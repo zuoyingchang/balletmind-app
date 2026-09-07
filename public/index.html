@@ -283,9 +283,10 @@
         <p class="label-editorial text-[13px] text-[var(--rose-deep)] font-semibold">写给今天的你</p>
         <h1 class="font-display mt-1 text-[28px] leading-tight font-semibold tracking-[-0.01em]">你的训练档案</h1>
       </div>
-      <div class="w-11 h-11 rounded-full chip flex items-center justify-center">
+      <button type="button" onclick="openNotices()" class="relative w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="通知">
         <iconify-icon icon="solar:bell-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon>
-      </div>
+        <span id="notice-dot" class="hidden absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[var(--rose-deep)] ring-2 ring-[var(--paper)]"></span>
+      </button>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-7">
       <img src="/img/pack-stand.png" alt="" aria-hidden="true" class="deco-photo tint-soft right-[-20px] bottom-6 w-[150px] h-[186px] opacity-[0.36]">
@@ -685,7 +686,7 @@
           <span class="text-[11px] text-[var(--ink-faint)]">状态由你自己确认</span>
         </div>
         <div id="issues-empty" class="hidden mt-3 text-center py-8 text-[var(--ink-faint)] text-[12.5px] leading-relaxed">
-          还没有发现重复出现的问题，继续记录训练吧
+          目前没有需要关注的问题
         </div>
         <div id="issues-list" class="mt-3 space-y-3"></div>
       </section>
@@ -766,6 +767,22 @@
   </div>
 </div>
 
+<div id="notice-sheet" class="hidden absolute inset-0 z-[65] items-end justify-center bg-black/40" onclick="if(event.target===this) closeNotices()">
+  <div class="w-full max-h-[78%] overflow-y-auto rounded-t-[28px] bg-[var(--paper)] px-6 pt-5 pb-8" onclick="event.stopPropagation()">
+    <div class="mx-auto mb-4 h-1 w-10 rounded-full bg-[var(--border-soft)]"></div>
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <p class="label-editorial text-[13px] text-[var(--rose-deep)]">产品动态</p>
+        <h2 class="mt-0.5 text-[18px] font-semibold">通知</h2>
+      </div>
+      <button type="button" onclick="closeNotices()" class="w-9 h-9 rounded-full chip flex items-center justify-center" aria-label="关闭">
+        <iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon>
+      </button>
+    </div>
+    <div id="notice-list" class="space-y-3"></div>
+  </div>
+</div>
+
 </div>
 
 <div id="about-modal" class="hidden fixed inset-0 z-[60] items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideAbout()">
@@ -800,6 +817,75 @@ function show(id) { document.querySelectorAll('.screen').forEach(s => s.classLis
 function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 2200); }
 function showAbout() { const m = document.getElementById('about-modal'); m.classList.remove('hidden'); m.classList.add('flex'); }
 function hideAbout() { const m = document.getElementById('about-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+
+// Loaded from /notices.json (same file for every user). Unread ids are stored
+// per browser in localStorage, so a new id lights the bell after the next deploy.
+let APP_NOTICES = [];
+const NOTICE_READ_KEY = 'bm_read_notices';
+
+async function loadNotices() {
+  try {
+    const res = await fetch('/notices.json', { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    APP_NOTICES = Array.isArray(data) ? data.filter((n) => n && n.id && n.title) : [];
+  } catch (e) {
+    APP_NOTICES = [];
+  }
+  refreshNoticeDot();
+}
+
+function readNoticeIds() {
+  try { return JSON.parse(localStorage.getItem(NOTICE_READ_KEY) || '[]'); } catch (e) { return []; }
+}
+function unreadNoticeCount() {
+  const read = new Set(readNoticeIds());
+  return APP_NOTICES.filter((n) => !read.has(n.id)).length;
+}
+function refreshNoticeDot() {
+  const dot = document.getElementById('notice-dot');
+  if (!dot) return;
+  dot.classList.toggle('hidden', unreadNoticeCount() === 0);
+}
+function renderNoticeList() {
+  const el = document.getElementById('notice-list');
+  if (!APP_NOTICES.length) {
+    el.innerHTML = '<p class="py-8 text-center text-[12.5px] text-[var(--ink-faint)]">暂时没有新通知</p>';
+    return;
+  }
+  const read = new Set(readNoticeIds());
+  el.innerHTML = APP_NOTICES.map((n) => {
+    const isNew = !read.has(n.id);
+    const action = n.go === 'progress' ? `onclick="followNotice('progress')"` : '';
+    return `<article class="rounded-2xl border border-[var(--border-soft)] bg-[var(--blush)]/30 p-4 ${n.go ? 'cursor-pointer' : ''}" ${action}>
+      <div class="flex items-start justify-between gap-2">
+        <p class="text-[13px] font-semibold">${escapeHtml(n.title)}</p>
+        ${isNew ? '<span class="shrink-0 rounded-full field-improve text-[var(--gold)] px-2 py-0.5 text-[10px]">新</span>' : ''}
+      </div>
+      <p class="mt-1.5 text-[12px] leading-5 text-[var(--ink-soft)]">${escapeHtml(n.body)}</p>
+    </article>`;
+  }).join('');
+}
+function markNoticesRead() {
+  localStorage.setItem(NOTICE_READ_KEY, JSON.stringify(APP_NOTICES.map((n) => n.id)));
+  refreshNoticeDot();
+}
+function openNotices() {
+  renderNoticeList();
+  const m = document.getElementById('notice-sheet');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+  markNoticesRead();
+}
+function closeNotices() {
+  const m = document.getElementById('notice-sheet');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+function followNotice(go) {
+  closeNotices();
+  if (go === 'progress') goProgress();
+}
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function fmtDate(ts){ const d = new Date(ts); return `${d.getMonth()+1}月${d.getDate()}日 ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`; }
 
@@ -897,6 +983,7 @@ async function submitAuth() {
 function logout() { clearAuth(); setAuthMode('login'); show('screen-auth'); }
 
 async function checkAuthAndInit() {
+  await loadNotices();
   if (!getToken()) { show('screen-auth'); return; }
   try {
     const res = await authFetch(`${API}/api/auth/me`);
@@ -908,7 +995,7 @@ async function checkAuthAndInit() {
 }
 
 // ---------- navigation ----------
-function goHome() { loadHome(); show('screen-home'); }
+function goHome() { loadHome(); show('screen-home'); refreshNoticeDot(); }
 function goRecord() {
   segments = []; renderSegments();
   document.getElementById('manual-input').value='';
@@ -994,6 +1081,7 @@ function renderTip() {
 let homeRows = [];
 async function loadHome() {
   renderTip();
+  refreshNoticeDot();
   const res = await authFetch(`${API}/api/records`);
   const rows = await res.json();
   document.getElementById('stat-count').innerHTML = rows.length + ' <span class="text-[14px] font-normal text-[var(--ink-faint)]">次记录</span>';
@@ -1073,16 +1161,16 @@ async function loadIssues() {
 function renderIssues() {
   const listEl = document.getElementById('issues-list');
   const emptyEl = document.getElementById('issues-empty');
-  if (currentIssues.length === 0) { emptyEl.classList.remove('hidden'); listEl.innerHTML = ''; return; }
+  const active = currentIssues.filter((issue) => issue.status !== 'resolved');
+  if (active.length === 0) { emptyEl.classList.remove('hidden'); listEl.innerHTML = ''; return; }
   emptyEl.classList.add('hidden');
-  listEl.innerHTML = currentIssues.map(issueCard).join('');
+  listEl.innerHTML = active.map(issueCard).join('');
 }
 function issueCard(issue) {
   const statusStyle = {
     open: { label: '仍然存在', badge: 'field-improve text-[var(--gold)]' },
     improving: { label: '有改善', badge: 'chip text-[var(--mauve)]' },
-    resolved: { label: '已解决', badge: 'field-good text-[var(--sage)]' },
-  }[issue.status];
+  }[issue.status] || { label: '仍然存在', badge: 'field-improve text-[var(--gold)]' };
   const dates = issue.occurrences.map(o => fmtDate(o.createdAt).split(' ')[0]).join('、');
   return `<div class="rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-4">
     <div class="flex items-start justify-between gap-2">
@@ -1093,7 +1181,7 @@ function issueCard(issue) {
     <div class="mt-3 flex gap-2">
       <button onclick="updateIssueStatus(${issue.id},'improving')" class="flex-1 h-8 rounded-xl border border-[var(--border-soft)] text-[11px] text-[var(--mauve)] ${issue.status==='improving'?'chip':''}">有改善</button>
       <button onclick="updateIssueStatus(${issue.id},'open')" class="flex-1 h-8 rounded-xl border border-[var(--border-soft)] text-[11px] text-[var(--mauve)] ${issue.status==='open'?'chip':''}">仍然存在</button>
-      <button onclick="updateIssueStatus(${issue.id},'resolved')" class="flex-1 h-8 rounded-xl border border-[var(--border-soft)] text-[11px] text-[var(--sage)] ${issue.status==='resolved'?'field-good':''}">已解决</button>
+      <button onclick="updateIssueStatus(${issue.id},'resolved')" class="flex-1 h-8 rounded-xl border border-[var(--border-soft)] text-[11px] text-[var(--sage)]">已解决</button>
     </div>
   </div>`;
 }
@@ -1102,9 +1190,15 @@ async function updateIssueStatus(id, status) {
     method: 'PATCH', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({ status })
   });
-  const issue = currentIssues.find(i => i.id === id);
-  if (issue) issue.status = status;
+  if (status === 'resolved') {
+    currentIssues = currentIssues.filter((issue) => issue.id !== id);
+    toast('已从追踪中移除');
+  } else {
+    const issue = currentIssues.find((item) => item.id === id);
+    if (issue) issue.status = status;
+  }
   renderIssues();
+  loadBrief();
 }
 
 async function generateTrainingReview() {
