@@ -371,18 +371,16 @@ test('/api/progress/brief returns top open issues and the last record, zero AI c
 });
 
 // ---------- milestone celebration ----------
-test('the 1st and 10th records trigger a count milestone, records 2-9 do not', async () => {
+test('count milestones fire at 1/3/5, then every 5th from the 10th record on', async () => {
   const { body: { token } } = await registerUser('milestone@example.com');
-
-  const first = await saveRecord(token, { className: '基训' });
-  assert.deepEqual(first.milestone, { type: 'count', value: 1 });
+  const milestoneCounts = new Set([1, 3, 5, 10, 15]);
 
   let lastResult;
-  for (let i = 2; i <= 10; i++) {
+  for (let i = 1; i <= 15; i++) {
     lastResult = await saveRecord(token, { className: '基训' + i });
-    if (i < 10) assert.equal(lastResult.milestone, null, `record #${i} should not be a milestone`);
+    if (milestoneCounts.has(i)) assert.deepEqual(lastResult.milestone, { type: 'count', value: i }, `record #${i} should be a milestone`);
+    else assert.equal(lastResult.milestone, null, `record #${i} should not be a milestone`);
   }
-  assert.deepEqual(lastResult.milestone, { type: 'count', value: 10 });
 });
 
 // ---------- terminology correction memory ----------

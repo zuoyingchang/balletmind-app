@@ -344,13 +344,37 @@
       </div>
     </header>
     <main class="flex-1 min-h-0 overflow-y-auto px-6 pb-7">
-      <div class="flex items-center gap-2 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] px-4 h-11 mb-4">
-        <iconify-icon icon="solar:magnifer-linear" class="text-[18px] text-[#9c8d90]"></iconify-icon>
-        <input id="history-search" oninput="filterHistory()" placeholder="搜索课程名称或内容" class="flex-1 bg-transparent outline-none text-[12px] placeholder:text-[#b6a8ac]">
+      <div class="flex items-center gap-1 mb-4 rounded-full bg-[var(--blush)]/60 p-1">
+        <button type="button" id="history-tab-list" onclick="setHistoryView('list')" class="flex-1 h-8 rounded-full text-[12px] font-medium">列表</button>
+        <button type="button" id="history-tab-calendar" onclick="setHistoryView('calendar')" class="flex-1 h-8 rounded-full text-[12px] font-medium">日历</button>
       </div>
-      <div id="history-empty" class="mt-10 text-center text-[#9c8d90] text-[12.5px]">还没有记录，去录第一段吧</div>
-      <div id="history-search-empty" class="hidden mt-10 text-center text-[#9c8d90] text-[12.5px]">没有找到匹配的记录</div>
-      <div id="history-list" class="space-y-3"></div>
+
+      <div id="history-list-view">
+        <div class="flex items-center gap-2 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] px-4 h-11 mb-4">
+          <iconify-icon icon="solar:magnifer-linear" class="text-[18px] text-[#9c8d90]"></iconify-icon>
+          <input id="history-search" oninput="filterHistory()" placeholder="搜索课程名称或内容" class="flex-1 bg-transparent outline-none text-[12px] placeholder:text-[#b6a8ac]">
+        </div>
+        <div id="history-empty" class="mt-10 text-center text-[#9c8d90] text-[12.5px]">还没有记录，去录第一段吧</div>
+        <div id="history-search-empty" class="hidden mt-10 text-center text-[#9c8d90] text-[12.5px]">没有找到匹配的记录</div>
+        <div id="history-list" class="space-y-3"></div>
+      </div>
+
+      <div id="history-calendar-view" class="hidden">
+        <div class="card-journal grain relative p-4" style="border-radius:22px 14px 22px 16px">
+          <div class="pearl-sheen"></div>
+          <div class="relative z-10 flex items-center justify-between mb-3">
+            <button type="button" onclick="shiftCalendarMonth(-1)" class="w-8 h-8 rounded-full flex items-center justify-center text-[var(--rose-deep)]"><iconify-icon icon="solar:alt-arrow-left-linear" class="text-[16px]"></iconify-icon></button>
+            <p class="label-editorial text-[15px] text-[var(--ink)]" id="calendar-month-label"></p>
+            <button type="button" onclick="shiftCalendarMonth(1)" class="w-8 h-8 rounded-full flex items-center justify-center text-[var(--rose-deep)]"><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px]"></iconify-icon></button>
+          </div>
+          <div class="relative z-10 grid grid-cols-7 text-center text-[10px] text-[var(--ink-faint)] mb-1">
+            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+          </div>
+          <div class="relative z-10 grid grid-cols-7 gap-y-1" id="calendar-grid"></div>
+        </div>
+        <div id="calendar-day-empty" class="mt-5 text-center text-[var(--ink-faint)] text-[12px]"></div>
+        <div id="calendar-day-list" class="mt-4 space-y-3"></div>
+      </div>
     </main>
   </div>
 
@@ -848,12 +872,14 @@ async function generateTrainingReview() {
 
 // ---------- history ----------
 let historyRows = [];
+let historyViewMode = 'list';
 async function loadHistory() {
   const res = await authFetch(`${API}/api/records`);
   historyRows = await res.json();
   document.getElementById('history-search').value = '';
   document.getElementById('history-empty').style.display = historyRows.length === 0 ? 'block' : 'none';
   filterHistory();
+  setHistoryView(historyViewMode);
 }
 function filterHistory() {
   const keyword = document.getElementById('history-search').value.trim().toLowerCase();
@@ -862,6 +888,96 @@ function filterHistory() {
     : historyRows;
   document.getElementById('history-search-empty').classList.toggle('hidden', rows.length > 0 || historyRows.length === 0);
   document.getElementById('history-list').innerHTML = rows.map(r => entryCard(r)).join('');
+}
+
+// ---------- history: calendar view ----------
+// Groups the same historyRows the list view uses by local calendar date —
+// no separate API call, just a different lens on the same data.
+let calendarCursor = new Date();
+let selectedCalendarDate = null; // 'YYYY-MM-DD' or null
+function setHistoryView(mode) {
+  historyViewMode = mode;
+  const listTab = document.getElementById('history-tab-list');
+  const calTab = document.getElementById('history-tab-calendar');
+  listTab.classList.toggle('bg-white', mode === 'list');
+  listTab.classList.toggle('shadow-sm', mode === 'list');
+  listTab.classList.toggle('text-[var(--burgundy)]', mode === 'list');
+  listTab.classList.toggle('text-[var(--ink-faint)]', mode !== 'list');
+  calTab.classList.toggle('bg-white', mode === 'calendar');
+  calTab.classList.toggle('shadow-sm', mode === 'calendar');
+  calTab.classList.toggle('text-[var(--burgundy)]', mode === 'calendar');
+  calTab.classList.toggle('text-[var(--ink-faint)]', mode !== 'calendar');
+  document.getElementById('history-list-view').classList.toggle('hidden', mode !== 'list');
+  document.getElementById('history-calendar-view').classList.toggle('hidden', mode !== 'calendar');
+  if (mode === 'calendar') renderCalendar();
+}
+function dateKey(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function shiftCalendarMonth(delta) {
+  calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1);
+  selectedCalendarDate = null;
+  renderCalendar();
+}
+function renderCalendar() {
+  const year = calendarCursor.getFullYear(), month = calendarCursor.getMonth();
+  document.getElementById('calendar-month-label').textContent = `${year}年${month+1}月`;
+
+  const byDate = {};
+  historyRows.forEach(r => {
+    const key = dateKey(new Date(r.created_at));
+    (byDate[key] = byDate[key] || []).push(r);
+  });
+
+  const startWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayKey = dateKey(new Date());
+
+  let html = '';
+  for (let i = 0; i < startWeekday; i++) html += `<div></div>`;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const key = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const records = byDate[key] || [];
+    const hasRecords = records.length > 0;
+    const isFuture = key > todayKey;
+    const isToday = key === todayKey;
+    const isSelected = key === selectedCalendarDate;
+    const dot = hasRecords
+      ? `<span class="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5">
+           <span class="w-[5px] h-[5px] rounded-full ${isSelected ? 'bg-white' : 'bg-[var(--gold)]'}"></span>
+           ${records.length > 1 ? `<span class="text-[8px] font-semibold ${isSelected ? 'text-white' : 'text-[var(--rose-deep)]'}">${records.length}</span>` : ''}
+         </span>`
+      : '';
+    const base = 'relative h-9 flex items-center justify-center text-[12px] rounded-full transition-colors';
+    const state = isSelected
+      ? 'bg-[var(--rose-deep)] text-white font-semibold'
+      : isFuture
+        ? 'text-[var(--ink-faint)] opacity-35'
+        : hasRecords
+          ? 'text-[var(--ink)] font-medium'
+          : 'text-[var(--ink-faint)]';
+    const ring = isToday && !isSelected ? 'ring-1 ring-[var(--rose-deep)]' : '';
+    const action = hasRecords && !isFuture ? `onclick="selectCalendarDate('${key}')"` : 'disabled';
+    html += `<button type="button" ${action} class="${base} ${state} ${ring}">${day}${dot}</button>`;
+  }
+  document.getElementById('calendar-grid').innerHTML = html;
+  renderCalendarDayList(byDate, year, month);
+}
+function selectCalendarDate(key) {
+  selectedCalendarDate = selectedCalendarDate === key ? null : key;
+  renderCalendar();
+}
+function renderCalendarDayList(byDate, year, month) {
+  const emptyEl = document.getElementById('calendar-day-empty');
+  const listEl = document.getElementById('calendar-day-list');
+  if (selectedCalendarDate && byDate[selectedCalendarDate]) {
+    emptyEl.classList.add('hidden');
+    listEl.innerHTML = byDate[selectedCalendarDate].map(r => entryCard(r)).join('');
+    return;
+  }
+  listEl.innerHTML = '';
+  const monthPrefix = `${year}-${String(month+1).padStart(2,'0')}-`;
+  const hasAnyThisMonth = Object.keys(byDate).some(k => k.startsWith(monthPrefix));
+  emptyEl.classList.toggle('hidden', hasAnyThisMonth);
+  emptyEl.textContent = '这个月还没有训练记录';
 }
 
 // ---------- detail ----------

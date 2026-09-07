@@ -1,8 +1,10 @@
 const db = require('./db');
 
 // Objective milestone celebration (V0.2 #11) — pure counting, never a
-// capability judgement. Triggers on the 1st record, then every 10th, and on
-// a handful of "nice" consecutive-week streak numbers.
+// capability judgement. Triggers on the 1st/3rd/5th record (early
+// encouragement), then every 5th from the 10th record on, and on a handful
+// of "nice" consecutive-week streak numbers.
+const COUNT_MILESTONES = new Set([1, 3, 5]);
 const STREAK_MILESTONES = new Set([2, 4, 8, 12, 26, 52]);
 
 function mondayOf(ts) {
@@ -31,7 +33,7 @@ async function computeWeekStreak(userId) {
 async function checkMilestone(userId) {
   const { c: totalCount } = await db.get('SELECT COUNT(*) AS c FROM records WHERE user_id = ?', [userId]);
 
-  if (totalCount === 1 || (totalCount >= 10 && totalCount % 10 === 0)) {
+  if (COUNT_MILESTONES.has(totalCount) || (totalCount >= 10 && totalCount % 5 === 0)) {
     return { type: 'count', value: totalCount };
   }
 
