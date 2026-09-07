@@ -1,6 +1,7 @@
 process.env.JWT_SECRET = 'test-secret-do-not-use-in-prod';
 process.env.DB_PATH = ':memory:';
 process.env.ADMIN_KEY = 'test-admin-key';
+process.env.DAILY_AI_LIMIT = '5';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -143,6 +144,31 @@ test('/api/generate requires auth', async () => {
     body: JSON.stringify({ transcript: '测试' }),
   });
   assert.equal(res.status, 401);
+});
+
+test('/api/generate rejects a transcript over the length cap', async () => {
+  const { body: { token } } = await registerUser('toolong@example.com');
+  const res = await fetch(`${base}/api/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ transcript: '啊'.repeat(4001) }),
+  });
+  assert.equal(res.status, 400);
+});
+
+test('/api/generate enforces the daily per-user quota', async () => {
+  const { body: { token, user } } = await registerUser('quota@example.com');
+  const { logEvent } = require('../events');
+  for (let i = 0; i < 5; i++) logEvent(user.id, 'ai_process_success', {});
+
+  const res = await fetch(`${base}/api/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ transcript: '今天练了tendu' }),
+  });
+  assert.equal(res.status, 429);
+  const body = await res.json();
+  assert.match(body.error, /今天的AI/);
 });
 
 // ---------- events ----------

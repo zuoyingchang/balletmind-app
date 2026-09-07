@@ -23,4 +23,16 @@ function logEvent(userId, eventName, metadata) {
   return true;
 }
 
-module.exports = { logEvent, KNOWN_EVENTS };
+// Count of ai_process_success/fail events for this user since local midnight —
+// used to enforce the daily AI call quota.
+function countAiCallsToday(userId) {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const row = db.prepare(`
+    SELECT COUNT(*) AS c FROM events
+    WHERE user_id = ? AND event_name IN ('ai_process_success', 'ai_process_fail') AND created_at >= ?
+  `).get(userId, startOfDay.getTime());
+  return row.c;
+}
+
+module.exports = { logEvent, KNOWN_EVENTS, countAiCallsToday };

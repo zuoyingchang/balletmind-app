@@ -1,6 +1,7 @@
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
-const { logEvent } = require('../events');
+const { logEvent, countAiCallsToday } = require('../events');
+const { DAILY_AI_LIMIT, MAX_TRANSCRIPT_LENGTH } = require('../config');
 
 const router = express.Router();
 
@@ -59,6 +60,13 @@ router.post('/', requireAuth, async (req, res) => {
   const { transcript } = req.body || {};
   if (!transcript || !transcript.trim()) {
     return res.status(400).json({ error: '缺少语音转写内容' });
+  }
+  if (transcript.length > MAX_TRANSCRIPT_LENGTH) {
+    return res.status(400).json({ error: `本次内容过长（超过${MAX_TRANSCRIPT_LENGTH}字），请分段录制` });
+  }
+  if (countAiCallsToday(req.userId) >= DAILY_AI_LIMIT) {
+    logEvent(req.userId, 'ai_process_fail', { reason: 'quota_exceeded' });
+    return res.status(429).json({ error: '今天的AI整理次数已经用完了，可以先手动记录内容，明天再生成复盘' });
   }
   if (!process.env.ANTHROPIC_API_KEY) {
     return res.status(500).json({ error: '服务器未配置 ANTHROPIC_API_KEY，请检查 .env 文件' });

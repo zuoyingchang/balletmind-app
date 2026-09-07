@@ -4,9 +4,14 @@ const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET;
 const ADMIN_KEY = process.env.ADMIN_KEY; // optional — gates the /stats.html metrics page
 
+// Guards against a runaway retry loop or a single oversized request burning
+// through the Anthropic budget — not a business feature, just a safety cap.
+const DAILY_AI_LIMIT = Number(process.env.DAILY_AI_LIMIT) || 30; // per user, per calendar day
+const MAX_TRANSCRIPT_LENGTH = Number(process.env.MAX_TRANSCRIPT_LENGTH) || 4000; // characters
+
 if (!JWT_SECRET) {
   console.error('缺少 JWT_SECRET，请在 .env 里配置（用于登录令牌签名）');
   process.exit(1);
 }
 
-module.exports = { PORT, JWT_SECRET, ADMIN_KEY };
+module.exports = { PORT, JWT_SECRET, ADMIN_KEY, DAILY_AI_LIMIT, MAX_TRANSCRIPT_LENGTH };
