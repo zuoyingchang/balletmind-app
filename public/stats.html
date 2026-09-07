@@ -56,6 +56,14 @@
   </div>
 
   <div class="card">
+    <div class="grid">
+      <div class="stat"><strong id="u-calls">-</strong><span>AI调用次数</span></div>
+      <div class="stat"><strong id="u-tokens">-</strong><span>累计Token(输入/输出)</span></div>
+      <div class="stat"><strong id="u-latency">-</strong><span>平均耗时</span></div>
+    </div>
+  </div>
+
+  <div class="card">
     <h2 style="font-size:14px;margin:0 0 10px;">各事件次数</h2>
     <table id="event-counts-table"><tbody></tbody></table>
   </div>
@@ -90,6 +98,10 @@ function render(data) {
   document.getElementById('m-success').textContent = data.metrics.aiProcessSuccessRate == null ? '-' : data.metrics.aiProcessSuccessRate + '%';
   document.getElementById('m-edit').textContent = data.metrics.editRate == null ? '-' : data.metrics.editRate + '%';
   document.getElementById('m-completion').textContent = data.metrics.recordCompletionRate == null ? '-' : data.metrics.recordCompletionRate + '%';
+
+  document.getElementById('u-calls').textContent = data.aiUsage.callCount;
+  document.getElementById('u-tokens').textContent = data.aiUsage.totalInputTokens + ' / ' + data.aiUsage.totalOutputTokens;
+  document.getElementById('u-latency').textContent = data.aiUsage.avgLatencyMs == null ? '-' : (data.aiUsage.avgLatencyMs / 1000).toFixed(1) + 's';
 
   const countsBody = document.querySelector('#event-counts-table tbody');
   const entries = Object.entries(data.eventCounts);

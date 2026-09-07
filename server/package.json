@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "node --test test/"
+    "test": "node --test test/",
+    "eval": "node eval/run-eval.js"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

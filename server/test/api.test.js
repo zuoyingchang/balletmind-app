@@ -2,6 +2,8 @@ process.env.JWT_SECRET = 'test-secret-do-not-use-in-prod';
 process.env.TURSO_DATABASE_URL = 'file::memory:';
 process.env.ADMIN_KEY = 'test-admin-key';
 process.env.DAILY_AI_LIMIT = '5';
+process.env.AI_TIMEOUT_MS = '200'; // short, so the timeout test doesn't take 25s
+process.env.ANTHROPIC_API_KEY = 'test-key-unused-fetch-is-mocked'; // real calls are always mocked in this file
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -422,4 +424,169 @@ test('correctionsAsPromptHint returns an empty string when the user has no corre
   const { body: { user } } = await registerUser('terms_none@example.com');
   const { correctionsAsPromptHint } = require('../terms');
   assert.equal(await correctionsAsPromptHint(user.id), '');
+});
+
+// ---------- retry / timeout / cost & latency logging ----------
+// generate.js calls the global fetch for the Anthropic request specifically —
+// swap it out for the duration of one test, delegating anything that isn't
+// an api.anthropic.com call (i.e. this file's own HTTP calls to our test
+// server) through to the real fetch, then always restore it.
+async function withMockAnthropicFetch(mockFn, run) {
+  const realFetch = global.fetch;
+  global.fetch = (url, opts) => {
+    if (String(url).includes('api.anthropic.com')) return mockFn(url, opts);
+    return realFetch(url, opts);
+  };
+  try {
+    await run();
+  } finally {
+    global.fetch = realFetch;
+  }
+}
+
+function fakeAnthropicResponse({ good = [], improve = [], next = [], confidence = '高', note = '', inputTokens = 120, outputTokens = 60 } = {}) {
+  return {
+    ok: true,
+    status: 200,
+    json: async () => ({
+      content: [{ type: 'tool_use', name: 'submit_review', input: {
+        good_points: good, improve_points: improve, next_time_reminder: next, confidence_level: confidence, note,
+      } }],
+      usage: { input_tokens: inputTokens, output_tokens: outputTokens },
+    }),
+  };
+}
+
+test('a transient network failure is retried once and succeeds, and success is logged with attempt/latency/token usage', async () => {
+  const { body: { token, user } } = await registerUser('retry_success@example.com');
+  let calls = 0;
+
+  await withMockAnthropicFetch(
+    async () => {
+      calls++;
+      if (calls === 1) throw new Error('simulated network failure');
+      return fakeAnthropicResponse({ good: ['高位更稳定'] });
+    },
+    async () => {
+      const res = await fetch(`${base}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ transcript: '今天练了基本功' }),
+      });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(body.good_points, '高位更稳定');
+    }
+  );
+
+  assert.equal(calls, 2, 'expected exactly one retry (two total attempts)');
+  const event = await db.get(
+    "SELECT * FROM events WHERE user_id = ? AND event_name = 'ai_process_success' ORDER BY id DESC LIMIT 1",
+    [user.id]
+  );
+  const meta = JSON.parse(event.metadata);
+  assert.equal(meta.attempt, 2);
+  assert.equal(meta.inputTokens, 120);
+  assert.equal(meta.outputTokens, 60);
+  assert.ok(typeof meta.latencyMs === 'number' && meta.latencyMs >= 0);
+});
+
+test('a persistent 5xx from Anthropic is retried once, then surfaced as a 502 (not silently retried forever)', async () => {
+  const { body: { token, user } } = await registerUser('retry_persistent_5xx@example.com');
+  let calls = 0;
+
+  await withMockAnthropicFetch(
+    async () => { calls++; return { ok: false, status: 503, text: async () => 'upstream overloaded' }; },
+    async () => {
+      const res = await fetch(`${base}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ transcript: '今天练了基本功' }),
+      });
+      assert.equal(res.status, 502);
+    }
+  );
+
+  assert.equal(calls, 2, 'expected exactly two attempts total, not an unbounded retry loop');
+  const event = await db.get(
+    "SELECT * FROM events WHERE user_id = ? AND event_name = 'ai_process_fail' ORDER BY id DESC LIMIT 1",
+    [user.id]
+  );
+  assert.equal(JSON.parse(event.metadata).reason, 'api_error');
+});
+
+test('a 4xx from Anthropic is NOT retried — the request itself is wrong, retrying would not help', async () => {
+  const { body: { token } } = await registerUser('no_retry_4xx@example.com');
+  let calls = 0;
+
+  await withMockAnthropicFetch(
+    async () => { calls++; return { ok: false, status: 400, text: async () => 'bad request' }; },
+    async () => {
+      const res = await fetch(`${base}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ transcript: '今天练了基本功' }),
+      });
+      assert.equal(res.status, 502);
+    }
+  );
+
+  assert.equal(calls, 1, 'a 4xx should fail fast, not be retried');
+});
+
+test('a request that never resolves times out and is reported as a timeout, not a generic error', async () => {
+  const { body: { token, user } } = await registerUser('timeout@example.com');
+  let calls = 0;
+
+  await withMockAnthropicFetch(
+    (url, opts) => {
+      calls++;
+      return new Promise((resolve, reject) => {
+        opts.signal.addEventListener('abort', () => {
+          const err = new Error('The operation was aborted');
+          err.name = 'AbortError';
+          reject(err);
+        });
+      });
+    },
+    async () => {
+      const res = await fetch(`${base}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ transcript: '今天练了基本功' }),
+      });
+      assert.equal(res.status, 504);
+      const body = await res.json();
+      assert.match(body.error, /超时/);
+    }
+  );
+
+  assert.equal(calls, 2, 'a timeout is transient, so it should still get one retry');
+  const event = await db.get(
+    "SELECT * FROM events WHERE user_id = ? AND event_name = 'ai_process_fail' ORDER BY id DESC LIMIT 1",
+    [user.id]
+  );
+  assert.equal(JSON.parse(event.metadata).reason, 'timeout');
+});
+
+test('/api/admin/stats aggregates real token usage and latency from ai_process_success events', async () => {
+  const { body: { token } } = await registerUser('usage_stats@example.com');
+
+  await withMockAnthropicFetch(
+    async () => fakeAnthropicResponse({ good: ['测试'], inputTokens: 200, outputTokens: 80 }),
+    async () => {
+      const res = await fetch(`${base}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ transcript: '今天练了基本功' }),
+      });
+      assert.equal(res.status, 200);
+    }
+  );
+
+  const stats = await (await fetch(`${base}/api/admin/stats`, { headers: { 'X-Admin-Key': 'test-admin-key' } })).json();
+  assert.ok(stats.aiUsage.totalInputTokens >= 200);
+  assert.ok(stats.aiUsage.totalOutputTokens >= 80);
+  assert.ok(stats.aiUsage.callCount >= 1);
+  assert.ok(typeof stats.aiUsage.avgLatencyMs === 'number' && stats.aiUsage.avgLatencyMs >= 0);
 });
