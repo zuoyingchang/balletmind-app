@@ -18,7 +18,10 @@ const termsRoutes = require('./routes/terms');
 const app = express();
 
 app.set('trust proxy', 1);
-app.use(cors());
+app.use(cors({
+  origin: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Key'],
+}));
 app.use('/api', (req, res, next) => {
   res.set('Cache-Control', 'no-store');
   next();

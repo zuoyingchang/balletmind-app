@@ -216,3 +216,4 @@ module.exports = router;
 module.exports.SYSTEM_PROMPT = SYSTEM_PROMPT;
 module.exports.REVIEW_TOOL = REVIEW_TOOL;
 module.exports.callAnthropicOnce = callAnthropicOnce;
+module.exports.PROMPT_VERSION = PROMPT_VERSION;

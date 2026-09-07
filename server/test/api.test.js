@@ -258,6 +258,9 @@ test('/api/admin/stats returns aggregate metrics with the correct key', async ()
   assert.ok(typeof body.totals.events === 'number');
   assert.ok(body.eventCounts.save_record >= 1, 'expected at least the save_record events logged earlier in this run');
   assert.ok(Array.isArray(body.recentEvents));
+  assert.ok(typeof body.totals.activatedUsers === 'number');
+  assert.ok(body.funnel && body.funnel.byUniqueUsers);
+  assert.ok(Array.isArray(body.eventBreakdown));
 });
 
 // ---------- response caching ----------
@@ -599,6 +602,8 @@ test('/api/admin/stats aggregates real token usage and latency from ai_process_s
   assert.ok(stats.aiUsage.totalOutputTokens >= 80);
   assert.ok(stats.aiUsage.callCount >= 1);
   assert.ok(typeof stats.aiUsage.avgLatencyMs === 'number' && stats.aiUsage.avgLatencyMs >= 0);
+  assert.ok(typeof stats.aiUsage.estimatedUsd === 'number');
+  assert.ok(stats.metrics.progressOpenCount === 0 || typeof stats.metrics.progressOpenCount === 'number');
 });
 
 // ---------- password reset ----------
@@ -711,6 +716,11 @@ test('/api/transcribe returns Whisper text and logs asr_success with model/laten
   const meta = JSON.parse(event.metadata);
   assert.equal(meta.model, 'whisper-1');
   assert.ok(typeof meta.latencyMs === 'number');
+});
+
+test('eval golden set covers more than the original five cases', () => {
+  const { CASES } = require('../eval/cases');
+  assert.ok(CASES.length >= 14);
 });
 
 test('/api/transcribe enforces the shared daily AI quota', async () => {

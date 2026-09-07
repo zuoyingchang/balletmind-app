@@ -1,8 +1,6 @@
 const db = require('./db');
 
-// The 10 events defined in the PRD's 埋点与核心指标 section.
-// progress_open is listed there too but has no corresponding UI yet (Progress
-// feature is deferred), so it isn't wired up until that ships.
+// The events defined in the PRD 埋点 section, plus asr_success for Whisper.
 const KNOWN_EVENTS = new Set([
   'record_voice_start',
   'record_voice_complete',

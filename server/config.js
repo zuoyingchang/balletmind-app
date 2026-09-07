@@ -35,6 +35,11 @@ const EMAIL_FROM = process.env.EMAIL_FROM || 'BalletMind <beth.t@example.com>';
 const APP_PUBLIC_URL = (process.env.APP_PUBLIC_URL || '').replace(/\/$/, '');
 const RESET_TOKEN_TTL_MS = Number(process.env.RESET_TOKEN_TTL_MS) || 60 * 60 * 1000;
 
+// Rough $/1M token rates for the internal stats page — not a billing API.
+// Override when you switch model tiers so "usd per save" stays in the right ballpark.
+const ANTHROPIC_INPUT_USD_PER_MTOK = Number(process.env.ANTHROPIC_INPUT_USD_PER_MTOK) || 3;
+const ANTHROPIC_OUTPUT_USD_PER_MTOK = Number(process.env.ANTHROPIC_OUTPUT_USD_PER_MTOK) || 15;
+
 if (!JWT_SECRET) {
   console.error('缺少 JWT_SECRET，请在 .env 里配置（用于登录令牌签名）');
   process.exit(1);
@@ -45,4 +50,5 @@ module.exports = {
   AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS, AI_TEMPERATURE,
   OPENAI_API_KEY, ASR_MODEL, ASR_TIMEOUT_MS, MAX_AUDIO_BYTES,
   RESEND_API_KEY, EMAIL_FROM, APP_PUBLIC_URL, RESET_TOKEN_TTL_MS,
+  ANTHROPIC_INPUT_USD_PER_MTOK, ANTHROPIC_OUTPUT_USD_PER_MTOK,
 };
