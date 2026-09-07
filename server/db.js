@@ -24,6 +24,13 @@ db.exec(`
     duration_sec INTEGER,
     created_at INTEGER
   );
+  CREATE TABLE IF NOT EXISTS events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    event_name TEXT NOT NULL,
+    metadata TEXT,
+    created_at INTEGER
+  );
 `);
 
 module.exports = db;

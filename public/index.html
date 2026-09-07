@@ -405,6 +405,15 @@ async function authFetch(url, opts = {}) {
   return res;
 }
 
+// fire-and-forget analytics event — never blocks the UI, never throws
+function logEvent(event, metadata) {
+  if (!getToken()) return;
+  authFetch(`${API}/api/events`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event, metadata }),
+  }).catch(() => {});
+}
+
 let authMode = 'login';
 function toggleAuthMode() {
   authMode = authMode === 'login' ? 'register' : 'login';
@@ -455,7 +464,7 @@ async function checkAuthAndInit() {
 // ---------- navigation ----------
 function goHome() { loadHome(); show('screen-home'); }
 function goRecord() { segments = []; renderSegments(); document.getElementById('manual-input').value=''; document.getElementById('generate-btn').disabled = true; document.getElementById('rec-live-text').textContent=''; document.getElementById('rec-timer').textContent='0s'; show('screen-record'); }
-function goHistory() { loadHistory(); show('screen-history'); }
+function goHistory() { logEvent('history_open'); loadHistory(); show('screen-history'); }
 const SELF_TIPS = [
   '每一次练习，都是在更靠近未来的自己。',
   '不用和别人比，只要今天比昨天更清楚一点。',
@@ -637,6 +646,7 @@ function initSpeech() {
   const FATAL_SPEECH_ERRORS = new Set(['service-not-allowed', 'not-allowed', 'audio-capture', 'language-not-supported']);
   recognition.onerror = (e) => {
     if (e.error === 'aborted') { stopRecording(currentText()); finalTranscript=''; interimTranscript=''; return; }
+    logEvent('asr_fail', { error: e.error });
     if (FATAL_SPEECH_ERRORS.has(e.error)) {
       speechSupported = false;
       document.getElementById('rec-btn').classList.add('hidden');
@@ -659,6 +669,7 @@ function toggleRecording() {
 }
 function startRecording() {
   if (segments.length >= 3) { toast('最多录制3段'); return; }
+  logEvent('record_voice_start');
   recognizing = true;
   window.__resetFinal && window.__resetFinal();
   document.getElementById('rec-live-text').textContent = '正在聆听...';
@@ -685,7 +696,7 @@ function stopRecording(finalText) {
   document.getElementById('rec-btn').classList.remove('bg-[#4b4850]');
   document.getElementById('rec-state').textContent = '已暂停 · 可以继续或完成';
   const text = (finalText || '').trim();
-  if (text) segments.push({ text, duration: currentSegSeconds });
+  if (text) { segments.push({ text, duration: currentSegSeconds }); logEvent('record_voice_complete', { durationSec: currentSegSeconds }); }
   renderSegments();
   updateGenerateBtn();
   if (segments.length >= 3) { document.getElementById('rec-btn').classList.add('opacity-40'); document.getElementById('rec-btn').disabled = true; }
@@ -739,6 +750,7 @@ async function generateReview() {
 }
 async function retryGenerate() {
   if (!lastDraft) return;
+  logEvent('retry_ai');
   show('screen-processing');
   try {
     const res = await authFetch(`${API}/api/generate`, {
@@ -769,15 +781,22 @@ function renderReview() {
   else noteEl.classList.add('hidden');
 }
 async function confirmSave() {
+  const good = document.getElementById('review-good').value.trim();
+  const improve = document.getElementById('review-improve').value.trim();
+  const next = document.getElementById('review-next').value.trim();
+  const edited = good !== (lastDraft.result.good_points || '').trim()
+    || improve !== (lastDraft.result.improve_points || '').trim()
+    || next !== (lastDraft.result.next_time_reminder || '').trim();
   const body = {
     className: document.getElementById('review-classname').value.trim() || '训练记录',
     transcript: lastDraft.transcript,
-    good_points: document.getElementById('review-good').value.trim(),
-    improve_points: document.getElementById('review-improve').value.trim(),
-    next_time_reminder: document.getElementById('review-next').value.trim(),
+    good_points: good,
+    improve_points: improve,
+    next_time_reminder: next,
     confidence_level: lastDraft.result.confidence_level || '',
     note: lastDraft.result.note || '',
     durationSec: lastDraft.durationSec,
+    edited,
   };
   await authFetch(`${API}/api/records`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
   toast('已保存到训练档案');

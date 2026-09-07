@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { logEvent } = require('../events');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -8,7 +9,7 @@ router.use(requireAuth);
 router.post('/', (req, res) => {
   const {
     className, transcript, good_points, improve_points,
-    next_time_reminder, confidence_level, note, durationSec,
+    next_time_reminder, confidence_level, note, durationSec, edited,
   } = req.body || {};
   const stmt = db.prepare(`
     INSERT INTO records
@@ -19,6 +20,8 @@ router.post('/', (req, res) => {
     req.userId, className || '训练记录', transcript || '', good_points || '', improve_points || '',
     next_time_reminder || '', confidence_level || '', note || '', durationSec || 0, Date.now()
   );
+  logEvent(req.userId, 'save_record', { recordId: info.lastInsertRowid });
+  logEvent(req.userId, 'user_edit_ai_result', { edited: !!edited });
   res.json({ id: info.lastInsertRowid });
 });
 

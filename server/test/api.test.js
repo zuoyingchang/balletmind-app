@@ -143,3 +143,55 @@ test('/api/generate requires auth', async () => {
   });
   assert.equal(res.status, 401);
 });
+
+// ---------- events ----------
+const db = require('../db');
+
+test('/api/events requires auth', async () => {
+  const res = await fetch(`${base}/api/events`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event: 'history_open' }),
+  });
+  assert.equal(res.status, 401);
+});
+
+test('/api/events rejects an unknown event name', async () => {
+  const { body: { token } } = await registerUser('events_unknown@example.com');
+  const res = await fetch(`${base}/api/events`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ event: 'not_a_real_event' }),
+  });
+  assert.equal(res.status, 400);
+});
+
+test('/api/events logs a known event for the calling user', async () => {
+  const { body: { token, user } } = await registerUser('events_known@example.com');
+  const res = await fetch(`${base}/api/events`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ event: 'history_open', metadata: { from: 'home' } }),
+  });
+  assert.equal(res.status, 200);
+
+  const row = db.prepare('SELECT * FROM events WHERE user_id = ? AND event_name = ?').get(user.id, 'history_open');
+  assert.ok(row, 'expected an events row to be written');
+  assert.deepEqual(JSON.parse(row.metadata), { from: 'home' });
+});
+
+test('saving a record logs save_record and user_edit_ai_result events', async () => {
+  const { body: { token, user } } = await registerUser('events_save@example.com');
+  const create = await fetch(`${base}/api/records`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ className: '测试', good_points: '进步', edited: true }),
+  });
+  assert.equal(create.status, 200);
+
+  const saveEvent = db.prepare('SELECT * FROM events WHERE user_id = ? AND event_name = ?').get(user.id, 'save_record');
+  assert.ok(saveEvent);
+  const editEvent = db.prepare('SELECT * FROM events WHERE user_id = ? AND event_name = ?').get(user.id, 'user_edit_ai_result');
+  assert.ok(editEvent);
+  assert.deepEqual(JSON.parse(editEvent.metadata), { edited: true });
+});
