@@ -1,4 +1,5 @@
 const db = require('./db');
+const { splitLines } = require('./lib/text');
 
 // Recurring Issue Tracking (V0.2 PRD #1) — deliberately NOT AI-based. Matching
 // a new "improve_points" line against existing open issues is plain text
@@ -24,10 +25,7 @@ function isSimilar(a, b) {
 // new issue otherwise. Every match/create is also logged in issue_occurrences
 // so the UI can link each issue back to the specific records it came from.
 async function processRecordForIssues(userId, recordId, improvePointsText) {
-  const lines = (improvePointsText || '')
-    .split('\n')
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const lines = splitLines(improvePointsText);
   if (lines.length === 0) return;
 
   const openIssues = await db.all(

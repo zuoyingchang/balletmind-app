@@ -1,6 +1,5 @@
 const db = require('./db');
 
-// The events defined in the PRD 埋点 section, plus asr_success for Whisper.
 const KNOWN_EVENTS = new Set([
   'record_voice_start',
   'record_voice_complete',
@@ -15,6 +14,15 @@ const KNOWN_EVENTS = new Set([
   'progress_open',
 ]);
 
+// ASR + generate share one daily budget so a user cannot burn both quotas.
+const QUOTA_EVENTS = ['ai_process_success', 'ai_process_fail', 'asr_success', 'asr_fail'];
+
+function startOfLocalDayMs() {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  return start.getTime();
+}
+
 async function logEvent(userId, eventName, metadata) {
   if (!KNOWN_EVENTS.has(eventName)) return false;
   await db.run(
@@ -24,15 +32,12 @@ async function logEvent(userId, eventName, metadata) {
   return true;
 }
 
-// Count of ai_process_success/fail events for this user since local midnight —
-// used to enforce the daily AI call quota.
 async function countAiCallsToday(userId) {
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
+  const placeholders = QUOTA_EVENTS.map(() => '?').join(', ');
   const row = await db.get(
     `SELECT COUNT(*) AS c FROM events
-     WHERE user_id = ? AND event_name IN ('ai_process_success', 'ai_process_fail', 'asr_success', 'asr_fail') AND created_at >= ?`,
-    [userId, startOfDay.getTime()]
+     WHERE user_id = ? AND event_name IN (${placeholders}) AND created_at >= ?`,
+    [userId, ...QUOTA_EVENTS, startOfLocalDayMs()]
   );
   return row.c;
 }

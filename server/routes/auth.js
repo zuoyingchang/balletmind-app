@@ -14,6 +14,22 @@ function hashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+function normalizeEmail(email) {
+  return String(email).trim().toLowerCase();
+}
+
+function signToken(userId) {
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '30d' });
+}
+
+function userPublic(user, email, displayName) {
+  return {
+    id: user.id,
+    email: email ?? user.email,
+    displayName: displayName ?? user.display_name,
+  };
+}
+
 function publicBase(req) {
   if (APP_PUBLIC_URL) return APP_PUBLIC_URL;
   const host = req.get('x-forwarded-host') || req.get('host');
@@ -48,26 +64,27 @@ router.post('/register', async (req, res) => {
   if (!email || !password) return res.status(400).json({ error: '请填写邮箱和密码' });
   if (password.length < 6) return res.status(400).json({ error: '密码至少6位' });
   if (!privacyAccepted) return res.status(400).json({ error: '请先阅读并同意隐私政策' });
-  const existing = await db.get('SELECT id FROM users WHERE email = ?', [email.trim().toLowerCase()]);
+  const normalized = normalizeEmail(email);
+  const existing = await db.get('SELECT id FROM users WHERE email = ?', [normalized]);
   if (existing) return res.status(409).json({ error: '这个邮箱已经注册过了' });
+  const name = displayName || email.split('@')[0];
   const passwordHash = await bcrypt.hash(password, 10);
   const info = await db.run(
     'INSERT INTO users (email, password_hash, display_name, created_at) VALUES (?, ?, ?, ?)',
-    [email.trim().toLowerCase(), passwordHash, displayName || email.split('@')[0], Date.now()]
+    [normalized, passwordHash, name, Date.now()]
   );
-  const token = jwt.sign({ userId: info.lastInsertRowid }, JWT_SECRET, { expiresIn: '30d' });
-  res.json({ token, user: { id: info.lastInsertRowid, email: email.trim().toLowerCase(), displayName: displayName || email.split('@')[0] } });
+  const id = info.lastInsertRowid;
+  res.json({ token: signToken(id), user: { id, email: normalized, displayName: name } });
 });
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: '请填写邮箱和密码' });
-  const user = await db.get('SELECT * FROM users WHERE email = ?', [email.trim().toLowerCase()]);
+  const user = await db.get('SELECT * FROM users WHERE email = ?', [normalizeEmail(email)]);
   if (!user) return res.status(401).json({ error: '邮箱或密码不对' });
   const ok = await bcrypt.compare(password, user.password_hash);
   if (!ok) return res.status(401).json({ error: '邮箱或密码不对' });
-  const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
-  res.json({ token, user: { id: user.id, email: user.email, displayName: user.display_name } });
+  res.json({ token: signToken(user.id), user: userPublic(user) });
 });
 
 router.get('/me', requireAuth, async (req, res) => {
@@ -82,7 +99,7 @@ router.post('/forgot-password', async (req, res) => {
   const generic = { ok: true, message: '如果这个邮箱已经注册，我们会发送重置链接' };
   if (!email || !String(email).trim()) return res.status(400).json({ error: '请填写邮箱' });
 
-  const user = await db.get('SELECT id, email FROM users WHERE email = ?', [String(email).trim().toLowerCase()]);
+  const user = await db.get('SELECT id, email FROM users WHERE email = ?', [normalizeEmail(email)]);
   if (!user) return res.json(generic);
 
   const rawToken = crypto.randomBytes(32).toString('hex');

@@ -4,7 +4,8 @@
 
 require('../config');
 const { AI_MODEL, AI_TEMPERATURE } = require('../config');
-const { callAnthropicOnce, PROMPT_VERSION } = require('../routes/generate');
+const { PROMPT_VERSION } = require('../ai/review-prompt');
+const { callAnthropicOnce, findToolUse, reviewFromToolInput } = require('../ai/anthropic');
 const { CASES } = require('./cases');
 
 async function runCase(c) {
@@ -13,17 +14,9 @@ async function runCase(c) {
     return { ...c, ok: false, reason: `API调用失败: ${response.status} ${await response.text()}` };
   }
   const data = await response.json();
-  const toolUse = (data.content || []).find((b) => b.type === 'tool_use');
+  const toolUse = findToolUse(data);
   if (!toolUse) return { ...c, ok: false, reason: 'AI未返回结构化结果' };
-  const input = toolUse.input || {};
-  const joinLines = (v) => (Array.isArray(v) ? v.filter(Boolean).join('\n') : v || '');
-  const result = {
-    good_points: joinLines(input.good_points),
-    improve_points: joinLines(input.improve_points),
-    next_time_reminder: joinLines(input.next_time_reminder),
-    confidence_level: input.confidence_level || '',
-    note: input.note || '',
-  };
+  const result = reviewFromToolInput(toolUse.input);
   const outcome = c.check(result);
   return { ...c, result, ...outcome };
 }

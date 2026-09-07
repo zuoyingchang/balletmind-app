@@ -5,6 +5,7 @@ const {
   DAILY_AI_LIMIT, OPENAI_API_KEY, ASR_MODEL, ASR_TIMEOUT_MS, MAX_AUDIO_BYTES,
 } = require('../config');
 const { WHISPER_PROMPT } = require('../ballet-glossary');
+const { fetchWithTimeout, isAbortError } = require('../lib/fetch-timeout');
 
 const router = express.Router();
 
@@ -22,9 +23,6 @@ router.get('/status', requireAuth, (req, res) => {
   res.json({ configured: Boolean(OPENAI_API_KEY), model: OPENAI_API_KEY ? ASR_MODEL : null });
 });
 
-// POST /api/transcribe  raw audio body -> { text }
-// Uses OpenAI Whisper with a ballet-term prompt so "pirouette / passé / tendu"
-// survive, unlike the browser's generic zh-CN speech recognizer.
 router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), async (req, res) => {
   if (!OPENAI_API_KEY) {
     return res.status(503).json({ error: '服务器未配置语音识别（OPENAI_API_KEY），请手动输入复盘内容' });
@@ -51,15 +49,12 @@ router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), 
   form.append('prompt', WHISPER_PROMPT);
   form.append('response_format', 'json');
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ASR_TIMEOUT_MS);
   try {
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    const response = await fetchWithTimeout('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
       body: form,
-      signal: controller.signal,
-    });
+    }, ASR_TIMEOUT_MS);
     const latencyMs = Date.now() - startedAt;
     if (!response.ok) {
       const detail = await response.text();
@@ -76,17 +71,15 @@ router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), 
     });
     res.json({ text, model: ASR_MODEL });
   } catch (e) {
-    const isTimeout = e.name === 'AbortError';
+    const timedOut = isAbortError(e);
     await logEvent(req.userId, 'asr_fail', {
-      reason: isTimeout ? 'timeout' : 'exception',
+      reason: timedOut ? 'timeout' : 'exception',
       message: e.message,
       latencyMs: Date.now() - startedAt,
       model: ASR_MODEL,
     });
-    const msg = isTimeout ? '语音识别超时，请重试或改用手动输入' : '语音识别失败，请重试或改用手动输入';
-    res.status(isTimeout ? 504 : 500).json({ error: msg });
-  } finally {
-    clearTimeout(timer);
+    const msg = timedOut ? '语音识别超时，请重试或改用手动输入' : '语音识别失败，请重试或改用手动输入';
+    res.status(timedOut ? 504 : 500).json({ error: msg });
   }
 });
 

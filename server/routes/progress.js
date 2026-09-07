@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { listIssuesWithOccurrences } = require('../issues');
+const { splitLines } = require('../lib/text');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -24,9 +25,7 @@ router.get('/review', async (req, res) => {
   const openIssues = issues.filter((i) => i.status !== 'resolved');
   const resolvedInPeriod = issues.filter((i) => i.status === 'resolved' && i.updated_at >= since);
 
-  const goodPointsRecap = [...new Set(
-    records.flatMap((r) => (r.good_points || '').split('\n').map((s) => s.trim()).filter(Boolean))
-  )];
+  const goodPointsRecap = [...new Set(records.flatMap((r) => splitLines(r.good_points)))];
 
   res.json({
     periodDays: days,
