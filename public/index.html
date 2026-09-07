@@ -6,47 +6,113 @@
 <title>BalletMind</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  body { font-family: -apple-system, "Noto Sans SC", sans-serif; background:#e9e6e1; }
+  :root {
+    --ivory: #fbf7f4;
+    --paper: #fefcfa;
+    --blush: #f7ebe8;
+    --blush-deep: #f0dcda;
+    --rose: #b98d95;
+    --rose-deep: #9c6d76;
+    --mauve: #8d6e78;
+    --burgundy: #6b3f45;
+    --beige: #d9c3ae;
+    --gold: #b8916a;
+    --ink: #4a3f3c;
+    --ink-soft: #7a6b68;
+    --ink-faint: #a4938e;
+    --border-soft: #efe3de;
+  }
+  body { font-family: -apple-system, "Noto Sans SC", sans-serif; background: var(--ivory); color: var(--ink); }
+  .font-display { font-family: "Cormorant Garamond", "Noto Sans SC", serif; letter-spacing: .01em; }
+  .label-editorial { font-family: "Cormorant Garamond", "Noto Sans SC", serif; font-style: italic; font-weight: 500; letter-spacing: .1em; }
   ::-webkit-scrollbar { display:none; }
   .screen { display:none; }
   .screen.active { display:flex; }
   button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: transform .15s ease; }
   button:active, a:active { transform: scale(0.97); }
-  button:focus-visible, a:focus-visible { outline: 2px solid #987283; outline-offset: 2px; }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
+  .deco-shoe, .deco-ribbon, .deco-dancer, .deco-sparkle, .deco-rose { pointer-events: none; display: inline-block; }
+
+  /* Fine paper grain — a single faint noise layer, reused everywhere via background-image */
+  .grain { position: relative; }
+  .grain::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: .05; mix-blend-mode: multiply;
+  }
+
+  /* Journal card: soft warm surface, thin uneven border, faint grain, no hard drop-shadow */
+  .card-journal {
+    position: relative; overflow: hidden;
+    background: linear-gradient(155deg, var(--paper) 0%, var(--blush) 65%, var(--blush-deep) 100%);
+    border: 1px solid var(--border-soft);
+    box-shadow: 0 1px 1px rgba(120,80,90,.06), 0 14px 30px -8px rgba(180,120,130,.32);
+  }
+  .card-journal.tinted { background: linear-gradient(155deg, var(--paper) 0%, var(--blush) 45%, var(--blush-deep) 100%); }
+
+  /* Pearl sheen: soft radial highlight plus a faint satin streak — luminous, not a hard glossy bar */
+  .pearl-sheen { position: absolute; inset: 0; pointer-events: none; z-index: 1; border-radius: inherit;
+    background: radial-gradient(130% 80% at 20% -15%, rgba(255,255,255,.85), transparent 55%),
+                radial-gradient(70% 50% at 88% 108%, rgba(255,255,255,.35), transparent 62%),
+                linear-gradient(115deg, transparent 30%, rgba(255,255,255,.5) 47%, transparent 62%);
+    mix-blend-mode: soft-light;
+  }
+
+  /* Ribbon button: pill-shaped, satin gradient, luminous pearl sheen with a soft glow */
+  .btn-ribbon {
+    position: relative; overflow: hidden; color: #fff;
+    background: linear-gradient(135deg, var(--rose) 0%, var(--rose-deep) 45%, var(--burgundy) 100%);
+    box-shadow: 0 12px 26px -6px rgba(107,63,69,.55), inset 0 1px 0 rgba(255,255,255,.35);
+  }
+  .btn-ribbon .pearl-sheen { background: radial-gradient(90% 140% at 24% -30%, rgba(255,255,255,.7), transparent 55%),
+    linear-gradient(115deg, transparent 25%, rgba(255,255,255,.4) 45%, transparent 60%); }
 </style>
 </head>
-<body class="w-full h-screen m-0 overflow-hidden flex items-center justify-center text-[#292729]">
-<div class="relative w-full h-full max-w-[393px] max-h-[852px] bg-[#f8f7f4] overflow-hidden flex flex-col rounded-[36px] shadow-2xl">
+<body class="w-full h-screen m-0 overflow-hidden flex items-center justify-center text-[#443c3e]">
+
+<div class="grain relative w-full h-full max-w-[393px] max-h-[852px] bg-[var(--ivory)] overflow-hidden flex flex-col rounded-[36px] shadow-2xl">
 
   <!-- ============ AUTH (LOGIN / REGISTER) ============ -->
   <div class="screen active flex-col w-full h-full" id="screen-auth">
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pt-16 pb-8 flex flex-col">
-      <div class="absolute -right-16 -top-10 w-48 h-48 rounded-full border border-[#dfbfc7]"></div>
-      <div class="absolute -left-14 top-24 w-24 h-24 rounded-full border border-[#d8a36e]/40"></div>
+      <div class="absolute -right-16 -top-10 w-48 h-48 rounded-full border border-[#eed7dc]"></div>
+      <div class="absolute -left-14 top-24 w-24 h-24 rounded-full border border-[#c9a382]/40"></div>
+      <div class="absolute -right-10 top-32 w-40 h-40 rounded-full bg-[#eed7dc] opacity-40 blur-[38px]"></div>
+      <div class="absolute -left-8 bottom-24 w-32 h-32 rounded-full bg-[#f2dde2] opacity-50 blur-[34px]"></div>
+      <svg class="absolute right-10 top-10 w-2.5 h-2.5 text-[#c9a382] opacity-70" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 0c0 4 1 7 5 8-4 1-5 4-5 8 0-4-1-7-5-8 4-1 5-4 5-8z"/></svg>
+      <svg class="absolute left-16 top-6 w-1.5 h-1.5 text-[#c9a382] opacity-50" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 0c0 4 1 7 5 8-4 1-5 4-5 8 0-4-1-7-5-8 4-1 5-4 5-8z"/></svg>
       <div class="relative text-center">
         <div class="relative mx-auto w-16 h-16">
-          <div class="absolute -inset-1.5 rounded-[20px] bg-gradient-to-br from-[#d8a36e] to-[#987283] opacity-60 blur-[3px]"></div>
-          <div class="relative w-16 h-16 rounded-[18px] bg-gradient-to-br from-[#987283] to-[#7d6270] flex items-center justify-center">
-            <iconify-icon icon="solar:notes-minimalistic-linear" class="text-[28px] text-[#f3e6ea]"></iconify-icon>
+          <div class="absolute -inset-1.5 opacity-70 blur-[5px]" style="border-radius:24px 16px 24px 16px; background:linear-gradient(135deg,var(--blush),var(--gold))"></div>
+          <div class="relative w-16 h-16 flex items-center justify-center shadow-[0_6px_20px_rgba(155,100,95,.35)]" style="border-radius:22px 14px 22px 14px; background:linear-gradient(150deg,var(--paper),var(--blush) 55%,var(--gold))">
+            <span class="pearl-sheen"></span>
+            <iconify-icon icon="mdi:shoe-ballet" class="relative z-10 text-[26px] text-[var(--burgundy)]"></iconify-icon>
           </div>
         </div>
-        <h1 class="mt-4 text-[22px] font-semibold">BalletMind</h1>
-        <p class="mt-1 text-[12px] text-[#a18f83]" id="auth-subtitle">登录后开始记录你的训练</p>
+        <h1 class="font-display mt-4 text-[27px] font-semibold">BalletMind</h1>
+        <svg class="mx-auto mt-1.5 w-14 h-3 text-[#c9a382] opacity-80" viewBox="0 0 120 24" fill="none" aria-hidden="true"><path d="M2 12c14-14 24-14 28-2 4 12 14 12 28-2 14-14 24-14 28-2s14 12 28 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <p class="mt-2 text-[12px] text-[#9c8d90]" id="auth-subtitle">登录后开始记录你的训练</p>
       </div>
 
       <div class="mt-8 space-y-3">
         <div id="auth-name-wrap" class="hidden">
-          <input id="auth-name" placeholder="昵称（可选）" class="w-full px-4 py-3 rounded-2xl border border-[#eee9e4] text-[13px]">
+          <input id="auth-name" placeholder="昵称（可选）" class="w-full px-4 py-3 rounded-2xl border border-[#f0e2e1] text-[13px]">
         </div>
-        <input id="auth-email" type="email" placeholder="邮箱" class="w-full px-4 py-3 rounded-2xl border border-[#eee9e4] text-[13px]">
-        <input id="auth-password" type="password" placeholder="密码（至少6位）" onkeydown="if(event.key==='Enter') submitAuth()" class="w-full px-4 py-3 rounded-2xl border border-[#eee9e4] text-[13px]">
+        <input id="auth-email" type="email" placeholder="邮箱" class="w-full px-4 py-3 rounded-2xl border border-[#f0e2e1] text-[13px]">
+        <input id="auth-password" type="password" placeholder="密码（至少6位）" onkeydown="if(event.key==='Enter') submitAuth()" class="w-full px-4 py-3 rounded-2xl border border-[#f0e2e1] text-[13px]">
       </div>
 
       <div id="auth-error" class="hidden mt-3 text-[11.5px] text-[#a03e3e] bg-[#fbeaea] border border-[#f0c9c9] rounded-xl p-3"></div>
 
-      <button id="auth-submit-btn" onclick="submitAuth()" class="mt-6 h-12 rounded-2xl bg-[#4b4850] text-white text-[13.5px] font-semibold">登录</button>
-      <button onclick="toggleAuthMode()" class="mt-4 text-[12px] text-[#987283]" id="auth-toggle-btn">还没有账号？去注册</button>
+      <button id="auth-submit-btn" onclick="submitAuth()" class="btn-ribbon mt-6 h-12 rounded-full text-[13.5px] font-semibold">
+        <span class="pearl-sheen"></span>
+        <span class="relative z-10" id="auth-submit-label">登录</span>
+      </button>
+      <button onclick="toggleAuthMode()" class="mt-4 text-[12px] text-[#a67d8d]" id="auth-toggle-btn">还没有账号？去注册</button>
     </main>
   </div>
 
@@ -54,50 +120,53 @@
   <div class="screen flex-col w-full h-full" id="screen-home">
     <header class="shrink-0 px-6 pt-7 pb-4 flex items-center justify-between">
       <div>
-        <p class="text-[11px] tracking-[0.2em] uppercase text-[#a18f83] font-semibold">BalletMind / 今日训练</p>
-        <h1 class="mt-1 text-[26px] leading-tight font-semibold tracking-[-0.03em]">你的训练档案</h1>
+        <p class="label-editorial text-[13px] text-[var(--rose-deep)] font-semibold">BalletMind / 今日训练</p>
+        <h1 class="font-display mt-1 text-[28px] leading-tight font-semibold tracking-[-0.01em]">你的训练档案</h1>
       </div>
-      <div class="w-11 h-11 rounded-full bg-[#dfbfc7]/35 flex items-center justify-center">
-        <iconify-icon icon="solar:bell-linear" class="text-[21px] text-[#987283]"></iconify-icon>
+      <div class="w-11 h-11 rounded-full bg-[#eed7dc]/35 flex items-center justify-center">
+        <iconify-icon icon="solar:bell-linear" class="text-[21px] text-[#a67d8d]"></iconify-icon>
       </div>
     </header>
     <main class="flex-1 min-h-0 overflow-y-auto px-6 pb-7">
-      <section class="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-[#9b7d8b] to-[#7d6270] text-white px-5 pt-5 pb-6 min-h-[150px]">
-        <div class="absolute -right-12 -top-12 w-44 h-44 rounded-full border border-white/15"></div>
-        <div class="absolute -right-2 top-16 w-20 h-20 rounded-full border border-[#d8a36e]/30"></div>
+      <section class="card-journal tinted grain relative px-5 pt-5 pb-6 min-h-[150px]" style="border-radius:30px 18px 30px 20px">
+        <div class="pearl-sheen"></div>
+        <svg class="absolute -right-2 bottom-3 w-28 h-10 text-[var(--gold)] opacity-[0.35]" viewBox="0 0 200 60" fill="none" aria-hidden="true"><path d="M2 30c20-22 40-22 55-6 16 17 34 17 50 0 16-17 34-17 50 0 15 15 30 16 41 4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+        <svg class="absolute right-7 top-4 w-2.5 h-2.5 text-[var(--rose-deep)] opacity-70" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 0c0 4 1 7 5 8-4 1-5 4-5 8 0-4-1-7-5-8 4-1 5-4 5-8z"/></svg>
+        <svg class="absolute right-16 top-9 w-1.5 h-1.5 text-[var(--gold)] opacity-80" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 0c0 4 1 7 5 8-4 1-5 4-5 8 0-4-1-7-5-8 4-1 5-4 5-8z"/></svg>
         <div class="relative z-10 flex items-start justify-between">
           <div>
-            <p class="text-[12px] text-[#e8cfc1]">训练档案</p>
-            <p class="mt-2 text-[34px] leading-none font-semibold" id="stat-count">0 <span class="text-[14px] font-normal text-[#e8cfc1]">次记录</span></p>
+            <p class="label-editorial text-[13px] text-[var(--rose-deep)]">训练档案</p>
+            <p class="mt-2 text-[34px] leading-none font-semibold text-[var(--ink)]" id="stat-count">0 <span class="text-[14px] font-normal text-[var(--ink-faint)]">次记录</span></p>
           </div>
-          <span class="px-3 py-1.5 rounded-full bg-white/10 text-[11px]" id="stat-duration">0s 累计</span>
+          <span class="px-3 py-1.5 rounded-full bg-white/40 text-[11px] text-[var(--burgundy)]" id="stat-duration">0s 累计</span>
         </div>
       </section>
 
       <section class="mt-5">
         <div class="flex items-center justify-between">
           <h2 class="text-[17px] font-semibold">今天想记录什么？</h2>
-          <span class="text-[11px] text-[#a18f83]">约 3 分钟</span>
+          <span class="text-[11px] text-[#9c8d90]">约 3 分钟</span>
         </div>
-        <button onclick="goRecord()" class="mt-3 w-full flex items-center gap-4 rounded-[22px] bg-[#d8a36e] px-5 py-4 text-[#382b28] shadow-[0_10px_22px_rgba(170,111,63,0.16)]">
-          <span class="w-12 h-12 rounded-[16px] bg-white/70 flex items-center justify-center">
-            <iconify-icon icon="solar:microphone-3-linear" class="text-[26px] text-[#794b37]"></iconify-icon>
+        <button onclick="goRecord()" class="btn-ribbon mt-3 w-full flex items-center gap-4 rounded-[28px] px-5 py-4">
+          <span class="pearl-sheen"></span>
+          <span class="relative z-10 w-12 h-12 rounded-[16px] bg-white/20 flex items-center justify-center">
+            <iconify-icon icon="solar:microphone-3-linear" class="text-[26px] text-white"></iconify-icon>
           </span>
-          <span class="flex-1 text-left">
+          <span class="relative z-10 flex-1 text-left">
             <strong class="block text-[15px] font-semibold">开始一段训练复盘</strong>
-            <span class="block mt-1 text-[11px] text-[#714d3b]">说说今天的动作、感受和老师建议</span>
+            <span class="block mt-1 text-[11px] text-white/85">说说今天的动作、感受和老师建议</span>
           </span>
-          <iconify-icon icon="solar:arrow-right-linear" class="text-[21px]"></iconify-icon>
+          <iconify-icon icon="solar:arrow-right-linear" class="relative z-10 text-[21px]"></iconify-icon>
         </button>
       </section>
 
       <section class="mt-7">
         <div class="flex items-center justify-between">
           <h2 class="text-[17px] font-semibold">复盘存档</h2>
-          <button onclick="goHistory()" class="text-[12px] text-[#987283] font-medium">查看全部</button>
+          <button onclick="goHistory()" class="text-[12px] text-[#a67d8d] font-medium">查看全部</button>
         </div>
-        <div id="home-empty" class="mt-3 text-center py-10 text-[#a18f83] text-[12.5px] leading-relaxed">
-          下课后录一段语音，AI 帮你整理今天的收获
+        <div id="home-empty" class="mt-3 text-center py-10 text-[#9c8d90] text-[12.5px] leading-relaxed">
+          <p class="mt-3">下课后录一段语音，AI 帮你整理今天的收获</p>
         </div>
         <div id="home-list" class="mt-3 space-y-3"></div>
       </section>
@@ -106,89 +175,89 @@
         <div class="flex items-center justify-between">
           <h2 class="text-[17px] font-semibold">成长追踪</h2>
         </div>
-        <button onclick="goProgress()" class="mt-3 w-full text-left rounded-2xl bg-white border border-[#eee9e4] p-4 flex items-center gap-3">
-          <span class="w-11 h-11 rounded-[15px] bg-[#dfbfc7]/35 flex items-center justify-center shrink-0"><iconify-icon icon="solar:graph-up-linear" class="text-[20px] text-[#987283]"></iconify-icon></span>
+        <button onclick="goProgress()" class="mt-3 w-full text-left rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-4 flex items-center gap-3">
+          <span class="w-11 h-11 rounded-[15px] bg-[#eed7dc]/35 flex items-center justify-center shrink-0"><iconify-icon icon="solar:graph-up-linear" class="text-[20px] text-[#a67d8d]"></iconify-icon></span>
           <span class="flex-1 min-w-0">
             <strong class="block text-[13px] font-semibold" id="progress-teaser-title">还没有足够的记录</strong>
-            <span class="block mt-0.5 text-[11px] text-[#a18f83]" id="progress-teaser-sub">多记录几次，这里会开始出现反复出现的问题</span>
+            <span class="block mt-0.5 text-[11px] text-[#9c8d90]" id="progress-teaser-sub">多记录几次，这里会开始出现反复出现的问题</span>
           </span>
-          <iconify-icon icon="solar:arrow-right-linear" class="text-[18px] text-[#b8ada6] shrink-0"></iconify-icon>
+          <iconify-icon icon="solar:arrow-right-linear" class="text-[18px] text-[#b8a8ac] shrink-0"></iconify-icon>
         </button>
       </section>
 
       <section class="mt-7">
         <h2 class="text-[17px] font-semibold">训练小提示</h2>
         <div class="mt-3 flex gap-3">
-          <div class="w-1 rounded-full bg-[#d8a36e]"></div>
+          <div class="w-1 rounded-full bg-[#c9a382]"></div>
           <div>
-            <p class="text-[13px] leading-6 text-[#5f5753]" id="tip-quote"></p>
-            <p class="mt-1 text-[11px] text-[#a18f83]" id="tip-label"></p>
+            <p class="text-[13px] leading-6 text-[#5c5153]" id="tip-quote"></p>
+            <p class="mt-1 text-[11px] text-[#9c8d90]" id="tip-label"></p>
           </div>
         </div>
       </section>
     </main>
-    <nav class="shrink-0 h-[76px] bg-[#f8f7f4]/95 border-t border-[#eee9e4] flex items-center justify-around px-5">
-      <button class="flex flex-col items-center gap-1 text-[#987283]"><iconify-icon icon="solar:home-2-bold" class="text-[22px]"></iconify-icon><span class="text-[10px] font-semibold">首页</span></button>
-      <button onclick="goRecord()" class="flex flex-col items-center gap-1 text-[#a9a09b]"><iconify-icon icon="solar:microphone-3-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">记录</span></button>
-      <button onclick="goHistory()" class="flex flex-col items-center gap-1 text-[#a9a09b]"><iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span></button>
-      <button onclick="goProfile()" class="flex flex-col items-center gap-1 text-[#a9a09b]"><iconify-icon icon="solar:user-circle-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">我的</span></button>
+    <nav class="shrink-0 h-[76px] bg-[#faf6f6]/95 border-t border-[#f0e2e1] flex items-center justify-around px-5">
+      <button class="flex flex-col items-center gap-1 text-[#a67d8d]"><iconify-icon icon="solar:home-2-bold" class="text-[22px]"></iconify-icon><span class="text-[10px] font-semibold">首页</span></button>
+      <button onclick="goRecord()" class="flex flex-col items-center gap-1 text-[#a89a9c]"><iconify-icon icon="solar:microphone-3-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">记录</span></button>
+      <button onclick="goHistory()" class="flex flex-col items-center gap-1 text-[#a89a9c]"><iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span></button>
+      <button onclick="goProfile()" class="flex flex-col items-center gap-1 text-[#a89a9c]"><iconify-icon icon="solar:user-circle-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">我的</span></button>
     </nav>
   </div>
 
   <!-- ============ VOICE / RECORD ============ -->
   <div class="screen flex-col w-full h-full" id="screen-record">
     <header class="shrink-0 px-6 pt-7 pb-3 flex items-center gap-4">
-      <button onclick="goHome()" class="w-11 h-11 rounded-full bg-[#dfbfc7]/35 flex items-center justify-center"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[#987283]"></iconify-icon></button>
-      <div><p class="text-[11px] tracking-[0.18em] uppercase text-[#a18f83]">训练记录</p><h1 class="mt-0.5 text-[20px] font-semibold">说说今天的训练</h1></div>
+      <button onclick="goHome()" class="w-11 h-11 rounded-full bg-[#eed7dc]/35 flex items-center justify-center"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[#a67d8d]"></iconify-icon></button>
+      <div><p class="label-editorial text-[13px] text-[var(--rose-deep)]">训练记录</p><h1 class="mt-0.5 text-[20px] font-semibold">说说今天的训练</h1></div>
     </header>
     <main class="flex-1 min-h-0 overflow-y-auto px-6 pb-8">
-      <section class="relative overflow-hidden rounded-[26px] bg-[#dfbfc7]/25 px-5 pt-5 pb-6 text-center">
-        <div class="absolute -right-8 -top-8 w-28 h-28 rounded-full border border-[#987283]/15"></div>
-        <p class="relative text-[12px] text-[#8d6b5d]">自由说，不用组织得很完美 · 最多3段,每段60秒</p>
-        <p class="relative mt-6 text-[30px] font-semibold tracking-[0.05em] text-[#69453d]" id="rec-timer">0s</p>
-        <p class="relative mt-1 text-[11px] text-[#a18f83]" id="rec-state">点击下方按钮开始录音</p>
-        <p class="relative mt-3 text-[12.5px] leading-6 text-[#5c4a42] min-h-[40px]" id="rec-live-text"></p>
+      <section class="relative overflow-hidden rounded-[26px] bg-[#eed7dc]/25 px-5 pt-5 pb-6 text-center">
+        <div class="absolute -right-8 -top-8 w-28 h-28 rounded-full border border-[#a67d8d]/15"></div>
+        <p class="relative text-[12px] text-[#8a7278]">自由说，不用组织得很完美 · 最多3段,每段60秒</p>
+        <p class="relative mt-6 text-[30px] font-semibold tracking-[0.05em] text-[#6b4c56]" id="rec-timer">0s</p>
+        <p class="relative mt-1 text-[11px] text-[#9c8d90]" id="rec-state">点击下方按钮开始录音</p>
+        <p class="relative mt-3 text-[12.5px] leading-6 text-[#5c4d50] min-h-[40px]" id="rec-live-text"></p>
       </section>
 
       <section class="mt-6">
-        <h2 class="text-[13px] font-semibold text-[#5f5753]">可以聊聊这些</h2>
+        <h2 class="text-[13px] font-semibold text-[#5c5153]">可以聊聊这些</h2>
         <div class="mt-3 grid grid-cols-2 gap-2.5">
-          <button type="button" onclick="insertPrompt('今天的身体状态：')" class="text-left rounded-2xl bg-white border border-[#eee9e4] p-3.5">
-            <iconify-icon icon="solar:body-shape-linear" class="text-[20px] text-[#987283]"></iconify-icon>
+          <button type="button" onclick="insertPrompt('今天的身体状态：')" class="text-left rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-3.5">
+            <iconify-icon icon="solar:body-shape-linear" class="text-[20px] text-[#a67d8d]"></iconify-icon>
             <span class="block mt-2 text-[12px] font-medium">今天的身体状态</span>
-            <span class="block mt-1 text-[10px] text-[#a18f83]">哪里紧张或轻松？</span>
+            <span class="block mt-1 text-[10px] text-[#9c8d90]">哪里紧张或轻松？</span>
           </button>
-          <button type="button" onclick="insertPrompt('今天做得好的：')" class="text-left rounded-2xl bg-white border border-[#eee9e4] p-3.5">
-            <iconify-icon icon="solar:star-shine-linear" class="text-[20px] text-[#d8a36e]"></iconify-icon>
+          <button type="button" onclick="insertPrompt('今天做得好的：')" class="text-left rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-3.5">
+            <iconify-icon icon="solar:star-shine-linear" class="text-[20px] text-[#c9a382]"></iconify-icon>
             <span class="block mt-2 text-[12px] font-medium">今天做得好的</span>
-            <span class="block mt-1 text-[10px] text-[#a18f83]">哪个动作有突破？</span>
+            <span class="block mt-1 text-[10px] text-[#9c8d90]">哪个动作有突破？</span>
           </button>
-          <button type="button" onclick="insertPrompt('老师的提醒：')" class="text-left rounded-2xl bg-white border border-[#eee9e4] p-3.5">
-            <iconify-icon icon="solar:lightbulb-linear" class="text-[20px] text-[#d8a36e]"></iconify-icon>
+          <button type="button" onclick="insertPrompt('老师的提醒：')" class="text-left rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-3.5">
+            <iconify-icon icon="solar:lightbulb-linear" class="text-[20px] text-[#c9a382]"></iconify-icon>
             <span class="block mt-2 text-[12px] font-medium">老师的提醒</span>
-            <span class="block mt-1 text-[10px] text-[#a18f83]">记下关键的纠正</span>
+            <span class="block mt-1 text-[10px] text-[#9c8d90]">记下关键的纠正</span>
           </button>
-          <button type="button" onclick="insertPrompt('下次想练习：')" class="text-left rounded-2xl bg-white border border-[#eee9e4] p-3.5">
-            <iconify-icon icon="solar:flag-2-linear" class="text-[20px] text-[#987283]"></iconify-icon>
+          <button type="button" onclick="insertPrompt('下次想练习：')" class="text-left rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-3.5">
+            <iconify-icon icon="solar:flag-2-linear" class="text-[20px] text-[#a67d8d]"></iconify-icon>
             <span class="block mt-2 text-[12px] font-medium">下次想练习</span>
-            <span class="block mt-1 text-[10px] text-[#a18f83]">给自己一个目标</span>
+            <span class="block mt-1 text-[10px] text-[#9c8d90]">给自己一个目标</span>
           </button>
         </div>
       </section>
 
       <div id="segments-box" class="mt-4 space-y-2"></div>
       <textarea id="manual-input" placeholder="点击上方卡片插入引导语，或直接在这里手动补充内容"
-        class="mt-4 w-full min-h-[80px] rounded-2xl border border-[#eee9e4] p-3 text-[12.5px]"></textarea>
+        class="mt-4 w-full min-h-[80px] rounded-2xl border border-[#f0e2e1] p-3 text-[12.5px]"></textarea>
 
       <div class="mt-7 flex justify-center">
-        <button id="rec-btn" onclick="toggleRecording()" class="w-[82px] h-[82px] rounded-full bg-[#987283] shadow-[0_10px_24px_rgba(132,72,59,0.25)] flex items-center justify-center text-white">
+        <button id="rec-btn" onclick="toggleRecording()" class="w-[82px] h-[82px] rounded-full bg-[#a67d8d] shadow-[0_10px_24px_rgba(132,72,59,0.25)] flex items-center justify-center text-white">
           <iconify-icon icon="solar:microphone-3-linear" id="rec-icon" class="text-[32px]"></iconify-icon>
         </button>
       </div>
       <div class="mt-5 flex gap-3">
-        <button onclick="clearSegments()" class="flex-1 h-11 rounded-2xl border border-[#dfbfc7] text-[12.5px] text-[#77483e] font-medium">清空全部</button>
+        <button onclick="clearSegments()" class="flex-1 h-11 rounded-2xl border border-[#eed7dc] text-[12.5px] text-[#7c5c68] font-medium">清空全部</button>
         <button id="generate-btn" onclick="generateReview()" disabled
-          class="flex-1 h-11 rounded-2xl bg-[#4b4850] text-white text-[12.5px] font-semibold disabled:opacity-40">完成并生成复盘</button>
+          class="btn-ribbon flex-1 h-11 rounded-full text-[12.5px] font-semibold disabled:opacity-40">完成并生成复盘</button>
       </div>
     </main>
   </div>
@@ -196,55 +265,55 @@
   <!-- ============ PROCESSING ============ -->
   <div class="screen flex-col w-full h-full" id="screen-processing">
     <header class="shrink-0 px-6 pt-7 pb-3 flex items-center gap-4">
-      <div><p class="text-[11px] tracking-[0.18em] uppercase text-[#a18f83]">BalletMind AI</p><h1 class="mt-0.5 text-[20px] font-semibold">正在整理你的训练</h1></div>
+      <div><p class="label-editorial text-[13px] text-[var(--rose-deep)]">BalletMind AI</p><h1 class="mt-0.5 text-[20px] font-semibold">正在整理你的训练</h1></div>
     </header>
     <main class="flex-1 min-h-0 flex flex-col items-center justify-center px-6">
-      <div class="relative w-32 h-32 rounded-full bg-gradient-to-br from-[#dfbfc7]/40 to-[#dfbfc7]/10 flex items-center justify-center shadow-[0_10px_26px_rgba(145,94,111,.12)]">
-        <div class="absolute inset-3 rounded-full border border-[#d19b78]"></div>
-        <div class="absolute inset-6 rounded-full border border-[#987283] border-dashed animate-spin" style="animation-duration:3s;"></div>
-        <iconify-icon icon="solar:stars-minimalistic-linear" class="relative text-[38px] text-[#987283]"></iconify-icon>
+      <div class="relative w-32 h-32 rounded-full bg-gradient-to-br from-[#eed7dc]/40 to-[#eed7dc]/10 flex items-center justify-center shadow-[0_10px_26px_rgba(145,94,111,.12)]">
+        <div class="absolute inset-3 rounded-full border border-[#c9a2ab]"></div>
+        <div class="absolute inset-6 rounded-full border border-[#a67d8d] border-dashed animate-spin" style="animation-duration:3s;"></div>
+        <iconify-icon icon="solar:stars-minimalistic-linear" class="relative text-[38px] text-[#a67d8d]" aria-hidden="true"></iconify-icon>
       </div>
-      <h2 class="mt-8 text-[21px] font-semibold">听见你的练习重点</h2>
-      <p class="mt-2 text-[12px] leading-5 text-[#9d938e] text-center">AI 正在从语音里提取动作、感受<br>和下一步可以尝试的方向</p>
-      <p class="mt-6 text-center text-[10px] text-[#aaa19c]">通常需要几秒到十几秒，请稍候</p>
+      <h2 class="font-display mt-8 text-[24px] font-semibold">听见你的练习重点</h2>
+      <p class="mt-2 text-[12px] leading-5 text-[#998b8f] text-center">AI 正在从语音里提取动作、感受<br>和下一步可以尝试的方向</p>
+      <p class="mt-6 text-center text-[10px] text-[#a89a9c]">通常需要几秒到十几秒，请稍候</p>
     </main>
   </div>
 
   <!-- ============ REVIEW & EDIT ============ -->
   <div class="screen flex-col w-full h-full" id="screen-review">
     <header class="shrink-0 px-6 pt-7 pb-3 flex items-center justify-between">
-      <button onclick="goHome()" class="w-11 h-11 rounded-full bg-[#dfbfc7]/35 flex items-center justify-center"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[#987283]"></iconify-icon></button>
+      <button onclick="goHome()" class="w-11 h-11 rounded-full bg-[#eed7dc]/35 flex items-center justify-center"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[#a67d8d]"></iconify-icon></button>
       <h1 class="text-[17px] font-semibold">Review 复盘草稿</h1>
       <div class="w-9"></div>
     </header>
     <main class="flex-1 min-h-0 overflow-y-auto px-6 pb-8">
       <div id="review-error-wrap"></div>
-      <input id="review-classname" placeholder="课程名称（如：芭蕾基训 · 足尖课）" class="w-full px-4 py-2.5 rounded-xl border border-[#eee9e4] text-[12.5px] mb-4">
+      <input id="review-classname" placeholder="课程名称（如：芭蕾基训 · 足尖课）" class="w-full px-4 py-2.5 rounded-xl border border-[#f0e2e1] text-[12.5px] mb-4">
 
-      <section class="rounded-[22px] bg-white border border-[#eee9e4] p-4 mb-4">
-        <div class="flex items-center gap-2 mb-2"><span class="w-7 h-7 rounded-full bg-[#dfbfc7]/35 flex items-center justify-center"><iconify-icon icon="solar:microphone-3-linear" class="text-[15px] text-[#987283]"></iconify-icon></span><span class="text-[12px] font-semibold">语音转写</span></div>
-        <p class="text-[12px] leading-6 text-[#665b56]" id="review-transcript"></p>
+      <section class="rounded-[22px] bg-[var(--paper)] border border-[var(--border-soft)] p-4 mb-4">
+        <div class="flex items-center gap-2 mb-2"><span class="w-7 h-7 rounded-full bg-[#eed7dc]/35 flex items-center justify-center"><iconify-icon icon="solar:microphone-3-linear" class="text-[15px] text-[#a67d8d]"></iconify-icon></span><span class="text-[12px] font-semibold">语音转写</span></div>
+        <p class="text-[12px] leading-6 text-[#665458]" id="review-transcript"></p>
       </section>
 
-      <span class="inline-block px-3 py-1 rounded-full bg-[#dfbfc7]/45 text-[#985947] text-[11px] mb-4" id="review-confidence">Confidence: -</span>
+      <span class="inline-block px-3 py-1 rounded-full bg-[#eed7dc]/45 text-[#8a5f68] text-[11px] mb-4" id="review-confidence">Confidence: -</span>
 
       <div class="mb-4">
         <p class="text-[12px] font-semibold text-[#54816f] mb-2">✓ 做得好的地方（可编辑）</p>
         <textarea id="review-good" class="w-full min-h-[60px] rounded-2xl bg-[#e8f1eb] p-3 text-[12.5px]"></textarea>
       </div>
       <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[#a07b4b] mb-2">△ 待改进点（可编辑）</p>
+        <p class="text-[12px] font-semibold text-[#a8845f] mb-2">△ 待改进点（可编辑）</p>
         <textarea id="review-improve" class="w-full min-h-[60px] rounded-2xl bg-[#f3eee4] p-3 text-[12.5px]"></textarea>
       </div>
       <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[#987283] mb-2">→ 下次练习注意事项（可编辑）</p>
-        <textarea id="review-next" class="w-full min-h-[60px] rounded-2xl bg-[#dfbfc7]/45 p-3 text-[12.5px]"></textarea>
+        <p class="text-[12px] font-semibold text-[#a67d8d] mb-2">→ 下次练习注意事项（可编辑）</p>
+        <textarea id="review-next" class="w-full min-h-[60px] rounded-2xl bg-[#eed7dc]/45 p-3 text-[12.5px]"></textarea>
       </div>
-      <div id="review-note" class="hidden mb-4 text-[11px] text-[#a18f83] border border-dashed border-[#ddd] rounded-xl p-3"></div>
+      <div id="review-note" class="hidden mb-4 text-[11px] text-[#9c8d90] border border-dashed border-[#ddd] rounded-xl p-3"></div>
 
       <div class="flex gap-3">
-        <button onclick="retryGenerate()" class="flex-1 h-11 rounded-2xl border border-[#dfbfc7] text-[12.5px] text-[#77483e] font-medium">Retry</button>
-        <button onclick="confirmSave()" class="flex-1 h-11 rounded-2xl bg-[#4b4850] text-white text-[12.5px] font-semibold">Confirm & Save</button>
+        <button onclick="retryGenerate()" class="flex-1 h-11 rounded-2xl border border-[#eed7dc] text-[12.5px] text-[#7c5c68] font-medium">Retry</button>
+        <button onclick="confirmSave()" class="btn-ribbon flex-1 h-11 rounded-full text-[12.5px] font-semibold">Confirm & Save</button>
       </div>
     </main>
   </div>
@@ -253,46 +322,46 @@
   <div class="screen flex-col w-full h-full" id="screen-history">
     <header class="shrink-0 px-6 pt-7 pb-4">
       <div class="flex items-center justify-between">
-        <div><p class="text-[11px] tracking-[0.2em] uppercase text-[#a18f83]">你的训练轨迹</p><h1 class="mt-1 text-[26px] font-semibold">历史存档</h1></div>
-        <button onclick="goHome()" class="w-11 h-11 rounded-full bg-[#dfbfc7]/35 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[21px] text-[#987283]"></iconify-icon></button>
+        <div><p class="label-editorial text-[13px] text-[var(--rose-deep)]">你的训练轨迹</p><h1 class="font-display mt-1 text-[28px] font-semibold">历史存档</h1></div>
+        <button onclick="goHome()" class="w-11 h-11 rounded-full bg-[#eed7dc]/35 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[21px] text-[#a67d8d]"></iconify-icon></button>
       </div>
     </header>
     <main class="flex-1 min-h-0 overflow-y-auto px-6 pb-7">
-      <div class="flex items-center gap-2 rounded-2xl bg-white border border-[#eee9e4] px-4 h-11 mb-4">
-        <iconify-icon icon="solar:magnifer-linear" class="text-[18px] text-[#a18f83]"></iconify-icon>
-        <input id="history-search" oninput="filterHistory()" placeholder="搜索课程名称或内容" class="flex-1 bg-transparent outline-none text-[12px] placeholder:text-[#b4aba6]">
+      <div class="flex items-center gap-2 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] px-4 h-11 mb-4">
+        <iconify-icon icon="solar:magnifer-linear" class="text-[18px] text-[#9c8d90]"></iconify-icon>
+        <input id="history-search" oninput="filterHistory()" placeholder="搜索课程名称或内容" class="flex-1 bg-transparent outline-none text-[12px] placeholder:text-[#b6a8ac]">
       </div>
-      <div id="history-empty" class="mt-10 text-center text-[#a18f83] text-[12.5px]">还没有记录，去录第一段吧</div>
-      <div id="history-search-empty" class="hidden mt-10 text-center text-[#a18f83] text-[12.5px]">没有找到匹配的记录</div>
+      <div id="history-empty" class="mt-10 text-center text-[#9c8d90] text-[12.5px]">还没有记录，去录第一段吧</div>
+      <div id="history-search-empty" class="hidden mt-10 text-center text-[#9c8d90] text-[12.5px]">没有找到匹配的记录</div>
       <div id="history-list" class="space-y-3"></div>
     </main>
   </div>
 
   <!-- ============ DETAIL ============ -->
   <div class="screen flex-col w-full h-full" id="screen-detail">
-    <header class="shrink-0 px-6 pt-7 pb-4 flex items-center gap-4 border-b border-[#eee9e4]">
-      <button onclick="goHistory()" class="w-11 h-11 rounded-full bg-[#dfbfc7]/35 flex items-center justify-center"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[#987283]"></iconify-icon></button>
+    <header class="shrink-0 px-6 pt-7 pb-4 flex items-center gap-4 border-b border-[#f0e2e1]">
+      <button onclick="goHistory()" class="w-11 h-11 rounded-full bg-[#eed7dc]/35 flex items-center justify-center"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[#a67d8d]"></iconify-icon></button>
       <div class="flex-1">
-        <p class="text-[11px] tracking-[0.18em] uppercase text-[#a18f83]" id="detail-date"></p>
+        <p class="label-editorial text-[13px] text-[var(--rose-deep)]" id="detail-date"></p>
         <h1 class="mt-0.5 text-[20px] font-semibold" id="detail-title"></h1>
       </div>
     </header>
     <main class="flex-1 min-h-0 overflow-y-auto px-6 py-5 pb-8">
-      <section class="rounded-[22px] bg-white border border-[#eee9e4] p-4 mb-4">
-        <div class="flex items-center gap-2 mb-2"><span class="w-7 h-7 rounded-full bg-[#dfbfc7]/35 flex items-center justify-center"><iconify-icon icon="solar:microphone-3-linear" class="text-[15px] text-[#987283]"></iconify-icon></span><span class="text-[12px] font-semibold">语音转写</span></div>
-        <p class="text-[12.5px] leading-6 text-[#665b56]" id="detail-transcript"></p>
+      <section class="rounded-[22px] bg-[var(--paper)] border border-[var(--border-soft)] p-4 mb-4">
+        <div class="flex items-center gap-2 mb-2"><span class="w-7 h-7 rounded-full bg-[#eed7dc]/35 flex items-center justify-center"><iconify-icon icon="solar:microphone-3-linear" class="text-[15px] text-[#a67d8d]"></iconify-icon></span><span class="text-[12px] font-semibold">语音转写</span></div>
+        <p class="text-[12.5px] leading-6 text-[#665458]" id="detail-transcript"></p>
       </section>
       <div class="mb-4">
         <p class="text-[12px] font-semibold text-[#54816f] mb-2">✓ 做得好的地方</p>
         <div class="rounded-2xl bg-[#e8f1eb] p-3 text-[12.5px] leading-6 whitespace-pre-wrap" id="detail-good"></div>
       </div>
       <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[#a07b4b] mb-2">△ 待改进点</p>
+        <p class="text-[12px] font-semibold text-[#a8845f] mb-2">△ 待改进点</p>
         <div class="rounded-2xl bg-[#f3eee4] p-3 text-[12.5px] leading-6 whitespace-pre-wrap" id="detail-improve"></div>
       </div>
       <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[#987283] mb-2">→ 下次练习注意事项</p>
-        <div class="rounded-2xl bg-[#dfbfc7]/45 p-3 text-[12.5px] leading-6 whitespace-pre-wrap" id="detail-next"></div>
+        <p class="text-[12px] font-semibold text-[#a67d8d] mb-2">→ 下次练习注意事项</p>
+        <div class="rounded-2xl bg-[#eed7dc]/45 p-3 text-[12.5px] leading-6 whitespace-pre-wrap" id="detail-next"></div>
       </div>
       <button onclick="deleteEntry()" class="w-full h-11 rounded-2xl border border-[#e5c9c9] text-[#a03e3e] text-[12.5px] font-medium">删除这条记录</button>
     </main>
@@ -301,98 +370,100 @@
   <!-- ============ PROFILE ============ -->
   <div class="screen flex-col w-full h-full" id="screen-profile">
     <header class="shrink-0 px-6 pt-7 pb-4">
-      <p class="text-[11px] tracking-[0.2em] uppercase text-[#a18f83]">个人空间</p>
-      <h1 class="mt-1 text-[26px] font-semibold">我的</h1>
+      <p class="label-editorial text-[13px] text-[var(--rose-deep)]">个人空间</p>
+      <h1 class="font-display mt-1 text-[28px] font-semibold">我的</h1>
     </header>
     <main class="flex-1 min-h-0 overflow-y-auto px-6 pb-7">
-      <section class="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#9b7d8b] to-[#7d6270] text-white p-5">
-        <div class="absolute -right-10 -top-10 w-32 h-32 rounded-full border border-white/15"></div>
-        <div class="absolute -right-2 top-10 w-16 h-16 rounded-full border border-[#d8a36e]/30"></div>
+      <section class="card-journal tinted grain relative p-5" style="border-radius:28px 18px 28px 20px">
+        <div class="pearl-sheen"></div>
+        <svg class="absolute right-5 top-4 w-2.5 h-2.5 text-[var(--rose-deep)] opacity-70" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 0c0 4 1 7 5 8-4 1-5 4-5 8 0-4-1-7-5-8 4-1 5-4 5-8z"/></svg>
+        <svg class="absolute right-14 top-8 w-1.5 h-1.5 text-[var(--gold)] opacity-80" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 0c0 4 1 7 5 8-4 1-5 4-5 8 0-4-1-7-5-8 4-1 5-4 5-8z"/></svg>
         <div class="relative z-10 flex items-center gap-4">
           <div class="relative shrink-0">
-            <div class="absolute -inset-1 rounded-full bg-gradient-to-br from-[#d8a36e] to-[#e8cfc1] opacity-70 blur-[2px]"></div>
-            <div class="relative w-16 h-16 rounded-full bg-[#d8a36e] flex items-center justify-center text-[22px] font-semibold text-[#7d6270] ring-2 ring-white/40" id="profile-avatar">·</div>
+            <div class="absolute -inset-1 rounded-full bg-gradient-to-br from-[var(--gold)] to-[var(--blush)] opacity-70 blur-[2px]"></div>
+            <div class="relative w-16 h-16 rounded-full bg-[var(--blush)] flex items-center justify-center text-[22px] font-semibold text-[var(--burgundy)] ring-2 ring-white/70" id="profile-avatar">·</div>
           </div>
           <div class="flex-1 min-w-0">
-            <h2 class="text-[17px] font-semibold truncate" id="profile-name">-</h2>
-            <p class="mt-1 text-[11px] text-[#e8cfc1] truncate" id="profile-email">-</p>
-            <p class="mt-1.5 inline-block px-2 py-0.5 rounded-full bg-white/15 text-[10px] text-[#f3e6ea]" id="profile-joined">-</p>
+            <h2 class="text-[17px] font-semibold text-[var(--ink)] truncate" id="profile-name">-</h2>
+            <p class="mt-1 text-[11px] text-[var(--ink-faint)] truncate" id="profile-email">-</p>
+            <p class="mt-1.5 inline-block px-2 py-0.5 rounded-full bg-white/40 text-[10px] text-[var(--burgundy)]" id="profile-joined">-</p>
           </div>
         </div>
       </section>
 
       <section class="mt-5 grid grid-cols-3 gap-2.5">
-        <div class="rounded-2xl bg-white border border-[#eee9e4] p-3 text-center">
-          <iconify-icon icon="solar:notes-minimalistic-linear" class="text-[16px] text-[#987283]"></iconify-icon>
+        <div class="rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-3 text-center">
+          <iconify-icon icon="solar:notes-minimalistic-linear" class="text-[16px] text-[#a67d8d]"></iconify-icon>
           <strong class="block mt-1 text-[19px]" id="profile-count">0</strong>
-          <span class="text-[10px] text-[#a18f83]">训练次数</span>
+          <span class="text-[10px] text-[#9c8d90]">训练次数</span>
         </div>
-        <div class="rounded-2xl bg-white border border-[#eee9e4] p-3 text-center">
-          <iconify-icon icon="solar:clock-circle-linear" class="text-[16px] text-[#987283]"></iconify-icon>
+        <div class="rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-3 text-center">
+          <iconify-icon icon="solar:clock-circle-linear" class="text-[16px] text-[#a67d8d]"></iconify-icon>
           <strong class="block mt-1 text-[19px]" id="profile-hours">0</strong>
-          <span class="text-[10px] text-[#a18f83]">训练小时</span>
+          <span class="text-[10px] text-[#9c8d90]">训练小时</span>
         </div>
-        <div class="rounded-2xl bg-white border border-[#eee9e4] p-3 text-center">
-          <iconify-icon icon="solar:calendar-mark-linear" class="text-[16px] text-[#987283]"></iconify-icon>
+        <div class="rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-3 text-center">
+          <iconify-icon icon="solar:calendar-mark-linear" class="text-[16px] text-[#a67d8d]"></iconify-icon>
           <strong class="block mt-1 text-[19px]" id="profile-month">0</strong>
-          <span class="text-[10px] text-[#a18f83]">本月次数</span>
+          <span class="text-[10px] text-[#9c8d90]">本月次数</span>
         </div>
       </section>
 
-      <section class="mt-7 rounded-2xl bg-[#dfbfc7]/25 p-4">
+      <section class="mt-7 rounded-2xl bg-[#eed7dc]/25 p-4">
         <div class="flex items-center gap-2">
-          <iconify-icon icon="solar:quote-up-linear" class="text-[18px] text-[#987283]"></iconify-icon>
+          <iconify-icon icon="solar:quote-up-linear" class="text-[18px] text-[#a67d8d]"></iconify-icon>
           <span class="text-[12px] font-semibold">写给自己的话</span>
         </div>
-        <p class="mt-2 text-[13px] leading-6 text-[#5f5753]" id="profile-self-tip">-</p>
+        <p class="mt-2 text-[13px] leading-6 text-[#5c5153]" id="profile-self-tip">-</p>
       </section>
 
       <section class="mt-7">
         <h2 class="text-[16px] font-semibold">账号</h2>
-        <div class="mt-3 rounded-[22px] bg-white border border-[#eee9e4] divide-y divide-[#f0ece8]">
+        <div class="mt-3 rounded-[22px] bg-[var(--paper)] border border-[var(--border-soft)] divide-y divide-[#f1e4e3]">
           <button onclick="showAbout()" class="w-full flex items-center gap-3 px-4 py-4 text-left">
-            <span class="w-11 h-11 rounded-xl bg-[#dfbfc7]/45 flex items-center justify-center"><iconify-icon icon="solar:info-circle-linear" class="text-[18px] text-[#987283]"></iconify-icon></span>
+            <span class="w-11 h-11 rounded-xl bg-[#eed7dc]/45 flex items-center justify-center"><iconify-icon icon="solar:info-circle-linear" class="text-[18px] text-[#a67d8d]"></iconify-icon></span>
             <span class="flex-1 text-[13px]">关于 BalletMind</span>
-            <span class="text-[11px] text-[#a18f83]">v0.1</span>
-            <iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px] text-[#b8ada6]"></iconify-icon>
+            <span class="text-[11px] text-[#9c8d90]">v0.1</span>
+            <iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px] text-[#b8a8ac]"></iconify-icon>
           </button>
           <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-4 text-left">
-            <span class="w-11 h-11 rounded-xl bg-[#dfbfc7]/45 flex items-center justify-center"><iconify-icon icon="solar:logout-2-linear" class="text-[18px] text-[#987283]"></iconify-icon></span>
+            <span class="w-11 h-11 rounded-xl bg-[#eed7dc]/45 flex items-center justify-center"><iconify-icon icon="solar:logout-2-linear" class="text-[18px] text-[#a67d8d]"></iconify-icon></span>
             <span class="flex-1 text-[13px] text-[#a03e3e]">退出登录</span>
-            <iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px] text-[#b8ada6]"></iconify-icon>
+            <iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px] text-[#b8a8ac]"></iconify-icon>
           </button>
         </div>
       </section>
     </main>
-    <nav class="shrink-0 h-[76px] bg-[#f8f7f4]/95 border-t border-[#eee9e4] flex items-center justify-around px-5">
-      <button onclick="goHome()" class="flex flex-col items-center gap-1 text-[#a9a09b]"><iconify-icon icon="solar:home-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">首页</span></button>
-      <button onclick="goRecord()" class="flex flex-col items-center gap-1 text-[#a9a09b]"><iconify-icon icon="solar:microphone-3-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">记录</span></button>
-      <button onclick="goHistory()" class="flex flex-col items-center gap-1 text-[#a9a09b]"><iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span></button>
-      <button class="flex flex-col items-center gap-1 text-[#987283]"><iconify-icon icon="solar:user-circle-bold" class="text-[22px]"></iconify-icon><span class="text-[10px] font-semibold">我的</span></button>
+    <nav class="shrink-0 h-[76px] bg-[#faf6f6]/95 border-t border-[#f0e2e1] flex items-center justify-around px-5">
+      <button onclick="goHome()" class="flex flex-col items-center gap-1 text-[#a89a9c]"><iconify-icon icon="solar:home-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">首页</span></button>
+      <button onclick="goRecord()" class="flex flex-col items-center gap-1 text-[#a89a9c]"><iconify-icon icon="solar:microphone-3-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">记录</span></button>
+      <button onclick="goHistory()" class="flex flex-col items-center gap-1 text-[#a89a9c]"><iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span></button>
+      <button class="flex flex-col items-center gap-1 text-[#a67d8d]"><iconify-icon icon="solar:user-circle-bold" class="text-[22px]"></iconify-icon><span class="text-[10px] font-semibold">我的</span></button>
     </nav>
   </div>
 
   <!-- ============ PROGRESS (Recurring Issues / Training Review / Pre-Class Brief) ============ -->
   <div class="screen flex-col w-full h-full" id="screen-progress">
     <header class="shrink-0 px-6 pt-7 pb-4 flex items-center gap-4">
-      <button onclick="goHome()" class="w-11 h-11 rounded-full bg-[#dfbfc7]/35 flex items-center justify-center"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[#987283]"></iconify-icon></button>
-      <div><p class="text-[11px] tracking-[0.18em] uppercase text-[#a18f83]">你的训练规律</p><h1 class="mt-0.5 text-[20px] font-semibold">成长追踪</h1></div>
+      <button onclick="goHome()" class="w-11 h-11 rounded-full bg-[#eed7dc]/35 flex items-center justify-center"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[#a67d8d]"></iconify-icon></button>
+      <div><p class="label-editorial text-[13px] text-[var(--rose-deep)]">你的训练规律</p><h1 class="mt-0.5 text-[20px] font-semibold">成长追踪</h1></div>
     </header>
     <main class="flex-1 min-h-0 overflow-y-auto px-6 pb-8">
 
       <!-- Pre-Class Brief: 0 LLM calls, renders straight from existing data -->
-      <section class="rounded-[22px] bg-gradient-to-br from-[#9b7d8b] to-[#7d6270] text-white p-4">
-        <div class="flex items-center gap-2"><iconify-icon icon="solar:flag-2-linear" class="text-[18px] text-[#e1b57e]"></iconify-icon><span class="text-[12px] font-semibold">课前预习卡</span></div>
-        <div id="brief-content" class="mt-3 text-[12.5px] leading-6 text-[#f3e6ea]">加载中…</div>
+      <section class="card-journal tinted grain relative p-4" style="border-radius:24px 16px 24px 18px">
+        <div class="pearl-sheen"></div>
+        <div class="relative z-10 flex items-center gap-2"><iconify-icon icon="solar:flag-2-linear" class="text-[18px] text-[var(--gold)]"></iconify-icon><span class="label-editorial text-[13px] text-[var(--rose-deep)]">课前预习卡</span></div>
+        <div id="brief-content" class="relative z-10 mt-3 text-[12.5px] leading-6 text-[var(--ink)]">加载中…</div>
       </section>
 
       <!-- Recurring Issue Tracking -->
       <section class="mt-7">
         <div class="flex items-center justify-between">
           <h2 class="text-[17px] font-semibold">反复出现的问题</h2>
-          <span class="text-[11px] text-[#a18f83]">状态由你自己确认</span>
+          <span class="text-[11px] text-[#9c8d90]">状态由你自己确认</span>
         </div>
-        <div id="issues-empty" class="hidden mt-3 text-center py-8 text-[#a18f83] text-[12.5px] leading-relaxed">
+        <div id="issues-empty" class="hidden mt-3 text-center py-8 text-[#9c8d90] text-[12.5px] leading-relaxed">
           还没有发现重复出现的问题，继续记录训练吧
         </div>
         <div id="issues-list" class="mt-3 space-y-3"></div>
@@ -403,8 +474,8 @@
         <div class="flex items-center justify-between">
           <h2 class="text-[17px] font-semibold">训练总结</h2>
         </div>
-        <button id="review-generate-btn" onclick="generateTrainingReview()" class="mt-3 w-full h-11 rounded-2xl border border-[#dfbfc7] text-[12.5px] text-[#77483e] font-medium">生成最近7天总结</button>
-        <div id="review-content" class="hidden mt-3 rounded-2xl bg-white border border-[#eee9e4] p-4"></div>
+        <button id="review-generate-btn" onclick="generateTrainingReview()" class="mt-3 w-full h-11 rounded-2xl border border-[#eed7dc] text-[12.5px] text-[#7c5c68] font-medium">生成最近7天总结</button>
+        <div id="review-content" class="hidden mt-3 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-4"></div>
       </section>
 
     </main>
@@ -413,26 +484,29 @@
 </div>
 
 <div id="about-modal" class="hidden fixed inset-0 z-[60] items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideAbout()">
-  <div class="relative w-full max-w-[340px] rounded-[26px] bg-[#f8f7f4] p-6">
-    <button onclick="hideAbout()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-[#dfbfc7]/35 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[#987283]"></iconify-icon></button>
+  <div class="relative w-full max-w-[340px] rounded-[26px] bg-[var(--paper)] p-6">
+    <button onclick="hideAbout()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></button>
     <div class="relative mx-auto w-14 h-14">
-      <div class="absolute -inset-1.5 rounded-[18px] bg-gradient-to-br from-[#d8a36e] to-[#987283] opacity-60 blur-[3px]"></div>
-      <div class="relative w-14 h-14 rounded-[16px] bg-gradient-to-br from-[#987283] to-[#7d6270] flex items-center justify-center">
-        <iconify-icon icon="solar:notes-minimalistic-linear" class="text-[24px] text-[#f3e6ea]"></iconify-icon>
+      <div class="absolute -inset-1.5 opacity-70 blur-[5px]" style="border-radius:20px 12px 20px 12px; background:linear-gradient(135deg,var(--blush),var(--gold))"></div>
+      <div class="relative w-14 h-14 flex items-center justify-center shadow-[0_6px_20px_rgba(155,100,95,.35)]" style="border-radius:18px 10px 18px 10px; background:linear-gradient(150deg,var(--paper),var(--blush) 55%,var(--gold))">
+        <span class="pearl-sheen"></span>
+        <iconify-icon icon="mdi:shoe-ballet" class="relative z-10 text-[22px] text-[var(--burgundy)]"></iconify-icon>
       </div>
     </div>
-    <h2 class="mt-4 text-center text-[17px] font-semibold">BalletMind</h2>
-    <p class="mt-0.5 text-center text-[11px] text-[#a18f83]">v0.1 · MVP 测试版</p>
-    <p class="mt-4 text-[12.5px] leading-6 text-[#5f5753]">
+    <h2 class="font-display mt-4 text-center text-[21px] font-semibold">BalletMind</h2>
+    <svg class="mx-auto mt-1 w-12 h-2.5 text-[#c9a382] opacity-80" viewBox="0 0 120 24" fill="none" aria-hidden="true"><path d="M2 12c14-14 24-14 28-2 4 12 14 12 28-2 14-14 24-14 28-2s14 12 28 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <p class="mt-1 text-center text-[11px] text-[#9c8d90]">v0.1 · MVP 测试版</p>
+    <p class="mt-4 text-[12.5px] leading-6 text-[#5c5153]">
       BalletMind 是一款给芭蕾练习者用的语音训练复盘工具。下课后花几分钟说说今天练了什么、感受如何、老师提了什么建议，AI 会帮你整理成"做得好的地方 / 待改进点 / 下次练习注意事项"，帮你把每一次练习的收获都记录下来。
     </p>
-    <p class="mt-3 text-[12.5px] leading-6 text-[#5f5753]">
+    <p class="mt-3 text-[12.5px] leading-6 text-[#5c5153]">
       现在还是早期测试阶段，功能和界面都会持续调整。你的训练记录只属于你自己的账号，不会被其他人看到。
     </p>
+    <p class="mt-4 text-center text-[10px] text-[#b6a8ac]">插图: Twemoji · CC BY 4.0</p>
   </div>
 </div>
 
-<div id="toast" class="hidden fixed bottom-8 left-1/2 -translate-x-1/2 rounded-full bg-[#4b4850] text-white px-4 py-2 text-[11px] z-50"></div>
+<div id="toast" class="hidden fixed bottom-8 left-1/2 -translate-x-1/2 rounded-full bg-[#8f6570] text-white px-4 py-2 text-[11px] z-50"></div>
 
 <script>
 const API = ''; // same-origin; server serves this file too
@@ -471,7 +545,7 @@ function toggleAuthMode() {
   authMode = authMode === 'login' ? 'register' : 'login';
   document.getElementById('auth-name-wrap').classList.toggle('hidden', authMode === 'login');
   document.getElementById('auth-subtitle').textContent = authMode === 'login' ? '登录后开始记录你的训练' : '注册一个账号，开始记录你的训练';
-  document.getElementById('auth-submit-btn').textContent = authMode === 'login' ? '登录' : '注册';
+  document.getElementById('auth-submit-label').textContent = authMode === 'login' ? '登录' : '注册';
   document.getElementById('auth-toggle-btn').textContent = authMode === 'login' ? '还没有账号？去注册' : '已经有账号？去登录';
   document.getElementById('auth-error').classList.add('hidden');
 }
@@ -590,7 +664,7 @@ async function loadHome() {
   renderTip();
   const res = await authFetch(`${API}/api/records`);
   const rows = await res.json();
-  document.getElementById('stat-count').innerHTML = rows.length + ' <span class="text-[14px] font-normal text-[#e8cfc1]">次记录</span>';
+  document.getElementById('stat-count').innerHTML = rows.length + ' <span class="text-[14px] font-normal text-[#f2dde2]">次记录</span>';
   document.getElementById('stat-duration').textContent = rows.reduce((a,r)=>a+(r.duration_sec||0),0) + 's 累计';
   const listEl = document.getElementById('home-list');
   const emptyEl = document.getElementById('home-empty');
@@ -616,15 +690,15 @@ async function loadProgressTeaser() {
   } catch (e) {}
 }
 function entryCard(r) {
-  return `<button onclick="openDetail(${r.id})" class="w-full text-left rounded-[21px] bg-white border border-[#eee9e4] p-4">
+  return `<button onclick="openDetail(${r.id})" class="w-full text-left rounded-[21px] bg-[var(--paper)] border border-[var(--border-soft)] p-4">
     <div class="flex items-start justify-between gap-3">
       <div class="flex items-start gap-3 min-w-0">
-        <span class="shrink-0 w-11 h-11 rounded-[15px] bg-[#dfbfc7]/35 flex items-center justify-center"><iconify-icon icon="solar:notes-minimalistic-linear" class="text-[20px] text-[#987283]"></iconify-icon></span>
-        <div class="min-w-0"><span class="text-[11px] text-[#a18f83]">${fmtDate(r.created_at)}</span><h3 class="mt-1 text-[14px] font-semibold truncate">${escapeHtml(r.class_name)}</h3></div>
+        <span class="shrink-0 w-11 h-11 rounded-[15px] bg-[#eed7dc]/35 flex items-center justify-center"><iconify-icon icon="solar:notes-minimalistic-linear" class="text-[20px] text-[#a67d8d]"></iconify-icon></span>
+        <div class="min-w-0"><span class="text-[11px] text-[#9c8d90]">${fmtDate(r.created_at)}</span><h3 class="mt-1 text-[14px] font-semibold truncate">${escapeHtml(r.class_name)}</h3></div>
       </div>
       <span class="shrink-0 rounded-full bg-[#e8f1eb] text-[#54816f] px-2 py-1 text-[10px]">已复盘</span>
     </div>
-    <p class="mt-2 text-[11.5px] text-[#887d77]">${escapeHtml((r.good_points||'').slice(0,36))}</p>
+    <p class="mt-2 text-[11.5px] text-[#8a7c7e]">${escapeHtml((r.good_points||'').slice(0,36))}</p>
   </button>`;
 }
 
@@ -643,14 +717,14 @@ async function loadBrief() {
     const data = await res.json();
     let html = '';
     if (data.topIssues.length > 0) {
-      html += `<p class="font-semibold text-white">重点关注</p><ul class="mt-1 space-y-1">`;
+      html += `<p class="font-semibold text-[#7c5c68]">重点关注</p><ul class="mt-1 space-y-1">`;
       html += data.topIssues.map(i => `<li>· ${escapeHtml(i.text)}（已出现${i.occurrence_count}次）</li>`).join('');
       html += `</ul>`;
     } else {
       html += `<p>暂时没有反复出现的问题，保持住</p>`;
     }
     if (data.lastRecord && data.lastRecord.nextTimeReminder) {
-      html += `<p class="mt-3 pt-3 border-t border-white/15"><span class="font-semibold text-white">上次的下次注意事项：</span>${escapeHtml(data.lastRecord.nextTimeReminder)}</p>`;
+      html += `<p class="mt-3 pt-3 border-t border-[#c9a382]/25"><span class="font-semibold text-[#7c5c68]">上次的下次注意事项：</span>${escapeHtml(data.lastRecord.nextTimeReminder)}</p>`;
     }
     el.innerHTML = html;
   } catch (e) {
@@ -673,20 +747,20 @@ function renderIssues() {
 }
 function issueCard(issue) {
   const statusStyle = {
-    open: { label: '仍然存在', badge: 'bg-[#f3eee4] text-[#a07b4b]' },
-    improving: { label: '有改善', badge: 'bg-[#dfbfc7]/45 text-[#985947]' },
+    open: { label: '仍然存在', badge: 'bg-[#f3eee4] text-[#a8845f]' },
+    improving: { label: '有改善', badge: 'bg-[#eed7dc]/45 text-[#8a5f68]' },
     resolved: { label: '已解决', badge: 'bg-[#e8f1eb] text-[#54816f]' },
   }[issue.status];
   const dates = issue.occurrences.map(o => fmtDate(o.createdAt).split(' ')[0]).join('、');
-  return `<div class="rounded-2xl bg-white border border-[#eee9e4] p-4">
+  return `<div class="rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-4">
     <div class="flex items-start justify-between gap-2">
       <p class="text-[13px] font-medium flex-1">${escapeHtml(issue.text)}</p>
       <span class="shrink-0 rounded-full px-2 py-1 text-[10px] ${statusStyle.badge}">${statusStyle.label}</span>
     </div>
-    <p class="mt-1.5 text-[11px] text-[#a18f83]">出现 ${issue.occurrence_count} 次 · ${escapeHtml(dates)}</p>
+    <p class="mt-1.5 text-[11px] text-[#9c8d90]">出现 ${issue.occurrence_count} 次 · ${escapeHtml(dates)}</p>
     <div class="mt-3 flex gap-2">
-      <button onclick="updateIssueStatus(${issue.id},'improving')" class="flex-1 h-8 rounded-xl border border-[#dfbfc7] text-[11px] text-[#77483e] ${issue.status==='improving'?'bg-[#dfbfc7]/45':''}">有改善</button>
-      <button onclick="updateIssueStatus(${issue.id},'open')" class="flex-1 h-8 rounded-xl border border-[#dfbfc7] text-[11px] text-[#77483e] ${issue.status==='open'?'bg-[#dfbfc7]/45':''}">仍然存在</button>
+      <button onclick="updateIssueStatus(${issue.id},'improving')" class="flex-1 h-8 rounded-xl border border-[#eed7dc] text-[11px] text-[#7c5c68] ${issue.status==='improving'?'bg-[#eed7dc]/45':''}">有改善</button>
+      <button onclick="updateIssueStatus(${issue.id},'open')" class="flex-1 h-8 rounded-xl border border-[#eed7dc] text-[11px] text-[#7c5c68] ${issue.status==='open'?'bg-[#eed7dc]/45':''}">仍然存在</button>
       <button onclick="updateIssueStatus(${issue.id},'resolved')" class="flex-1 h-8 rounded-xl border border-[#e8f1eb] text-[11px] text-[#54816f] ${issue.status==='resolved'?'bg-[#e8f1eb]':''}">已解决</button>
     </div>
   </div>`;
@@ -710,21 +784,21 @@ async function generateTrainingReview() {
     const data = await res.json();
     let html = `<p class="text-[13px]"><strong>${data.recordCount}</strong> 次训练记录（最近${data.periodDays}天）</p>`;
     if (data.goodPointsRecap.length > 0) {
-      html += `<div class="mt-3"><p class="text-[12px] font-semibold text-[#54816f]">这段时间做得好的</p><ul class="mt-1 text-[12px] leading-6 text-[#5f5753]">`;
+      html += `<div class="mt-3"><p class="text-[12px] font-semibold text-[#54816f]">这段时间做得好的</p><ul class="mt-1 text-[12px] leading-6 text-[#5c5153]">`;
       html += data.goodPointsRecap.map(p => `<li>· ${escapeHtml(p)}</li>`).join('');
       html += `</ul></div>`;
     }
     if (data.resolvedInPeriod.length > 0) {
-      html += `<div class="mt-3"><p class="text-[12px] font-semibold text-[#54816f]">这段时间解决的问题</p><ul class="mt-1 text-[12px] leading-6 text-[#5f5753]">`;
+      html += `<div class="mt-3"><p class="text-[12px] font-semibold text-[#54816f]">这段时间解决的问题</p><ul class="mt-1 text-[12px] leading-6 text-[#5c5153]">`;
       html += data.resolvedInPeriod.map(i => `<li>· ${escapeHtml(i.text)}</li>`).join('');
       html += `</ul></div>`;
     }
     if (data.openIssues.length > 0) {
-      html += `<div class="mt-3"><p class="text-[12px] font-semibold text-[#a07b4b]">还在关注的问题</p><ul class="mt-1 text-[12px] leading-6 text-[#5f5753]">`;
+      html += `<div class="mt-3"><p class="text-[12px] font-semibold text-[#a8845f]">还在关注的问题</p><ul class="mt-1 text-[12px] leading-6 text-[#5c5153]">`;
       html += data.openIssues.map(i => `<li>· ${escapeHtml(i.text)}（${i.occurrence_count}次）</li>`).join('');
       html += `</ul></div>`;
     }
-    if (data.recordCount === 0) html = `<p class="text-[12px] text-[#a18f83]">这段时间还没有新的训练记录</p>`;
+    if (data.recordCount === 0) html = `<p class="text-[12px] text-[#9c8d90]">这段时间还没有新的训练记录</p>`;
     contentEl.innerHTML = html;
     contentEl.classList.remove('hidden');
     btn.classList.add('hidden');
@@ -861,8 +935,8 @@ function startRecording() {
   window.__resetFinal && window.__resetFinal();
   document.getElementById('rec-live-text').textContent = '正在聆听...';
   document.getElementById('rec-icon').setAttribute('icon','solar:stop-circle-bold');
-  document.getElementById('rec-btn').classList.remove('bg-[#987283]');
-  document.getElementById('rec-btn').classList.add('bg-[#4b4850]');
+  document.getElementById('rec-btn').classList.remove('bg-[#a67d8d]');
+  document.getElementById('rec-btn').classList.add('bg-[#8f6570]');
   document.getElementById('rec-state').textContent = '正在录音 · 点击停止';
   currentSegSeconds = 0;
   document.getElementById('rec-timer').textContent = '0s';
@@ -879,8 +953,8 @@ function stopRecording(finalText) {
   clearInterval(timerInterval);
   try { recognition.stop(); } catch(e){}
   document.getElementById('rec-icon').setAttribute('icon','solar:microphone-3-linear');
-  document.getElementById('rec-btn').classList.add('bg-[#987283]');
-  document.getElementById('rec-btn').classList.remove('bg-[#4b4850]');
+  document.getElementById('rec-btn').classList.add('bg-[#a67d8d]');
+  document.getElementById('rec-btn').classList.remove('bg-[#8f6570]');
   document.getElementById('rec-state').textContent = '已暂停 · 可以继续或完成';
   const text = (finalText || '').trim();
   if (text) { segments.push({ text, duration: currentSegSeconds }); logEvent('record_voice_complete', { durationSec: currentSegSeconds }); }
@@ -891,9 +965,9 @@ function stopRecording(finalText) {
 function renderSegments() {
   const box = document.getElementById('segments-box');
   box.innerHTML = segments.map((s,i) => `
-    <div class="flex items-center justify-between bg-white border border-[#eee9e4] rounded-xl px-3 py-2 text-[11.5px]">
+    <div class="flex items-center justify-between bg-[var(--paper)] border border-[var(--border-soft)] rounded-xl px-3 py-2 text-[11.5px]">
       <span>第${i+1}段(${s.duration}s)：${escapeHtml(s.text.slice(0,26))}${s.text.length>26?'…':''}</span>
-      <button onclick="removeSegment(${i})" class="text-[#b87a8f]">删除</button>
+      <button onclick="removeSegment(${i})" class="text-[#a67d8d]">删除</button>
     </div>`).join('');
 }
 function removeSegment(i) {
