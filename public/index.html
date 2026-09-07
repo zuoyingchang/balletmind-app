@@ -634,7 +634,20 @@ function initSpeech() {
     }
     document.getElementById('rec-live-text').textContent = currentText();
   };
-  recognition.onerror = (e) => { toast('语音识别出错：' + e.error); stopRecording(currentText()); finalTranscript=''; interimTranscript=''; };
+  const FATAL_SPEECH_ERRORS = new Set(['service-not-allowed', 'not-allowed', 'audio-capture', 'language-not-supported']);
+  recognition.onerror = (e) => {
+    if (e.error === 'aborted') { stopRecording(currentText()); finalTranscript=''; interimTranscript=''; return; }
+    if (FATAL_SPEECH_ERRORS.has(e.error)) {
+      speechSupported = false;
+      document.getElementById('rec-btn').classList.add('hidden');
+      document.getElementById('rec-state').textContent = '这台设备/浏览器不支持语音识别，请在下方手动输入内容';
+      toast('语音识别不可用，已切换为手动输入');
+    } else {
+      toast('语音识别出错：' + e.error + '，可以重试或手动输入');
+    }
+    stopRecording(currentText());
+    finalTranscript=''; interimTranscript='';
+  };
   recognition.onend = () => { if (recognizing) { stopRecording(currentText()); finalTranscript=''; interimTranscript=''; } };
   window.__getFinal = () => currentText();
   window.__resetFinal = () => { finalTranscript=''; interimTranscript=''; };
