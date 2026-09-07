@@ -218,3 +218,10 @@ test('/api/admin/stats returns aggregate metrics with the correct key', async ()
   assert.ok(body.eventCounts.save_record >= 1, 'expected at least the save_record events logged earlier in this run');
   assert.ok(Array.isArray(body.recentEvents));
 });
+
+// ---------- response caching ----------
+test('all /api responses carry Cache-Control: no-store (never cache per-user data)', async () => {
+  const { body: { token } } = await registerUser('nostore@example.com');
+  const res = await fetch(`${base}/api/records`, { headers: { Authorization: `Bearer ${token}` } });
+  assert.equal(res.headers.get('cache-control'), 'no-store');
+});
