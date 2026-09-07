@@ -103,6 +103,20 @@
       </section>
 
       <section class="mt-7">
+        <div class="flex items-center justify-between">
+          <h2 class="text-[17px] font-semibold">成长追踪</h2>
+        </div>
+        <button onclick="goProgress()" class="mt-3 w-full text-left rounded-2xl bg-white border border-[#eee9e4] p-4 flex items-center gap-3">
+          <span class="w-11 h-11 rounded-[15px] bg-[#dfbfc7]/35 flex items-center justify-center shrink-0"><iconify-icon icon="solar:graph-up-linear" class="text-[20px] text-[#987283]"></iconify-icon></span>
+          <span class="flex-1 min-w-0">
+            <strong class="block text-[13px] font-semibold" id="progress-teaser-title">还没有足够的记录</strong>
+            <span class="block mt-0.5 text-[11px] text-[#a18f83]" id="progress-teaser-sub">多记录几次，这里会开始出现反复出现的问题</span>
+          </span>
+          <iconify-icon icon="solar:arrow-right-linear" class="text-[18px] text-[#b8ada6] shrink-0"></iconify-icon>
+        </button>
+      </section>
+
+      <section class="mt-7">
         <h2 class="text-[17px] font-semibold">训练小提示</h2>
         <div class="mt-3 flex gap-3">
           <div class="w-1 rounded-full bg-[#d8a36e]"></div>
@@ -358,6 +372,44 @@
     </nav>
   </div>
 
+  <!-- ============ PROGRESS (Recurring Issues / Training Review / Pre-Class Brief) ============ -->
+  <div class="screen flex-col w-full h-full" id="screen-progress">
+    <header class="shrink-0 px-6 pt-7 pb-4 flex items-center gap-4">
+      <button onclick="goHome()" class="w-11 h-11 rounded-full bg-[#dfbfc7]/35 flex items-center justify-center"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[#987283]"></iconify-icon></button>
+      <div><p class="text-[11px] tracking-[0.18em] uppercase text-[#a18f83]">你的训练规律</p><h1 class="mt-0.5 text-[20px] font-semibold">成长追踪</h1></div>
+    </header>
+    <main class="flex-1 min-h-0 overflow-y-auto px-6 pb-8">
+
+      <!-- Pre-Class Brief: 0 LLM calls, renders straight from existing data -->
+      <section class="rounded-[22px] bg-gradient-to-br from-[#9b7d8b] to-[#7d6270] text-white p-4">
+        <div class="flex items-center gap-2"><iconify-icon icon="solar:flag-2-linear" class="text-[18px] text-[#e1b57e]"></iconify-icon><span class="text-[12px] font-semibold">课前预习卡</span></div>
+        <div id="brief-content" class="mt-3 text-[12.5px] leading-6 text-[#f3e6ea]">加载中…</div>
+      </section>
+
+      <!-- Recurring Issue Tracking -->
+      <section class="mt-7">
+        <div class="flex items-center justify-between">
+          <h2 class="text-[17px] font-semibold">反复出现的问题</h2>
+          <span class="text-[11px] text-[#a18f83]">状态由你自己确认</span>
+        </div>
+        <div id="issues-empty" class="hidden mt-3 text-center py-8 text-[#a18f83] text-[12.5px] leading-relaxed">
+          还没有发现重复出现的问题，继续记录训练吧
+        </div>
+        <div id="issues-list" class="mt-3 space-y-3"></div>
+      </section>
+
+      <!-- Training Review: user-triggered aggregation, not a background job -->
+      <section class="mt-7">
+        <div class="flex items-center justify-between">
+          <h2 class="text-[17px] font-semibold">训练总结</h2>
+        </div>
+        <button id="review-generate-btn" onclick="generateTrainingReview()" class="mt-3 w-full h-11 rounded-2xl border border-[#dfbfc7] text-[12.5px] text-[#77483e] font-medium">生成最近7天总结</button>
+        <div id="review-content" class="hidden mt-3 rounded-2xl bg-white border border-[#eee9e4] p-4"></div>
+      </section>
+
+    </main>
+  </div>
+
 </div>
 
 <div id="about-modal" class="hidden fixed inset-0 z-[60] items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideAbout()">
@@ -542,9 +594,26 @@ async function loadHome() {
   document.getElementById('stat-duration').textContent = rows.reduce((a,r)=>a+(r.duration_sec||0),0) + 's 累计';
   const listEl = document.getElementById('home-list');
   const emptyEl = document.getElementById('home-empty');
-  if (rows.length === 0) { emptyEl.style.display='block'; listEl.innerHTML=''; return; }
-  emptyEl.style.display='none';
-  listEl.innerHTML = rows.slice(0,5).map(r => entryCard(r)).join('');
+  if (rows.length === 0) { emptyEl.style.display='block'; listEl.innerHTML=''; }
+  else { emptyEl.style.display='none'; listEl.innerHTML = rows.slice(0,5).map(r => entryCard(r)).join(''); }
+  loadProgressTeaser();
+}
+async function loadProgressTeaser() {
+  try {
+    const res = await authFetch(`${API}/api/issues`);
+    const issues = await res.json();
+    const open = issues.filter(i => i.status !== 'resolved');
+    const titleEl = document.getElementById('progress-teaser-title');
+    const subEl = document.getElementById('progress-teaser-sub');
+    if (open.length === 0) {
+      titleEl.textContent = '还没有发现重复问题';
+      subEl.textContent = '多记录几次，这里会开始出现训练规律';
+    } else {
+      const top = open.slice().sort((a,b)=>b.occurrence_count-a.occurrence_count)[0];
+      titleEl.textContent = `最常出现：${top.text}`;
+      subEl.textContent = `已出现 ${top.occurrence_count} 次 · 共 ${open.length} 个待关注问题`;
+    }
+  } catch (e) {}
 }
 function entryCard(r) {
   return `<button onclick="openDetail(${r.id})" class="w-full text-left rounded-[21px] bg-white border border-[#eee9e4] p-4">
@@ -557,6 +626,111 @@ function entryCard(r) {
     </div>
     <p class="mt-2 text-[11.5px] text-[#887d77]">${escapeHtml((r.good_points||'').slice(0,36))}</p>
   </button>`;
+}
+
+// ---------- progress (recurring issues / training review / pre-class brief) ----------
+async function goProgress() {
+  show('screen-progress');
+  document.getElementById('review-content').classList.add('hidden');
+  document.getElementById('review-generate-btn').classList.remove('hidden');
+  await Promise.all([loadBrief(), loadIssues()]);
+}
+
+async function loadBrief() {
+  const el = document.getElementById('brief-content');
+  try {
+    const res = await authFetch(`${API}/api/progress/brief`);
+    const data = await res.json();
+    let html = '';
+    if (data.topIssues.length > 0) {
+      html += `<p class="font-semibold text-white">重点关注</p><ul class="mt-1 space-y-1">`;
+      html += data.topIssues.map(i => `<li>· ${escapeHtml(i.text)}（已出现${i.occurrence_count}次）</li>`).join('');
+      html += `</ul>`;
+    } else {
+      html += `<p>暂时没有反复出现的问题，保持住</p>`;
+    }
+    if (data.lastRecord && data.lastRecord.nextTimeReminder) {
+      html += `<p class="mt-3 pt-3 border-t border-white/15"><span class="font-semibold text-white">上次的下次注意事项：</span>${escapeHtml(data.lastRecord.nextTimeReminder)}</p>`;
+    }
+    el.innerHTML = html;
+  } catch (e) {
+    el.textContent = '加载失败，下拉重试';
+  }
+}
+
+let currentIssues = [];
+async function loadIssues() {
+  const res = await authFetch(`${API}/api/issues`);
+  currentIssues = await res.json();
+  renderIssues();
+}
+function renderIssues() {
+  const listEl = document.getElementById('issues-list');
+  const emptyEl = document.getElementById('issues-empty');
+  if (currentIssues.length === 0) { emptyEl.classList.remove('hidden'); listEl.innerHTML = ''; return; }
+  emptyEl.classList.add('hidden');
+  listEl.innerHTML = currentIssues.map(issueCard).join('');
+}
+function issueCard(issue) {
+  const statusStyle = {
+    open: { label: '仍然存在', badge: 'bg-[#f3eee4] text-[#a07b4b]' },
+    improving: { label: '有改善', badge: 'bg-[#dfbfc7]/45 text-[#985947]' },
+    resolved: { label: '已解决', badge: 'bg-[#e8f1eb] text-[#54816f]' },
+  }[issue.status];
+  const dates = issue.occurrences.map(o => fmtDate(o.createdAt).split(' ')[0]).join('、');
+  return `<div class="rounded-2xl bg-white border border-[#eee9e4] p-4">
+    <div class="flex items-start justify-between gap-2">
+      <p class="text-[13px] font-medium flex-1">${escapeHtml(issue.text)}</p>
+      <span class="shrink-0 rounded-full px-2 py-1 text-[10px] ${statusStyle.badge}">${statusStyle.label}</span>
+    </div>
+    <p class="mt-1.5 text-[11px] text-[#a18f83]">出现 ${issue.occurrence_count} 次 · ${escapeHtml(dates)}</p>
+    <div class="mt-3 flex gap-2">
+      <button onclick="updateIssueStatus(${issue.id},'improving')" class="flex-1 h-8 rounded-xl border border-[#dfbfc7] text-[11px] text-[#77483e] ${issue.status==='improving'?'bg-[#dfbfc7]/45':''}">有改善</button>
+      <button onclick="updateIssueStatus(${issue.id},'open')" class="flex-1 h-8 rounded-xl border border-[#dfbfc7] text-[11px] text-[#77483e] ${issue.status==='open'?'bg-[#dfbfc7]/45':''}">仍然存在</button>
+      <button onclick="updateIssueStatus(${issue.id},'resolved')" class="flex-1 h-8 rounded-xl border border-[#e8f1eb] text-[11px] text-[#54816f] ${issue.status==='resolved'?'bg-[#e8f1eb]':''}">已解决</button>
+    </div>
+  </div>`;
+}
+async function updateIssueStatus(id, status) {
+  await authFetch(`${API}/api/issues/${id}`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ status })
+  });
+  const issue = currentIssues.find(i => i.id === id);
+  if (issue) issue.status = status;
+  renderIssues();
+}
+
+async function generateTrainingReview() {
+  const btn = document.getElementById('review-generate-btn');
+  const contentEl = document.getElementById('review-content');
+  btn.textContent = '生成中…';
+  try {
+    const res = await authFetch(`${API}/api/progress/review?days=7`);
+    const data = await res.json();
+    let html = `<p class="text-[13px]"><strong>${data.recordCount}</strong> 次训练记录（最近${data.periodDays}天）</p>`;
+    if (data.goodPointsRecap.length > 0) {
+      html += `<div class="mt-3"><p class="text-[12px] font-semibold text-[#54816f]">这段时间做得好的</p><ul class="mt-1 text-[12px] leading-6 text-[#5f5753]">`;
+      html += data.goodPointsRecap.map(p => `<li>· ${escapeHtml(p)}</li>`).join('');
+      html += `</ul></div>`;
+    }
+    if (data.resolvedInPeriod.length > 0) {
+      html += `<div class="mt-3"><p class="text-[12px] font-semibold text-[#54816f]">这段时间解决的问题</p><ul class="mt-1 text-[12px] leading-6 text-[#5f5753]">`;
+      html += data.resolvedInPeriod.map(i => `<li>· ${escapeHtml(i.text)}</li>`).join('');
+      html += `</ul></div>`;
+    }
+    if (data.openIssues.length > 0) {
+      html += `<div class="mt-3"><p class="text-[12px] font-semibold text-[#a07b4b]">还在关注的问题</p><ul class="mt-1 text-[12px] leading-6 text-[#5f5753]">`;
+      html += data.openIssues.map(i => `<li>· ${escapeHtml(i.text)}（${i.occurrence_count}次）</li>`).join('');
+      html += `</ul></div>`;
+    }
+    if (data.recordCount === 0) html = `<p class="text-[12px] text-[#a18f83]">这段时间还没有新的训练记录</p>`;
+    contentEl.innerHTML = html;
+    contentEl.classList.remove('hidden');
+    btn.classList.add('hidden');
+  } catch (e) {
+    btn.textContent = '生成失败，点击重试';
+  }
 }
 
 // ---------- history ----------
@@ -606,9 +780,22 @@ let timerInterval = null;
 let currentSegSeconds = 0;
 let speechSupported = false;
 
+let aiUnavailable = false;
 function updateGenerateBtn() {
+  if (aiUnavailable) { document.getElementById('generate-btn').disabled = true; return; }
   const manualLen = document.getElementById('manual-input').value.trim().length;
   document.getElementById('generate-btn').disabled = segments.length === 0 && manualLen === 0;
+}
+// AI quota hit / AI service down — grey out the AI entry point instead of letting
+// the user keep hitting the same error. Manual recording/typing stays usable.
+function disableAiEntry(message) {
+  aiUnavailable = true;
+  const btn = document.getElementById('generate-btn');
+  btn.disabled = true;
+  btn.textContent = 'AI暂时不可用，先手动记录';
+  const retryBtn = document.querySelector('#screen-review button[onclick="retryGenerate()"]');
+  if (retryBtn) retryBtn.disabled = true;
+  toast(message);
 }
 function insertPrompt(text) {
   const el = document.getElementById('manual-input');
@@ -739,13 +926,14 @@ async function generateReview() {
       body: JSON.stringify({ transcript })
     });
     const result = await res.json();
-    if (!res.ok) throw new Error(result.error || '生成失败');
+    if (!res.ok) { const err = new Error(result.error || '生成失败'); err.status = res.status; throw err; }
     lastDraft.result = result;
     renderReview();
     show('screen-review');
   } catch (e) {
     show('screen-record');
-    toast('AI生成失败：' + e.message + '，原始录音已保留');
+    if (e.status === 429) disableAiEntry(e.message);
+    else toast('AI生成失败：' + e.message + '，原始录音已保留');
   }
 }
 async function retryGenerate() {
@@ -758,12 +946,13 @@ async function retryGenerate() {
       body: JSON.stringify({ transcript: lastDraft.transcript })
     });
     const result = await res.json();
-    if (!res.ok) throw new Error(result.error || '生成失败');
+    if (!res.ok) { const err = new Error(result.error || '生成失败'); err.status = res.status; throw err; }
     lastDraft.result = result;
     renderReview();
     show('screen-review');
   } catch (e) {
     show('screen-review');
+    if (e.status === 429) { disableAiEntry(e.message); return; }
     document.getElementById('review-error-wrap').innerHTML = `<div class="mb-4 text-[12px] text-[#a03e3e] bg-[#fbeaea] border border-[#f0c9c9] rounded-xl p-3">调用失败：${escapeHtml(e.message)}。原始输入未丢失，可以再次Retry。</div>`;
   }
 }

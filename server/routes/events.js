@@ -9,10 +9,10 @@ const router = express.Router();
 // ASR errored, user opened history, etc). Server-side events that already hit
 // an existing route (ai_process_*, save_record) are logged directly there
 // instead of round-tripping through here.
-router.post('/', requireAuth, (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   const { event, metadata } = req.body || {};
   if (!KNOWN_EVENTS.has(event)) return res.status(400).json({ error: '未知事件类型' });
-  logEvent(req.userId, event, metadata);
+  await logEvent(req.userId, event, metadata);
   res.json({ ok: true });
 });
 

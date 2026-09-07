@@ -16,22 +16,25 @@ const KNOWN_EVENTS = new Set([
   'progress_open',
 ]);
 
-function logEvent(userId, eventName, metadata) {
+async function logEvent(userId, eventName, metadata) {
   if (!KNOWN_EVENTS.has(eventName)) return false;
-  db.prepare('INSERT INTO events (user_id, event_name, metadata, created_at) VALUES (?, ?, ?, ?)')
-    .run(userId || null, eventName, metadata ? JSON.stringify(metadata) : null, Date.now());
+  await db.run(
+    'INSERT INTO events (user_id, event_name, metadata, created_at) VALUES (?, ?, ?, ?)',
+    [userId || null, eventName, metadata ? JSON.stringify(metadata) : null, Date.now()]
+  );
   return true;
 }
 
 // Count of ai_process_success/fail events for this user since local midnight —
 // used to enforce the daily AI call quota.
-function countAiCallsToday(userId) {
+async function countAiCallsToday(userId) {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
-  const row = db.prepare(`
-    SELECT COUNT(*) AS c FROM events
-    WHERE user_id = ? AND event_name IN ('ai_process_success', 'ai_process_fail') AND created_at >= ?
-  `).get(userId, startOfDay.getTime());
+  const row = await db.get(
+    `SELECT COUNT(*) AS c FROM events
+     WHERE user_id = ? AND event_name IN ('ai_process_success', 'ai_process_fail') AND created_at >= ?`,
+    [userId, startOfDay.getTime()]
+  );
   return row.c;
 }
 

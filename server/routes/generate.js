@@ -64,8 +64,8 @@ router.post('/', requireAuth, async (req, res) => {
   if (transcript.length > MAX_TRANSCRIPT_LENGTH) {
     return res.status(400).json({ error: `本次内容过长（超过${MAX_TRANSCRIPT_LENGTH}字），请分段录制` });
   }
-  if (countAiCallsToday(req.userId) >= DAILY_AI_LIMIT) {
-    logEvent(req.userId, 'ai_process_fail', { reason: 'quota_exceeded' });
+  if ((await countAiCallsToday(req.userId)) >= DAILY_AI_LIMIT) {
+    await logEvent(req.userId, 'ai_process_fail', { reason: 'quota_exceeded' });
     return res.status(429).json({ error: '今天的AI整理次数已经用完了，可以先手动记录内容，明天再生成复盘' });
   }
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -91,20 +91,20 @@ router.post('/', requireAuth, async (req, res) => {
 
     if (!response.ok) {
       const errText = await response.text();
-      logEvent(req.userId, 'ai_process_fail', { reason: 'api_error', status: response.status });
+      await logEvent(req.userId, 'ai_process_fail', { reason: 'api_error', status: response.status });
       return res.status(502).json({ error: 'AI服务调用失败，请Retry', detail: errText });
     }
 
     const data = await response.json();
     const toolUse = (data.content || []).find((b) => b.type === 'tool_use');
     if (!toolUse) {
-      logEvent(req.userId, 'ai_process_fail', { reason: 'no_tool_use' });
+      await logEvent(req.userId, 'ai_process_fail', { reason: 'no_tool_use' });
       return res.status(502).json({ error: 'AI未返回有效内容' });
     }
 
     const input = toolUse.input || {};
     const joinLines = (v) => Array.isArray(v) ? v.filter(Boolean).join('\n') : (v || '');
-    logEvent(req.userId, 'ai_process_success', { confidence_level: input.confidence_level });
+    await logEvent(req.userId, 'ai_process_success', { confidence_level: input.confidence_level });
     res.json({
       good_points: joinLines(input.good_points),
       improve_points: joinLines(input.improve_points),
@@ -113,7 +113,7 @@ router.post('/', requireAuth, async (req, res) => {
       note: input.note || '',
     });
   } catch (e) {
-    logEvent(req.userId, 'ai_process_fail', { reason: 'exception', message: e.message });
+    await logEvent(req.userId, 'ai_process_fail', { reason: 'exception', message: e.message });
     res.status(500).json({ error: '服务器错误', detail: e.message });
   }
 });

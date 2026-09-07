@@ -1,16 +1,19 @@
 process.env.JWT_SECRET = 'test-secret-do-not-use-in-prod';
-process.env.DB_PATH = ':memory:';
+process.env.TURSO_DATABASE_URL = 'file::memory:';
 process.env.ADMIN_KEY = 'test-admin-key';
 process.env.DAILY_AI_LIMIT = '5';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const app = require('../app.js');
+const db = require('../db');
+const { countAiCallsToday } = require('../events');
 
 let server;
 let base;
 
-test.before(() => {
+test.before(async () => {
+  await db.ready;
   server = app.listen(0);
   base = `http://localhost:${server.address().port}`;
 });
@@ -159,7 +162,7 @@ test('/api/generate rejects a transcript over the length cap', async () => {
 test('/api/generate enforces the daily per-user quota', async () => {
   const { body: { token, user } } = await registerUser('quota@example.com');
   const { logEvent } = require('../events');
-  for (let i = 0; i < 5; i++) logEvent(user.id, 'ai_process_success', {});
+  for (let i = 0; i < 5; i++) await logEvent(user.id, 'ai_process_success', {});
 
   const res = await fetch(`${base}/api/generate`, {
     method: 'POST',
@@ -172,8 +175,6 @@ test('/api/generate enforces the daily per-user quota', async () => {
 });
 
 // ---------- events ----------
-const db = require('../db');
-
 test('/api/events requires auth', async () => {
   const res = await fetch(`${base}/api/events`, {
     method: 'POST',
@@ -202,7 +203,7 @@ test('/api/events logs a known event for the calling user', async () => {
   });
   assert.equal(res.status, 200);
 
-  const row = db.prepare('SELECT * FROM events WHERE user_id = ? AND event_name = ?').get(user.id, 'history_open');
+  const row = await db.get('SELECT * FROM events WHERE user_id = ? AND event_name = ?', [user.id, 'history_open']);
   assert.ok(row, 'expected an events row to be written');
   assert.deepEqual(JSON.parse(row.metadata), { from: 'home' });
 });
@@ -216,9 +217,9 @@ test('saving a record logs save_record and user_edit_ai_result events', async ()
   });
   assert.equal(create.status, 200);
 
-  const saveEvent = db.prepare('SELECT * FROM events WHERE user_id = ? AND event_name = ?').get(user.id, 'save_record');
+  const saveEvent = await db.get('SELECT * FROM events WHERE user_id = ? AND event_name = ?', [user.id, 'save_record']);
   assert.ok(saveEvent);
-  const editEvent = db.prepare('SELECT * FROM events WHERE user_id = ? AND event_name = ?').get(user.id, 'user_edit_ai_result');
+  const editEvent = await db.get('SELECT * FROM events WHERE user_id = ? AND event_name = ?', [user.id, 'user_edit_ai_result']);
   assert.ok(editEvent);
   assert.deepEqual(JSON.parse(editEvent.metadata), { edited: true });
 });
@@ -250,4 +251,119 @@ test('all /api responses carry Cache-Control: no-store (never cache per-user dat
   const { body: { token } } = await registerUser('nostore@example.com');
   const res = await fetch(`${base}/api/records`, { headers: { Authorization: `Bearer ${token}` } });
   assert.equal(res.headers.get('cache-control'), 'no-store');
+});
+
+// ---------- recurring issue tracking ----------
+async function saveRecord(token, body) {
+  const res = await fetch(`${base}/api/records`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+test('/api/issues requires auth', async () => {
+  const res = await fetch(`${base}/api/issues`);
+  assert.equal(res.status, 401);
+});
+
+test('saving a record with improve_points opens a new issue', async () => {
+  const { body: { token } } = await registerUser('issue_new@example.com');
+  await saveRecord(token, { className: '基训', improve_points: '左侧转圈重心不稳' });
+
+  const res = await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${token}` } });
+  const issues = await res.json();
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].text, '左侧转圈重心不稳');
+  assert.equal(issues[0].occurrence_count, 1);
+  assert.equal(issues[0].status, 'open');
+  assert.equal(issues[0].occurrences.length, 1);
+});
+
+test('a similar improve_points line on a later record bumps the existing issue instead of creating a new one', async () => {
+  const { body: { token } } = await registerUser('issue_repeat@example.com');
+  await saveRecord(token, { className: '基训1', improve_points: '重心不稳' });
+  await saveRecord(token, { className: '基训2', improve_points: '转圈的时候重心不稳，需要多加练习' });
+
+  const res = await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${token}` } });
+  const issues = await res.json();
+  assert.equal(issues.length, 1, 'the two similar lines should collapse into one issue');
+  assert.equal(issues[0].occurrence_count, 2);
+  assert.equal(issues[0].occurrences.length, 2);
+});
+
+test('an unrelated improve_points line creates a separate issue', async () => {
+  const { body: { token } } = await registerUser('issue_separate@example.com');
+  await saveRecord(token, { className: '基训1', improve_points: '重心不稳' });
+  await saveRecord(token, { className: '基训2', improve_points: '手臂线条不够舒展' });
+
+  const res = await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${token}` } });
+  const issues = await res.json();
+  assert.equal(issues.length, 2);
+});
+
+test('PATCH /api/issues/:id updates status and only the owner can update it', async () => {
+  const { body: { token: tokenA } } = await registerUser('issue_owner@example.com');
+  const { body: { token: tokenB } } = await registerUser('issue_notowner@example.com');
+  await saveRecord(tokenA, { className: '基训', improve_points: '脚踝发力不够' });
+  const [issue] = await (await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${tokenA}` } })).json();
+
+  const wrongUser = await fetch(`${base}/api/issues/${issue.id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenB}` },
+    body: JSON.stringify({ status: 'resolved' }),
+  });
+  assert.equal(wrongUser.status, 404);
+
+  const invalidStatus = await fetch(`${base}/api/issues/${issue.id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenA}` },
+    body: JSON.stringify({ status: 'not_a_real_status' }),
+  });
+  assert.equal(invalidStatus.status, 400);
+
+  const ok = await fetch(`${base}/api/issues/${issue.id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenA}` },
+    body: JSON.stringify({ status: 'resolved' }),
+  });
+  assert.equal(ok.status, 200);
+  const [updated] = await (await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${tokenA}` } })).json();
+  assert.equal(updated.status, 'resolved');
+});
+
+// ---------- progress: training review + pre-class brief ----------
+test('/api/progress/review and /api/progress/brief require auth', async () => {
+  assert.equal((await fetch(`${base}/api/progress/review`)).status, 401);
+  assert.equal((await fetch(`${base}/api/progress/brief`)).status, 401);
+});
+
+test('/api/progress/review aggregates records and open issues with zero AI calls', async () => {
+  const { body: { token, user } } = await registerUser('review@example.com');
+  await saveRecord(token, { className: '基训', good_points: '高位更稳定', improve_points: '重心不稳' });
+
+  const before = await countAiCallsToday(user.id);
+  const res = await fetch(`${base}/api/progress/review`, { headers: { Authorization: `Bearer ${token}` } });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.recordCount, 1);
+  assert.equal(body.openIssues.length, 1);
+  assert.ok(body.goodPointsRecap.includes('高位更稳定'));
+  const after = await countAiCallsToday(user.id);
+  assert.equal(after, before, 'training review must not consume the AI quota');
+});
+
+test('/api/progress/brief returns top open issues and the last record, zero AI calls', async () => {
+  const { body: { token, user } } = await registerUser('brief@example.com');
+  await saveRecord(token, { className: '基训', improve_points: '重心不稳', next_time_reminder: '多练习passé' });
+
+  const before = await countAiCallsToday(user.id);
+  const res = await fetch(`${base}/api/progress/brief`, { headers: { Authorization: `Bearer ${token}` } });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.topIssues.length, 1);
+  assert.equal(body.lastRecord.nextTimeReminder, '多练习passé');
+  const after = await countAiCallsToday(user.id);
+  assert.equal(after, before, 'pre-class brief must not consume the AI quota');
 });

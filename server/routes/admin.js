@@ -13,32 +13,33 @@ function requireAdminKey(req, res, next) {
   next();
 }
 
-router.get('/stats', requireAdminKey, (req, res) => {
-  const eventCounts = db.prepare(`
+router.get('/stats', requireAdminKey, async (req, res) => {
+  const eventCounts = await db.all(`
     SELECT event_name, COUNT(*) AS count FROM events GROUP BY event_name
-  `).all();
+  `);
   const countOf = (name) => eventCounts.find((e) => e.event_name === name)?.count || 0;
 
   const aiSuccess = countOf('ai_process_success');
   const aiFail = countOf('ai_process_fail');
   const aiTotal = aiSuccess + aiFail;
 
-  const editEvents = db.prepare(`
+  const editEvents = await db.all(`
     SELECT metadata FROM events WHERE event_name = 'user_edit_ai_result'
-  `).all();
+  `);
   const editedCount = editEvents.filter((r) => {
     try { return JSON.parse(r.metadata || '{}').edited === true; } catch (e) { return false; }
   }).length;
 
-  const totals = {
-    users: db.prepare('SELECT COUNT(*) AS c FROM users').get().c,
-    records: db.prepare('SELECT COUNT(*) AS c FROM records').get().c,
-    events: db.prepare('SELECT COUNT(*) AS c FROM events').get().c,
-  };
+  const [usersCount, recordsCount, eventsCount] = await Promise.all([
+    db.get('SELECT COUNT(*) AS c FROM users'),
+    db.get('SELECT COUNT(*) AS c FROM records'),
+    db.get('SELECT COUNT(*) AS c FROM events'),
+  ]);
+  const totals = { users: usersCount.c, records: recordsCount.c, events: eventsCount.c };
 
-  const recentEvents = db.prepare(`
+  const recentEvents = await db.all(`
     SELECT event_name, metadata, created_at FROM events ORDER BY id DESC LIMIT 30
-  `).all();
+  `);
 
   res.json({
     totals,

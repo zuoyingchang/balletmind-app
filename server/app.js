@@ -1,5 +1,5 @@
 require('./config'); // loads .env and validates JWT_SECRET before anything else runs
-require('./db'); // opens the sqlite connection and ensures tables exist
+require('./db'); // opens the Turso connection; server.js awaits db.ready before listening
 
 const express = require('express');
 const cors = require('cors');
@@ -10,6 +10,8 @@ const recordsRoutes = require('./routes/records');
 const generateRoutes = require('./routes/generate');
 const eventsRoutes = require('./routes/events');
 const adminRoutes = require('./routes/admin');
+const issuesRoutes = require('./routes/issues');
+const progressRoutes = require('./routes/progress');
 
 const app = express();
 
@@ -29,5 +31,7 @@ app.use('/api/records', recordsRoutes);
 app.use('/api/generate', generateRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/issues', issuesRoutes);
+app.use('/api/progress', progressRoutes);
 
 module.exports = app;
