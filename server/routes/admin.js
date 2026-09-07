@@ -30,6 +30,26 @@ router.get('/stats', requireAdminKey, async (req, res) => {
     try { return JSON.parse(r.metadata || '{}').edited === true; } catch (e) { return false; }
   }).length;
 
+  // Token/latency numbers come straight from ai_process_success metadata
+  // (routes/generate.js logs Anthropic's own usage.input_tokens/output_tokens
+  // and the call's wall-clock time on every successful call) — this is the
+  // only place actual AI cost/speed is visible instead of an unknown bill.
+  const successEvents = await db.all(
+    "SELECT metadata FROM events WHERE event_name = 'ai_process_success'"
+  );
+  const usage = successEvents.reduce((acc, r) => {
+    try {
+      const m = JSON.parse(r.metadata || '{}');
+      if (typeof m.inputTokens === 'number') acc.inputTokens += m.inputTokens;
+      if (typeof m.outputTokens === 'number') acc.outputTokens += m.outputTokens;
+      if (typeof m.latencyMs === 'number') acc.latencies.push(m.latencyMs);
+    } catch (e) {}
+    return acc;
+  }, { inputTokens: 0, outputTokens: 0, latencies: [] });
+  const avgLatencyMs = usage.latencies.length
+    ? Math.round(usage.latencies.reduce((a, b) => a + b, 0) / usage.latencies.length)
+    : null;
+
   const [usersCount, recordsCount, eventsCount] = await Promise.all([
     db.get('SELECT COUNT(*) AS c FROM users'),
     db.get('SELECT COUNT(*) AS c FROM records'),
@@ -50,6 +70,12 @@ router.get('/stats', requireAdminKey, async (req, res) => {
       recordCompletionRate: countOf('record_voice_start')
         ? Math.round((countOf('save_record') / countOf('record_voice_start')) * 1000) / 10
         : null,
+    },
+    aiUsage: {
+      totalInputTokens: usage.inputTokens,
+      totalOutputTokens: usage.outputTokens,
+      avgLatencyMs,
+      callCount: usage.latencies.length,
     },
     recentEvents,
   });

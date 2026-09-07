@@ -53,6 +53,15 @@ const ready = client.batch(
       record_id INTEGER NOT NULL,
       created_at INTEGER
     )`,
+    // Terminology correction memory (V0.2 #12): the user explicitly tells us
+    // "AI got this term wrong", never inferred by diffing their edits.
+    `CREATE TABLE IF NOT EXISTS term_corrections (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      wrong_term TEXT NOT NULL,
+      correct_term TEXT NOT NULL,
+      created_at INTEGER
+    )`,
   ],
   'write'
 );
