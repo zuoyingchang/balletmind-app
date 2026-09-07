@@ -4,11 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BalletMind</title>
+<meta name="theme-color" content="#faf7f6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="BalletMind">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/img/icon-192.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --ivory: #faf7f6;
@@ -22,9 +30,9 @@
     --beige: #e8dfdc;
     --gold: #c4ada8;
     --sage: #9aa89c;
-    --ink: #5a504e;
-    --ink-soft: #847876;
-    --ink-faint: #b0a5a3;
+    --ink: #4a4341;
+    --ink-soft: #6f6563;
+    --ink-faint: #948a88;
     --border-soft: rgba(214, 198, 196, .5);
   }
   body { font-family: -apple-system, "Noto Sans SC", sans-serif; background: #ddd6d4; color: var(--ink); }
@@ -179,7 +187,8 @@
   }
 
   .btn-ribbon {
-    position: relative; overflow: hidden; color: #f7f1f0;
+    position: relative; overflow: hidden; color: #fff;
+    font-weight: 600;
     background: linear-gradient(135deg, rgba(212,192,191,.62) 0%, rgba(184,154,154,.58) 48%, rgba(168,141,140,.66) 100%);
     backdrop-filter: blur(14px);
     box-shadow: 0 8px 20px -14px rgba(140,100,100,.28), inset 0 1px 0 rgba(255,255,255,.45);
@@ -297,7 +306,7 @@
         <div class="relative z-10 flex items-start justify-between">
           <div>
             <p class="label-editorial text-[13px] text-[var(--rose-deep)]">今天练了几次啦</p>
-            <p class="mt-2 text-[34px] leading-none font-semibold text-[var(--ink)]" id="stat-count">0 <span class="text-[14px] font-normal text-[var(--ink-faint)]">次记录</span></p>
+            <p class="mt-2 text-[34px] leading-none font-semibold text-[var(--ink)]" id="stat-count">0 <span class="text-[14px] font-medium text-[var(--ink-faint)]">次记录</span></p>
           </div>
           <span class="px-3 py-1.5 rounded-full bg-white/40 text-[11px] text-[var(--burgundy)]" id="stat-duration">0s 累计</span>
         </div>
@@ -314,8 +323,8 @@
             <iconify-icon icon="solar:microphone-3-linear" class="text-[26px] text-white"></iconify-icon>
           </span>
           <span class="relative z-10 flex-1 text-left">
-            <strong class="block text-[15px] font-semibold">开始一段训练复盘</strong>
-            <span class="block mt-1 text-[11px] text-white/85">说说今天的动作、感受和老师建议</span>
+            <strong class="block text-[15px] font-bold">开始一段训练复盘</strong>
+            <span class="block mt-1 text-[11px] font-semibold text-white">说说今天的动作、感受和老师建议</span>
           </span>
           <iconify-icon icon="solar:arrow-right-linear" class="relative z-10 text-[21px]"></iconify-icon>
         </button>
@@ -1084,7 +1093,7 @@ async function loadHome() {
   refreshNoticeDot();
   const res = await authFetch(`${API}/api/records`);
   const rows = await res.json();
-  document.getElementById('stat-count').innerHTML = rows.length + ' <span class="text-[14px] font-normal text-[var(--ink-faint)]">次记录</span>';
+  document.getElementById('stat-count').innerHTML = rows.length + ' <span class="text-[14px] font-medium text-[var(--ink-faint)]">次记录</span>';
   document.getElementById('stat-duration').textContent = rows.reduce((a,r)=>a+(r.duration_sec||0),0) + 's 累计';
   homeRows = Array.isArray(rows) ? rows : [];
   renderHomeCalendar();
