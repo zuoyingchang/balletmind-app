@@ -1,0 +1,145 @@
+process.env.JWT_SECRET = 'test-secret-do-not-use-in-prod';
+process.env.DB_PATH = ':memory:';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const app = require('../app.js');
+
+let server;
+let base;
+
+test.before(() => {
+  server = app.listen(0);
+  base = `http://localhost:${server.address().port}`;
+});
+
+test.after(() => {
+  server.close();
+});
+
+async function registerUser(email, password = 'secret123', displayName) {
+  const res = await fetch(`${base}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, displayName }),
+  });
+  return { status: res.status, body: await res.json() };
+}
+
+test('register creates a user and returns a token', async () => {
+  const { status, body } = await registerUser('alice@example.com', 'secret123', 'Alice');
+  assert.equal(status, 200);
+  assert.ok(body.token);
+  assert.equal(body.user.email, 'alice@example.com');
+  assert.equal(body.user.displayName, 'Alice');
+});
+
+test('register rejects a duplicate email', async () => {
+  await registerUser('dupe@example.com');
+  const { status, body } = await registerUser('dupe@example.com');
+  assert.equal(status, 409);
+  assert.ok(body.error);
+});
+
+test('register rejects a short password', async () => {
+  const { status } = await registerUser('shortpw@example.com', '123');
+  assert.equal(status, 400);
+});
+
+test('login succeeds with correct credentials and fails with wrong password', async () => {
+  await registerUser('bob@example.com', 'correcthorse');
+
+  const ok = await fetch(`${base}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'bob@example.com', password: 'correcthorse' }),
+  });
+  assert.equal(ok.status, 200);
+
+  const bad = await fetch(`${base}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'bob@example.com', password: 'wrongpassword' }),
+  });
+  assert.equal(bad.status, 401);
+});
+
+test('protected routes reject requests with no token', async () => {
+  const res = await fetch(`${base}/api/records`);
+  assert.equal(res.status, 401);
+});
+
+test('protected routes reject an invalid token', async () => {
+  const res = await fetch(`${base}/api/records`, {
+    headers: { Authorization: 'Bearer not-a-real-token' },
+  });
+  assert.equal(res.status, 401);
+});
+
+test('a user can create and list their own records', async () => {
+  const { body: { token } } = await registerUser('carol@example.com');
+
+  const create = await fetch(`${base}/api/records`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ className: '基训', transcript: '今天练了tendu', durationSec: 90 }),
+  });
+  assert.equal(create.status, 200);
+  const { id } = await create.json();
+  assert.ok(id);
+
+  const list = await fetch(`${base}/api/records`, { headers: { Authorization: `Bearer ${token}` } });
+  const rows = await list.json();
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].class_name, '基训');
+  assert.equal(rows[0].transcript, '今天练了tendu');
+});
+
+test('one user cannot see, fetch, or delete another user\'s records', async () => {
+  const { body: { token: tokenA } } = await registerUser('dave@example.com');
+  const { body: { token: tokenB } } = await registerUser('erin@example.com');
+
+  const create = await fetch(`${base}/api/records`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenA}` },
+    body: JSON.stringify({ className: '私密记录', transcript: '只属于dave' }),
+  });
+  const { id } = await create.json();
+
+  const listAsB = await fetch(`${base}/api/records`, { headers: { Authorization: `Bearer ${tokenB}` } });
+  assert.deepEqual(await listAsB.json(), []);
+
+  const getAsB = await fetch(`${base}/api/records/${id}`, { headers: { Authorization: `Bearer ${tokenB}` } });
+  assert.equal(getAsB.status, 404);
+
+  const deleteAsB = await fetch(`${base}/api/records/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${tokenB}` } });
+  assert.equal(deleteAsB.status, 200); // no-op: WHERE user_id=B matches nothing
+
+  const getAsA = await fetch(`${base}/api/records/${id}`, { headers: { Authorization: `Bearer ${tokenA}` } });
+  assert.equal(getAsA.status, 200); // dave's record survived erin's delete attempt
+});
+
+test('a user can delete their own record', async () => {
+  const { body: { token } } = await registerUser('frank@example.com');
+  const create = await fetch(`${base}/api/records`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ className: '待删除' }),
+  });
+  const { id } = await create.json();
+
+  const del = await fetch(`${base}/api/records/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+  assert.equal(del.status, 200);
+
+  const get = await fetch(`${base}/api/records/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+  assert.equal(get.status, 404);
+});
+
+test('/api/generate requires auth', async () => {
+  const res = await fetch(`${base}/api/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ transcript: '测试' }),
+  });
+  assert.equal(res.status, 401);
+});
