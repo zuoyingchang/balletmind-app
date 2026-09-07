@@ -8,11 +8,13 @@ router.use(requireAuth);
 
 const VALID_STATUSES = new Set(['open', 'improving', 'resolved']);
 
-// GET /api/issues — recurring issues for this user, each with the record
-// dates it traces back to (evidence linking), most-repeated first.
+// GET /api/issues — active recurring issues for this user, each with the
+// record dates it traces back to (evidence linking), most-repeated first.
+// Resolved items stay in the database for the 7-day recap, but they leave
+// this list so the tracking page does not accumulate closed cards.
 router.get('/', async (req, res) => {
   const issues = await listIssuesWithOccurrences(req.userId);
-  res.json(issues);
+  res.json(issues.filter((issue) => issue.status !== 'resolved'));
 });
 
 // PATCH /api/issues/:id  { status } — the ONLY way an issue's status changes.

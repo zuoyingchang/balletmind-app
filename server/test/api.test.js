@@ -346,8 +346,13 @@ test('PATCH /api/issues/:id updates status and only the owner can update it', as
     body: JSON.stringify({ status: 'resolved' }),
   });
   assert.equal(ok.status, 200);
-  const [updated] = await (await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${tokenA}` } })).json();
-  assert.equal(updated.status, 'resolved');
+  const listed = await (await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${tokenA}` } })).json();
+  assert.equal(listed.length, 0, 'resolved issues leave the tracking list');
+
+  const review = await (await fetch(`${base}/api/progress/review`, { headers: { Authorization: `Bearer ${tokenA}` } })).json();
+  assert.equal(review.openIssues.length, 0);
+  assert.equal(review.resolvedInPeriod.length, 1);
+  assert.equal(review.resolvedInPeriod[0].text, '脚踝发力不够');
 });
 
 // ---------- progress: training review + pre-class brief ----------
