@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const recordsRoutes = require('./routes/records');
 const generateRoutes = require('./routes/generate');
 const eventsRoutes = require('./routes/events');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 
@@ -20,5 +21,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/records', recordsRoutes);
 app.use('/api/generate', generateRoutes);
 app.use('/api/events', eventsRoutes);
+app.use('/api/admin', adminRoutes);
 
 module.exports = app;

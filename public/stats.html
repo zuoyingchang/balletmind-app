@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BalletMind 数据统计（内部）</title>
+<style>
+  body { font-family: -apple-system, "Noto Sans SC", sans-serif; background:#e9e6e1; margin:0; padding:24px; color:#292729; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { font-size: 12px; color:#a18f83; margin-bottom: 20px; }
+  .card { background:#fff; border:1px solid #eee9e4; border-radius:16px; padding:16px; margin-bottom:16px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap:10px; }
+  .stat { text-align:center; }
+  .stat strong { display:block; font-size:22px; }
+  .stat span { font-size:11px; color:#a18f83; }
+  table { width:100%; border-collapse: collapse; font-size:13px; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid #f0ece8; }
+  th { color:#a18f83; font-weight:600; font-size:11px; text-transform:uppercase; }
+  #gate { display:flex; flex-direction:column; gap:10px; max-width:320px; margin: 80px auto; }
+  #gate input { padding:10px 12px; border-radius:10px; border:1px solid #eee9e4; font-size:13px; }
+  #gate button { padding:10px; border-radius:10px; border:none; background:#4b4850; color:#fff; font-size:13px; cursor:pointer; }
+  #app { display:none; }
+  .err { color:#a03e3e; font-size:12px; margin-top:8px; }
+  pre { white-space:pre-wrap; font-size:11px; background:#faf7f3; padding:8px; border-radius:8px; margin:0; }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <h1>管理密钥</h1>
+  <input id="admin-key" type="password" placeholder="输入 ADMIN_KEY">
+  <button onclick="unlock()">查看</button>
+  <div id="gate-err" class="err"></div>
+</div>
+
+<div id="app">
+<div class="wrap">
+  <h1>BalletMind 数据统计</h1>
+  <p class="sub">内部使用，数据每次刷新页面重新拉取</p>
+
+  <div class="card">
+    <div class="grid">
+      <div class="stat"><strong id="t-users">-</strong><span>注册用户</span></div>
+      <div class="stat"><strong id="t-records">-</strong><span>训练记录</span></div>
+      <div class="stat"><strong id="t-events">-</strong><span>事件总数</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <div class="stat"><strong id="m-success">-</strong><span>AI处理成功率</span></div>
+      <div class="stat"><strong id="m-edit">-</strong><span>Edit Rate</span></div>
+      <div class="stat"><strong id="m-completion">-</strong><span>录音→保存转化率</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:14px;margin:0 0 10px;">各事件次数</h2>
+    <table id="event-counts-table"><tbody></tbody></table>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:14px;margin:0 0 10px;">最近30条事件</h2>
+    <table>
+      <thead><tr><th>时间</th><th>事件</th><th>详情</th></tr></thead>
+      <tbody id="recent-events-body"></tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<script>
+function fmtTime(ts) { const d = new Date(ts); return d.toLocaleString('zh-CN'); }
+
+async function loadStats(key) {
+  const res = await fetch('/api/admin/stats', { headers: { 'X-Admin-Key': key } });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || ('HTTP ' + res.status));
+  }
+  return res.json();
+}
+
+function render(data) {
+  document.getElementById('t-users').textContent = data.totals.users;
+  document.getElementById('t-records').textContent = data.totals.records;
+  document.getElementById('t-events').textContent = data.totals.events;
+
+  document.getElementById('m-success').textContent = data.metrics.aiProcessSuccessRate == null ? '-' : data.metrics.aiProcessSuccessRate + '%';
+  document.getElementById('m-edit').textContent = data.metrics.editRate == null ? '-' : data.metrics.editRate + '%';
+  document.getElementById('m-completion').textContent = data.metrics.recordCompletionRate == null ? '-' : data.metrics.recordCompletionRate + '%';
+
+  const countsBody = document.querySelector('#event-counts-table tbody');
+  const entries = Object.entries(data.eventCounts);
+  countsBody.innerHTML = entries.length
+    ? entries.map(([name, count]) => `<tr><td>${name}</td><td>${count}</td></tr>`).join('')
+    : '<tr><td colspan="2" style="color:#a18f83;">还没有数据</td></tr>';
+
+  const recentBody = document.getElementById('recent-events-body');
+  recentBody.innerHTML = data.recentEvents.length
+    ? data.recentEvents.map(e => `<tr><td>${fmtTime(e.created_at)}</td><td>${e.event_name}</td><td><pre>${e.metadata ? escapeHtml(e.metadata) : ''}</pre></td></tr>`).join('')
+    : '<tr><td colspan="3" style="color:#a18f83;">还没有数据</td></tr>';
+}
+
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function unlock() {
+  const key = document.getElementById('admin-key').value.trim();
+  const errEl = document.getElementById('gate-err');
+  errEl.textContent = '';
+  if (!key) return;
+  try {
+    const data = await loadStats(key);
+    localStorage.setItem('bm_admin_key', key);
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    render(data);
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+}
+
+(async function init() {
+  const saved = localStorage.getItem('bm_admin_key');
+  if (!saved) return;
+  try {
+    const data = await loadStats(saved);
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    render(data);
+  } catch (e) {
+    localStorage.removeItem('bm_admin_key');
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 process.env.JWT_SECRET = 'test-secret-do-not-use-in-prod';
 process.env.DB_PATH = ':memory:';
+process.env.ADMIN_KEY = 'test-admin-key';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -194,4 +195,26 @@ test('saving a record logs save_record and user_edit_ai_result events', async ()
   const editEvent = db.prepare('SELECT * FROM events WHERE user_id = ? AND event_name = ?').get(user.id, 'user_edit_ai_result');
   assert.ok(editEvent);
   assert.deepEqual(JSON.parse(editEvent.metadata), { edited: true });
+});
+
+// ---------- admin stats ----------
+test('/api/admin/stats rejects requests with no admin key', async () => {
+  const res = await fetch(`${base}/api/admin/stats`);
+  assert.equal(res.status, 401);
+});
+
+test('/api/admin/stats rejects the wrong admin key', async () => {
+  const res = await fetch(`${base}/api/admin/stats`, { headers: { 'X-Admin-Key': 'wrong-key' } });
+  assert.equal(res.status, 401);
+});
+
+test('/api/admin/stats returns aggregate metrics with the correct key', async () => {
+  const res = await fetch(`${base}/api/admin/stats`, { headers: { 'X-Admin-Key': 'test-admin-key' } });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.ok(typeof body.totals.users === 'number');
+  assert.ok(typeof body.totals.records === 'number');
+  assert.ok(typeof body.totals.events === 'number');
+  assert.ok(body.eventCounts.save_record >= 1, 'expected at least the save_record events logged earlier in this run');
+  assert.ok(Array.isArray(body.recentEvents));
 });

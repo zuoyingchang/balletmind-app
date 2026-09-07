@@ -1,0 +1,57 @@
+const express = require('express');
+const db = require('../db');
+const { ADMIN_KEY } = require('../config');
+
+const router = express.Router();
+
+// Gated by a separate admin key (not a user account) — the events table spans
+// every user, so a regular logged-in user must never be able to read it.
+function requireAdminKey(req, res, next) {
+  if (!ADMIN_KEY) return res.status(503).json({ error: '管理统计功能未配置 ADMIN_KEY' });
+  const key = req.headers['x-admin-key'];
+  if (key !== ADMIN_KEY) return res.status(401).json({ error: '管理密钥不对' });
+  next();
+}
+
+router.get('/stats', requireAdminKey, (req, res) => {
+  const eventCounts = db.prepare(`
+    SELECT event_name, COUNT(*) AS count FROM events GROUP BY event_name
+  `).all();
+  const countOf = (name) => eventCounts.find((e) => e.event_name === name)?.count || 0;
+
+  const aiSuccess = countOf('ai_process_success');
+  const aiFail = countOf('ai_process_fail');
+  const aiTotal = aiSuccess + aiFail;
+
+  const editEvents = db.prepare(`
+    SELECT metadata FROM events WHERE event_name = 'user_edit_ai_result'
+  `).all();
+  const editedCount = editEvents.filter((r) => {
+    try { return JSON.parse(r.metadata || '{}').edited === true; } catch (e) { return false; }
+  }).length;
+
+  const totals = {
+    users: db.prepare('SELECT COUNT(*) AS c FROM users').get().c,
+    records: db.prepare('SELECT COUNT(*) AS c FROM records').get().c,
+    events: db.prepare('SELECT COUNT(*) AS c FROM events').get().c,
+  };
+
+  const recentEvents = db.prepare(`
+    SELECT event_name, metadata, created_at FROM events ORDER BY id DESC LIMIT 30
+  `).all();
+
+  res.json({
+    totals,
+    eventCounts: Object.fromEntries(eventCounts.map((e) => [e.event_name, e.count])),
+    metrics: {
+      aiProcessSuccessRate: aiTotal ? Math.round((aiSuccess / aiTotal) * 1000) / 10 : null,
+      editRate: editEvents.length ? Math.round((editedCount / editEvents.length) * 1000) / 10 : null,
+      recordCompletionRate: countOf('record_voice_start')
+        ? Math.round((countOf('save_record') / countOf('record_voice_start')) * 1000) / 10
+        : null,
+    },
+    recentEvents,
+  });
+});
+
+module.exports = router;
