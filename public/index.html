@@ -14,6 +14,8 @@
   button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: transform .15s ease; }
   button:active, a:active { transform: scale(0.97); }
   button:focus-visible, a:focus-visible { outline: 2px solid #987283; outline-offset: 2px; }
+  @keyframes checkPop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+  .check-pop { animation: checkPop .45s cubic-bezier(.34,1.56,.64,1) forwards; }
 </style>
 </head>
 <body class="w-full h-screen m-0 overflow-hidden flex items-center justify-center text-[#292729]">
@@ -242,6 +244,18 @@
       </div>
       <div id="review-note" class="hidden mb-4 text-[11px] text-[#a18f83] border border-dashed border-[#ddd] rounded-xl p-3"></div>
 
+      <div class="mb-4 rounded-2xl bg-[#faf7f3] border border-dashed border-[#dfbfc7] p-3">
+        <button type="button" onclick="toggleTermCorrection()" class="w-full flex items-center justify-between text-left">
+          <span class="text-[11.5px] text-[#8d6b5d]">发现某个动作名称被识别错了？点这里纠正</span>
+          <iconify-icon icon="solar:alt-arrow-down-linear" id="term-toggle-icon" class="text-[14px] text-[#a18f83]"></iconify-icon>
+        </button>
+        <div id="term-correction-form" class="hidden mt-3 space-y-2">
+          <input id="term-wrong" placeholder="AI 识别成了什么（如：拍赛）" class="w-full px-3 py-2 rounded-xl border border-[#eee9e4] text-[12px]">
+          <input id="term-correct" placeholder="正确写法是什么（如：passé）" class="w-full px-3 py-2 rounded-xl border border-[#eee9e4] text-[12px]">
+          <button type="button" onclick="submitTermCorrection()" class="w-full h-9 rounded-xl bg-[#987283] text-white text-[11.5px] font-medium">记住这个纠正</button>
+        </div>
+      </div>
+
       <div class="flex gap-3">
         <button onclick="retryGenerate()" class="flex-1 h-11 rounded-2xl border border-[#dfbfc7] text-[12.5px] text-[#77483e] font-medium">Retry</button>
         <button onclick="confirmSave()" class="flex-1 h-11 rounded-2xl bg-[#4b4850] text-white text-[12.5px] font-semibold">Confirm & Save</button>
@@ -433,6 +447,19 @@
 </div>
 
 <div id="toast" class="hidden fixed bottom-8 left-1/2 -translate-x-1/2 rounded-full bg-[#4b4850] text-white px-4 py-2 text-[11px] z-50"></div>
+
+<!-- Save-moment ceremony (V0.2 #16) + milestone celebration (V0.2 #11) -->
+<div id="save-ceremony" class="hidden fixed inset-0 z-[70] items-center justify-center bg-black/35 px-8">
+  <div class="w-full max-w-[300px] rounded-[26px] bg-[#f8f7f4] p-6 text-center">
+    <div class="mx-auto w-16 h-16 rounded-full bg-[#e8f1eb] flex items-center justify-center check-pop">
+      <iconify-icon icon="solar:check-circle-bold" class="text-[36px] text-[#54816f]"></iconify-icon>
+    </div>
+    <p class="mt-4 text-[15px] font-semibold">已保存到训练档案</p>
+    <div id="milestone-content" class="hidden mt-3 pt-3 border-t border-[#eee9e4]">
+      <p class="text-[13px] leading-6 text-[#5f5753]" id="milestone-text"></p>
+    </div>
+  </div>
+</div>
 
 <script>
 const API = ''; // same-origin; server serves this file too
@@ -969,6 +996,33 @@ function renderReview() {
   if (r.note) { noteEl.classList.remove('hidden'); noteEl.textContent = 'Note: ' + r.note; }
   else noteEl.classList.add('hidden');
 }
+// V0.2 #12 — the user explicitly flags a term AI got wrong; never inferred
+// by diffing their edits. Saved corrections are fed back into future AI
+// calls server-side (see /api/generate) so it prefers the confirmed spelling.
+function toggleTermCorrection() {
+  const form = document.getElementById('term-correction-form');
+  const icon = document.getElementById('term-toggle-icon');
+  const hidden = form.classList.toggle('hidden');
+  icon.setAttribute('icon', hidden ? 'solar:alt-arrow-down-linear' : 'solar:alt-arrow-up-linear');
+}
+async function submitTermCorrection() {
+  const wrongTerm = document.getElementById('term-wrong').value.trim();
+  const correctTerm = document.getElementById('term-correct').value.trim();
+  if (!wrongTerm || !correctTerm) { toast('请把两个词都填一下'); return; }
+  try {
+    await authFetch(`${API}/api/terms`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ wrongTerm, correctTerm })
+    });
+    document.getElementById('term-wrong').value = '';
+    document.getElementById('term-correct').value = '';
+    toggleTermCorrection();
+    toast('记住了，以后会优先用这个写法');
+  } catch (e) {
+    toast('保存失败：' + e.message);
+  }
+}
+
 async function confirmSave() {
   const good = document.getElementById('review-good').value.trim();
   const improve = document.getElementById('review-improve').value.trim();
@@ -987,9 +1041,33 @@ async function confirmSave() {
     durationSec: lastDraft.durationSec,
     edited,
   };
-  await authFetch(`${API}/api/records`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-  toast('已保存到训练档案');
-  goHome();
+  const res = await authFetch(`${API}/api/records`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const result = await res.json();
+  showSaveCeremony(result.milestone);
+}
+
+// V0.2 #16 (save ceremony) + #11 (objective milestone celebration — pure
+// counting, never a capability judgement). Same trigger point, one overlay.
+function milestoneText(m) {
+  if (!m) return '';
+  if (m.type === 'count' && m.value === 1) return '这是你的第一次训练记录，成长追踪从这里开始。';
+  if (m.type === 'count') return `已经完成 ${m.value} 次训练记录了。`;
+  if (m.type === 'streak') return `已经连续 ${m.value} 周坚持训练了。`;
+  return '';
+}
+function showSaveCeremony(milestone) {
+  const overlay = document.getElementById('save-ceremony');
+  const milestoneEl = document.getElementById('milestone-content');
+  const text = milestoneText(milestone);
+  if (text) { document.getElementById('milestone-text').textContent = text; milestoneEl.classList.remove('hidden'); }
+  else { milestoneEl.classList.add('hidden'); }
+  overlay.classList.remove('hidden');
+  overlay.classList.add('flex');
+  setTimeout(() => {
+    overlay.classList.add('hidden');
+    overlay.classList.remove('flex');
+    goHome();
+  }, text ? 2200 : 900);
 }
 
 initSpeech();

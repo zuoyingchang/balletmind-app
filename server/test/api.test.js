@@ -367,3 +367,59 @@ test('/api/progress/brief returns top open issues and the last record, zero AI c
   const after = await countAiCallsToday(user.id);
   assert.equal(after, before, 'pre-class brief must not consume the AI quota');
 });
+
+// ---------- milestone celebration ----------
+test('the 1st and 10th records trigger a count milestone, records 2-9 do not', async () => {
+  const { body: { token } } = await registerUser('milestone@example.com');
+
+  const first = await saveRecord(token, { className: '基训' });
+  assert.deepEqual(first.milestone, { type: 'count', value: 1 });
+
+  let lastResult;
+  for (let i = 2; i <= 10; i++) {
+    lastResult = await saveRecord(token, { className: '基训' + i });
+    if (i < 10) assert.equal(lastResult.milestone, null, `record #${i} should not be a milestone`);
+  }
+  assert.deepEqual(lastResult.milestone, { type: 'count', value: 10 });
+});
+
+// ---------- terminology correction memory ----------
+test('/api/terms requires auth', async () => {
+  const res = await fetch(`${base}/api/terms`);
+  assert.equal(res.status, 401);
+});
+
+test('/api/terms rejects a correction missing either term', async () => {
+  const { body: { token } } = await registerUser('terms_invalid@example.com');
+  const res = await fetch(`${base}/api/terms`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ wrongTerm: '拍赛' }),
+  });
+  assert.equal(res.status, 400);
+});
+
+test('a saved term correction shows up in the list and in the AI prompt hint', async () => {
+  const { body: { token, user } } = await registerUser('terms_valid@example.com');
+  const res = await fetch(`${base}/api/terms`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ wrongTerm: '拍赛', correctTerm: 'passé' }),
+  });
+  assert.equal(res.status, 200);
+
+  const list = await (await fetch(`${base}/api/terms`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  assert.equal(list.length, 1);
+  assert.equal(list[0].correct_term, 'passé');
+
+  const { correctionsAsPromptHint } = require('../terms');
+  const hint = await correctionsAsPromptHint(user.id);
+  assert.match(hint, /拍赛/);
+  assert.match(hint, /passé/);
+});
+
+test('correctionsAsPromptHint returns an empty string when the user has no corrections', async () => {
+  const { body: { user } } = await registerUser('terms_none@example.com');
+  const { correctionsAsPromptHint } = require('../terms');
+  assert.equal(await correctionsAsPromptHint(user.id), '');
+});

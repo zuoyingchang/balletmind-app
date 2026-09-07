@@ -3,6 +3,7 @@ const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { logEvent } = require('../events');
 const { processRecordForIssues } = require('../issues');
+const { checkMilestone } = require('../milestones');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -24,7 +25,8 @@ router.post('/', async (req, res) => {
   await logEvent(req.userId, 'save_record', { recordId: info.lastInsertRowid });
   await logEvent(req.userId, 'user_edit_ai_result', { edited: !!edited });
   await processRecordForIssues(req.userId, info.lastInsertRowid, improve_points);
-  res.json({ id: info.lastInsertRowid });
+  const milestone = await checkMilestone(req.userId);
+  res.json({ id: info.lastInsertRowid, milestone });
 });
 
 router.get('/', async (req, res) => {

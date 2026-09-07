@@ -12,6 +12,7 @@ const eventsRoutes = require('./routes/events');
 const adminRoutes = require('./routes/admin');
 const issuesRoutes = require('./routes/issues');
 const progressRoutes = require('./routes/progress');
+const termsRoutes = require('./routes/terms');
 
 const app = express();
 
@@ -33,5 +34,6 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/issues', issuesRoutes);
 app.use('/api/progress', progressRoutes);
+app.use('/api/terms', termsRoutes);
 
 module.exports = app;

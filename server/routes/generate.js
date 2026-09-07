@@ -2,6 +2,7 @@ const express = require('express');
 const { requireAuth } = require('../middleware/auth');
 const { logEvent, countAiCallsToday } = require('../events');
 const { DAILY_AI_LIMIT, MAX_TRANSCRIPT_LENGTH } = require('../config');
+const { correctionsAsPromptHint } = require('../terms');
 
 const router = express.Router();
 
@@ -72,6 +73,7 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(500).json({ error: '服务器未配置 ANTHROPIC_API_KEY，请检查 .env 文件' });
   }
   try {
+    const termHint = await correctionsAsPromptHint(req.userId);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -82,7 +84,7 @@ router.post('/', requireAuth, async (req, res) => {
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 1000,
-        system: SYSTEM_PROMPT,
+        system: SYSTEM_PROMPT + termHint,
         messages: [{ role: 'user', content: `用户语音转写内容：\n${transcript}` }],
         tools: [REVIEW_TOOL],
         tool_choice: { type: 'tool', name: 'submit_review' },
