@@ -62,6 +62,14 @@ const ready = client.batch(
       correct_term TEXT NOT NULL,
       created_at INTEGER
     )`,
+    `CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      token_hash TEXT UNIQUE NOT NULL,
+      expires_at INTEGER NOT NULL,
+      used_at INTEGER,
+      created_at INTEGER NOT NULL
+    )`,
   ],
   'write'
 );

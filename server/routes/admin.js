@@ -50,6 +50,16 @@ router.get('/stats', requireAdminKey, async (req, res) => {
     ? Math.round(usage.latencies.reduce((a, b) => a + b, 0) / usage.latencies.length)
     : null;
 
+  const asrSuccessEvents = await db.all(
+    "SELECT metadata FROM events WHERE event_name = 'asr_success'"
+  );
+  const asrLatencies = asrSuccessEvents.map((r) => {
+    try { return JSON.parse(r.metadata || '{}').latencyMs; } catch (e) { return null; }
+  }).filter((n) => typeof n === 'number');
+  const asrAvgLatencyMs = asrLatencies.length
+    ? Math.round(asrLatencies.reduce((a, b) => a + b, 0) / asrLatencies.length)
+    : null;
+
   const [usersCount, recordsCount, eventsCount] = await Promise.all([
     db.get('SELECT COUNT(*) AS c FROM users'),
     db.get('SELECT COUNT(*) AS c FROM records'),
@@ -70,12 +80,20 @@ router.get('/stats', requireAdminKey, async (req, res) => {
       recordCompletionRate: countOf('record_voice_start')
         ? Math.round((countOf('save_record') / countOf('record_voice_start')) * 1000) / 10
         : null,
+      asrSuccessRate: (countOf('asr_success') + countOf('asr_fail'))
+        ? Math.round((countOf('asr_success') / (countOf('asr_success') + countOf('asr_fail'))) * 1000) / 10
+        : null,
     },
     aiUsage: {
       totalInputTokens: usage.inputTokens,
       totalOutputTokens: usage.outputTokens,
       avgLatencyMs,
       callCount: usage.latencies.length,
+    },
+    asrUsage: {
+      success: countOf('asr_success'),
+      fail: countOf('asr_fail'),
+      avgLatencyMs: asrAvgLatencyMs,
     },
     recentEvents,
   });

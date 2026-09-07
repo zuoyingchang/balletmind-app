@@ -52,6 +52,7 @@
       <div class="stat"><strong id="m-success">-</strong><span>AI处理成功率</span></div>
       <div class="stat"><strong id="m-edit">-</strong><span>Edit Rate</span></div>
       <div class="stat"><strong id="m-completion">-</strong><span>录音→保存转化率</span></div>
+      <div class="stat"><strong id="m-asr">-</strong><span>语音识别成功率</span></div>
     </div>
   </div>
 
@@ -98,6 +99,7 @@ function render(data) {
   document.getElementById('m-success').textContent = data.metrics.aiProcessSuccessRate == null ? '-' : data.metrics.aiProcessSuccessRate + '%';
   document.getElementById('m-edit').textContent = data.metrics.editRate == null ? '-' : data.metrics.editRate + '%';
   document.getElementById('m-completion').textContent = data.metrics.recordCompletionRate == null ? '-' : data.metrics.recordCompletionRate + '%';
+  document.getElementById('m-asr').textContent = data.metrics.asrSuccessRate == null ? '-' : data.metrics.asrSuccessRate + '%';
 
   document.getElementById('u-calls').textContent = data.aiUsage.callCount;
   document.getElementById('u-tokens').textContent = data.aiUsage.totalInputTokens + ' / ' + data.aiUsage.totalOutputTokens;

@@ -20,6 +20,21 @@ const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS) || 25000;
 // point is worded is fine — what matters is the *content* stays stable.
 const AI_TEMPERATURE = process.env.AI_TEMPERATURE === undefined ? 0.2 : Number(process.env.AI_TEMPERATURE);
 
+// OpenAI Whisper (or gpt-4o-mini-transcribe). Optional: if unset, recording
+// still works as a timer + manual typing, but there is no server-side ASR.
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+const ASR_MODEL = process.env.ASR_MODEL || 'whisper-1';
+const ASR_TIMEOUT_MS = Number(process.env.ASR_TIMEOUT_MS) || 30000;
+const MAX_AUDIO_BYTES = Number(process.env.MAX_AUDIO_BYTES) || 10 * 1024 * 1024;
+
+// Password-reset email. Without RESEND_API_KEY, forgot-password still creates
+// a token but only returns the reset URL outside production (so tests / local
+// demo work). Production needs Resend or the user never sees the link.
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+const EMAIL_FROM = process.env.EMAIL_FROM || 'BalletMind <beth.t@example.com>';
+const APP_PUBLIC_URL = (process.env.APP_PUBLIC_URL || '').replace(/\/$/, '');
+const RESET_TOKEN_TTL_MS = Number(process.env.RESET_TOKEN_TTL_MS) || 60 * 60 * 1000;
+
 if (!JWT_SECRET) {
   console.error('缺少 JWT_SECRET，请在 .env 里配置（用于登录令牌签名）');
   process.exit(1);
@@ -28,4 +43,6 @@ if (!JWT_SECRET) {
 module.exports = {
   PORT, JWT_SECRET, ADMIN_KEY, DAILY_AI_LIMIT, MAX_TRANSCRIPT_LENGTH,
   AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS, AI_TEMPERATURE,
+  OPENAI_API_KEY, ASR_MODEL, ASR_TIMEOUT_MS, MAX_AUDIO_BYTES,
+  RESEND_API_KEY, EMAIL_FROM, APP_PUBLIC_URL, RESET_TOKEN_TTL_MS,
 };

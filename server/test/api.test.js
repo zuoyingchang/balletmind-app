@@ -4,6 +4,7 @@ process.env.ADMIN_KEY = 'test-admin-key';
 process.env.DAILY_AI_LIMIT = '5';
 process.env.AI_TIMEOUT_MS = '200'; // short, so the timeout test doesn't take 25s
 process.env.ANTHROPIC_API_KEY = 'test-key-unused-fetch-is-mocked'; // real calls are always mocked in this file
+process.env.OPENAI_API_KEY = 'test-openai-key';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -28,7 +29,7 @@ async function registerUser(email, password = 'secret123', displayName) {
   const res = await fetch(`${base}/api/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, displayName }),
+    body: JSON.stringify({ email, password, displayName, privacyAccepted: true }),
   });
   return { status: res.status, body: await res.json() };
 }
@@ -51,6 +52,17 @@ test('register rejects a duplicate email', async () => {
 test('register rejects a short password', async () => {
   const { status } = await registerUser('shortpw@example.com', '123');
   assert.equal(status, 400);
+});
+
+test('register rejects missing privacy acceptance', async () => {
+  const res = await fetch(`${base}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'noprivacy@example.com', password: 'secret123' }),
+  });
+  assert.equal(res.status, 400);
+  const body = await res.json();
+  assert.match(body.error, /隐私/);
 });
 
 test('login succeeds with correct credentials and fails with wrong password', async () => {
@@ -587,4 +599,129 @@ test('/api/admin/stats aggregates real token usage and latency from ai_process_s
   assert.ok(stats.aiUsage.totalOutputTokens >= 80);
   assert.ok(stats.aiUsage.callCount >= 1);
   assert.ok(typeof stats.aiUsage.avgLatencyMs === 'number' && stats.aiUsage.avgLatencyMs >= 0);
+});
+
+// ---------- password reset ----------
+test('forgot-password does not leak whether an email is registered', async () => {
+  const missing = await fetch(`${base}/api/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'nobody-here@example.com' }),
+  });
+  assert.equal(missing.status, 200);
+  const missingBody = await missing.json();
+  assert.equal(missingBody.resetUrl, undefined);
+
+  await registerUser('resetme@example.com', 'oldpassword');
+  const found = await fetch(`${base}/api/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'resetme@example.com' }),
+  });
+  assert.equal(found.status, 200);
+  const foundBody = await found.json();
+  assert.ok(foundBody.resetUrl, 'non-production should return a resetUrl for local testing');
+  const token = new URL(foundBody.resetUrl).searchParams.get('token');
+  assert.ok(token);
+
+  const reset = await fetch(`${base}/api/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password: 'newpassword' }),
+  });
+  assert.equal(reset.status, 200);
+
+  const oldPw = await fetch(`${base}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'resetme@example.com', password: 'oldpassword' }),
+  });
+  assert.equal(oldPw.status, 401);
+
+  const newPw = await fetch(`${base}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'resetme@example.com', password: 'newpassword' }),
+  });
+  assert.equal(newPw.status, 200);
+
+  const reused = await fetch(`${base}/api/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password: 'anotherpassword' }),
+  });
+  assert.equal(reused.status, 400);
+});
+
+// ---------- Whisper ASR ----------
+async function withMockOpenAIFetch(mockFn, run) {
+  const realFetch = global.fetch;
+  global.fetch = (url, opts) => {
+    if (String(url).includes('api.openai.com')) return mockFn(url, opts);
+    return realFetch(url, opts);
+  };
+  try {
+    await run();
+  } finally {
+    global.fetch = realFetch;
+  }
+}
+
+test('/api/transcribe requires auth', async () => {
+  const res = await fetch(`${base}/api/transcribe`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'audio/webm' },
+    body: Buffer.from('fake-audio'),
+  });
+  assert.equal(res.status, 401);
+});
+
+test('/api/transcribe/status reports that Whisper is configured in tests', async () => {
+  const { body: { token } } = await registerUser('asr-status@example.com');
+  const res = await fetch(`${base}/api/transcribe/status`, { headers: { Authorization: `Bearer ${token}` } });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.configured, true);
+  assert.equal(body.model, 'whisper-1');
+});
+
+test('/api/transcribe returns Whisper text and logs asr_success with model/latency', async () => {
+  const { body: { token, user } } = await registerUser('asr-ok@example.com');
+  await withMockOpenAIFetch(
+    async () => ({
+      ok: true,
+      json: async () => ({ text: '今天 pirouette 单圈，passé 位置还行' }),
+    }),
+    async () => {
+      const res = await fetch(`${base}/api/transcribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'audio/webm', Authorization: `Bearer ${token}` },
+        body: Buffer.from('fake-audio-bytes-that-are-long-enough'),
+      });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.match(body.text, /pirouette/);
+      assert.equal(body.model, 'whisper-1');
+    }
+  );
+  const event = await db.get(
+    "SELECT * FROM events WHERE user_id = ? AND event_name = 'asr_success' ORDER BY id DESC LIMIT 1",
+    [user.id]
+  );
+  const meta = JSON.parse(event.metadata);
+  assert.equal(meta.model, 'whisper-1');
+  assert.ok(typeof meta.latencyMs === 'number');
+});
+
+test('/api/transcribe enforces the shared daily AI quota', async () => {
+  const { body: { token, user } } = await registerUser('asr-quota@example.com');
+  const { logEvent } = require('../events');
+  for (let i = 0; i < 5; i++) await logEvent(user.id, 'asr_success', {});
+
+  const res = await fetch(`${base}/api/transcribe`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'audio/webm', Authorization: `Bearer ${token}` },
+    body: Buffer.from('fake-audio'),
+  });
+  assert.equal(res.status, 429);
 });

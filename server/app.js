@@ -8,6 +8,7 @@ const path = require('path');
 const authRoutes = require('./routes/auth');
 const recordsRoutes = require('./routes/records');
 const generateRoutes = require('./routes/generate');
+const transcribeRoutes = require('./routes/transcribe');
 const eventsRoutes = require('./routes/events');
 const adminRoutes = require('./routes/admin');
 const issuesRoutes = require('./routes/issues');
@@ -16,16 +17,17 @@ const termsRoutes = require('./routes/terms');
 
 const app = express();
 
+app.set('trust proxy', 1);
 app.use(cors());
-app.use(express.json({ limit: '1mb' }));
-app.use(express.static(path.join(__dirname, '..', 'public')));
-
-// Every /api/* response carries per-user data behind auth — never let a
-// browser, proxy, or CDN cache and replay one user's response for another.
 app.use('/api', (req, res, next) => {
   res.set('Cache-Control', 'no-store');
   next();
 });
+// Transcribe accepts a raw audio blob — register it before the JSON parser so
+// body-parser cannot consume or overwrite the buffer.
+app.use('/api/transcribe', transcribeRoutes);
+app.use(express.json({ limit: '1mb' }));
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/records', recordsRoutes);

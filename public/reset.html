@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>重置密码 · BalletMind</title>
+<style>
+  body { font-family: -apple-system, "Noto Sans SC", sans-serif; background:#f6f0eb; color:#6d5f5c; margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .card { width: 100%; max-width: 360px; background: rgba(253,250,247,.9); border: 1px solid rgba(232,214,208,.7); border-radius: 24px; padding: 28px 22px; margin: 16px; }
+  h1 { font-size: 20px; margin: 0 0 8px; }
+  p { font-size: 12.5px; color:#8d7f7c; line-height:1.6; }
+  input { width:100%; box-sizing:border-box; margin-top:10px; padding:12px 14px; border-radius:14px; border:1px solid rgba(232,214,208,.9); font-size:13px; }
+  button { width:100%; margin-top:16px; height:44px; border:0; border-radius:999px; background:#c4a4a6; color:#faf6f3; font-size:14px; font-weight:600; }
+  .err { display:none; margin-top:10px; font-size:12px; color:#a03e3e; }
+  a { color:#8f7476; font-size:12px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>设置新密码</h1>
+  <p>密码至少 6 位。设置成功后请返回 App 登录。</p>
+  <input id="pw" type="password" placeholder="新密码（至少6位）">
+  <input id="pw2" type="password" placeholder="再输入一次">
+  <div class="err" id="err"></div>
+  <button type="button" onclick="submitReset()">保存新密码</button>
+  <p style="margin-top:16px"><a href="/">返回登录</a></p>
+</div>
+<script>
+async function submitReset() {
+  const err = document.getElementById('err');
+  err.style.display = 'none';
+  const password = document.getElementById('pw').value;
+  const password2 = document.getElementById('pw2').value;
+  const token = new URLSearchParams(location.search).get('token');
+  if (!token) { err.textContent = '缺少重置链接，请重新申请'; err.style.display = 'block'; return; }
+  if (password.length < 6) { err.textContent = '密码至少6位'; err.style.display = 'block'; return; }
+  if (password !== password2) { err.textContent = '两次输入不一致'; err.style.display = 'block'; return; }
+  const res = await fetch('/api/auth/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) { err.textContent = data.error || '重置失败'; err.style.display = 'block'; return; }
+  alert('密码已更新，请用新密码登录');
+  location.href = '/';
+}
+</script>
+</body>
+</html>

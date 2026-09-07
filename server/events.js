@@ -7,6 +7,7 @@ const KNOWN_EVENTS = new Set([
   'record_voice_start',
   'record_voice_complete',
   'asr_fail',
+  'asr_success',
   'ai_process_success',
   'ai_process_fail',
   'user_edit_ai_result',
@@ -32,7 +33,7 @@ async function countAiCallsToday(userId) {
   startOfDay.setHours(0, 0, 0, 0);
   const row = await db.get(
     `SELECT COUNT(*) AS c FROM events
-     WHERE user_id = ? AND event_name IN ('ai_process_success', 'ai_process_fail') AND created_at >= ?`,
+     WHERE user_id = ? AND event_name IN ('ai_process_success', 'ai_process_fail', 'asr_success', 'asr_fail') AND created_at >= ?`,
     [userId, startOfDay.getTime()]
   );
   return row.c;
