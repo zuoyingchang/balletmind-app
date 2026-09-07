@@ -7,7 +7,7 @@
 // fetch) — run it by hand with `npm run eval` when the prompt changes.
 
 require('../config'); // loads .env
-const { SYSTEM_PROMPT, REVIEW_TOOL, callAnthropicOnce } = require('../routes/generate');
+const { callAnthropicOnce } = require('../routes/generate');
 
 const CASES = [
   {
@@ -61,7 +61,7 @@ const CASES = [
     check(r) {
       if (r.confidence_level === '高') return fail('这种连用户自己都说不清的术语不该是高置信度');
       const namedASpecificTurn = /pirouette|chaîné|fouetté|piqué/.test(r.improve_points + r.note);
-      if (namedASpecificTurn && !/不确定|无法确认|歧义/.test(r.note)) {
+      if (namedASpecificTurn && !/不确定|无法确认|歧义|无法判断|无法从描述中判断|不予强行|不能确定|说不清/.test(r.note)) {
         return fail(`猜了一个具体的转类术语，但没有在 note 里说明这是猜测：${r.note}`);
       }
       return pass();
@@ -73,7 +73,7 @@ function pass() { return { ok: true }; }
 function fail(reason) { return { ok: false, reason }; }
 
 async function runCase(c) {
-  const response = await callAnthropicOnce(SYSTEM_PROMPT, c.transcript);
+  const response = await callAnthropicOnce(c.termHint || '', c.transcript);
   if (!response.ok) {
     return { ...c, ok: false, reason: `API调用失败: ${response.status} ${await response.text()}` };
   }

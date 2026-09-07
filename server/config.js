@@ -14,6 +14,11 @@ const MAX_TRANSCRIPT_LENGTH = Number(process.env.MAX_TRANSCRIPT_LENGTH) || 4000;
 const AI_MODEL = process.env.AI_MODEL || 'claude-sonnet-4-6';
 const AI_MAX_OUTPUT_TOKENS = Number(process.env.AI_MAX_OUTPUT_TOKENS) || 1000;
 const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS) || 25000;
+// Low, not zero: this is faithful extraction (not creative writing), so we
+// want consistent phrasing run-to-run over Anthropic's default. Not fully
+// deterministic (0) because a little natural-language variation in how a
+// point is worded is fine — what matters is the *content* stays stable.
+const AI_TEMPERATURE = process.env.AI_TEMPERATURE === undefined ? 0.2 : Number(process.env.AI_TEMPERATURE);
 
 if (!JWT_SECRET) {
   console.error('缺少 JWT_SECRET，请在 .env 里配置（用于登录令牌签名）');
@@ -22,5 +27,5 @@ if (!JWT_SECRET) {
 
 module.exports = {
   PORT, JWT_SECRET, ADMIN_KEY, DAILY_AI_LIMIT, MAX_TRANSCRIPT_LENGTH,
-  AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS,
+  AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS, AI_TEMPERATURE,
 };
