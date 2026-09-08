@@ -7,15 +7,12 @@ const {
   JWT_SECRET, RESEND_API_KEY, EMAIL_FROM, APP_PUBLIC_URL, RESET_TOKEN_TTL_MS,
 } = require('../config');
 const { requireAuth } = require('../middleware/auth');
+const { normalizeEmail, isValidEmail } = require('../lib/email-format');
 
 const router = express.Router();
 
 function hashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
-}
-
-function normalizeEmail(email) {
-  return String(email).trim().toLowerCase();
 }
 
 function signToken(userId) {
@@ -62,6 +59,7 @@ async function sendResetEmail(to, resetUrl) {
 router.post('/register', async (req, res) => {
   const { email, password, displayName, privacyAccepted } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: '请填写邮箱和密码' });
+  if (!isValidEmail(email)) return res.status(400).json({ error: '邮箱格式不对' });
   if (password.length < 6) return res.status(400).json({ error: '密码至少6位' });
   if (!privacyAccepted) return res.status(400).json({ error: '请先阅读并同意隐私政策' });
   const normalized = normalizeEmail(email);
@@ -80,6 +78,7 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: '请填写邮箱和密码' });
+  if (!isValidEmail(email)) return res.status(400).json({ error: '邮箱格式不对' });
   const user = await db.get('SELECT * FROM users WHERE email = ?', [normalizeEmail(email)]);
   if (!user) return res.status(401).json({ error: '邮箱或密码不对' });
   const ok = await bcrypt.compare(password, user.password_hash);
@@ -98,6 +97,7 @@ router.post('/forgot-password', async (req, res) => {
   const email = (req.body || {}).email;
   const generic = { ok: true, message: '如果这个邮箱已经注册，我们会发送重置链接' };
   if (!email || !String(email).trim()) return res.status(400).json({ error: '请填写邮箱' });
+  if (!isValidEmail(email)) return res.status(400).json({ error: '邮箱格式不对' });
 
   const user = await db.get('SELECT id, email FROM users WHERE email = ?', [normalizeEmail(email)]);
   if (!user) return res.json(generic);

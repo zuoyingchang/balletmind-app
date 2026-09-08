@@ -264,7 +264,7 @@
         <div id="auth-name-wrap" class="hidden">
           <input id="auth-name" placeholder="昵称（可选）" class="w-full px-4 py-3 rounded-2xl border border-[var(--border-soft)] text-[13px]">
         </div>
-        <input id="auth-email" type="email" placeholder="邮箱" class="w-full px-4 py-3 rounded-2xl border border-[var(--border-soft)] text-[13px]">
+        <input id="auth-email" type="email" placeholder="邮箱（如 name@example.com）" class="w-full px-4 py-3 rounded-2xl border border-[var(--border-soft)] text-[13px]">
         <input id="auth-password" type="password" placeholder="密码（至少6位）" onkeydown="if(event.key==='Enter') submitAuth()" class="w-full px-4 py-3 rounded-2xl border border-[var(--border-soft)] text-[13px]">
         <div id="auth-privacy-wrap" class="hidden">
           <label class="flex items-start gap-2 text-[11px] text-[var(--ink-soft)] leading-5">
@@ -941,6 +941,9 @@ function toggleAuthMode() {
   setAuthMode(authMode === 'login' ? 'register' : 'login');
 }
 function showForgotPassword() { setAuthMode('forgot'); }
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+}
 async function submitAuth() {
   const email = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
@@ -948,6 +951,7 @@ async function submitAuth() {
   const errEl = document.getElementById('auth-error');
   errEl.classList.add('hidden');
   if (!email) { errEl.textContent = '请填写邮箱'; errEl.classList.remove('hidden'); return; }
+  if (!isValidEmail(email)) { errEl.textContent = '邮箱格式不对，请写成 名字@域名 的形式'; errEl.classList.remove('hidden'); return; }
   if (authMode !== 'forgot' && !password) { errEl.textContent = '请填写邮箱和密码'; errEl.classList.remove('hidden'); return; }
   if (authMode === 'register' && !document.getElementById('auth-privacy').checked) {
     errEl.textContent = '请先阅读并同意隐私政策'; errEl.classList.remove('hidden'); return;

@@ -54,6 +54,21 @@ test('register rejects a short password', async () => {
   assert.equal(status, 400);
 });
 
+test('register and login reject a malformed email', async () => {
+  const bad = await fetch(`${base}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'not-an-email', password: 'secret123', privacyAccepted: true }),
+  });
+  assert.equal(bad.status, 400);
+  const login = await fetch(`${base}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'abc', password: 'secret123' }),
+  });
+  assert.equal(login.status, 400);
+});
+
 test('register rejects missing privacy acceptance', async () => {
   const res = await fetch(`${base}/api/auth/register`, {
     method: 'POST',
