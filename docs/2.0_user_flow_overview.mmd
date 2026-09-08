@@ -1,0 +1,35 @@
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#F7E8E8','primaryTextColor':'#3D2C2C','primaryBorderColor':'#C9A3A3','lineColor':'#8B6B6B','secondaryColor':'#F3EFE8','tertiaryColor':'#FFF8F5','fontFamily':'PingFang SC, Noto Sans SC, sans-serif','fontSize':'14px'}}}%%
+flowchart TD
+  A[登录 / 注册] --> B[Home 首页]
+  B --> C[开始训练复盘]
+  C --> D{能否录音?}
+  D -->|能| E[录 1–3 段 · 每段 ≤60s]
+  D -->|不能 / 不想说| F[转写框手打]
+  E --> G[Whisper ASR]
+  G --> H{转写成功?}
+  H -->|是| I[转写可编辑]
+  H -->|否| J[保留已有内容]
+  J --> K{重录 / 手打 / 放弃}
+  K -->|重录| E
+  K -->|手打| F
+  F --> I
+  I --> L{日配额还够?}
+  L -->|不够| M[提示配额用尽 · 禁用生成]
+  L -->|够| N[Generate]
+  N --> O[Claude 抽取 · Prompt 1.5]
+  O --> P{结构化成功?}
+  P -->|否| Q[不展示假结果]
+  Q --> R{Retry / 手填 / 改转写}
+  R -->|Retry| N
+  R -->|改转写| I
+  P -->|是| S[Review · 改删补]
+  S --> T{用户 Confirm?}
+  T -->|否| U[Draft 不入库]
+  T -->|是| V[Confirm and Save]
+  V --> W[训练档案]
+  W --> X[规则匹配反复问题 · 0 次 LLM]
+  W --> Y[History 可搜可删]
+  W --> Z[Progress 可选]
+  Z --> Z1[课前卡最多 3 句]
+  Z --> Z2[最近 7 天 / 最近 5 次]
+  Z --> Z3[有改善 / 仍在 / 已解决]

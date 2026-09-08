@@ -129,6 +129,32 @@ test('a user can create and list their own records', async () => {
   assert.equal(rows[0].transcript, '今天练了tendu');
 });
 
+test('training_duration_min is optional and distinct from the voice memo length (duration_sec)', async () => {
+  const { body: { token } } = await registerUser('trainedhours@example.com');
+
+  const withDuration = await fetch(`${base}/api/records`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ className: '基训', transcript: 'x', durationSec: 12, trainingDurationMin: 90 }),
+  });
+  assert.equal(withDuration.status, 200);
+
+  const withoutDuration = await fetch(`${base}/api/records`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ className: '基训', transcript: 'y', durationSec: 8 }),
+  });
+  assert.equal(withoutDuration.status, 200);
+
+  const list = await fetch(`${base}/api/records`, { headers: { Authorization: `Bearer ${token}` } });
+  const rows = await list.json();
+  const tagged = rows.find((r) => r.transcript === 'x');
+  const untagged = rows.find((r) => r.transcript === 'y');
+  assert.equal(tagged.training_duration_min, 90);
+  assert.equal(tagged.duration_sec, 12); // the two fields never get mixed up
+  assert.equal(untagged.training_duration_min, null);
+});
+
 test('one user cannot see, fetch, or delete another user\'s records', async () => {
   const { body: { token: tokenA } } = await registerUser('dave@example.com');
   const { body: { token: tokenB } } = await registerUser('erin@example.com');

@@ -196,6 +196,11 @@
   .btn-ribbon .pearl-sheen { opacity: .45; background: linear-gradient(115deg, transparent 28%, rgba(255,255,255,.28) 40%, transparent 52%); }
 
   .chip { background: rgba(244, 235, 233, .7); }
+  .duration-chip { background: rgba(255,252,251,.7); transition: background .15s ease, color .15s ease, border-color .15s ease; }
+  .duration-chip.is-selected {
+    background: linear-gradient(135deg, var(--gold), var(--rose-deep));
+    border-color: transparent; color: #fff; font-weight: 600;
+  }
   .nav-ballet {
     background: rgba(253,251,250,.78);
     backdrop-filter: blur(18px);
@@ -227,13 +232,18 @@
   .cal-cell.is-empty { pointer-events: none; }
   .cal-cell.is-future { opacity: .32; }
   .cal-cell.is-today { box-shadow: inset 0 0 0 1px rgba(196,173,168,.7); color: var(--ink); }
-  .cal-cell.has-record { color: var(--ink); font-weight: 600; }
+  .cal-cell.has-record {
+    color: var(--burgundy); font-weight: 700;
+    background: linear-gradient(160deg, rgba(216,163,110,.22), rgba(184,141,141,.22));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 4px 10px -8px rgba(140,100,100,.4);
+  }
+  .cal-cell.has-record.is-today { box-shadow: inset 0 0 0 1.5px var(--rose-deep), inset 0 1px 0 rgba(255,255,255,.6), 0 4px 10px -8px rgba(140,100,100,.4); }
   .cal-cell.is-selected {
     background: linear-gradient(160deg, #fffcfb, #f3eae8);
     color: var(--burgundy); font-weight: 600;
     box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 6px 14px -10px rgba(110,80,80,.22);
   }
-  .cal-bow { width: 15px; height: 15px; margin-top: 1px; object-fit: contain; display: block; }
+  .cal-bow { width: 20px; height: 20px; margin-top: 1px; object-fit: contain; display: block; filter: drop-shadow(0 1px 2px rgba(140,100,100,.35)); }
 
   .deco-watermark { position: absolute; pointer-events: none; z-index: 0; }
   .satin-mark {
@@ -473,6 +483,16 @@
       <img src="/img/pack-arms.png" alt="" aria-hidden="true" class="deco-photo tint-soft right-[-14px] bottom-2 w-[128px] h-[160px] opacity-[0.34]">
       <div id="review-error-wrap"></div>
       <input id="review-classname" placeholder="课程名称（如：芭蕾基训 · 足尖课）" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] text-[12.5px] mb-4">
+
+      <div class="mb-4">
+        <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">这次练了多久？（可选）</p>
+        <div class="flex gap-2 flex-wrap" id="duration-chips">
+          <button type="button" onclick="selectDuration(30)" data-min="30" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">30分钟</button>
+          <button type="button" onclick="selectDuration(60)" data-min="60" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1小时</button>
+          <button type="button" onclick="selectDuration(90)" data-min="90" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1.5小时</button>
+          <button type="button" onclick="selectDuration(120)" data-min="120" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">2小时+</button>
+        </div>
+      </div>
 
       <section class="rounded-[22px] bg-[var(--paper)] border border-[var(--border-soft)] p-4 mb-4">
         <div class="flex items-center gap-2 mb-2"><span class="w-7 h-7 rounded-full chip flex items-center justify-center"><iconify-icon icon="solar:microphone-3-linear" class="text-[15px] text-[var(--rose-deep)]"></iconify-icon></span><span class="text-[12px] font-semibold">语音转写</span></div>
@@ -1119,14 +1139,13 @@ async function goProfile() {
   try {
     const res = await authFetch(`${API}/api/records`);
     const rows = await res.json();
-    const totalDurationSec = rows.reduce((a, r) => a + (r.duration_sec || 0), 0);
     const now = new Date();
     const thisMonthCount = rows.filter(r => {
       const d = new Date(r.created_at);
       return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
     }).length;
     document.getElementById('profile-count').textContent = rows.length;
-    document.getElementById('profile-hours').textContent = (totalDurationSec / 3600).toFixed(1);
+    document.getElementById('profile-hours').textContent = formatTrainingHours(rows) ?? '--';
     document.getElementById('profile-month').textContent = thisMonthCount;
   } catch (e) {}
 
@@ -1160,13 +1179,24 @@ function renderTip() {
 }
 
 let homeRows = [];
+// Real training duration is user-provided and optional (`training_duration_min`).
+// `duration_sec` is just the voice memo length — never use it for this stat.
+// Returns null (not "0") when nobody has recorded a duration yet, so the UI
+// can say "not tracked yet" instead of implying zero hours of practice.
+function formatTrainingHours(rows) {
+  const withDuration = rows.filter(r => r.training_duration_min != null);
+  if (withDuration.length === 0) return null;
+  const totalMin = withDuration.reduce((a, r) => a + r.training_duration_min, 0);
+  return (totalMin / 60).toFixed(1);
+}
 async function loadHome() {
   renderTip();
   refreshNoticeDot();
   const res = await authFetch(`${API}/api/records`);
   const rows = await res.json();
   document.getElementById('stat-count').innerHTML = rows.length + ' <span class="text-[14px] font-medium text-[var(--ink-faint)]">次记录</span>';
-  document.getElementById('stat-duration').textContent = rows.reduce((a,r)=>a+(r.duration_sec||0),0) + 's 累计';
+  const trainedHours = formatTrainingHours(rows);
+  document.getElementById('stat-duration').textContent = trainedHours === null ? '时长待记录' : `${trainedHours}小时 累计`;
   homeRows = Array.isArray(rows) ? rows : [];
   renderHomeCalendar();
   renderCheckinStatus(homeRows);
@@ -1582,7 +1612,8 @@ async function openDetail(id) {
   detailId = id;
   currentDetailRecord = r;
   document.getElementById('detail-title').textContent = r.class_name;
-  document.getElementById('detail-date').textContent = fmtDate(r.created_at) + ` · ${r.duration_sec}s语音`;
+  const trainedNote = r.training_duration_min != null ? ` · 训练${r.training_duration_min >= 60 ? (r.training_duration_min/60).toFixed(1)+'小时' : r.training_duration_min+'分钟'}` : '';
+  document.getElementById('detail-date').textContent = fmtDate(r.created_at) + ` · ${r.duration_sec}s语音` + trainedNote;
   document.getElementById('detail-transcript').textContent = r.transcript;
   document.getElementById('detail-good').textContent = r.good_points || '（无）';
   document.getElementById('detail-improve').textContent = r.improve_points || '（无）';
@@ -1872,10 +1903,19 @@ async function retryGenerate() {
     }
   }
 }
+let selectedDurationMin = null;
+function selectDuration(min) {
+  selectedDurationMin = (selectedDurationMin === min) ? null : min;
+  document.querySelectorAll('.duration-chip').forEach(btn => {
+    btn.classList.toggle('is-selected', Number(btn.dataset.min) === selectedDurationMin);
+  });
+}
 function renderReview() {
   logEvent('review_opened');
   const errWrap = document.getElementById('review-error-wrap');
   if (errWrap) errWrap.innerHTML = '';
+  selectedDurationMin = null;
+  document.querySelectorAll('.duration-chip').forEach(btn => btn.classList.remove('is-selected'));
   document.getElementById('review-transcript').textContent = lastDraft.transcript;
   document.getElementById('review-classname').value = '';
   const r = lastDraft.result;
@@ -1932,6 +1972,7 @@ async function confirmSave() {
     confidence_level: lastDraft.result.confidence_level || '',
     note: lastDraft.result.note || '',
     durationSec: lastDraft.durationSec,
+    trainingDurationMin: selectedDurationMin,
     edited,
     editedFields,
     sessionId: captureSessionId,

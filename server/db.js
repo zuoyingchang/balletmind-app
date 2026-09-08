@@ -7,6 +7,10 @@ const client = createClient({
 
 const ready = client.batch(
   [
+    // NOTE: `records.duration_sec` is the length of the VOICE MEMO, not how
+    // long the user actually trained — do not use it for "training hours"
+    // stats. `training_duration_min` (added via migration below) is the
+    // user-provided, optional, real training duration.
     `CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT UNIQUE NOT NULL,
@@ -72,7 +76,15 @@ const ready = client.batch(
     )`,
   ],
   'write'
-);
+).then(async () => {
+  try {
+    await client.execute('ALTER TABLE records ADD COLUMN training_duration_min INTEGER');
+  } catch (e) {
+    // Already applied in a previous deploy/restart — idempotent, safe to ignore.
+    // Any other failure here is unexpected and should still surface.
+    if (!/duplicate column/i.test(e.message || '')) throw e;
+  }
+});
 
 async function get(sql, args = []) {
   const { rows } = await client.execute({ sql, args });

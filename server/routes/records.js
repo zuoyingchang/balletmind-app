@@ -13,18 +13,24 @@ router.post('/', async (req, res) => {
   const {
     className, transcript, good_points, improve_points,
     next_time_reminder, confidence_level, note, durationSec, edited, editedFields,
+    trainingDurationMin,
   } = req.body || {};
   const sessionId = sessionIdFromReq(req);
   const fields = Array.isArray(editedFields)
     ? editedFields.filter((f) => ['good_points', 'improve_points', 'next_time_reminder'].includes(f))
     : [];
+  // User-provided real training duration (minutes), always optional — not to
+  // be confused with duration_sec, which is just the voice memo's length.
+  const trainingMin = Number.isFinite(trainingDurationMin) && trainingDurationMin > 0
+    ? Math.round(trainingDurationMin)
+    : null;
   const info = await db.run(
     `INSERT INTO records
-      (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, confidence_level, note, duration_sec, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, confidence_level, note, duration_sec, created_at, training_duration_min)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       req.userId, className || '训练记录', transcript || '', good_points || '', improve_points || '',
-      next_time_reminder || '', confidence_level || '', note || '', durationSec || 0, Date.now(),
+      next_time_reminder || '', confidence_level || '', note || '', durationSec || 0, Date.now(), trainingMin,
     ]
   );
   await logEvent(req.userId, 'save_record', withSession({ recordId: info.lastInsertRowid }, sessionId));
