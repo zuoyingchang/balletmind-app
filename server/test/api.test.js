@@ -237,20 +237,72 @@ test('/api/events logs a known event for the calling user', async () => {
   assert.deepEqual(JSON.parse(row.metadata), { from: 'home' });
 });
 
+test('session funnel counts one capture that starts and saves with the same sessionId', async () => {
+  const { body: { user } } = await registerUser('session_funnel@example.com');
+  const { logEvent } = require('../events');
+  const { buildAdminStats } = require('../admin-stats');
+  const sid = 'test-session-funnel-1';
+  await logEvent(user.id, 'record_voice_start', { sessionId: sid });
+  await logEvent(user.id, 'record_voice_complete', { sessionId: sid });
+  await logEvent(user.id, 'asr_success', { sessionId: sid, latencyMs: 10 });
+  await logEvent(user.id, 'ai_process_success', { sessionId: sid, latencyMs: 120 });
+  await logEvent(user.id, 'review_opened', { sessionId: sid });
+  await logEvent(user.id, 'save_record', { sessionId: sid, recordId: 1 });
+  const stats = await buildAdminStats();
+  assert.ok(stats.sessionFunnel.withSessionId >= 1);
+  assert.ok(stats.sessionFunnel.voiceCaptures >= 1);
+  assert.equal(stats.sessionFunnel.completionRate, 100);
+  assert.ok(Array.isArray(stats.sessionFunnel.steps));
+  assert.equal(stats.sessionFunnel.steps[stats.sessionFunnel.steps.length - 1].sessions >= 1, true);
+  assert.equal(stats.metrics.doNotUseUniqueUserCompletion, true);
+});
+
+test('analytics metadata drops transcript and keeps field_name only', async () => {
+  const { body: { user } } = await registerUser('sanitize_meta@example.com');
+  const { logEvent } = require('../events');
+  await logEvent(user.id, 'field_edited', {
+    field_name: 'good_points',
+    transcript: 'SECRET TEXT',
+    good_points: 'also secret',
+    sessionId: 'sid-sanitize',
+  });
+  const row = await db.get(
+    "SELECT * FROM events WHERE user_id = ? AND event_name = 'field_edited'",
+    [user.id]
+  );
+  const meta = JSON.parse(row.metadata);
+  assert.equal(meta.field_name, 'good_points');
+  assert.equal(meta.sessionId, 'sid-sanitize');
+  assert.equal(meta.transcript, undefined);
+  assert.equal(meta.good_points, undefined);
+});
+
 test('saving a record logs save_record and user_edit_ai_result events', async () => {
   const { body: { token, user } } = await registerUser('events_save@example.com');
   const create = await fetch(`${base}/api/records`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ className: '测试', good_points: '进步', edited: true }),
+    body: JSON.stringify({
+      className: '测试',
+      good_points: '进步',
+      edited: true,
+      editedFields: ['good_points'],
+      transcript: 'should-not-be-in-analytics',
+    }),
   });
   assert.equal(create.status, 200);
 
   const saveEvent = await db.get('SELECT * FROM events WHERE user_id = ? AND event_name = ?', [user.id, 'save_record']);
   assert.ok(saveEvent);
+  const confirmed = await db.get('SELECT * FROM events WHERE user_id = ? AND event_name = ?', [user.id, 'session_confirmed']);
+  assert.ok(confirmed);
   const editEvent = await db.get('SELECT * FROM events WHERE user_id = ? AND event_name = ?', [user.id, 'user_edit_ai_result']);
   assert.ok(editEvent);
-  assert.deepEqual(JSON.parse(editEvent.metadata), { edited: true });
+  assert.equal(JSON.parse(editEvent.metadata).edited, true);
+  const fieldEvent = await db.get('SELECT * FROM events WHERE user_id = ? AND event_name = ?', [user.id, 'field_edited']);
+  assert.ok(fieldEvent);
+  assert.equal(JSON.parse(fieldEvent.metadata).field_name, 'good_points');
+  assert.equal(JSON.parse(fieldEvent.metadata).transcript, undefined);
 });
 
 // ---------- admin stats ----------
@@ -275,6 +327,10 @@ test('/api/admin/stats returns aggregate metrics with the correct key', async ()
   assert.ok(Array.isArray(body.recentEvents));
   assert.ok(typeof body.totals.activatedUsers === 'number');
   assert.ok(body.funnel && body.funnel.byUniqueUsers);
+  assert.ok(Array.isArray(body.funnel.steps));
+  assert.ok(body.sessionFunnel);
+  assert.ok(body.retention);
+  assert.ok('p95LatencyMs' in body.aiUsage);
   assert.ok(Array.isArray(body.eventBreakdown));
 });
 
@@ -508,7 +564,12 @@ function fakeAnthropicResponse({ good = [], improve = [], next = [], confidence 
       content: [{ type: 'tool_use', name: 'submit_review', input: {
         good_points: good, improve_points: improve, next_time_reminder: next, confidence_level: confidence, note,
       } }],
-      usage: { input_tokens: inputTokens, output_tokens: outputTokens },
+      usage: {
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        cache_read_input_tokens: 0,
+        cache_creation_input_tokens: 0,
+      },
     }),
   };
 }
@@ -544,7 +605,58 @@ test('a transient network failure is retried once and succeeds, and success is l
   assert.equal(meta.attempt, 2);
   assert.equal(meta.inputTokens, 120);
   assert.equal(meta.outputTokens, 60);
+  assert.equal(meta.cacheReadTokens, 0);
+  assert.equal(meta.cacheCreationTokens, 0);
+  assert.ok(meta.model);
   assert.ok(typeof meta.latencyMs === 'number' && meta.latencyMs >= 0);
+});
+
+test('Sonnet 5 Anthropic body omits temperature; Sonnet 4.6 still sends it', async () => {
+  const { body: { token } } = await registerUser('sonnet5_no_temp@example.com');
+  const prev = process.env.AI_MODEL;
+  try {
+    process.env.AI_MODEL = 'claude-sonnet-5';
+    let body5;
+    await withMockAnthropicFetch(
+      async (_url, opts) => {
+        body5 = JSON.parse(opts.body);
+        return fakeAnthropicResponse({ good: ['ok'] });
+      },
+      async () => {
+        const res = await fetch(`${base}/api/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ transcript: '今天练了基本功' }),
+        });
+        assert.equal(res.status, 200);
+      }
+    );
+    assert.equal(body5.model, 'claude-sonnet-5');
+    assert.equal(body5.temperature, undefined);
+    assert.ok(body5.tool_choice && body5.tools);
+
+    process.env.AI_MODEL = 'claude-sonnet-4-6';
+    let body46;
+    await withMockAnthropicFetch(
+      async (_url, opts) => {
+        body46 = JSON.parse(opts.body);
+        return fakeAnthropicResponse({ good: ['ok'] });
+      },
+      async () => {
+        const res = await fetch(`${base}/api/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ transcript: '今天练了基本功' }),
+        });
+        assert.equal(res.status, 200);
+      }
+    );
+    assert.equal(body46.model, 'claude-sonnet-4-6');
+    assert.equal(body46.temperature, 0.2);
+  } finally {
+    if (prev === undefined) delete process.env.AI_MODEL;
+    else process.env.AI_MODEL = prev;
+  }
 });
 
 test('a persistent 5xx from Anthropic is retried once, then surfaced as a 502 (not silently retried forever)', async () => {
@@ -644,7 +756,7 @@ test('/api/admin/stats aggregates real token usage and latency from ai_process_s
   assert.ok(stats.aiUsage.totalInputTokens >= 200);
   assert.ok(stats.aiUsage.totalOutputTokens >= 80);
   assert.ok(stats.aiUsage.callCount >= 1);
-  assert.ok(typeof stats.aiUsage.avgLatencyMs === 'number' && stats.aiUsage.avgLatencyMs >= 0);
+  assert.ok(stats.aiUsage.p95LatencyMs === null || typeof stats.aiUsage.p95LatencyMs === 'number');
   assert.ok(typeof stats.aiUsage.estimatedUsd === 'number');
   assert.ok(stats.metrics.progressOpenCount === 0 || typeof stats.metrics.progressOpenCount === 'number');
 });
@@ -761,9 +873,13 @@ test('/api/transcribe returns Whisper text and logs asr_success with model/laten
   assert.ok(typeof meta.latencyMs === 'number');
 });
 
-test('eval golden set covers more than the original five cases', () => {
+test('eval golden set is a 30–50 case offline pack with rubric and types', () => {
   const { CASES } = require('../eval/cases');
-  assert.ok(CASES.length >= 14);
+  assert.ok(CASES.length >= 30, `expected >= 30 cases, got ${CASES.length}`);
+  assert.ok(CASES.length <= 50, `keep the set small enough to rerun, got ${CASES.length}`);
+  for (const c of CASES) {
+    assert.ok(c.name && c.transcript !== undefined && c.rubric && c.type && Array.isArray(c.dimensions) && typeof c.check === 'function', c.name);
+  }
 });
 
 test('/api/transcribe enforces the shared daily AI quota', async () => {

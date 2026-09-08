@@ -16,7 +16,7 @@
 | **V0.2 Progress Intelligence** | Track → Understand → Act：反复问题、课前卡、跨训练汇总 | **业务功能已做**（规则聚合，默认 0 次 LLM）；可视化 / 老师寄语等仍在 P2 |
 | **账号与合规补丁** | 注册同意隐私、找回密码、隐私政策 | **已做**（线上发信需另配 Resend） |
 | **ASR 升级** | 浏览器识别 → OpenAI Whisper + 芭蕾术语 prompt | **已做**（需 `OPENAI_API_KEY`） |
-| **评测加厚（本次）** | 黄金集 5 条 → 14 条；eval 打印模型/温度/prompt 版本 | **已做骨架**，换模型对照实验还要人工跑 `npm run eval` |
+| **评测加厚** | 黄金集 30+ 条 Offline Eval；五维质量 + 本跑 latency/token | **已做骨架**，换模型对照仍要跑 `npm run eval` |
 
 相关文档：`docs/V0.1-复盘.md`、`docs/BalletMind_V2_优先级总表.md`、`docs/2.0.md`；原始 Brief / PRD / Prompt Spec 在上一级 `芭蕾产品/docs/`。第一版墨刀原型**有意过时**，以线上为准。
 
@@ -71,24 +71,26 @@
 
 | # | 能力 | 岗位在考什么 | 我们 | 版本 |
 |---|---|---|---|---|
-| P1 | 模型选型 | 质量 / 贵 / 慢 | **部分做** `AI_MODEL` 可换；**缺** 一次对照实验纪要 | 配置已有 |
-| P2 | temperature / max_tokens / timeout | 抽取用低温度 | **已做** 默认 0.2 并写明理由；**未做** 0/0.2/0.7 扫描表 | generate + config |
-| P3 | System Prompt + few-shot + 版本 | 改过几版、每版修什么 | **已做** Spec V1.1 → 代码 `PROMPT_VERSION=1.3` | V0.1 |
+| P1 | 模型选型 | 质量 / 贵 / 慢 | **已做** 35 条对照：Sonnet 5 胜出（质量打平、更便宜更快）；不换 Haiku | `docs/Eval_Model_Selection_Report.md` |
+| P2 | temperature / max_tokens / timeout | 抽取用低温度 | **已做** 4.6 默认 0.2；**Sonnet 5 不传 temperature**（API 会 400） | anthropic.js |
+| P3 | System Prompt + few-shot + 版本 | 改过几版、每版修什么 | **已做** Spec V1.1 → 代码 `PROMPT_VERSION=1.5` | V0.1 |
 | P4 | 结构化输出 | JSON 崩了怎么办 | **已做** Anthropic tool-use | V0.1 |
 | P5 | 领域词表 | 术语怎么进模型 | **已做** 芭蕾词表 + 用户纠错写回 prompt；ASR 同样喂术语 | V0.1 / ASR |
 | P6 | Prompt 注入 | 口述里带「忽略指令」 | **已做** `<transcript>` 当数据；eval 有注入 case | V0.1 + 本次评测 |
 | P7 | 多轮 Agent / 工具编排 | 工作流产品 | **没做** 单次整理。产品层已是「模型 / 规则 / 人」分工，不必硬上 Agent 框架 | 刻意不做 |
 
-换模型怎么判定更好：改 `.env` 的 `AI_MODEL` 或 `AI_TEMPERATURE`，在 `server` 目录跑 `npm run eval`。同一套 14 条 case，看通过率和失败类型；线上再看 Edit Rate、幻觉投诉、延迟、token。**一次只改一个变量。**
+换模型怎么判定更好：改 `.env` 的 `AI_MODEL` 或 `AI_TEMPERATURE`，`cd server && npm run eval`。同一套 30+ 条 case，看五维质量、Schema、延迟、估算费用。线上再看 Edit Rate、延迟、token。**一次只改一个变量。** Precision/Recall 留给以后的 RAG，现在不硬套。
+
+详见 `docs/Eval_双轨道.md`。
 
 ### 3.3 评测 Eval（和传统 PM 最大的分界）
 
 | # | 能力 | 岗位在考什么 | 我们 | 版本 |
 |---|---|---|---|---|
-| E1 | 黄金集 + 通过标准 | 换模型先跑再上 | **已做** 14 条（原 5 条 + 注入/伤病/只说优点/中英夹杂等） | 本次加厚 |
-| E2 | 多维指标 | 覆盖、幻觉、拒答、延迟、成本 | **部分做** 埋点 + 估算 USD；**无** 人工 rubric / LLM-as-Judge | 看板本次补费用 |
-| E3 | 线上质量 | Edit Rate 当幻觉代理 | **已做埋点**；**缺** 真人样本把数字跑出来 | V0.1 |
-| E4 | 回归决策 | 有数才换模型 | **有方法**（eval 打印模型/温度/版本）；**缺** 一份填好的对比表 | 本次 |
+| E1 | 黄金集 + 通过标准 | 换模型先跑再上 | **已做** 30+ 条（Input / Rubric / Type / 五维标签） | Offline Eval |
+| E2 | 多维指标 | 覆盖、幻觉、拒答、延迟、成本 | **部分做** eval 五维 + 看板 USD；**无** LLM-as-Judge | 本次 |
+| E3 | 线上质量 | Edit Rate 当幻觉代理 | **已做埋点**（含 `review_opened`）；**缺** 真人样本；Edit Rate ≠ Error Rate | V0.1 |
+| E4 | 回归决策 | 有数才换模型 | **有方法**（eval 打印模型/温度/版本/token）；**缺** 填好的对比表 | 本次 |
 | E5 | Bad case 进评测集 | 错了能复现 | **术语纠错已做**；评测集仍需手加 case | V0.2 #12 |
 
 跑法：`cd server && npm run eval`（会花真实 Anthropic 费用，不要放进 `npm test`）。
@@ -123,7 +125,7 @@
 
 | 项 | 为什么算 AI PM / 传统 PM | 怎么用 |
 |---|---|---|
-| 评测集 5 → 14 | Eval 是 2026 面经第一分界 | `npm run eval` |
+| 评测集 5 → 30+ | Eval 是 2026 面经第一分界 | `npm run eval`；见 `docs/Eval_双轨道.md` |
 | eval 打印模型、温度、prompt 版本 | 换配置可对比 | 看命令行第一行 |
 | `progress_open` | PRD 第 7 节原缺口 | 打开「追踪」即上报 |
 | 估算 LLM 费用 / 每次保存费用 | 成本意识 | `/stats.html` |
@@ -147,7 +149,7 @@
 | 项 | 原因 |
 |---|---|
 | 3–6 人真实测试与 Edit Rate 基线 | 必须真人，代码替代不了 |
-| 黄金集 20–30+、LLM-as-Judge、CI 里跑 eval | 要费用和标注；14 条是起步 |
+| 黄金集 20–30+、LLM-as-Judge、CI 里跑 eval | 黄金集已到 30+；Judge 与 CI 仍未做（费用） |
 | 模型 A/B 填好的数字表 | 你本地有 Key 后跑两遍 eval 即可补进本文 |
 | Whisper vs `gpt-4o-mini-transcribe` 术语准确率 | 同一把 OpenAI Key，改 `ASR_MODEL` 后真人口播对比 |
 | 多厂商降级、流式、灰度 | 工程量大，朋友测试阶段不需要 |
@@ -159,5 +161,5 @@
 ## 7. 一句话履历
 
 传统 PM：Brief、PRD、原型、优先级、埋点、异常、隐私账号、导出，按真产品走过。  
-AI PM：Prompt 有版本和 14 条评测；参数与模型可配；幻觉靠规则 + HITL +「有的环节不用模型」；ASR 按术语单独选型；成本在内部看板可见。  
-下一步只需要：**真人试用把 Edit Rate 跑出来**，以及 **换一次模型/ASR 把 eval 对比表填上**。
+AI PM：Prompt 有版本和 30+ 条评测；参数与模型可配；幻觉靠规则 + HITL +「有的环节不用模型」；刻意不做 Agent/RAG/微调。  
+下一步：**本地跑一遍 `npm run eval` 记下 Baseline**，以及 **3–6 人试用把 Edit Rate 跑出来**。

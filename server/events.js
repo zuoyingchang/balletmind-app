@@ -1,20 +1,8 @@
 const db = require('./db');
+const { knownEventNames, sanitizeEventMetadata } = require('./analytics');
 
-const KNOWN_EVENTS = new Set([
-  'record_voice_start',
-  'record_voice_complete',
-  'asr_fail',
-  'asr_success',
-  'ai_process_success',
-  'ai_process_fail',
-  'user_edit_ai_result',
-  'retry_ai',
-  'save_record',
-  'history_open',
-  'progress_open',
-]);
+const KNOWN_EVENTS = knownEventNames();
 
-// ASR + generate share one daily budget so a user cannot burn both quotas.
 const QUOTA_EVENTS = ['ai_process_success', 'ai_process_fail', 'asr_success', 'asr_fail'];
 
 function startOfLocalDayMs() {
@@ -25,9 +13,10 @@ function startOfLocalDayMs() {
 
 async function logEvent(userId, eventName, metadata) {
   if (!KNOWN_EVENTS.has(eventName)) return false;
+  const clean = sanitizeEventMetadata(metadata);
   await db.run(
     'INSERT INTO events (user_id, event_name, metadata, created_at) VALUES (?, ?, ?, ?)',
-    [userId || null, eventName, metadata ? JSON.stringify(metadata) : null, Date.now()]
+    [userId || null, eventName, clean ? JSON.stringify(clean) : null, Date.now()]
   );
   return true;
 }

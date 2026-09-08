@@ -3,19 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BalletMind 数据统计（内部）</title>
+<title>BalletMind 三层指标（内部）</title>
 <style>
   body { font-family: -apple-system, "Noto Sans SC", sans-serif; background:#e9e6e1; margin:0; padding:24px; color:#292729; }
-  .wrap { max-width: 800px; margin: 0 auto; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  h2 { font-size: 14px; margin: 0 0 10px; }
-  .sub { font-size: 12px; color:#a18f83; margin-bottom: 20px; line-height: 1.6; }
-  .card { background:#fff; border:1px solid #eee9e4; border-radius:16px; padding:16px; margin-bottom:16px; }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  h2 { font-size: 15px; margin: 0 0 6px; }
+  h3 { font-size: 13px; margin: 0 0 10px; font-weight: 650; }
+  .sub { font-size: 12px; color:#6d5f5c; margin-bottom: 16px; line-height: 1.65; }
+  .card { background:#fff; border:1px solid #eee9e4; border-radius:16px; padding:16px; margin-bottom:12px; }
   .note { background:#faf7f3; font-size:12px; line-height:1.65; color:#6d5f5c; }
-  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); gap:10px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(128px,1fr)); gap:10px; }
   .stat { text-align:center; }
   .stat strong { display:block; font-size:22px; }
-  .stat span { font-size:11px; color:#a18f83; }
+  .stat span { font-size:11px; color:#a18f83; line-height:1.35; }
   table { width:100%; border-collapse: collapse; font-size:13px; }
   th, td { text-align:left; padding:6px 8px; border-bottom:1px solid #f0ece8; }
   th { color:#a18f83; font-weight:600; font-size:11px; text-transform:uppercase; }
@@ -25,7 +26,20 @@
   #app { display:none; }
   .err { color:#a03e3e; font-size:12px; margin-top:8px; }
   pre { white-space:pre-wrap; font-size:11px; background:#faf7f3; padding:8px; border-radius:8px; margin:0; max-width:280px; overflow:auto; }
-  .muted { color:#a18f83; font-size:11px; }
+  .muted { color:#a18f83; font-size:11px; line-height:1.55; }
+  .how { display:grid; grid-template-columns: 1fr; gap:8px; }
+  @media (min-width: 700px) { .how { grid-template-columns: 1fr 1fr 1fr; } }
+  .how-item { background:#fff; border:1px solid #eee9e4; border-radius:14px; padding:12px 14px; }
+  .how-item b { display:block; font-size:12px; margin-bottom:4px; }
+  .how-item span { font-size:11px; color:#6d5f5c; line-height:1.5; }
+  .layer { margin: 28px 0 8px; }
+  .layer-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:10px; }
+  .badge { font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:#6d5f5c; }
+  .jump { font-size:12px; color:#6d5f5c; margin: 0 0 18px; }
+  .jump a { color:#4b4850; }
+  details.card { padding: 12px 16px; }
+  details.card summary { cursor:pointer; font-size:13px; font-weight:650; }
+  details.card .inner { margin-top:12px; }
 </style>
 </head>
 <body>
@@ -39,87 +53,142 @@
 
 <div id="app">
 <div class="wrap">
-  <h1>BalletMind 使用情况</h1>
-  <p class="sub" id="readme">内部看板 · 刷新页面重新拉取</p>
+  <h1>BalletMind 指标看板</h1>
+  <p class="sub" id="readme">内部页。Layer 1 不在这里。</p>
 
-  <div class="card note" id="howto">
-    看「独立账号」和「近7天」，不要只看事件总数。你自己反复点生成、Retry、开关追踪，次数会涨，人数不会按 20 个真人去涨。
+  <div class="how">
+    <div class="how-item">
+      <b>Layer 1 · AI 对不对</b>
+      <span>不在本页。终端跑 <code>cd server && npm run eval</code>，看 35 条黄金集的五维质量。</span>
+    </div>
+    <div class="how-item">
+      <b>Layer 2 · 系统稳不稳</b>
+      <span>本页上半：API/ASR 成功、延迟 P95、费用、失败原因。问的是「服务有没有跑通」，不是「抽得对不对」。</span>
+    </div>
+    <div class="how-item">
+      <b>Layer 3 · 用户有没有走完</b>
+      <span>本页下半：同一 session 的漏斗 + Activation / Completion / Edit / Regenerated / History / D7。含自测，部署前没有 session 的旧数据不会被补。</span>
+    </div>
   </div>
+  <p class="jump"><a href="#layer2">跳到 Layer 2</a> · <a href="#layer3">跳到 Layer 3</a></p>
 
-  <div class="card">
-    <h2>真实使用（按账号，不是按点击）</h2>
-    <div class="grid">
-      <div class="stat"><strong id="t-users">-</strong><span>注册账号</span></div>
-      <div class="stat"><strong id="t-activated">-</strong><span>至少保存过1条</span></div>
-      <div class="stat"><strong id="t-never">-</strong><span>只注册没保存</span></div>
-      <div class="stat"><strong id="m-activation">-</strong><span>激活率</span></div>
-      <div class="stat"><strong id="t-records">-</strong><span>训练记录总数</span></div>
-      <div class="stat"><strong id="m-avg-rec">-</strong><span>有记录账号人均条数</span></div>
+  <div class="layer" id="layer2">
+    <div class="layer-head">
+      <h2>Layer 2 · System</h2>
+      <span class="badge">快不快 · 贵不贵 · 会不会挂</span>
+    </div>
+
+    <div class="card">
+      <h3>可用性</h3>
+      <div class="grid">
+        <div class="stat"><strong id="m-success">-</strong><span>AI 调用成功率</span></div>
+        <div class="stat"><strong id="m-asr">-</strong><span>ASR 成功率</span></div>
+        <div class="stat"><strong id="m-retry">-</strong><span>用户点 Retry 占比</span></div>
+        <div class="stat"><strong id="m-ai-per-save">-</strong><span>每条保存对应几次 AI 成功</span></div>
+      </div>
+      <p class="muted" style="margin:12px 0 6px;">失败原因（timeout / api_error / quota…）。没有行就是还没失败过。</p>
+      <table>
+        <thead><tr><th>来源</th><th>原因</th><th>次数</th></tr></thead>
+        <tbody id="fail-reasons-body"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>速度与成本（估算，不是账单）</h3>
+      <div class="grid">
+        <div class="stat"><strong id="u-calls">-</strong><span>记到 token 的 AI 次数</span></div>
+        <div class="stat"><strong id="u-latency">-</strong><span>AI 平均 / P95</span></div>
+        <div class="stat"><strong id="u-asr-lat">-</strong><span>ASR 平均 / P95</span></div>
+        <div class="stat"><strong id="u-tokens">-</strong><span>Token 输入 / 输出</span></div>
+        <div class="stat"><strong id="u-usd">-</strong><span>估算 LLM 费用</span></div>
+        <div class="stat"><strong id="u-per-save">-</strong><span>每次保存估算费用</span></div>
+      </div>
+      <p class="muted" id="u-note" style="margin:10px 0 0;"></p>
+      <p class="muted" id="u-conf" style="margin:6px 0 0;"></p>
     </div>
   </div>
 
-  <div class="card">
-    <h2>近 7 天</h2>
-    <div class="grid">
-      <div class="stat"><strong id="w-records">-</strong><span>新保存的记录</span></div>
-      <div class="stat"><strong id="w-savers">-</strong><span>保存过的账号</span></div>
-      <div class="stat"><strong id="w-active">-</strong><span>有过任何操作的账号</span></div>
-      <div class="stat"><strong id="w-events">-</strong><span>事件次数（含重试）</span></div>
+  <div class="layer" id="layer3">
+    <div class="layer-head">
+      <h2>Layer 3 · Product</h2>
+      <span class="badge">用户有没有获得价值</span>
+    </div>
+
+    <div class="card">
+      <h3>规模（含自测，先看账号不要只看次数）</h3>
+      <div class="grid">
+        <div class="stat"><strong id="t-users">-</strong><span>注册账号</span></div>
+        <div class="stat"><strong id="t-activated">-</strong><span>至少保存过 1 条</span></div>
+        <div class="stat"><strong id="m-activation">-</strong><span>Activation</span></div>
+        <div class="stat"><strong id="t-never">-</strong><span>只注册没保存</span></div>
+        <div class="stat"><strong id="t-records">-</strong><span>训练记录总数</span></div>
+        <div class="stat"><strong id="m-avg-rec">-</strong><span>激活用户人均条数</span></div>
+      </div>
+      <div class="grid" style="margin-top:12px;">
+        <div class="stat"><strong id="w-records">-</strong><span>近 7 天新保存</span></div>
+        <div class="stat"><strong id="w-savers">-</strong><span>近 7 天保存过的账号</span></div>
+        <div class="stat"><strong id="w-active">-</strong><span>近 7 天有过操作</span></div>
+        <div class="stat"><strong id="w-events">-</strong><span>近 7 天事件次数</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>规范漏斗（同一 session，才是 conversion）</h3>
+      <p class="muted" id="funnel-def" style="margin:0 0 10px;">Record started → Voice completed → ASR → AI → Review → Confirm。没有 sessionId 的历史行不会被补进这张表。</p>
+      <table>
+        <thead><tr><th>步骤</th><th>到达的 Capture 数</th><th>相对上一步</th></tr></thead>
+        <tbody id="canonical-funnel-body"></tbody>
+      </table>
+      <div class="grid" style="margin-top:14px;">
+        <div class="stat"><strong id="l3-complete">-</strong><span>Completion</span></div>
+        <div class="stat"><strong id="l3-edit">-</strong><span>Edit Rate</span></div>
+        <div class="stat"><strong id="l3-regen">-</strong><span>Regenerate Rate</span></div>
+        <div class="stat"><strong id="l3-hist">-</strong><span>History Revisit</span></div>
+        <div class="stat"><strong id="l3-d7">-</strong><span>D7 Retention</span></div>
+      </div>
+      <p class="muted" style="margin:10px 0 0;">Completion = 走到确认保存的语音 session / 开始录音的 session。Edit Rate ≠ AI 错误率。不要用「独立账号相除」当完成率。</p>
+      <p class="muted" id="l3-note" style="margin:6px 0 0;"></p>
+    </div>
+
+    <div class="card">
+      <h3>回访（还不是 NPS）</h3>
+      <div class="grid">
+        <div class="stat"><strong id="r-repeat">-</strong><span>保存 ≥2 条 / 激活率</span></div>
+        <div class="stat"><strong id="r-twoday">-</strong><span>≥2 个不同日保存</span></div>
+        <div class="stat"><strong id="r-week">-</strong><span>满 7 天后再有事件（合格 / 回来）</span></div>
+        <div class="stat"><strong id="m-progress">-</strong><span>打开过 Progress（次数）</span></div>
+        <div class="stat"><strong id="m-fields">-</strong><span>改过的字段 优点 / 改进 / 下次</span></div>
+      </div>
+      <p class="muted" id="r-note" style="margin:10px 0 0;"></p>
+      <p class="muted" id="internal-note" style="margin:6px 0 0;"></p>
     </div>
   </div>
 
-  <div class="card">
-    <h2>完成漏斗</h2>
-    <p class="muted" style="margin:0 0 10px;">左：点了多少次（含重试，会虚高）。右：多少个账号至少做过一次。</p>
-    <table>
-      <thead><tr><th>步骤</th><th>点击次数</th><th>独立账号</th></tr></thead>
-      <tbody id="funnel-body"></tbody>
-    </table>
-    <div class="grid" style="margin-top:14px;">
-      <div class="stat"><strong id="m-click-cvr">-</strong><span>按点击：录音开始→保存</span></div>
-      <div class="stat"><strong id="m-user-cvr">-</strong><span>按账号：开过录音→保存过</span></div>
+  <details class="card">
+    <summary>附录 · 事件次数（不是漏斗）</summary>
+    <div class="inner">
+      <p class="muted" style="margin:0 0 10px;">这里只是点击量。不要把右边「独立账号」拿来除完成率。</p>
+      <table>
+        <thead><tr><th>步骤</th><th>次数</th><th>独立账号</th></tr></thead>
+        <tbody id="funnel-body"></tbody>
+      </table>
+      <h3 style="margin-top:16px;">全部事件名</h3>
+      <table>
+        <thead><tr><th>事件</th><th>次数</th><th>独立账号</th></tr></thead>
+        <tbody id="event-counts-table"></tbody>
+      </table>
     </div>
-  </div>
+  </details>
 
-  <div class="card">
-    <h2>AI 质量（仍含你自己的测试）</h2>
-    <div class="grid">
-      <div class="stat"><strong id="m-success">-</strong><span>AI整理成功率</span></div>
-      <div class="stat"><strong id="m-asr">-</strong><span>语音识别成功率</span></div>
-      <div class="stat"><strong id="m-edit">-</strong><span>保存前改了AI草稿</span></div>
-      <div class="stat"><strong id="m-retry">-</strong><span>Retry占比</span></div>
-      <div class="stat"><strong id="m-ai-per-save">-</strong><span>每条保存对应几次AI成功</span></div>
-      <div class="stat"><strong id="m-progress">-</strong><span>打开追踪（次数/账号）</span></div>
+  <details class="card">
+    <summary>附录 · 最近 30 条原始事件</summary>
+    <div class="inner">
+      <table>
+        <thead><tr><th>时间</th><th>用户</th><th>事件</th><th>详情</th></tr></thead>
+        <tbody id="recent-events-body"></tbody>
+      </table>
     </div>
-  </div>
-
-  <div class="card">
-    <h2>成本与速度（估算，不是账单）</h2>
-    <div class="grid">
-      <div class="stat"><strong id="u-calls">-</strong><span>记到token的AI成功次数</span></div>
-      <div class="stat"><strong id="u-tokens">-</strong><span>累计Token(输入/输出)</span></div>
-      <div class="stat"><strong id="u-latency">-</strong><span>平均耗时</span></div>
-      <div class="stat"><strong id="u-usd">-</strong><span>估算LLM费用(USD)</span></div>
-      <div class="stat"><strong id="u-per-save">-</strong><span>每次保存估算费用</span></div>
-    </div>
-    <p class="muted" id="u-note" style="margin:10px 0 0;"></p>
-  </div>
-
-  <div class="card">
-    <h2>各事件：次数 vs 独立账号</h2>
-    <table>
-      <thead><tr><th>事件</th><th>次数</th><th>独立账号</th></tr></thead>
-      <tbody id="event-counts-table"></tbody>
-    </table>
-  </div>
-
-  <div class="card">
-    <h2>最近30条事件</h2>
-    <table>
-      <thead><tr><th>时间</th><th>用户</th><th>事件</th><th>详情</th></tr></thead>
-      <tbody id="recent-events-body"></tbody>
-    </table>
-  </div>
+  </details>
 </div>
 </div>
 
@@ -135,7 +204,7 @@ async function loadStats(key) {
   try {
     res = await fetch('/api/admin/stats', { headers: { 'X-Admin-Key': key } });
   } catch (e) {
-    throw new Error('连不上服务器（Failed to fetch）。请用浏览器打开 https://balletmind-app.onrender.com/stats.html ，不要打开本地 html 文件。Render 免费版睡着时请等 20–40 秒再点一次「查看」。密钥填错时会提示「管理密钥不对」，不是这句。');
+    throw new Error('连不上服务器（Failed to fetch）。请用浏览器打开线上 /stats.html，不要打开本地 html 文件。Render 睡着时请等 20–40 秒再点「查看」。');
   }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -145,11 +214,9 @@ async function loadStats(key) {
 }
 
 function render(data) {
-  document.getElementById('readme').textContent = data.readMe || '';
+  document.getElementById('readme').textContent = data.readMe || '内部看板';
   const t = data.totals || {};
   const m = data.metrics || {};
-  const f = data.funnel || { byClicks: {}, byUniqueUsers: {} };
-
   document.getElementById('t-users').textContent = t.users;
   document.getElementById('t-activated').textContent = t.activatedUsers;
   document.getElementById('t-never').textContent = t.neverSavedUsers;
@@ -162,43 +229,74 @@ function render(data) {
   document.getElementById('w-active').textContent = t.activeUsersLast7Days;
   document.getElementById('w-events').textContent = t.eventsLast7Days;
 
-  const steps = [
-    ['开始录音', f.byClicks.voiceStart, f.byUniqueUsers.voiceStart],
-    ['语音识别成功', f.byClicks.asrSuccess, f.byUniqueUsers.asrSuccess],
-    ['AI整理成功', f.byClicks.aiSuccess, f.byUniqueUsers.aiSuccess],
-    ['确认保存', f.byClicks.saved, f.byUniqueUsers.saved],
-  ];
-  document.getElementById('funnel-body').innerHTML = steps.map((row) =>
-    `<tr><td>${row[0]}</td><td>${row[1] ?? 0}</td><td>${row[2] ?? 0}</td></tr>`
-  ).join('');
+  const f = data.funnel || { steps: [] };
+  const funnelSteps = Array.isArray(f.steps) ? f.steps : [];
+  document.getElementById('funnel-body').innerHTML = funnelSteps.length
+    ? funnelSteps.map((s) => `<tr><td>${escapeHtml(s.label || '')}</td><td>${s.clicks ?? 0}</td><td>${s.uniqueUsers ?? 0}</td></tr>`).join('')
+    : '<tr><td colspan="3" class="muted">还没有数据</td></tr>';
 
-  document.getElementById('m-click-cvr').textContent = dash(m.recordCompletionRate, '%');
-  document.getElementById('m-user-cvr').textContent = dash(m.uniqueUserCompletionRate, '%');
+  const l3 = (data.layer3 && data.layer3.allTraffic) || {};
+  const sf = l3.sessionFunnel || data.sessionFunnel || {};
+  document.getElementById('funnel-def').textContent = (data.layer3 && data.layer3.definition) || sf.definition
+    || 'Record started → Voice completed → ASR → AI → Review → Confirm。';
+  const canon = Array.isArray(sf.steps) ? sf.steps : [];
+  document.getElementById('canonical-funnel-body').innerHTML = canon.length
+    ? canon.map((s) => `<tr><td>${escapeHtml(s.label)}</td><td>${s.sessions ?? 0}</td><td>${s.fromPreviousRate == null ? '-' : s.fromPreviousRate + '%'}</td></tr>`).join('')
+    : '<tr><td colspan="3" class="muted">部署后才有 sessionId，历史事件不会回填</td></tr>';
+  document.getElementById('l3-complete').textContent = dash(m.completionRateSession, '%');
+  document.getElementById('l3-edit').textContent = dash(m.editRate, '%');
+  document.getElementById('l3-regen').textContent = dash(m.regenerateRate, '%');
+  document.getElementById('l3-hist').textContent = dash(m.historyRevisitRate, '%');
+  document.getElementById('l3-d7').textContent = dash(m.d7RetentionRate, '%');
+  document.getElementById('l3-note').textContent = sf.note || '';
+  const excl = data.layer3 && data.layer3.excludingInternal;
+  document.getElementById('internal-note').textContent = excl
+    ? ('内部邮箱排除：' + (excl.configuredInternalAccounts || 0) + ' 个账号。未配置 ANALYTICS_INTERNAL_EMAILS 时两列数字相同。')
+    : '';
+
+  const ret = data.retention || {};
+  document.getElementById('r-repeat').textContent = (ret.repeatSavers ?? '-') + ' · ' + dash(ret.repeatSaverRate, '%');
+  document.getElementById('r-twoday').textContent = dash(ret.twoDayRate, '%');
+  document.getElementById('r-week').textContent = (ret.weekReturnEligible ?? 0) + ' / ' + (ret.weekReturnReturned ?? 0);
+  document.getElementById('m-progress').textContent = String(m.progressOpenCount || 0);
+  const ef = m.editedFields || {};
+  document.getElementById('m-fields').textContent = (ef.good_points || 0) + ' / ' + (ef.improve_points || 0) + ' / ' + (ef.next_time_reminder || 0);
+  document.getElementById('r-note').textContent = ret.note || '';
 
   document.getElementById('m-success').textContent = dash(m.aiProcessSuccessRate, '%');
   document.getElementById('m-asr').textContent = dash(m.asrSuccessRate, '%');
-  document.getElementById('m-edit').textContent = dash(m.editRate, '%');
   document.getElementById('m-retry').textContent = dash(m.retryRate, '%');
   document.getElementById('m-ai-per-save').textContent = dash(m.aiSuccessesPerSave);
-  document.getElementById('m-progress').textContent = (m.progressOpenCount || 0) + ' / ' + (m.progressOpenUniqueUsers || 0);
 
+  function reasonRows(label, map) {
+    const entries = Object.entries(map || {});
+    if (!entries.length) return `<tr><td>${label}</td><td class="muted" colspan="2">无失败</td></tr>`;
+    return entries.map(([k, v]) => `<tr><td>${label}</td><td>${escapeHtml(k)}</td><td>${v}</td></tr>`).join('');
+  }
   const u = data.aiUsage || {};
+  const asr = data.asrUsage || {};
+  document.getElementById('fail-reasons-body').innerHTML =
+    reasonRows('AI', u.failReasons) + reasonRows('ASR', asr.failReasons);
+
   document.getElementById('u-calls').textContent = u.callCount;
   document.getElementById('u-tokens').textContent = u.totalInputTokens + ' / ' + u.totalOutputTokens;
-  document.getElementById('u-latency').textContent = u.avgLatencyMs == null ? '-' : (u.avgLatencyMs / 1000).toFixed(1) + 's';
+  document.getElementById('u-latency').textContent = (u.avgLatencyMs == null ? '-' : (u.avgLatencyMs / 1000).toFixed(1) + 's')
+    + ' / ' + (u.p95LatencyMs == null ? '-' : (u.p95LatencyMs / 1000).toFixed(1) + 's');
+  document.getElementById('u-asr-lat').textContent = (asr.avgLatencyMs == null ? '-' : (asr.avgLatencyMs / 1000).toFixed(1) + 's')
+    + ' / ' + (asr.p95LatencyMs == null ? '-' : (asr.p95LatencyMs / 1000).toFixed(1) + 's');
   document.getElementById('u-usd').textContent = u.estimatedUsd == null ? '-' : '$' + u.estimatedUsd;
   document.getElementById('u-per-save').textContent = u.usdPerSave == null ? '-' : '$' + u.usdPerSave;
   document.getElementById('u-note').textContent = u.estimateNote || '';
+  const conf = (data.onlineQualityProxy && data.onlineQualityProxy.confidence) || u.confidence || {};
+  document.getElementById('u-conf').textContent = '模型自报 confidence（不是 Layer 1）：高 ' + (conf['高'] || 0) + ' · 中 ' + (conf['中'] || 0) + ' · 低 ' + (conf['低'] || 0);
 
   const breakdown = data.eventBreakdown
     || Object.entries(data.eventCounts || {}).map(([name, count]) => ({ name, count, uniqueUsers: '-' }));
-  const countsBody = document.getElementById('event-counts-table');
-  countsBody.innerHTML = breakdown.length
+  document.getElementById('event-counts-table').innerHTML = breakdown.length
     ? breakdown.map((e) => `<tr><td>${escapeHtml(e.name)}</td><td>${e.count}</td><td>${e.uniqueUsers}</td></tr>`).join('')
     : '<tr><td colspan="3" class="muted">还没有数据</td></tr>';
 
-  const recentBody = document.getElementById('recent-events-body');
-  recentBody.innerHTML = (data.recentEvents || []).length
+  document.getElementById('recent-events-body').innerHTML = (data.recentEvents || []).length
     ? data.recentEvents.map((e) => `<tr><td>${fmtTime(e.created_at)}</td><td>${e.user_id ?? '-'}</td><td>${escapeHtml(e.event_name)}</td><td><pre>${e.metadata ? escapeHtml(e.metadata) : ''}</pre></td></tr>`).join('')
     : '<tr><td colspan="4" class="muted">还没有数据</td></tr>';
 }

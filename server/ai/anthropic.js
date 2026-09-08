@@ -13,7 +13,22 @@ function systemBlocks(termHint) {
   return blocks;
 }
 
+function modelRejectsTemperature(model) {
+  return /^claude-(sonnet-5|opus-5|fable-5)/.test(model);
+}
+
 async function callAnthropicOnce(termHint, transcript) {
+  const model = process.env.AI_MODEL || AI_MODEL;
+  const body = {
+    model,
+    max_tokens: AI_MAX_OUTPUT_TOKENS,
+    system: systemBlocks(termHint),
+    messages: [{ role: 'user', content: userTranscriptMessage(transcript) }],
+    tools: [REVIEW_TOOL],
+    tool_choice: { type: 'tool', name: 'submit_review' },
+  };
+  // Sonnet 5 / Opus 5 / Fable 5 reject `temperature` (invalid_request_error).
+  if (!modelRejectsTemperature(model)) body.temperature = AI_TEMPERATURE;
   return fetchWithTimeout('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -21,15 +36,7 @@ async function callAnthropicOnce(termHint, transcript) {
       'x-api-key': process.env.ANTHROPIC_API_KEY,
       'anthropic-version': '2023-06-01',
     },
-    body: JSON.stringify({
-      model: AI_MODEL,
-      max_tokens: AI_MAX_OUTPUT_TOKENS,
-      temperature: AI_TEMPERATURE,
-      system: systemBlocks(termHint),
-      messages: [{ role: 'user', content: userTranscriptMessage(transcript) }],
-      tools: [REVIEW_TOOL],
-      tool_choice: { type: 'tool', name: 'submit_review' },
-    }),
+    body: JSON.stringify(body),
   }, AI_TIMEOUT_MS);
 }
 

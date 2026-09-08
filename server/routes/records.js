@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { logEvent } = require('../events');
+const { sessionIdFromReq, withSession } = require('../lib/text');
 const { processRecordForIssues } = require('../issues');
 const { checkMilestone } = require('../milestones');
 
@@ -11,8 +12,12 @@ router.use(requireAuth);
 router.post('/', async (req, res) => {
   const {
     className, transcript, good_points, improve_points,
-    next_time_reminder, confidence_level, note, durationSec, edited,
+    next_time_reminder, confidence_level, note, durationSec, edited, editedFields,
   } = req.body || {};
+  const sessionId = sessionIdFromReq(req);
+  const fields = Array.isArray(editedFields)
+    ? editedFields.filter((f) => ['good_points', 'improve_points', 'next_time_reminder'].includes(f))
+    : [];
   const info = await db.run(
     `INSERT INTO records
       (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, confidence_level, note, duration_sec, created_at)
@@ -22,8 +27,15 @@ router.post('/', async (req, res) => {
       next_time_reminder || '', confidence_level || '', note || '', durationSec || 0, Date.now(),
     ]
   );
-  await logEvent(req.userId, 'save_record', { recordId: info.lastInsertRowid });
-  await logEvent(req.userId, 'user_edit_ai_result', { edited: !!edited });
+  await logEvent(req.userId, 'save_record', withSession({ recordId: info.lastInsertRowid }, sessionId));
+  await logEvent(req.userId, 'session_confirmed', withSession({ recordId: info.lastInsertRowid }, sessionId));
+  await logEvent(req.userId, 'user_edit_ai_result', withSession({
+    edited: !!edited,
+    editedFields: fields,
+  }, sessionId));
+  for (const field_name of fields) {
+    await logEvent(req.userId, 'field_edited', withSession({ field_name }, sessionId));
+  }
   await processRecordForIssues(req.userId, info.lastInsertRowid, improve_points);
   const milestone = await checkMilestone(req.userId);
   res.json({ id: info.lastInsertRowid, milestone });

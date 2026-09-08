@@ -335,6 +335,7 @@
           <h2 class="text-[17px] font-semibold">复盘存档</h2>
           <button onclick="goHistory()" class="text-[12px] text-[var(--rose-deep)] font-medium">查看全部</button>
         </div>
+        <div class="mt-2 flex items-center gap-2" id="checkin-status"></div>
         <div class="card-journal grain relative mt-3 p-4" style="border-radius:22px 14px 22px 16px">
           <div class="pearl-sheen"></div>
           <div class="relative z-10 flex items-center justify-between mb-3">
@@ -959,12 +960,32 @@ async function authFetch(url, opts = {}) {
 }
 
 // fire-and-forget analytics event — never blocks the UI, never throws
-function logEvent(event, metadata) {
+let captureSessionId = '';
+let browseSessionId = '';
+function ensureCaptureSession() {
+  if (!captureSessionId) {
+    captureSessionId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : ('s-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+  }
+  return captureSessionId;
+}
+
+function logEvent(event, metadata, sessionKind) {
   if (!getToken()) return;
+  const sid = sessionKind === 'browse' ? browseSessionId : (sessionKind === 'none' ? '' : captureSessionId);
+  const meta = Object.assign({}, sid ? { sessionId: sid } : {}, metadata || {});
   authFetch(`${API}/api/events`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ event, metadata }),
+    body: JSON.stringify({ event, metadata: meta }),
   }).catch(() => {});
+}
+
+function ensureBrowseSession() {
+  browseSessionId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : ('b-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+  return browseSessionId;
 }
 
 let authMode = 'login';
@@ -1068,7 +1089,7 @@ function goRecord() {
   if (!recorderSupported) document.getElementById('rec-btn').classList.add('hidden');
   show('screen-record');
 }
-function goHistory() { logEvent('history_open'); loadHistory(); show('screen-history'); }
+function goHistory() { ensureBrowseSession(); logEvent('history_opened', {}, 'browse'); loadHistory(); show('screen-history'); }
 const SELF_TIPS = [
   '每一次练习，都是在更靠近未来的自己。',
   '不用和别人比，只要今天比昨天更清楚一点。',
@@ -1148,7 +1169,54 @@ async function loadHome() {
   document.getElementById('stat-duration').textContent = rows.reduce((a,r)=>a+(r.duration_sec||0),0) + 's 累计';
   homeRows = Array.isArray(rows) ? rows : [];
   renderHomeCalendar();
+  renderCheckinStatus(homeRows);
   loadProgressTeaser();
+}
+// Daily streak, purely client-side from records already loaded for the home
+// calendar — no new endpoint. Counts backward from today; if today has no
+// record yet, starts from yesterday so an active streak doesn't read as
+// broken mid-day (today isn't over yet).
+function computeDailyStreak(rows) {
+  if (!rows.length) return 0;
+  const days = new Set(rows.map(r => dateKey(new Date(r.created_at))));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const cursor = new Date(today);
+  if (!days.has(dateKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  let streak = 0;
+  while (days.has(dateKey(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+function renderCheckinStatus(rows) {
+  const el = document.getElementById('checkin-status');
+  if (!el) return;
+  if (!rows.length) {
+    el.innerHTML = `<span class="text-[12px] text-[var(--ink-faint)]">还没有第一条记录，随时可以开始</span>`;
+    return;
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const lastTs = Math.max(...rows.map(r => r.created_at));
+  const lastDay = new Date(lastTs);
+  lastDay.setHours(0, 0, 0, 0);
+  const daysSince = Math.round((today - lastDay) / 86400000);
+  const streak = computeDailyStreak(rows);
+
+  const badge = streak >= 2
+    ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-white" style="background:linear-gradient(135deg,var(--gold),var(--rose-deep))">
+        <iconify-icon icon="solar:star-shine-bold" class="text-[12px]"></iconify-icon>打卡 ${streak} 天
+      </span>`
+    : '';
+
+  let text;
+  if (daysSince <= 0) text = '今天已经记录啦';
+  else if (daysSince === 1) text = '昨天有记录，今天要不要也来一段？';
+  else text = `距离上次记录已经 ${daysSince} 天`;
+
+  el.innerHTML = `${badge}<span class="text-[12px] text-[var(--ink-faint)]">${text}</span>`;
 }
 async function loadProgressTeaser() {
   try {
@@ -1183,7 +1251,7 @@ function entryCard(r) {
 
 // ---------- progress (recurring issues / training review / pre-class brief) ----------
 async function goProgress() {
-  logEvent('progress_open');
+  logEvent('progress_opened', {}, 'browse');
   show('screen-progress');
   document.getElementById('review-content').classList.add('hidden');
   document.getElementById('review-export-btn').classList.add('hidden');
@@ -1520,6 +1588,8 @@ async function openDetail(id) {
   document.getElementById('detail-improve').textContent = r.improve_points || '（无）';
   document.getElementById('detail-next').textContent = r.next_time_reminder || '（无）';
   show('screen-detail');
+  if (!browseSessionId) ensureBrowseSession();
+  logEvent('history_session_opened', { recordId: Number(id) }, 'browse');
 }
 function formatRecordText(r) {
   return [
@@ -1614,6 +1684,7 @@ function toggleRecording() {
 
 async function startRecording() {
   if (segments.length >= 3) { toast('最多录制3段'); return; }
+  ensureCaptureSession();
   logEvent('record_voice_start');
   recordedChunks = [];
   try {
@@ -1690,7 +1761,10 @@ async function transcribeSegment(blob, duration) {
   try {
     const res = await authFetch(`${API}/api/transcribe`, {
       method: 'POST',
-      headers: { 'Content-Type': blob.type || 'audio/webm' },
+      headers: Object.assign(
+        { 'Content-Type': blob.type || 'audio/webm' },
+        captureSessionId ? { 'X-Capture-Session': captureSessionId } : {}
+      ),
       body: blob,
     });
     const data = await res.json();
@@ -1755,11 +1829,12 @@ async function generateReview() {
   if (!transcript) { toast('请先录音或输入内容'); return; }
   const totalDuration = segments.reduce((a,s)=>a+s.duration,0) || 60;
   lastDraft = { transcript, durationSec: totalDuration };
+  ensureCaptureSession();
   show('screen-processing');
   try {
     const res = await authFetch(`${API}/api/generate`, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ transcript })
+      body: JSON.stringify({ transcript, sessionId: captureSessionId })
     });
     const result = await res.json();
     if (!res.ok) { const err = new Error(result.error || '生成失败'); err.status = res.status; throw err; }
@@ -1774,12 +1849,12 @@ async function generateReview() {
 }
 async function retryGenerate() {
   if (!lastDraft) return;
-  logEvent('retry_ai');
+  logEvent('ai_regenerated');
   show('screen-processing');
   try {
     const res = await authFetch(`${API}/api/generate`, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ transcript: lastDraft.transcript })
+      body: JSON.stringify({ transcript: lastDraft.transcript, sessionId: captureSessionId })
     });
     const result = await res.json();
     if (!res.ok) { const err = new Error(result.error || '生成失败'); err.status = res.status; throw err; }
@@ -1798,6 +1873,7 @@ async function retryGenerate() {
   }
 }
 function renderReview() {
+  logEvent('review_opened');
   const errWrap = document.getElementById('review-error-wrap');
   if (errWrap) errWrap.innerHTML = '';
   document.getElementById('review-transcript').textContent = lastDraft.transcript;
@@ -1842,9 +1918,11 @@ async function confirmSave() {
   const good = document.getElementById('review-good').value.trim();
   const improve = document.getElementById('review-improve').value.trim();
   const next = document.getElementById('review-next').value.trim();
-  const edited = good !== (lastDraft.result.good_points || '').trim()
-    || improve !== (lastDraft.result.improve_points || '').trim()
-    || next !== (lastDraft.result.next_time_reminder || '').trim();
+  const editedFields = [];
+  if (good !== (lastDraft.result.good_points || '').trim()) editedFields.push('good_points');
+  if (improve !== (lastDraft.result.improve_points || '').trim()) editedFields.push('improve_points');
+  if (next !== (lastDraft.result.next_time_reminder || '').trim()) editedFields.push('next_time_reminder');
+  const edited = editedFields.length > 0;
   const body = {
     className: document.getElementById('review-classname').value.trim() || '训练记录',
     transcript: lastDraft.transcript,
@@ -1855,9 +1933,13 @@ async function confirmSave() {
     note: lastDraft.result.note || '',
     durationSec: lastDraft.durationSec,
     edited,
+    editedFields,
+    sessionId: captureSessionId,
   };
   const res = await authFetch(`${API}/api/records`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
   const result = await res.json();
+  if (!res.ok) { toast(result.error || '保存失败'); return; }
+  captureSessionId = '';
   showSaveCeremony(result.milestone);
 }
 

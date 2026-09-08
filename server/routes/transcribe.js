@@ -6,6 +6,7 @@ const {
 } = require('../config');
 const { WHISPER_PROMPT } = require('../ballet-glossary');
 const { fetchWithTimeout, isAbortError } = require('../lib/fetch-timeout');
+const { sessionIdFromReq, withSession } = require('../lib/text');
 
 const router = express.Router();
 
@@ -35,7 +36,7 @@ router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), 
     return res.status(400).json({ error: '这段录音太长了，请录短一点再试' });
   }
   if ((await countAiCallsToday(req.userId)) >= DAILY_AI_LIMIT) {
-    await logEvent(req.userId, 'asr_fail', { reason: 'quota_exceeded', model: ASR_MODEL });
+    await logEvent(req.userId, 'asr_fail', withSession({ reason: 'quota_exceeded', model: ASR_MODEL }, sessionIdFromReq(req)));
     return res.status(429).json({ error: '今天的AI次数已经用完了，可以先手动记录内容' });
   }
 
@@ -58,26 +59,26 @@ router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), 
     const latencyMs = Date.now() - startedAt;
     if (!response.ok) {
       const detail = await response.text();
-      await logEvent(req.userId, 'asr_fail', { reason: 'api_error', status: response.status, latencyMs, model: ASR_MODEL });
+      await logEvent(req.userId, 'asr_fail', withSession({ reason: 'api_error', status: response.status, latencyMs, model: ASR_MODEL }, sessionIdFromReq(req)));
       return res.status(502).json({ error: '语音识别失败，请重试或改用手动输入', detail });
     }
     const data = await response.json();
     const text = (data.text || '').trim();
-    await logEvent(req.userId, 'asr_success', {
+    await logEvent(req.userId, 'asr_success', withSession({
       latencyMs,
       model: ASR_MODEL,
       chars: text.length,
       bytes: audio.length,
-    });
+    }, sessionIdFromReq(req)));
     res.json({ text, model: ASR_MODEL });
   } catch (e) {
     const timedOut = isAbortError(e);
-    await logEvent(req.userId, 'asr_fail', {
+    await logEvent(req.userId, 'asr_fail', withSession({
       reason: timedOut ? 'timeout' : 'exception',
       message: e.message,
       latencyMs: Date.now() - startedAt,
       model: ASR_MODEL,
-    });
+    }, sessionIdFromReq(req)));
     const msg = timedOut ? '语音识别超时，请重试或改用手动输入' : '语音识别失败，请重试或改用手动输入';
     res.status(timedOut ? 504 : 500).json({ error: msg });
   }

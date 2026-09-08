@@ -11,7 +11,8 @@ const MAX_TRANSCRIPT_LENGTH = Number(process.env.MAX_TRANSCRIPT_LENGTH) || 4000;
 
 // Model is env-configurable so swapping tiers (e.g. to A/B a cheaper/faster
 // model against quality) doesn't require a code change or redeploy of logic.
-const AI_MODEL = process.env.AI_MODEL || 'claude-sonnet-4-6';
+// Default: Sonnet 5. Do not send `temperature` for this family (API rejects it).
+const AI_MODEL = process.env.AI_MODEL || 'claude-sonnet-5';
 const AI_MAX_OUTPUT_TOKENS = Number(process.env.AI_MAX_OUTPUT_TOKENS) || 1000;
 const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS) || 25000;
 // Low, not zero: this is faithful extraction (not creative writing), so we
@@ -37,8 +38,14 @@ const RESET_TOKEN_TTL_MS = Number(process.env.RESET_TOKEN_TTL_MS) || 60 * 60 * 1
 
 // Rough $/1M token rates for the internal stats page — not a billing API.
 // Override when you switch model tiers so "usd per save" stays in the right ballpark.
-const ANTHROPIC_INPUT_USD_PER_MTOK = Number(process.env.ANTHROPIC_INPUT_USD_PER_MTOK) || 3;
-const ANTHROPIC_OUTPUT_USD_PER_MTOK = Number(process.env.ANTHROPIC_OUTPUT_USD_PER_MTOK) || 15;
+const ANTHROPIC_INPUT_USD_PER_MTOK = Number(process.env.ANTHROPIC_INPUT_USD_PER_MTOK) || 2;
+const ANTHROPIC_OUTPUT_USD_PER_MTOK = Number(process.env.ANTHROPIC_OUTPUT_USD_PER_MTOK) || 10;
+
+// Optional comma-separated emails excluded from the "real users" Layer 3 slice.
+const ANALYTICS_INTERNAL_EMAILS = (process.env.ANALYTICS_INTERNAL_EMAILS || '')
+  .split(',')
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
 
 if (!JWT_SECRET) {
   console.error('缺少 JWT_SECRET，请在 .env 里配置（用于登录令牌签名）');
@@ -51,4 +58,5 @@ module.exports = {
   OPENAI_API_KEY, ASR_MODEL, ASR_TIMEOUT_MS, MAX_AUDIO_BYTES,
   RESEND_API_KEY, EMAIL_FROM, APP_PUBLIC_URL, RESET_TOKEN_TTL_MS,
   ANTHROPIC_INPUT_USD_PER_MTOK, ANTHROPIC_OUTPUT_USD_PER_MTOK,
+  ANALYTICS_INTERNAL_EMAILS,
 };
