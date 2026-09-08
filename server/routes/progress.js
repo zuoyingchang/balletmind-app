@@ -59,7 +59,7 @@ router.get('/brief', async (req, res) => {
   const topIssues = issues
     .filter((i) => i.status !== 'resolved')
     .sort((a, b) => b.occurrence_count - a.occurrence_count)
-    .slice(0, 5);
+    .slice(0, 3);
 
   const lastRecord = await db.get(
     'SELECT class_name, next_time_reminder, created_at FROM records WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',

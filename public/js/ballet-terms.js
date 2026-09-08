@@ -1,6 +1,5 @@
 // Shared ballet term aliases: French (accented), English/ASCII, typeable IPA, Chinese.
-// Used by history search and keyword chips. Keep groups small — only terms
-// adult recaps actually say, not a dictionary dump.
+// Used by history search. Keep groups small — only terms adult recaps actually say.
 
 function foldBalletText(s) {
   return String(s || '')
@@ -52,6 +51,52 @@ const TERM_ALIAS_GROUPS = [
 
 const HISTORY_SEARCH_CHIPS = ['plié', 'tendu', 'pirouette', 'passé', 'arabesque', '外开', '把杆'];
 
+// Beginner glossary: French (classroom spelling) · English (easy to type) · Chinese.
+const TERM_GLOSSARY = [
+  { group: '把杆', rows: [
+    { fr: 'plié', en: 'plie', zh: '蹲' },
+    { fr: 'tendu', en: 'tendu', zh: '擦地' },
+    { fr: 'dégagé', en: 'degage', zh: '小踢' },
+    { fr: 'rond de jambe', en: 'rond de jambe', zh: '划圈' },
+    { fr: 'frappé', en: 'frappe', zh: '打击' },
+    { fr: 'fondu', en: 'fondu', zh: '单腿蹲' },
+    { fr: 'développé', en: 'developpe', zh: '伸展' },
+    { fr: 'grand battement', en: 'grand battement', zh: '大踢腿' },
+    { fr: 'port de bras', en: 'port de bras', zh: '手臂动作' },
+    { fr: 'relevé', en: 'releve', zh: '半脚尖' },
+  ]},
+  { group: '转与跳', rows: [
+    { fr: 'pirouette', en: 'pirouette', zh: '单足转' },
+    { fr: 'chaîné', en: 'chaine', zh: '链转' },
+    { fr: 'fouetté', en: 'fouette', zh: '挥鞭转' },
+    { fr: 'piqué', en: 'pique', zh: '点转' },
+    { fr: 'promenade', en: 'promenade', zh: '慢转' },
+    { fr: 'sauté', en: 'saute', zh: '小跳' },
+    { fr: 'échappé', en: 'echappe', zh: '跳开' },
+    { fr: 'assemblé', en: 'assemble', zh: '集合跳' },
+    { fr: 'jeté', en: 'jete', zh: '抛跳' },
+    { fr: 'grand jeté', en: 'grand jete', zh: '大跳' },
+  ]},
+  { group: '姿态与课堂', rows: [
+    { fr: 'arabesque', en: 'arabesque', zh: '阿拉贝斯克' },
+    { fr: 'attitude', en: 'attitude', zh: '阿蒂蒂德' },
+    { fr: 'passé', en: 'passe', zh: '吸腿' },
+    { fr: 'retiré', en: 'retire', zh: '吸腿' },
+    { fr: 'pointe', en: 'pointe', zh: '足尖' },
+    { fr: 'barre', en: 'barre', zh: '把杆' },
+    { fr: 'en dehors', en: 'turnout', zh: '外开' },
+    { fr: 'spotting', en: 'spotting', zh: '甩头' },
+    { fr: 'alignment', en: 'alignment', zh: '身体线条' },
+  ]},
+  { group: '脚位', rows: [
+    { fr: 'première', en: 'first', zh: '一位' },
+    { fr: 'seconde', en: 'second', zh: '二位' },
+    { fr: 'troisième', en: 'third', zh: '三位' },
+    { fr: 'quatrième', en: 'fourth', zh: '四位' },
+    { fr: 'cinquième', en: 'fifth', zh: '五位' },
+  ]},
+];
+
 function expandSearchNeedles(keyword) {
   const q = foldBalletText(keyword).trim();
   if (!q) return [];
@@ -79,36 +124,25 @@ function recordMatchesSearch(record, keyword) {
   return needles.some((needle) => hay.includes(needle));
 }
 
-function extractIssueKeywords(text, limit = 3) {
-  const hay = foldBalletText(text);
-  if (!hay) return [];
-  const found = [];
-  const groups = TERM_ALIAS_GROUPS.slice().sort((a, b) => {
-    const la = Math.max(...a.map((t) => foldBalletText(t).length));
-    const lb = Math.max(...b.map((t) => foldBalletText(t).length));
-    return lb - la;
-  });
-  for (const group of groups) {
-    const shown = group.find((alias) => hay.includes(foldBalletText(alias)));
-    if (!shown) continue;
-    const key = foldBalletText(shown);
-    if (found.some((t) => {
-      const ft = foldBalletText(t);
-      return ft.includes(key) || key.includes(ft);
-    })) continue;
-    found.push(shown);
-    if (found.length >= limit) break;
-  }
-  return found;
+function compactPhrase(s, maxLen = 28) {
+  let t = String(s || '').replace(/\s+/g, ' ').trim();
+  if (t.length <= maxLen && !/需要多加练习|需要加强|的时候/.test(t)) return t;
+  t = t.replace(/^(我觉得|我感觉|老师说)/, '');
+  t = t.replace(/需要多加练习|需要加强|不太好|不够好/g, '');
+  t = t.replace(/[^，。；;、\n]{0,8}的时候/g, '');
+  t = t.replace(/[，。；;]+/g, '、').replace(/、+/g, '、').replace(/^、|、$/g, '');
+  if (t.length > maxLen) t = `${t.slice(0, maxLen - 1)}…`;
+  return t.trim();
 }
 
 const api = {
   foldBalletText,
   TERM_ALIAS_GROUPS,
   HISTORY_SEARCH_CHIPS,
+  TERM_GLOSSARY,
   expandSearchNeedles,
   recordMatchesSearch,
-  extractIssueKeywords,
+  compactPhrase,
 };
 
 if (typeof module !== 'undefined' && module.exports) {

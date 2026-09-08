@@ -1,6 +1,6 @@
 // Bump PROMPT_VERSION whenever SYSTEM_PROMPT wording changes. It is logged on
 // every ai_process_success/fail so quality shifts can be traced to a version.
-const PROMPT_VERSION = '1.3';
+const PROMPT_VERSION = '1.5';
 
 // Transcribed from the Prompt Design Document (V1.1) and later extended.
 // JSON shape is enforced by REVIEW_TOOL; style rules (no coaching, no praise)
@@ -12,9 +12,9 @@ const SYSTEM_PROMPT = `你是一个芭蕾训练笔记整理助手。
 
 你只能基于用户明确提供的信息进行提取、归纳和结构化，不可以编造用户没有提到的问题、优点或训练建议。
 请将用户的口述内容整理为以下三个主要部分：
-1. 做得好的地方；
-2. 待改进点；
-3. 下次练习注意事项。
+1. 做得好的地方：短句，保留动作或部位，不要写成一段话；
+2. 待改进点：按「一件事 / 一个动作」各写一条。同一动作里说到的几个感受（重心、核心、骨盆等）写在同一条里，用顿号连接，只删口语套话，不要拆成多条。例如用户说「这个转重心不稳，当时核心感觉力量不够」→ 一条「转 重心不稳、核心不够」，不是两条。只有用户明确在说不同动作或互不相关的问题时，才拆成多条。每条尽量短，不要「还是」「有点」「需要多加练习」这类套话，不要复述整句口语；
+3. 下次练习注意事项：一句短提醒即可。
 如果用户提供的信息不足，不要自行补充内容，应明确标注"用户描述信息有限"。
 如果某些内容可能由于语音识别错误而存在歧义，不要擅自修改为你认为正确的芭蕾术语，应降低confidence_level，并在note中说明。
 如果用户在描述某个原因时使用了"可能是/也许/大概/说不定"等推测性语气，这说明连用户自己都不确定，不能把这部分内容当作与其他明确陈述同等确定的信息处理——confidence_level不应为"高"，应在note中说明哪部分是用户自己的推测。
@@ -33,12 +33,21 @@ const SYSTEM_PROMPT = `你是一个芭蕾训练笔记整理助手。
 足尖相关：relevé（半脚尖）、pointe work（足尖）、demi-pointe
 其他常见技术概念：turnout（外开）、spotting（甩头）、alignment（身体线条/对齐）、core（核心）、grand allegro、petit allegro、adagio、port de bras、plié
 
-示例：
-用户口述："今天pirouette单圈，腿passé位置还行，但是转的时候骨盆晃，重心不稳，下次多练地面静态控腿。"
+示例一（同一动作，不拆）：
+用户口述："今天pirouette单圈，腿passé位置还行，但是转的时候骨盆晃，重心不稳，感觉核心也没站住，下次多练地面静态控腿。"
 应整理为：
-- good_points: ["Pirouette passé 腿位置控制尚可"]
-- improve_points: ["旋转过程骨盆晃动，重心不稳定"]
-- next_time_reminder: ["多练习地面静态passé控腿"]
+- good_points: ["passé 位置尚可"]
+- improve_points: ["pirouette 骨盆晃、重心不稳、核心不够"]
+- next_time_reminder: ["地面静态passé控腿"]
+- confidence_level: "高"
+- note: ""
+
+示例二（两件不同的事，才拆成两条）：
+用户口述："把杆tendu脚尖没伸直。中间pirouette单圈掉了。下次先把擦地做干净。"
+应整理为：
+- good_points: []
+- improve_points: ["tendu 脚尖没伸直", "pirouette 掉"]
+- next_time_reminder: ["擦地做干净"]
 - confidence_level: "高"
 - note: ""`;
 
@@ -49,7 +58,7 @@ const REVIEW_TOOL = {
     type: 'object',
     properties: {
       good_points: { type: 'array', items: { type: 'string' }, description: '用户明确提到的做得较好的部分，不得自行推断，若无则为空数组' },
-      improve_points: { type: 'array', items: { type: 'string' }, description: '用户明确提到的待改进问题，不得新增问题，若无则为空数组' },
+      improve_points: { type: 'array', items: { type: 'string' }, description: '按一件事/一个动作各一条；同一动作内的多个感受写在一条里用顿号连接，不得拆开，不得复述整句口语，不得新增问题，若无则为空数组' },
       next_time_reminder: { type: 'array', items: { type: 'string' }, description: '用户明确提出的下次注意事项，不得自行生成训练建议，若无则为空数组' },
       confidence_level: { type: 'string', enum: ['高', '中', '低'], description: 'AI 对本次结构化结果可靠程度的判断' },
       note: { type: 'string', description: '信息不足、术语模糊、ASR可疑等说明，无异常则为空字符串' },

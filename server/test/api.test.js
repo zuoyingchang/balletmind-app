@@ -311,7 +311,6 @@ test('saving a record with improve_points opens a new issue', async () => {
   assert.equal(issues[0].occurrence_count, 1);
   assert.equal(issues[0].status, 'open');
   assert.equal(issues[0].occurrences.length, 1);
-  assert.ok(issues[0].keywords.includes('重心'));
 });
 
 test('a similar improve_points line on a later record bumps the existing issue instead of creating a new one', async () => {

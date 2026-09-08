@@ -4,7 +4,7 @@ const {
   foldBalletText,
   expandSearchNeedles,
   recordMatchesSearch,
-  extractIssueKeywords,
+  compactPhrase,
 } = require('../../public/js/ballet-terms');
 
 test('plie / plié / 蹲 / pli.e belong to the same search group', () => {
@@ -25,11 +25,10 @@ test('searching 外开 finds turnout, and tendu finds 擦地', () => {
   assert.equal(recordMatchesSearch({ good_points: '擦地脚尖没伸直', improve_points: '', transcript: '', class_name: '', next_time_reminder: '' }, 'tendu'), true);
 });
 
-test('extractIssueKeywords returns 1–3 terms actually present, including aliases', () => {
-  const keys = extractIssueKeywords('蹲的时候骨盆晃，核心没站住，膝盖也软');
-  assert.ok(keys.includes('蹲'));
-  assert.ok(keys.length >= 1 && keys.length <= 3);
-  assert.deepEqual(extractIssueKeywords('plié 膝盖方向不对'), ['plié', '膝盖']);
+test('compactPhrase keeps the action and drops spoken filler', () => {
+  assert.equal(compactPhrase('转的时候骨盆晃，重心不稳，需要多加练习'), '骨盆晃、重心不稳');
+  assert.equal(compactPhrase('重心不稳'), '重心不稳');
+  assert.equal(compactPhrase('pirouette 重心不稳、核心不够'), 'pirouette 重心不稳、核心不够');
 });
 
 test('expandSearchNeedles for 蹲 includes ascii plie', () => {
