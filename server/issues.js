@@ -1,5 +1,6 @@
 const db = require('./db');
 const { splitLines } = require('./lib/text');
+const { extractIssueKeywords } = require('./lib/issue-keywords');
 
 // Recurring Issue Tracking (V0.2 PRD #1) — deliberately NOT AI-based. Matching
 // a new "improve_points" line against existing open issues is plain text
@@ -80,6 +81,7 @@ async function listIssuesWithOccurrences(userId) {
 
   return issues.map((issue) => ({
     ...issue,
+    keywords: extractIssueKeywords(issue.text, 3),
     occurrences: occurrences
       .filter((o) => o.issue_id === issue.id)
       .map((o) => ({ recordId: o.record_id, createdAt: o.created_at, className: o.class_name })),

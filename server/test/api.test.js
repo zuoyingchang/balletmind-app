@@ -311,6 +311,7 @@ test('saving a record with improve_points opens a new issue', async () => {
   assert.equal(issues[0].occurrence_count, 1);
   assert.equal(issues[0].status, 'open');
   assert.equal(issues[0].occurrences.length, 1);
+  assert.ok(issues[0].keywords.includes('重心'));
 });
 
 test('a similar improve_points line on a later record bumps the existing issue instead of creating a new one', async () => {
@@ -384,11 +385,34 @@ test('/api/progress/review aggregates records and open issues with zero AI calls
   const res = await fetch(`${base}/api/progress/review`, { headers: { Authorization: `Bearer ${token}` } });
   assert.equal(res.status, 200);
   const body = await res.json();
+  assert.equal(body.mode, 'days');
   assert.equal(body.recordCount, 1);
   assert.equal(body.openIssues.length, 1);
   assert.ok(body.goodPointsRecap.includes('高位更稳定'));
   const after = await countAiCallsToday(user.id);
   assert.equal(after, before, 'training review must not consume the AI quota');
+});
+
+test('/api/progress/review?last=5 returns the most recent N records, not a calendar window', async () => {
+  const { body: { token, user } } = await registerUser('review_last@example.com');
+  for (let i = 1; i <= 6; i++) {
+    await saveRecord(token, { className: `课${i}`, good_points: `优点${i}` });
+  }
+
+  const before = await countAiCallsToday(user.id);
+  const res = await fetch(`${base}/api/progress/review?last=5`, { headers: { Authorization: `Bearer ${token}` } });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.mode, 'last');
+  assert.equal(body.lastCount, 5);
+  assert.equal(body.recordCount, 5);
+  assert.deepEqual(body.records.map((r) => r.className), ['课2', '课3', '课4', '课5', '课6']);
+  assert.ok(body.goodPointsRecap.includes('优点6'));
+  assert.equal(body.goodPointsRecap.includes('优点1'), false);
+  const week = await (await fetch(`${base}/api/progress/review?days=7`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  assert.equal(week.recordCount, 6);
+  const after = await countAiCallsToday(user.id);
+  assert.equal(after, before, 'last-N review must not consume the AI quota');
 });
 
 test('/api/progress/brief returns top open issues and the last record, zero AI calls', async () => {
