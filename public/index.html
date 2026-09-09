@@ -320,27 +320,20 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
   }
   .term-chip-row {
-    display: flex; gap: 8px; overflow-x: auto;
-    padding: 2px 2px 6px;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
+    display: flex; flex-wrap: wrap; gap: 8px;
   }
-  .term-chip-row::-webkit-scrollbar { display: none; }
   .term-chip {
     flex: 0 0 auto;
     height: 32px;
     padding: 0 13px;
     border-radius: 999px;
-    font-size: 12.5px;
-    line-height: 32px;
+    font-size: 12px;
     color: var(--ink-soft);
-    background: rgba(255,252,251,.9);
+    background: rgba(255,252,251,.92);
     border: 1px solid var(--border-soft);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
   }
-  .term-chip.is-fr { font-style: italic; letter-spacing: 0.01em; }
   .term-chip.is-on {
-    font-style: normal;
     font-weight: 600;
     color: #fff;
     border-color: transparent;
@@ -725,34 +718,32 @@
 
   <!-- ============ HISTORY ============ -->
   <div class="screen flex-col w-full h-full wash-dust" id="screen-history">
-    <header class="shrink-0 px-6 pt-7 pb-3">
+    <header class="shrink-0 px-6 pt-7 pb-4">
       <div class="flex items-center gap-3">
         <button onclick="goHome()" class="w-11 h-11 shrink-0 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
         <div class="flex-1 min-w-0">
           <p class="label-editorial text-[13px] text-[var(--rose-deep)]">档案</p>
-          <h1 class="font-display mt-0.5 text-[22px] font-semibold tracking-[-0.01em]">每一次记下的课</h1>
+          <h1 class="font-display mt-1 text-[28px] font-semibold tracking-[-0.01em]">每一次记下的课</h1>
         </div>
-        <button type="button" id="history-view-toggle" onclick="toggleHistoryView()" class="shrink-0 text-[12.5px] text-[var(--rose-deep)] font-medium">日历</button>
+        <button type="button" onclick="goProfile()" class="header-avatar shrink-0 flex items-center justify-center" aria-label="我的"><iconify-icon icon="solar:user-circle-linear" class="text-[20px]"></iconify-icon></button>
       </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-7">
-      <img src="/img/pack-arabesque.png" alt="" aria-hidden="true" class="deco-photo tint-rose right-[-18px] bottom-8 w-[110px] h-[138px] opacity-[0.16]">
+      <img src="/img/pack-arabesque.png" alt="" aria-hidden="true" class="deco-photo tint-rose right-[-12px] bottom-[-6px] w-[148px] h-[186px] opacity-[0.28]">
+      <div class="hist-tabs flex items-center gap-1 mb-4 rounded-full p-1">
+        <button type="button" id="history-tab-list" onclick="setHistoryView('list')" class="flex-1 h-8 rounded-full text-[12px] font-medium">列表</button>
+        <button type="button" id="history-tab-calendar" onclick="setHistoryView('calendar')" class="flex-1 h-8 rounded-full text-[12px] font-medium">日历</button>
+      </div>
 
       <div id="history-list-view">
-        <div class="card-journal grain relative rounded-[22px] px-3.5 pt-3 pb-3 mb-4">
+        <div class="card-journal grain relative flex items-center gap-2 rounded-[18px] px-4 h-12 mb-3">
           <div class="pearl-sheen"></div>
-          <div class="relative z-10 flex items-center gap-2 rounded-[14px] bg-white/55 px-3 h-11">
-            <iconify-icon icon="solar:magnifer-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon>
-            <input id="history-search" oninput="filterHistory()" placeholder="搜 plie、蹲，都能找到 plié" class="flex-1 bg-transparent outline-none text-[12.5px] placeholder:text-[var(--ink-faint)]">
-          </div>
-          <p class="relative z-10 mt-2.5 mb-1.5 text-[11px] text-[var(--ink-faint)]">点标签筛选，再点一次取消</p>
-          <div id="history-term-chips" class="relative z-10 term-chip-row"></div>
+          <iconify-icon icon="solar:magnifer-linear" class="relative z-10 text-[18px] text-[var(--rose-deep)]"></iconify-icon>
+          <input id="history-search" oninput="filterHistory()" placeholder="搜 plie、蹲，都能找到 plié" class="relative z-10 flex-1 bg-transparent outline-none text-[12.5px] placeholder:text-[var(--ink-faint)]">
         </div>
-        <div id="history-empty" class="mt-8 text-center">
-          <p class="text-[var(--ink-faint)] text-[13px]">还没有记录</p>
-          <button type="button" onclick="goRecord()" class="mt-3 text-[13px] text-[var(--rose-deep)] font-medium">去说第一段</button>
-        </div>
-        <div id="history-search-empty" class="hidden mt-8 text-center text-[var(--ink-faint)] text-[12.5px]">没有找到匹配的记录，换个词或再点一下标签</div>
+        <div id="history-term-chips" class="term-chip-row mb-4" onclick="onHistoryChipClick(event)"></div>
+        <div id="history-empty" class="mt-10 text-center text-[var(--ink-faint)] text-[12.5px]">还没有记录，去录第一段吧</div>
+        <div id="history-search-empty" class="hidden mt-10 text-center text-[var(--ink-faint)] text-[12.5px]">没有找到匹配的记录</div>
         <div id="history-list" class="relative z-10 space-y-3"></div>
       </div>
 
@@ -1640,12 +1631,17 @@ async function loadProgressTeaser() {
 const MOOD_EMOJI = { low: '😔', meh: '😐', good: '🙂', great: '😄' };
 function entryCard(r) {
   const mood = MOOD_EMOJI[r.mood] || '';
-  const preview = compactPhrase(r.improve_points || r.good_points || r.next_time_reminder || '', 48);
-  return `<button onclick="openDetail(${r.id})" class="entry-card relative z-10 w-full text-left rounded-[22px] px-4 py-3.5 pl-5 overflow-hidden">
+  const preview = compactPhrase(r.improve_points || r.good_points || r.next_time_reminder || '', 40);
+  return `<button onclick="openDetail(${r.id})" class="entry-card relative z-10 w-full text-left rounded-[22px] p-4 pl-5 overflow-hidden">
     <span class="satin-mark absolute left-0 top-3 bottom-3"></span>
-    <p class="label-editorial text-[12px] text-[var(--rose-deep)]">${fmtDate(r.created_at)}${mood ? ` · ${mood}` : ''}</p>
-    <h3 class="font-display mt-1 text-[18px] font-semibold tracking-[-0.01em] truncate">${escapeHtml(r.class_name)}</h3>
-    ${preview ? `<p class="mt-1.5 text-[12.5px] leading-5 text-[var(--ink-soft)]">${escapeHtml(preview)}</p>` : ''}
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <p class="label-editorial text-[12px] text-[var(--rose-deep)]">${fmtDate(r.created_at)}</p>
+        <h3 class="mt-1 text-[15px] font-semibold truncate">${escapeHtml(r.class_name)}${mood ? ` <span class="font-normal">${mood}</span>` : ''}</h3>
+      </div>
+      <span class="shrink-0 w-9 h-9 rounded-[12px] chip flex items-center justify-center"><iconify-icon icon="solar:notes-minimalistic-linear" class="text-[17px] text-[var(--rose-deep)]"></iconify-icon></span>
+    </div>
+    ${preview ? `<p class="mt-2 text-[12px] leading-5 text-[var(--ink-soft)]">${escapeHtml(preview)}</p>` : ''}
   </button>`;
 }
 
@@ -1867,9 +1863,14 @@ function renderHistoryTermChips() {
   const needles = expandSearchNeedles(document.getElementById('history-search').value);
   wrap.innerHTML = HISTORY_SEARCH_CHIPS.map((term) => {
     const on = needles.includes(foldBalletText(term));
-    const fr = /[a-zàâäéèêëïîôùûüç]/i.test(term);
-    return `<button type="button" onclick="applyHistoryTerm(${JSON.stringify(term)})" aria-pressed="${on ? 'true' : 'false'}" class="term-chip ${fr ? 'is-fr' : ''} ${on ? 'is-on' : ''}">${term}</button>`;
+    return `<button type="button" data-term="${escapeHtml(term)}" aria-pressed="${on ? 'true' : 'false'}" class="term-chip ${on ? 'is-on' : ''}">${escapeHtml(term)}</button>`;
   }).join('');
+}
+
+function onHistoryChipClick(event) {
+  const btn = event.target.closest('button[data-term]');
+  if (!btn) return;
+  applyHistoryTerm(btn.getAttribute('data-term'));
 }
 
 function applyHistoryTerm(term) {
@@ -1983,14 +1984,21 @@ function paintDayList(byDate, year, month, selectedKey, emptyId, listId) {
 
 function setHistoryView(mode) {
   historyViewMode = mode;
-  const toggle = document.getElementById('history-view-toggle');
-  if (toggle) toggle.textContent = mode === 'list' ? '日历' : '列表';
+  const listTab = document.getElementById('history-tab-list');
+  const calTab = document.getElementById('history-tab-calendar');
+  if (listTab && calTab) {
+    listTab.classList.toggle('bg-white', mode === 'list');
+    listTab.classList.toggle('shadow-sm', mode === 'list');
+    listTab.classList.toggle('text-[var(--burgundy)]', mode === 'list');
+    listTab.classList.toggle('text-[var(--ink-faint)]', mode !== 'list');
+    calTab.classList.toggle('bg-white', mode === 'calendar');
+    calTab.classList.toggle('shadow-sm', mode === 'calendar');
+    calTab.classList.toggle('text-[var(--burgundy)]', mode === 'calendar');
+    calTab.classList.toggle('text-[var(--ink-faint)]', mode !== 'calendar');
+  }
   document.getElementById('history-list-view').classList.toggle('hidden', mode !== 'list');
   document.getElementById('history-calendar-view').classList.toggle('hidden', mode !== 'calendar');
   if (mode === 'calendar') renderCalendar();
-}
-function toggleHistoryView() {
-  setHistoryView(historyViewMode === 'list' ? 'calendar' : 'list');
 }
 function shiftCalendarMonth(delta) {
   calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1);
