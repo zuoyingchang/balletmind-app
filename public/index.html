@@ -227,10 +227,25 @@
   }
   .mood-chip.is-selected .mood-chip-emoji { color: var(--rose-deep); }
   .mood-chip.is-selected .mood-chip-label { color: var(--burgundy); font-weight: 600; }
+  .header-avatar {
+    width: 36px; height: 36px;
+    border-radius: 999px;
+    background: linear-gradient(160deg, #f7efe8, #eadfdd);
+    color: var(--burgundy);
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+  }
   .nav-ballet {
     background: rgba(253,251,250,.78);
     backdrop-filter: blur(18px);
     border-top: 1px solid rgba(255,255,255,.7);
+  }
+  .sticky-actions {
+    background: rgba(253,251,250,.9);
+    backdrop-filter: blur(18px);
+    border-top: 1px solid rgba(255,255,255,.7);
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
   }
   .field-good { background: rgba(232, 234, 226, .78); }
   .field-improve { background: rgba(242, 232, 226, .8); }
@@ -240,6 +255,15 @@
     color: #fdfbfa;
     box-shadow: 0 12px 24px -12px rgba(140,100,100,.36), inset 0 1px 0 rgba(255,255,255,.5);
   }
+  .rec-prompts summary {
+    list-style: none;
+    cursor: pointer;
+  }
+  .rec-prompts summary::-webkit-details-marker { display: none; }
+  .rec-prompts[open] summary .rec-prompts-chevron { transform: rotate(90deg); }
+  .progress-more summary { list-style: none; cursor: pointer; }
+  .progress-more summary::-webkit-details-marker { display: none; }
+  .progress-more[open] summary .progress-more-chevron { transform: rotate(180deg); }
   .rec-mic-wrap {
     width: 98px; height: 98px;
     border-radius: 999px;
@@ -294,6 +318,34 @@
     background: rgba(244, 235, 233, .72);
     border: 1px solid var(--border-soft);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+  }
+  .term-chip-row {
+    display: flex; gap: 8px; overflow-x: auto;
+    padding: 2px 2px 6px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .term-chip-row::-webkit-scrollbar { display: none; }
+  .term-chip {
+    flex: 0 0 auto;
+    height: 32px;
+    padding: 0 13px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    line-height: 32px;
+    color: var(--ink-soft);
+    background: rgba(255,252,251,.9);
+    border: 1px solid var(--border-soft);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
+  }
+  .term-chip.is-fr { font-style: italic; letter-spacing: 0.01em; }
+  .term-chip.is-on {
+    font-style: normal;
+    font-weight: 600;
+    color: #fff;
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--gold), var(--rose-deep));
+    box-shadow: 0 6px 14px -10px rgba(140,100,100,.45);
   }
   .entry-card {
     background: linear-gradient(165deg, #fffcfb 0%, #f8f2f1 100%);
@@ -394,109 +446,94 @@
   <div class="screen flex-col w-full h-full wash-cream" id="screen-home">
     <header class="shrink-0 px-6 pt-7 pb-4 flex items-center justify-between">
       <div>
-        <p class="label-editorial text-[13px] text-[var(--rose-deep)] font-semibold" id="home-kicker">写给今天的你</p>
-        <h1 class="font-display mt-1 text-[28px] leading-tight font-semibold tracking-[-0.01em]" id="home-title">你的训练档案</h1>
+        <p class="label-editorial text-[12px] text-[var(--rose-deep)]" id="home-kicker">写给今天的你</p>
+        <h1 class="font-display mt-0.5 text-[24px] leading-tight font-semibold tracking-[-0.01em]" id="home-title">你的训练档案</h1>
       </div>
-      <button type="button" onclick="openNotices()" class="relative w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="通知">
-        <iconify-icon icon="solar:bell-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon>
-        <span id="notice-dot" class="hidden absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[var(--rose-deep)] ring-2 ring-[var(--paper)]"></span>
-      </button>
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="openNotices()" class="relative w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="通知">
+          <iconify-icon icon="solar:bell-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon>
+          <span id="notice-dot" class="hidden absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[var(--rose-deep)] ring-2 ring-[var(--paper)]"></span>
+        </button>
+        <button type="button" onclick="goProfile()" class="header-avatar flex items-center justify-center" aria-label="我的"><iconify-icon icon="solar:user-circle-linear" class="text-[20px]"></iconify-icon></button>
+      </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-7">
       <img src="/img/pack-stand.png" alt="" aria-hidden="true" class="deco-photo tint-soft right-[-20px] bottom-6 w-[150px] h-[186px] opacity-[0.36]">
-      <section class="card-journal tinted grain relative overflow-hidden px-5 pt-5 pb-6 min-h-[150px]" style="border-radius:30px 18px 30px 20px">
+      <section class="card-journal tinted grain relative overflow-hidden px-5 pt-4 pb-4" style="border-radius:26px 16px 26px 18px">
         <div class="pearl-sheen"></div>
-        <img src="/img/shoes.png" alt="" aria-hidden="true" class="deco-photo tint-rose right-2 -bottom-3 w-[108px] h-[128px] opacity-[0.9] z-[1]">
-        <svg class="absolute right-7 top-4 w-2.5 h-2.5 text-[var(--rose-deep)] opacity-70" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 0c0 4 1 7 5 8-4 1-5 4-5 8 0-4-1-7-5-8 4-1 5-4 5-8z"/></svg>
-        <div class="relative z-10 flex items-start justify-between">
+        <img src="/img/shoes.png" alt="" aria-hidden="true" class="deco-photo tint-rose right-3 top-2 w-[64px] h-[76px] opacity-[0.55] z-[1] pointer-events-none">
+        <div class="relative z-10 flex items-end justify-between gap-3 pr-16">
           <div>
-            <p class="label-editorial text-[13px] text-[var(--rose-deep)]">一共记了几次</p>
-            <p class="font-display mt-1.5 text-[42px] leading-none font-semibold tracking-[-0.02em] text-[var(--ink)]" id="stat-count">0 <span class="text-[15px] font-medium text-[var(--ink-faint)]">次记录</span></p>
+            <p class="font-display text-[34px] leading-none font-semibold tracking-[-0.02em] text-[var(--ink)]" id="stat-count">0 <span class="text-[14px] font-medium text-[var(--ink-faint)]">次</span></p>
+            <p class="mt-1.5 text-[11px] text-[var(--ink-faint)]" id="stat-duration">时长待记录</p>
           </div>
-          <span class="px-3 py-1.5 rounded-full bg-white/40 text-[11px] text-[var(--burgundy)]" id="stat-duration">时长待记录</span>
         </div>
-      </section>
-
-      <section class="mt-5">
-        <div class="flex items-center justify-between">
-          <h2 class="font-display text-[21px] font-semibold tracking-[-0.01em]">今天想记录什么？</h2>
-          <span class="text-[11px] text-[var(--ink-faint)]">约 3 分钟</span>
-        </div>
-        <button id="home-cta-btn" onclick="goRecord()" class="btn-ribbon mt-3 w-full flex items-center gap-4 rounded-[28px] px-5 py-4">
+        <button id="home-cta-btn" onclick="goRecord()" class="btn-ribbon relative z-10 mt-4 w-full flex items-center gap-3 rounded-[22px] px-4 py-3.5">
           <span class="pearl-sheen"></span>
-          <span class="relative z-10 w-12 h-12 rounded-[16px] bg-white/20 flex items-center justify-center">
-            <iconify-icon icon="solar:microphone-3-linear" class="text-[26px] text-white"></iconify-icon>
+          <span class="relative z-10 w-10 h-10 rounded-[14px] bg-white/20 flex items-center justify-center">
+            <iconify-icon icon="solar:microphone-3-linear" class="text-[22px] text-white"></iconify-icon>
           </span>
           <span class="relative z-10 flex-1 text-left">
-            <strong class="block text-[15px] font-bold">开始一段训练复盘</strong>
-          <span class="block mt-1 text-[11px] font-semibold text-white" id="home-cta-sub">说说今天的动作、感受和老师建议</span>
+            <strong class="block text-[14.5px] font-semibold" id="home-cta-title">复盘今天</strong>
+            <span class="block mt-0.5 text-[11px] font-medium text-white/90" id="home-cta-sub">说几句，以后还能翻到</span>
           </span>
-          <iconify-icon icon="solar:arrow-right-linear" class="relative z-10 text-[21px]"></iconify-icon>
         </button>
       </section>
 
-      <p id="home-first-hint" class="hidden mt-3 text-[12px] leading-5 text-[var(--ink-soft)]">第一次：先按上面开始一段。下面的日历和追踪可以随便点，有记录之后会慢慢填上。</p>
+      <p id="home-first-hint" class="hidden mt-2.5 text-[11.5px] leading-5 text-[var(--ink-faint)]">第一次就说几句：今天练了什么、老师提了什么。不是打卡，是留给以后的自己。</p>
 
-      <section class="mt-7" id="home-archive-block">
-        <div class="flex items-center justify-between">
-          <h2 class="font-display text-[21px] font-semibold tracking-[-0.01em]">复盘存档</h2>
-          <button onclick="goHistory()" class="text-[12px] text-[var(--rose-deep)] font-medium">查看全部</button>
+      <section class="mt-6" id="home-archive-block">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-[15px] font-semibold text-[var(--ink)]">档案</h2>
+          <div class="flex-1 min-w-0 flex items-center justify-end gap-2 overflow-hidden" id="checkin-status"></div>
+          <button onclick="goHistory()" class="shrink-0 text-[12px] text-[var(--rose-deep)] font-medium">全部</button>
         </div>
-        <div class="mt-2 flex items-center gap-2" id="checkin-status"></div>
-        <div class="card-journal grain relative mt-3 p-4" style="border-radius:22px 14px 22px 16px">
+        <div class="card-journal grain relative mt-2.5 p-3.5" style="border-radius:20px 14px 20px 16px">
           <div class="pearl-sheen"></div>
-          <div class="relative z-10 flex items-center justify-between mb-3">
-            <button type="button" onclick="shiftHomeCalendar(-1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]"><iconify-icon icon="solar:alt-arrow-left-linear" class="text-[15px]"></iconify-icon></button>
-            <p class="label-editorial text-[15px] text-[var(--ink)]" id="home-calendar-month-label"></p>
-            <button type="button" onclick="shiftHomeCalendar(1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]"><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[15px]"></iconify-icon></button>
+          <div class="relative z-10 flex items-center gap-2 mb-2">
+            <button type="button" onclick="shiftHomeCalendar(-1)" class="w-8 h-8 shrink-0 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]" aria-label="上一周或上一月"><iconify-icon icon="solar:alt-arrow-left-linear" class="text-[15px]"></iconify-icon></button>
+            <p class="label-editorial flex-1 min-w-0 text-center text-[14px] text-[var(--ink)]" id="home-calendar-month-label"></p>
+            <button type="button" onclick="shiftHomeCalendar(1)" class="w-8 h-8 shrink-0 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]" aria-label="下一周或下一月"><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[15px]"></iconify-icon></button>
+            <button type="button" onclick="toggleHomeCalendarRange()" id="home-cal-range-btn" class="shrink-0 text-[12px] text-[var(--rose-deep)] font-medium">整月</button>
           </div>
           <div class="relative z-10 cal-grid text-center text-[10px] text-[var(--ink-faint)] mb-1" style="aspect-ratio:auto">
             <span class="py-1">日</span><span class="py-1">一</span><span class="py-1">二</span><span class="py-1">三</span><span class="py-1">四</span><span class="py-1">五</span><span class="py-1">六</span>
           </div>
           <div class="relative z-10 cal-grid" id="home-calendar-grid"></div>
-          <p class="relative z-10 mt-3 text-center text-[10px] text-[var(--ink-faint)]">练过的日子会有一个小蝴蝶结</p>
         </div>
-        <div id="home-calendar-day-empty" class="mt-4 text-center text-[var(--ink-faint)] text-[12px]"></div>
-        <div id="home-calendar-day-list" class="mt-3 space-y-3"></div>
+        <div id="home-calendar-day-empty" class="mt-3 text-center text-[var(--ink-faint)] text-[12px]"></div>
+        <div id="home-calendar-day-list" class="mt-2.5 space-y-3"></div>
       </section>
 
-      <section class="mt-7" id="home-progress-block">
+      <section class="mt-6" id="home-progress-block">
         <div class="flex items-center justify-between">
-          <h2 class="font-display text-[21px] font-semibold tracking-[-0.01em]">成长追踪</h2>
+          <h2 class="text-[15px] font-semibold text-[var(--ink)]">追踪</h2>
           <button type="button" onclick="goProgress()" class="text-[12px] text-[var(--rose-deep)] font-medium">打开</button>
         </div>
-        <p class="mt-1 text-[11px] text-[var(--ink-faint)]">课前看一眼 · 反复问题 · 最近 7 天 / 5 次</p>
-        <button type="button" onclick="goProgress()" class="card-journal grain relative mt-3 w-full text-left rounded-[22px] p-4">
+        <button type="button" onclick="goProgress()" class="card-journal grain relative mt-2.5 w-full text-left rounded-[20px] px-4 py-3.5">
           <div class="pearl-sheen"></div>
-          <div class="relative z-10 space-y-3">
-            <p class="flex items-start gap-2.5 text-[12.5px] leading-5">
-              <span class="teaser-dot shrink-0 flex items-center justify-center"><iconify-icon icon="solar:flag-2-linear" class="text-[14px] text-[var(--gold)]"></iconify-icon></span>
-              <span><span class="font-semibold text-[var(--mauve)]">课前</span> <span id="progress-teaser-brief" class="text-[var(--ink-soft)]">还没有可看的提醒</span></span>
+          <div class="relative z-10 space-y-2.5">
+            <p class="flex items-baseline gap-2 text-[12.5px] leading-5">
+              <span class="w-8 shrink-0 text-[11px] font-semibold text-[var(--mauve)]">反复</span>
+              <span id="progress-teaser-issue" class="min-w-0 text-[var(--ink-soft)]">记几次后出现</span>
             </p>
-            <p class="flex items-start gap-2.5 text-[12.5px] leading-5">
-              <span class="teaser-dot shrink-0 flex items-center justify-center"><iconify-icon icon="solar:refresh-linear" class="text-[14px] text-[var(--rose-deep)]"></iconify-icon></span>
-              <span><span class="font-semibold text-[var(--mauve)]">反复</span> <span id="progress-teaser-issue" class="text-[var(--ink-soft)]">多记几次，重复出现的问题会列在这里</span></span>
+            <p class="flex items-baseline gap-2 text-[12.5px] leading-5">
+              <span class="w-8 shrink-0 text-[11px] font-semibold text-[var(--mauve)]">课前</span>
+              <span id="progress-teaser-brief" class="min-w-0 text-[var(--ink-soft)]">暂无</span>
             </p>
-            <p class="flex items-start gap-2.5 text-[12.5px] leading-5">
-              <span class="teaser-dot shrink-0 flex items-center justify-center"><iconify-icon icon="solar:calendar-linear" class="text-[14px] text-[var(--burgundy)]"></iconify-icon></span>
-              <span><span class="font-semibold text-[var(--mauve)]">7天/5次</span> <span class="text-[var(--ink-soft)]">打开即可看这段时间的汇总</span></span>
+            <p class="flex items-baseline gap-2 text-[12.5px] leading-5">
+              <span class="w-8 shrink-0 text-[11px] font-semibold text-[var(--mauve)]">汇总</span>
+              <span class="text-[var(--ink-soft)]">最近 7 天或 5 次</span>
             </p>
           </div>
         </button>
       </section>
 
-      <section class="mt-7" id="home-tips-block">
-        <h2 class="font-display text-[21px] font-semibold tracking-[-0.01em]">训练小提示</h2>
-        <div class="card-journal tinted-rose grain relative overflow-hidden mt-3 p-4" style="border-radius:20px 26px 18px 24px">
+      <section class="mt-6" id="home-tips-block">
+        <div class="card-journal tinted-rose grain relative overflow-hidden p-3.5" style="border-radius:18px 22px 16px 20px">
           <div class="pearl-sheen"></div>
-          <div class="relative z-10 flex items-center gap-2 mb-2"><iconify-icon icon="solar:lightbulb-linear" class="text-[16px] text-[var(--gold)]"></iconify-icon><span class="label-editorial text-[12px] text-[var(--rose-deep)]">小提示</span></div>
-          <div class="relative z-10 flex gap-3">
-            <div class="satin-mark h-10 shrink-0"></div>
-            <div>
-              <p class="text-[13px] leading-6 text-[var(--ink-soft)]" id="tip-quote"></p>
-              <p class="mt-1 text-[11px] text-[var(--ink-faint)]" id="tip-label"></p>
-            </div>
-          </div>
+          <p class="relative z-10 text-[11px] text-[var(--rose-deep)]" id="tip-label"></p>
+          <p class="relative z-10 mt-1 text-[13px] leading-6 text-[var(--ink-soft)]" id="tip-quote"></p>
         </div>
       </section>
     </main>
@@ -505,25 +542,23 @@
       <button onclick="goRecord()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:microphone-3-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">记录</span></button>
       <button onclick="goHistory()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span></button>
       <button onclick="goProgress()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><span class="relative"><iconify-icon icon="solar:graph-up-linear" class="text-[22px]"></iconify-icon><span class="nav-progress-dot hidden absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[var(--rose-deep)] ring-2 ring-[var(--paper)]"></span></span><span class="text-[10px]">追踪</span></button>
-      <button onclick="goProfile()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:user-circle-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">我的</span></button>
     </nav>
   </div>
 
   <!-- ============ VOICE / RECORD ============ -->
   <div class="screen flex-col w-full h-full wash-rose" id="screen-record">
     <header class="shrink-0 px-6 pt-7 pb-3 flex items-center gap-4">
-      <button onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
+      <button onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
       <div><p class="label-editorial text-[13px] text-[var(--rose-deep)]">训练记录</p><h1 class="mt-0.5 text-[20px] font-semibold">说说今天的训练</h1></div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-8">
       <p class="text-[12.5px] leading-6 text-[var(--ink-soft)]">点中间按钮开始说，最多 3 段、每段 60 秒。停了会转成文字，不用组织得很完美。</p>
-      <p class="mt-1.5 text-[12px] leading-5 text-[var(--ink-faint)]">比如：「中间转圈掉了，老师说 spotting 定点没看住。」</p>
 
       <section class="card-journal tinted-rose grain relative mt-5 overflow-hidden rounded-[26px] px-5 pt-6 pb-7 text-center">
         <div class="pearl-sheen"></div>
         <img src="/img/pack-spin.png" alt="" aria-hidden="true" class="deco-photo tint-deep right-[-18px] -bottom-4 w-[108px] h-[136px] opacity-[0.38] z-[1]">
-        <p class="relative z-10 font-display text-[40px] leading-none font-semibold tracking-[0.04em] text-[var(--burgundy)]" id="rec-timer">0s</p>
-        <p class="relative z-10 mt-2 text-[12px] text-[var(--ink-faint)]" id="rec-state">点中间按钮开始录音</p>
+        <p class="relative z-10 text-[32px] leading-none font-medium tracking-[0.02em] text-[var(--burgundy)]" id="rec-timer" style="font-variant-numeric:tabular-nums">0s</p>
+        <p class="relative z-10 mt-2 text-[12px] text-[var(--ink-faint)]" id="rec-state">轻触开始</p>
         <p class="relative z-10 mt-3 pr-16 text-[12.5px] leading-6 text-[var(--ink-soft)] min-h-[24px]" id="rec-live-text"></p>
         <div class="relative z-10 mt-5 flex justify-center">
           <div class="rec-mic-wrap">
@@ -534,9 +569,12 @@
         </div>
       </section>
 
-      <section class="mt-6">
-        <p class="text-[12px] font-medium text-[var(--ink-soft)]">想不起说什么时，点一条写进下方</p>
-        <p class="mt-0.5 text-[11px] text-[var(--ink-faint)]">只会插入提纲，不会开始录音</p>
+      <details class="rec-prompts mt-6">
+        <summary class="flex items-center gap-1.5 text-[12px] font-medium text-[var(--ink-soft)]">
+          <iconify-icon icon="solar:alt-arrow-right-linear" class="rec-prompts-chevron text-[14px] text-[var(--rose-deep)] transition-transform"></iconify-icon>
+          想不出说什么时点这里
+        </summary>
+        <p class="mt-1.5 text-[11px] text-[var(--ink-faint)]">点一条写进下方，只会插入提纲，不会开始录音</p>
         <div class="mt-3 grid grid-cols-2 gap-2">
           <button type="button" onclick="insertPrompt('今天身体：哪里紧、哪里轻松。')" class="text-left rounded-[18px] bg-[var(--paper)] border border-[var(--border-soft)] px-3.5 py-3">
             <span class="block text-[12.5px] font-medium">身体状态</span>
@@ -555,35 +593,32 @@
             <span class="block mt-0.5 text-[10.5px] text-[var(--ink-faint)]">给自己一句就好</span>
           </button>
         </div>
-      </section>
+      </details>
 
       <div id="segments-box" class="mt-4 space-y-2"></div>
       <textarea id="manual-input" placeholder="也可以打字。例如：今天 pirouette 掉了，spotting 没看住。"
         class="mt-4 w-full min-h-[76px] rounded-2xl border border-[var(--border-soft)] p-3.5 text-[12.5px]"></textarea>
-
-      <div class="mt-5 flex gap-3">
-        <button onclick="clearSegments()" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">清空</button>
-        <button id="generate-btn" onclick="generateReview()" disabled
-          class="btn-ribbon flex-1 h-11 rounded-full text-[12.5px] font-semibold disabled:opacity-40">
-          <span class="pearl-sheen"></span>
-          <span class="relative z-10">完成并生成复盘</span>
-        </button>
-      </div>
     </main>
+    <div class="sticky-actions shrink-0 px-6 pt-3 flex gap-3">
+      <button type="button" onclick="clearSegments()" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">清空</button>
+      <button id="generate-btn" onclick="generateReview()" disabled
+        class="btn-ribbon flex-1 h-11 rounded-full text-[12.5px] font-semibold disabled:opacity-40">
+        <span class="pearl-sheen"></span>
+        <span class="relative z-10">完成并生成复盘</span>
+      </button>
+    </div>
   </div>
 
   <!-- ============ PROCESSING ============ -->
   <div class="screen flex-col w-full h-full wash-rose" id="screen-processing">
     <header class="shrink-0 px-6 pt-7 pb-3 flex items-center gap-4">
-      <div><p class="label-editorial text-[13px] text-[var(--rose-deep)]">BalletMind AI</p><h1 class="mt-0.5 text-[20px] font-semibold">正在整理你的训练</h1></div>
+      <div><p class="label-editorial text-[13px] text-[var(--rose-deep)]">BalletMind AI</p><h1 class="mt-0.5 text-[20px] font-semibold">正在整理你说过的话</h1></div>
     </header>
     <main class="flex-1 min-h-0 flex flex-col items-center justify-center px-6">
       <div class="relative w-36 h-36 flex items-center justify-center">
         <img src="/img/pack-jump.png" alt="" class="w-[120px] h-[140px] object-contain tint-rose opacity-60">
       </div>
-      <h2 class="font-display mt-8 text-[24px] font-semibold">听见你的练习重点</h2>
-      <p class="mt-2 text-[12px] leading-5 text-[var(--ink-faint)] text-center">AI 正在整理你说过的内容<br>并给出针对这次的常见练法参考（不是教练）</p>
-      <p class="mt-6 text-center text-[10px] text-[var(--ink-faint)]">通常需要几秒到十几秒，请稍候</p>
+      <p class="mt-8 text-[12px] leading-5 text-[var(--ink-faint)] text-center">通常需要几秒到十几秒</p>
       <button type="button" onclick="cancelGenerate()" class="mt-8 text-[13px] text-[var(--rose-deep)]">返回修改</button>
     </main>
   </div>
@@ -592,119 +627,133 @@
   <div class="screen flex-col w-full h-full wash-dust" id="screen-review">
     <header class="shrink-0 px-6 pt-7 pb-3 flex items-center justify-between">
       <button onclick="goBackFromReview()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回修改"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
-      <h1 class="text-[17px] font-semibold">Review 复盘草稿</h1>
+      <h1 class="text-[17px] font-semibold">复盘草稿</h1>
       <div class="w-9"></div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-8">
       <img src="/img/pack-arms.png" alt="" aria-hidden="true" class="deco-photo tint-soft right-[-14px] bottom-2 w-[128px] h-[160px] opacity-[0.34]">
       <div id="review-error-wrap"></div>
-      <input id="review-classname" placeholder="课程名称（如：芭蕾基训 · 足尖课）" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] text-[12.5px] mb-4">
 
       <div class="mb-4">
-        <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">这次练了多久？（可选）</p>
-        <div class="flex gap-2 flex-wrap" id="duration-chips">
-          <button type="button" onclick="selectDuration(30)" data-min="30" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">30分钟</button>
-          <button type="button" onclick="selectDuration(60)" data-min="60" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1小时</button>
-          <button type="button" onclick="selectDuration(90)" data-min="90" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1.5小时</button>
-          <button type="button" onclick="selectDuration(120)" data-min="120" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">2小时+</button>
-        </div>
-      </div>
-
-      <div class="mb-4">
-        <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">今天感觉怎么样？（可选，自己记录的感受）</p>
-        <div class="flex gap-2.5" id="mood-chips">
-          <button type="button" onclick="selectMood('low')" data-mood="low" aria-label="不在状态" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
-            <iconify-icon icon="solar:sad-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
-            <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">不在状态</span>
-          </button>
-          <button type="button" onclick="selectMood('meh')" data-mood="meh" aria-label="一般" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
-            <iconify-icon icon="solar:confounded-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
-            <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">一般</span>
-          </button>
-          <button type="button" onclick="selectMood('good')" data-mood="good" aria-label="还不错" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
-            <iconify-icon icon="solar:smile-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
-            <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">还不错</span>
-          </button>
-          <button type="button" onclick="selectMood('great')" data-mood="great" aria-label="状态很好" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
-            <iconify-icon icon="solar:emoji-funny-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
-            <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">很好</span>
-          </button>
-        </div>
-      </div>
-
-      <section class="rounded-[22px] bg-[var(--paper)] border border-[var(--border-soft)] p-4 mb-4">
-        <div class="flex items-center gap-2 mb-2"><span class="w-7 h-7 rounded-full chip flex items-center justify-center"><iconify-icon icon="solar:microphone-3-linear" class="text-[15px] text-[var(--rose-deep)]"></iconify-icon></span><span class="text-[12px] font-semibold">语音转写</span></div>
-        <p class="text-[12px] leading-6 text-[var(--ink-soft)]" id="review-transcript"></p>
-      </section>
-
-      <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[var(--sage)] mb-2">✓ 做得好的地方（可编辑）</p>
+        <p class="text-[12px] font-semibold text-[var(--sage)] mb-2">做得好的地方</p>
         <textarea id="review-good" class="w-full min-h-[60px] rounded-2xl field-good p-3 text-[12.5px]"></textarea>
       </div>
       <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[var(--gold)] mb-2">△ 待改进点（可编辑）</p>
+        <p class="text-[12px] font-semibold text-[var(--gold)] mb-2">待改进点</p>
         <textarea id="review-improve" class="w-full min-h-[60px] rounded-2xl field-improve p-3 text-[12.5px]"></textarea>
       </div>
       <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[var(--rose-deep)] mb-2">→ 下次练习注意事项（可编辑）</p>
+        <p class="text-[12px] font-semibold text-[var(--rose-deep)] mb-2">下次想留意</p>
         <textarea id="review-next" class="w-full min-h-[60px] rounded-2xl field-next p-3 text-[12.5px]"></textarea>
-      </div>
-      <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[var(--mauve)] mb-1">针对这次的小提示（可编辑、可删）</p>
-        <p class="text-[11px] leading-4 text-[var(--ink-faint)] mb-2">常见练法参考，不是针对你的诊断，也不替代老师。可以删掉再保存。</p>
-        <textarea id="review-tips" class="w-full min-h-[60px] rounded-2xl border border-dashed border-[var(--border-soft)] p-3 text-[12.5px]"></textarea>
       </div>
       <div id="review-note" class="hidden mb-4 text-[11px] text-[var(--ink-faint)] border border-dashed border-[var(--border-soft)] rounded-xl p-3"></div>
 
-      <div class="mb-4 rounded-2xl bg-[var(--paper)] border border-dashed border-[var(--rose)]/40 p-3">
-        <button type="button" onclick="toggleTermCorrection()" class="w-full flex items-center justify-between text-left">
-          <span class="text-[11.5px] text-[var(--mauve)]">发现某个动作名称被识别错了？点这里纠正</span>
-          <iconify-icon icon="solar:alt-arrow-down-linear" id="term-toggle-icon" class="text-[14px] text-[var(--ink-faint)]"></iconify-icon>
+      <div class="mb-4 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] px-3.5 py-3">
+        <button type="button" onclick="toggleReviewExtras()" class="w-full flex items-center justify-between text-left gap-2">
+          <span class="min-w-0">
+            <span class="block text-[12.5px] font-medium text-[var(--ink)]">还可以记下</span>
+            <span class="block mt-0.5 text-[11px] leading-4 text-[var(--ink-faint)]" id="review-extras-summary">课名、时长、心情、这次的小提示，不填也能保存</span>
+          </span>
+          <iconify-icon icon="solar:alt-arrow-down-linear" id="review-extras-icon" class="shrink-0 text-[16px] text-[var(--ink-faint)]"></iconify-icon>
         </button>
-        <div id="term-correction-form" class="hidden mt-3 space-y-2">
-          <input id="term-wrong" placeholder="AI 识别成了什么（如：拍赛）" class="w-full px-3 py-2 rounded-xl border border-[var(--border-soft)] text-[12px]">
-          <input id="term-correct" placeholder="正确写法是什么（如：passé）" class="w-full px-3 py-2 rounded-xl border border-[var(--border-soft)] text-[12px]">
-          <button type="button" onclick="submitTermCorrection()" class="btn-ribbon w-full h-9 rounded-full text-[11.5px] font-medium">
-            <span class="pearl-sheen"></span><span class="relative z-10">记住这个纠正</span>
-          </button>
+        <div id="review-extras-body" class="hidden mt-3 space-y-4">
+          <input id="review-classname" placeholder="课程名称（如：芭蕾基训 · 足尖课）" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] text-[12.5px]" oninput="updateReviewExtrasSummary()">
+
+          <div>
+            <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">这次练了多久？（可选）</p>
+            <div class="flex gap-2 flex-wrap" id="duration-chips">
+              <button type="button" onclick="selectDuration(30)" data-min="30" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">30分钟</button>
+              <button type="button" onclick="selectDuration(60)" data-min="60" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1小时</button>
+              <button type="button" onclick="selectDuration(90)" data-min="90" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1.5小时</button>
+              <button type="button" onclick="selectDuration(120)" data-min="120" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">2小时+</button>
+            </div>
+          </div>
+          <div>
+            <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">今天感觉怎么样？（可选）</p>
+            <div class="flex gap-2.5" id="mood-chips">
+              <button type="button" onclick="selectMood('low')" data-mood="low" aria-label="不在状态" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+                <iconify-icon icon="solar:sad-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
+                <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">不在状态</span>
+              </button>
+              <button type="button" onclick="selectMood('meh')" data-mood="meh" aria-label="一般" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+                <iconify-icon icon="solar:confounded-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
+                <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">一般</span>
+              </button>
+              <button type="button" onclick="selectMood('good')" data-mood="good" aria-label="还不错" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+                <iconify-icon icon="solar:smile-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
+                <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">还不错</span>
+              </button>
+              <button type="button" onclick="selectMood('great')" data-mood="great" aria-label="状态很好" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+                <iconify-icon icon="solar:emoji-funny-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
+                <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">很好</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-[12px] font-semibold text-[var(--mauve)] mb-1">针对这次的小提示</p>
+            <p class="text-[11px] leading-4 text-[var(--ink-faint)] mb-2">常见练法参考（不是教练）</p>
+            <textarea id="review-tips" class="w-full min-h-[60px] rounded-2xl border border-dashed border-[var(--border-soft)] p-3 text-[12.5px]" oninput="updateReviewExtrasSummary()"></textarea>
+          </div>
+
+          <section class="rounded-[18px] bg-[var(--ivory)] border border-[var(--border-soft)] p-3">
+            <p class="text-[11.5px] font-medium text-[var(--ink-soft)] mb-1">语音转写</p>
+            <p class="text-[12px] leading-6 text-[var(--ink-soft)]" id="review-transcript"></p>
+          </section>
+
+          <div class="rounded-2xl bg-[var(--ivory)] border border-dashed border-[var(--rose)]/40 p-3">
+            <button type="button" onclick="toggleTermCorrection()" class="w-full flex items-center justify-between text-left">
+              <span class="text-[11.5px] text-[var(--mauve)]">发现某个动作名称被识别错了？点这里纠正</span>
+              <iconify-icon icon="solar:alt-arrow-down-linear" id="term-toggle-icon" class="text-[14px] text-[var(--ink-faint)]"></iconify-icon>
+            </button>
+            <div id="term-correction-form" class="hidden mt-3 space-y-2">
+              <input id="term-wrong" placeholder="AI 识别成了什么（如：拍赛）" class="w-full px-3 py-2 rounded-xl border border-[var(--border-soft)] text-[12px]">
+              <input id="term-correct" placeholder="正确写法是什么（如：passé）" class="w-full px-3 py-2 rounded-xl border border-[var(--border-soft)] text-[12px]">
+              <button type="button" onclick="submitTermCorrection()" class="btn-ribbon w-full h-9 rounded-full text-[11.5px] font-medium">
+                <span class="pearl-sheen"></span><span class="relative z-10">记住这个纠正</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-
-      <div class="flex gap-3">
-        <button onclick="retryGenerate()" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">重新生成</button>
-        <button onclick="confirmSave()" class="btn-ribbon flex-1 h-11 rounded-full text-[12.5px] font-semibold">确认保存</button>
-      </div>
     </main>
+    <div class="sticky-actions shrink-0 px-6 pt-3 flex gap-3">
+      <button type="button" onclick="retryGenerate()" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">重新生成</button>
+      <button type="button" id="review-save-btn" onclick="confirmSave()" class="btn-ribbon flex-1 h-11 rounded-full text-[12.5px] font-semibold">确认保存</button>
+    </div>
   </div>
 
   <!-- ============ HISTORY ============ -->
   <div class="screen flex-col w-full h-full wash-dust" id="screen-history">
-    <header class="shrink-0 px-6 pt-7 pb-4">
-      <div class="flex items-center justify-between">
-        <div>
+    <header class="shrink-0 px-6 pt-7 pb-3">
+      <div class="flex items-center gap-3">
+        <button onclick="goHome()" class="w-11 h-11 shrink-0 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
+        <div class="flex-1 min-w-0">
           <p class="label-editorial text-[13px] text-[var(--rose-deep)]">档案</p>
-          <h1 class="font-display mt-1 text-[28px] font-semibold tracking-[-0.01em]">每一次记下的课</h1>
+          <h1 class="font-display mt-0.5 text-[22px] font-semibold tracking-[-0.01em]">每一次记下的课</h1>
         </div>
-        <button onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
+        <button type="button" id="history-view-toggle" onclick="toggleHistoryView()" class="shrink-0 text-[12.5px] text-[var(--rose-deep)] font-medium">日历</button>
       </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-7">
-      <img src="/img/pack-arabesque.png" alt="" aria-hidden="true" class="deco-photo tint-rose right-[-12px] bottom-[-6px] w-[148px] h-[186px] opacity-[0.28]">
-      <div class="hist-tabs flex items-center gap-1 mb-4 rounded-full p-1">
-        <button type="button" id="history-tab-list" onclick="setHistoryView('list')" class="flex-1 h-8 rounded-full text-[12px] font-medium">列表</button>
-        <button type="button" id="history-tab-calendar" onclick="setHistoryView('calendar')" class="flex-1 h-8 rounded-full text-[12px] font-medium">日历</button>
-      </div>
+      <img src="/img/pack-arabesque.png" alt="" aria-hidden="true" class="deco-photo tint-rose right-[-18px] bottom-8 w-[110px] h-[138px] opacity-[0.16]">
 
       <div id="history-list-view">
-        <div class="card-journal grain relative flex items-center gap-2 rounded-[18px] px-4 h-12 mb-3">
+        <div class="card-journal grain relative rounded-[22px] px-3.5 pt-3 pb-3 mb-4">
           <div class="pearl-sheen"></div>
-          <iconify-icon icon="solar:magnifer-linear" class="relative z-10 text-[18px] text-[var(--rose-deep)]"></iconify-icon>
-          <input id="history-search" oninput="filterHistory()" placeholder="搜 plie、蹲，都能找到 plié" class="relative z-10 flex-1 bg-transparent outline-none text-[12.5px] placeholder:text-[var(--ink-faint)]">
+          <div class="relative z-10 flex items-center gap-2 rounded-[14px] bg-white/55 px-3 h-11">
+            <iconify-icon icon="solar:magnifer-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon>
+            <input id="history-search" oninput="filterHistory()" placeholder="搜 plie、蹲，都能找到 plié" class="flex-1 bg-transparent outline-none text-[12.5px] placeholder:text-[var(--ink-faint)]">
+          </div>
+          <p class="relative z-10 mt-2.5 mb-1.5 text-[11px] text-[var(--ink-faint)]">点标签筛选，再点一次取消</p>
+          <div id="history-term-chips" class="relative z-10 term-chip-row"></div>
         </div>
-        <div id="history-term-chips" class="flex flex-wrap gap-2 mb-4"></div>
-        <div id="history-empty" class="mt-10 text-center text-[var(--ink-faint)] text-[12.5px]">还没有记录，去录第一段吧</div>
-        <div id="history-search-empty" class="hidden mt-10 text-center text-[var(--ink-faint)] text-[12.5px]">没有找到匹配的记录</div>
-        <div id="history-list" class="space-y-3"></div>
+        <div id="history-empty" class="mt-8 text-center">
+          <p class="text-[var(--ink-faint)] text-[13px]">还没有记录</p>
+          <button type="button" onclick="goRecord()" class="mt-3 text-[13px] text-[var(--rose-deep)] font-medium">去说第一段</button>
+        </div>
+        <div id="history-search-empty" class="hidden mt-8 text-center text-[var(--ink-faint)] text-[12.5px]">没有找到匹配的记录，换个词或再点一下标签</div>
+        <div id="history-list" class="relative z-10 space-y-3"></div>
       </div>
 
       <div id="history-calendar-view" class="hidden">
@@ -729,7 +778,7 @@
   <!-- ============ DETAIL ============ -->
   <div class="screen flex-col w-full h-full wash-cream" id="screen-detail">
     <header class="shrink-0 px-6 pt-7 pb-4 flex items-center gap-4 border-b border-[var(--border-soft)]">
-      <button onclick="goHistory()" class="w-11 h-11 rounded-full chip flex items-center justify-center"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
+      <button onclick="goHistory()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
       <div class="flex-1">
         <p class="label-editorial text-[13px] text-[var(--rose-deep)]" id="detail-date"></p>
         <h1 class="mt-0.5 text-[20px] font-semibold flex items-center gap-1.5"><span id="detail-title"></span><span id="detail-mood" class="text-[16px]"></span></h1>
@@ -765,9 +814,12 @@
 
   <!-- ============ PROFILE ============ -->
   <div class="screen flex-col w-full h-full wash-cream" id="screen-profile">
-    <header class="shrink-0 px-6 pt-7 pb-4">
-      <p class="label-editorial text-[13px] text-[var(--rose-deep)]">只属于你</p>
-      <h1 class="font-display mt-1 text-[28px] font-semibold tracking-[-0.01em]">我的</h1>
+    <header class="shrink-0 px-6 pt-7 pb-4 flex items-center gap-4">
+      <button onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
+      <div>
+        <p class="label-editorial text-[13px] text-[var(--rose-deep)]">只属于你</p>
+        <h1 class="font-display mt-1 text-[28px] font-semibold tracking-[-0.01em]">我的</h1>
+      </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-7">
       <section class="card-journal tinted grain relative overflow-hidden px-5 pt-5 pb-6" style="border-radius:30px 18px 28px 20px">
@@ -861,68 +913,25 @@
       <button onclick="goRecord()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:microphone-3-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">记录</span></button>
       <button onclick="goHistory()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span></button>
       <button onclick="goProgress()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><span class="relative"><iconify-icon icon="solar:graph-up-linear" class="text-[22px]"></iconify-icon><span class="nav-progress-dot hidden absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[var(--rose-deep)] ring-2 ring-[var(--paper)]"></span></span><span class="text-[10px]">追踪</span></button>
-      <button class="flex flex-col items-center gap-1 text-[var(--rose-deep)]"><iconify-icon icon="solar:user-circle-bold" class="text-[22px]"></iconify-icon><span class="text-[10px] font-semibold">我的</span></button>
     </nav>
   </div>
 
   <!-- ============ PROGRESS (Recurring Issues / Training Review / Pre-Class Brief) ============ -->
   <div class="screen flex-col w-full h-full wash-rose" id="screen-progress">
     <header class="shrink-0 px-6 pt-7 pb-4 flex items-center gap-4">
-      <button onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
+      <button onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
       <div>
         <p class="label-editorial text-[13px] text-[var(--rose-deep)]">你确认过的记录</p>
         <h1 class="mt-0.5 text-[20px] font-semibold">成长追踪</h1>
-        <p class="mt-1 text-[11px] leading-4 text-[var(--ink-faint)]">从你自己的复盘里汇总。不是教练计划，也不替代老师。</p>
       </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-8">
-      <img src="/img/pack-plie.png" alt="" aria-hidden="true" class="deco-photo tint-soft right-[-16px] bottom-4 w-[120px] h-[148px] opacity-[0.32]">
-
-      <!-- Pre-Class Brief: 0 LLM calls, renders straight from existing data -->
-      <section class="card-journal tinted-rose grain relative overflow-hidden p-4" style="border-radius:24px 16px 24px 18px">
-        <div class="pearl-sheen"></div>
-        <img src="/img/pack-barre.png" alt="" aria-hidden="true" class="deco-photo tint-deep right-[-8px] -bottom-5 w-[96px] h-[116px] opacity-[0.5] z-[1]">
-        <div class="relative z-10 flex items-center gap-2"><iconify-icon icon="solar:flag-2-linear" class="text-[18px] text-[var(--gold)]"></iconify-icon><span class="label-editorial text-[13px] text-[var(--rose-deep)]">课前看一眼</span></div>
-        <div id="brief-content" class="relative z-10 mt-3 pr-24 text-[12.5px] leading-6 text-[var(--ink)]">加载中…</div>
-      </section>
-
-      <!-- Recent-activity strip: compact alternative to a full calendar card
-           (that felt redundant with the home-screen calendar and took up a
-           lot of space for little signal). Just the last 14 days, colored
-           by that day's record count — no month nav, no day-click list. -->
-      <section class="mt-7">
-        <h2 class="text-[17px] font-semibold">最近训练</h2>
-        <div class="card-journal tinted grain relative overflow-hidden mt-3 p-4" style="border-radius:22px 14px 22px 16px">
-          <div class="pearl-sheen"></div>
-          <div class="relative z-10 flex items-center justify-between">
-            <div class="flex items-center gap-2"><iconify-icon icon="solar:fire-linear" class="text-[16px] text-[var(--gold)]"></iconify-icon><span class="label-editorial text-[12px] text-[var(--rose-deep)]">近14天</span></div>
-            <span class="text-[10.5px] text-[var(--ink-faint)]">颜色越深，练得越多</span>
-          </div>
-          <div class="relative z-10 mt-3 flex items-center justify-center gap-1.5" id="progress-strip"></div>
-        </div>
-      </section>
-
-      <!-- Training Review: rules aggregation; auto-shown so it is not buried -->
-      <section class="mt-7">
-        <div class="flex items-center justify-between">
-          <h2 class="text-[17px] font-semibold">最近 7 天 / 5 次</h2>
-        </div>
-        <p class="mt-1 text-[11px] leading-4 text-[var(--ink-faint)]">打开本页会先看到最近 7 天；可改成最近 5 次。都是你确认过的记录，不是 AI 另写的指导。</p>
-        <div class="mt-3 flex gap-2">
-          <button id="review-days-btn" onclick="generateTrainingReview('days')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近7天</button>
-          <button id="review-last-btn" onclick="generateTrainingReview('last')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近5次</button>
-        </div>
-        <div id="review-content" class="mt-3 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-4 text-[12.5px] text-[var(--ink)]">加载中…</div>
-        <button id="review-export-btn" onclick="exportTrainingReview()" class="hidden mt-2 w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">复制为文本</button>
-      </section>
-
-      <!-- Recurring Issue Tracking -->
-      <section class="mt-7">
-        <div class="flex items-center justify-between">
+      <section>
+        <div class="flex items-end justify-between gap-3">
           <h2 class="text-[17px] font-semibold">反复出现的问题</h2>
-          <span class="text-[11px] text-[var(--ink-faint)]">状态由你自己确认</span>
+          <span class="text-[11px] text-[var(--ink-faint)]">状态自己定</span>
         </div>
-        <div id="issue-donut-wrap" class="hidden card-journal tinted-rose grain relative overflow-hidden mt-3 p-4" style="border-radius:18px 24px 16px 22px">
+        <div id="issue-donut-wrap" class="hidden card-journal tinted-rose grain relative overflow-hidden mt-3 p-3" style="border-radius:18px 24px 16px 22px">
           <div class="pearl-sheen"></div>
           <div class="relative z-10 flex items-center gap-4">
             <svg id="issue-donut-svg" viewBox="0 0 64 64" class="w-14 h-14 shrink-0"></svg>
@@ -932,11 +941,43 @@
             </div>
           </div>
         </div>
-        <div id="issues-empty" class="hidden mt-3 text-center py-8 text-[var(--ink-faint)] text-[12.5px] leading-relaxed">
-          同一个问题在训练记录里反复出现时，会自动出现在这里；有没有改善由你自己确认，不是AI替你下结论
+        <div id="issues-empty" class="hidden mt-3 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-[12px] leading-5 text-[var(--ink-faint)]">
+          同一个问题在复盘里反复出现时，会列在这里。
         </div>
-        <div id="issues-list" class="mt-3 space-y-3"></div>
+        <div id="issues-list" class="relative z-10 mt-3 space-y-2.5"></div>
       </section>
+
+      <section class="card-journal tinted-rose grain relative overflow-hidden mt-5 p-3.5" style="border-radius:22px 16px 22px 18px">
+        <div class="pearl-sheen"></div>
+        <div class="relative z-10 flex items-center gap-2"><iconify-icon icon="solar:flag-2-linear" class="text-[16px] text-[var(--gold)]"></iconify-icon><span class="label-editorial text-[13px] text-[var(--rose-deep)]">课前看一眼</span></div>
+        <div id="brief-content" class="relative z-10 mt-2 text-[12.5px] leading-6 text-[var(--ink)]">加载中…</div>
+      </section>
+
+      <details class="progress-more mt-5">
+        <summary class="flex items-center justify-between gap-2 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] px-3.5 py-3">
+          <span class="min-w-0">
+            <span class="block text-[13px] font-medium text-[var(--ink)]">最近状态</span>
+            <span class="block mt-0.5 text-[11px] leading-4 text-[var(--ink-faint)]">近14天练习，还有 7 天或 5 次汇总</span>
+          </span>
+          <iconify-icon icon="solar:alt-arrow-down-linear" class="progress-more-chevron shrink-0 text-[16px] text-[var(--ink-faint)] transition-transform"></iconify-icon>
+        </summary>
+        <div class="mt-3">
+          <div class="card-journal tinted grain relative overflow-hidden p-4" style="border-radius:22px 14px 22px 16px">
+            <div class="pearl-sheen"></div>
+            <div class="relative z-10 flex items-center justify-between">
+              <div class="flex items-center gap-2"><iconify-icon icon="solar:fire-linear" class="text-[16px] text-[var(--gold)]"></iconify-icon><span class="label-editorial text-[12px] text-[var(--rose-deep)]">近14天</span></div>
+              <span class="text-[10.5px] text-[var(--ink-faint)]">颜色越深，练得越多</span>
+            </div>
+            <div class="relative z-10 mt-3 flex items-center justify-center gap-1.5" id="progress-strip"></div>
+          </div>
+          <div class="mt-3 flex gap-2">
+            <button id="review-days-btn" onclick="generateTrainingReview('days')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近7天</button>
+            <button id="review-last-btn" onclick="generateTrainingReview('last')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近5次</button>
+          </div>
+          <div id="review-content" class="mt-3 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-4 text-[12.5px] text-[var(--ink)]">加载中…</div>
+          <button id="review-export-btn" onclick="exportTrainingReview()" class="hidden mt-2 w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">复制为文本</button>
+        </div>
+      </details>
 
     </main>
     <nav class="shrink-0 h-[76px] nav-ballet flex items-center justify-around px-5">
@@ -944,7 +985,6 @@
       <button onclick="goRecord()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:microphone-3-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">记录</span></button>
       <button onclick="goHistory()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span></button>
       <button class="flex flex-col items-center gap-1 text-[var(--rose-deep)]"><iconify-icon icon="solar:graph-up-bold" class="text-[22px]"></iconify-icon><span class="text-[10px] font-semibold">追踪</span></button>
-      <button onclick="goProfile()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:user-circle-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">我的</span></button>
     </nav>
   </div>
 
@@ -1323,9 +1363,11 @@ function resetRecordScreen() {
   document.getElementById('rec-timer').textContent='0s';
   document.getElementById('rec-btn').disabled = false;
   document.getElementById('rec-btn').classList.remove('opacity-40', 'hidden');
-  document.getElementById('rec-state').textContent = recorderSupported ? '点中间按钮开始录音' : '此浏览器不能录音，请在下方手动输入';
+  document.getElementById('rec-state').textContent = recorderSupported ? '轻触开始' : '此浏览器不能录音，请在下方手动输入';
   if (!recorderSupported) document.getElementById('rec-btn').classList.add('hidden');
   lastDraft = null;
+  const prompts = document.querySelector('#screen-record .rec-prompts');
+  if (prompts) prompts.open = false;
 }
 function goRecord() {
   enableAiEntry();
@@ -1348,11 +1390,16 @@ function renderSelfTip() {
     SELF_TIPS[Math.floor(Math.random() * SELF_TIPS.length)];
 }
 
+function headerInitial() {
+  const user = getUser();
+  return (user?.displayName || user?.email || '?').trim().slice(0, 1).toUpperCase() || '·';
+}
+
 async function goProfile() {
   const user = getUser();
   document.getElementById('profile-name').textContent = user?.displayName || '-';
   document.getElementById('profile-email').textContent = user?.email || '-';
-  document.getElementById('profile-avatar').textContent = (user?.displayName || user?.email || '?').slice(0,1).toUpperCase();
+  document.getElementById('profile-avatar').textContent = headerInitial();
   renderSelfTip();
   refreshProgressDot();
 
@@ -1488,13 +1535,15 @@ async function loadHome() {
   refreshNoticeDot();
   const res = await authFetch(`${API}/api/records`);
   const rows = await res.json();
-  document.getElementById('stat-count').innerHTML = rows.length + ' <span class="text-[14px] font-medium text-[var(--ink-faint)]">次记录</span>';
+  document.getElementById('stat-count').innerHTML = rows.length + ' <span class="text-[14px] font-medium text-[var(--ink-faint)]">次</span>';
   const trainedHours = formatTrainingHours(rows);
   document.getElementById('stat-duration').textContent = trainedHours === null ? '时长待记录' : `${trainedHours}小时 累计`;
   homeRows = Array.isArray(rows) ? rows : [];
-  const isNew = homeRows.length === 0;
-  document.getElementById('home-cta-btn').classList.toggle('home-cta-first', isNew);
-  document.getElementById('home-first-hint').classList.toggle('hidden', !isNew);
+  rememberClassNameFromRecords(homeRows);
+  homeCalendarExpanded = false;
+  homeCalendarCursor = new Date();
+  paintHomeCta(homeRows);
+  document.getElementById('home-first-hint').classList.toggle('hidden', homeRows.length !== 0);
   renderHomeCalendar();
   renderCheckinStatus(homeRows);
   loadProgressTeaser();
@@ -1503,6 +1552,21 @@ async function loadHome() {
 // calendar — no new endpoint. Counts backward from today; if today has no
 // record yet, starts from yesterday so an active streak doesn't read as
 // broken mid-day (today isn't over yet).
+function paintHomeCta(rows) {
+  const isNew = !rows.length;
+  const recappedToday = rows.some((r) => dateKey(new Date(r.created_at)) === dateKey(new Date()));
+  document.getElementById('home-cta-btn').classList.toggle('home-cta-first', isNew);
+  const title = document.getElementById('home-cta-title');
+  const sub = document.getElementById('home-cta-sub');
+  if (!title || !sub) return;
+  if (recappedToday) {
+    title.textContent = '再记一笔';
+    sub.textContent = '今天已经写过，还可以再留一句';
+  } else {
+    title.textContent = '复盘今天';
+    sub.textContent = '说几句，以后还能翻到';
+  }
+}
 function computeDailyStreak(rows) {
   if (!rows.length) return 0;
   const days = new Set(rows.map(r => dateKey(new Date(r.created_at))));
@@ -1521,7 +1585,7 @@ function renderCheckinStatus(rows) {
   const el = document.getElementById('checkin-status');
   if (!el) return;
   if (!rows.length) {
-    el.innerHTML = `<span class="text-[12px] text-[var(--ink-faint)]">还没有第一条记录，随时可以开始</span>`;
+    el.innerHTML = `<span class="truncate text-[11px] text-[var(--ink-faint)]">还没有复盘</span>`;
     return;
   }
   const today = new Date();
@@ -1534,16 +1598,16 @@ function renderCheckinStatus(rows) {
 
   const badge = streak >= 2
     ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-white" style="background:linear-gradient(135deg,var(--gold),var(--rose-deep))">
-        <iconify-icon icon="solar:star-shine-bold" class="text-[12px]"></iconify-icon>打卡 ${streak} 天
+        <iconify-icon icon="solar:star-shine-bold" class="text-[12px]"></iconify-icon>连续记下 ${streak} 天
       </span>`
     : '';
 
   let text;
-  if (daysSince <= 0) text = '今天已经记录啦';
-  else if (daysSince === 1) text = '昨天有记录，今天要不要也来一段？';
-  else text = `距离上次记录已经 ${daysSince} 天`;
+  if (daysSince <= 0) text = '今天已复盘';
+  else if (daysSince === 1) text = '昨天留下过';
+  else text = `${daysSince} 天没写下`;
 
-  el.innerHTML = `${badge}<span class="text-[12px] text-[var(--ink-faint)]">${text}</span>`;
+  el.innerHTML = `${badge}<span class="truncate text-[11px] text-[var(--ink-faint)]">${text}</span>`;
 }
 async function loadProgressTeaser() {
   const briefEl = document.getElementById('progress-teaser-brief');
@@ -1558,7 +1622,7 @@ async function loadProgressTeaser() {
     const brief = await briefRes.json();
     const open = issues.filter(i => i.status !== 'resolved');
     if (open.length === 0) {
-      issueEl.textContent = '多记几次，重复出现的问题会列在这里';
+      issueEl.textContent = '记几次后出现';
     } else {
       const top = open.slice().sort((a, b) => b.occurrence_count - a.occurrence_count)[0];
       issueEl.textContent = `${compactPhrase(top.text)} · ${top.occurrence_count}次`;
@@ -1568,7 +1632,7 @@ async function loadProgressTeaser() {
     } else {
       const last = brief.lastRecord || {};
       const tip = (last.nextTimeReminder || last.improvePoints || '').trim();
-      briefEl.textContent = tip ? compactPhrase(tip, 40) : '还没有可看的提醒';
+      briefEl.textContent = tip ? compactPhrase(tip, 40) : '暂无';
     }
   } catch (e) {}
 }
@@ -1576,17 +1640,12 @@ async function loadProgressTeaser() {
 const MOOD_EMOJI = { low: '😔', meh: '😐', good: '🙂', great: '😄' };
 function entryCard(r) {
   const mood = MOOD_EMOJI[r.mood] || '';
-  const preview = compactPhrase(r.improve_points || r.good_points || r.next_time_reminder || '', 40);
-  return `<button onclick="openDetail(${r.id})" class="entry-card relative w-full text-left rounded-[22px] p-4 pl-5 overflow-hidden">
+  const preview = compactPhrase(r.improve_points || r.good_points || r.next_time_reminder || '', 48);
+  return `<button onclick="openDetail(${r.id})" class="entry-card relative z-10 w-full text-left rounded-[22px] px-4 py-3.5 pl-5 overflow-hidden">
     <span class="satin-mark absolute left-0 top-3 bottom-3"></span>
-    <div class="flex items-start justify-between gap-3">
-      <div class="min-w-0">
-        <p class="label-editorial text-[12px] text-[var(--rose-deep)]">${fmtDate(r.created_at)}</p>
-        <h3 class="mt-1 text-[15px] font-semibold truncate">${escapeHtml(r.class_name)}${mood ? ` <span class="font-normal">${mood}</span>` : ''}</h3>
-      </div>
-      <span class="shrink-0 w-9 h-9 rounded-[12px] chip flex items-center justify-center"><iconify-icon icon="solar:notes-minimalistic-linear" class="text-[17px] text-[var(--rose-deep)]"></iconify-icon></span>
-    </div>
-    ${preview ? `<p class="mt-2 text-[12px] leading-5 text-[var(--ink-soft)]">${escapeHtml(preview)}</p>` : ''}
+    <p class="label-editorial text-[12px] text-[var(--rose-deep)]">${fmtDate(r.created_at)}${mood ? ` · ${mood}` : ''}</p>
+    <h3 class="font-display mt-1 text-[18px] font-semibold tracking-[-0.01em] truncate">${escapeHtml(r.class_name)}</h3>
+    ${preview ? `<p class="mt-1.5 text-[12.5px] leading-5 text-[var(--ink-soft)]">${escapeHtml(preview)}</p>` : ''}
   </button>`;
 }
 
@@ -1608,31 +1667,18 @@ async function loadProgressStrip() {
   renderProgressStrip(rows);
 }
 
+// Deliberately doesn't repeat topIssues here — those are fully shown in
+// 「反复出现的问题」at the top of this screen. This card only shows the
+// last reminder / improve-point as a pre-class glance.
 async function loadBrief() {
   const el = document.getElementById('brief-content');
   try {
     const res = await authFetch(`${API}/api/progress/brief`);
     const data = await res.json();
-    let html = '';
-    if (data.topIssues.length > 0) {
-      html += `<p class="font-semibold text-[var(--mauve)]">这次留意</p><ul class="mt-1 space-y-1">`;
-      html += data.topIssues.map(i => `<li>· ${escapeHtml(compactPhrase(i.text))} <span class="text-[var(--ink-faint)]">${i.occurrence_count}次</span></li>`).join('');
-      html += `</ul>`;
-      if (data.lastRecord && data.lastRecord.nextTimeReminder) {
-        html += `<p class="mt-3 pt-3 border-t border-[var(--gold)]/20"><span class="font-semibold text-[var(--mauve)]">上次提醒</span> ${escapeHtml(compactPhrase(data.lastRecord.nextTimeReminder, 22))}</p>`;
-      }
-    } else {
-      // No repeat issue to flag yet — fall back to the user's own last
-      // reminder/improve-point note so there's always something concrete
-      // here, not just an empty-state sentence. Still pure lookup, no AI.
-      const tip = data.lastRecord ? (data.lastRecord.nextTimeReminder || data.lastRecord.improvePoints || '').trim() : '';
-      if (tip) {
-        html += `<p><span class="font-semibold text-[var(--mauve)]">这次留意</span> ${escapeHtml(compactPhrase(tip, 40))}</p>`;
-      } else {
-        html += `<p>还没有反复留意的点——同一个问题多次出现，会自动提醒你</p>`;
-      }
-    }
-    el.innerHTML = html;
+    const tip = data.lastRecord ? (data.lastRecord.nextTimeReminder || data.lastRecord.improvePoints || '').trim() : '';
+    el.innerHTML = tip
+      ? `<p><span class="font-semibold text-[var(--mauve)]">上次提醒</span> ${escapeHtml(compactPhrase(tip, 44))}</p>`
+      : `<p>还没有记录——保存第一条之后，这里会显示你上次给自己的提醒</p>`;
   } catch (e) {
     el.textContent = '加载失败，下拉重试';
   }
@@ -1652,24 +1698,38 @@ function renderIssues() {
   emptyEl.classList.add('hidden');
   listEl.innerHTML = active.map(issueCard).join('');
 }
+// Rows collapse to a single glanceable line (status dot + text + count) —
+// the status-change buttons only appear once you tap a row open. With
+// several open issues, a screen of always-visible 3-button rows read as
+// noisy; this keeps the default view a clean scannable list.
+let expandedIssueIds = new Set();
+function toggleIssueExpand(id) {
+  if (expandedIssueIds.has(id)) expandedIssueIds.delete(id); else expandedIssueIds.add(id);
+  renderIssues();
+}
 function issueCard(issue) {
-  const statusStyle = {
-    open: { label: '仍然存在', badge: 'field-improve text-[var(--gold)]' },
-    improving: { label: '有改善', badge: 'chip text-[var(--mauve)]' },
-  }[issue.status] || { label: '仍然存在', badge: 'field-improve text-[var(--gold)]' };
+  const statusDot = { open: 'var(--gold)', improving: 'var(--mauve)' }[issue.status] || 'var(--gold)';
+  const statusLabel = { open: '仍然存在', improving: '有改善' }[issue.status] || '仍然存在';
   const dates = issue.occurrences.map(o => fmtDate(o.createdAt).split(' ')[0]).join('、');
-  return `<div class="rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-4">
-    <div class="flex items-start justify-between gap-2">
-      <p class="text-[13px] font-medium flex-1">${escapeHtml(compactPhrase(issue.text))}</p>
-      <span class="shrink-0 rounded-full px-2 py-1 text-[10px] ${statusStyle.badge}">${statusStyle.label}</span>
-    </div>
-    <p class="mt-1.5 text-[11px] text-[var(--ink-faint)]">出现 ${issue.occurrence_count} 次 · ${escapeHtml(dates)}</p>
-    <div class="mt-3 flex gap-2">
-      <button onclick="updateIssueStatus(${issue.id},'improving')" class="flex-1 h-8 rounded-xl border border-[var(--border-soft)] text-[11px] text-[var(--mauve)] ${issue.status==='improving'?'chip':''}">有改善</button>
-      <button onclick="updateIssueStatus(${issue.id},'open')" class="flex-1 h-8 rounded-xl border border-[var(--border-soft)] text-[11px] text-[var(--mauve)] ${issue.status==='open'?'chip':''}">仍然存在</button>
-      <button onclick="updateIssueStatus(${issue.id},'resolved')" class="flex-1 h-8 rounded-xl border border-[var(--border-soft)] text-[11px] text-[var(--sage)]">已解决</button>
-    </div>
-  </div>`;
+  const isOpen = expandedIssueIds.has(issue.id);
+  let html = `<div class="rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] overflow-hidden">
+    <button type="button" onclick="toggleIssueExpand(${issue.id})" class="w-full flex items-center gap-2.5 px-4 py-3.5 text-left">
+      <span class="shrink-0 w-2 h-2 rounded-full" style="background:${statusDot}" aria-hidden="true"></span>
+      <span class="flex-1 min-w-0 text-[13px] font-medium truncate">${escapeHtml(compactPhrase(issue.text))}</span>
+      <span class="shrink-0 text-[11px] text-[var(--ink-faint)]">${issue.occurrence_count}次</span>
+      <iconify-icon icon="solar:alt-arrow-${isOpen ? 'up' : 'down'}-linear" class="shrink-0 text-[14px] text-[var(--ink-faint)]"></iconify-icon>
+    </button>`;
+  if (isOpen) {
+    html += `<div class="px-4 pb-4">
+      <p class="text-[11px] text-[var(--ink-faint)] mb-3">出现 ${issue.occurrence_count} 次 · ${escapeHtml(dates)} · 当前：${statusLabel}</p>
+      <div class="flex gap-2">
+        <button onclick="updateIssueStatus(${issue.id},'improving')" class="flex-1 h-8 rounded-xl border border-[var(--border-soft)] text-[11px] text-[var(--mauve)] ${issue.status==='improving'?'chip':''}">有改善</button>
+        <button onclick="updateIssueStatus(${issue.id},'open')" class="flex-1 h-8 rounded-xl border border-[var(--border-soft)] text-[11px] text-[var(--mauve)] ${issue.status==='open'?'chip':''}">仍然存在</button>
+        <button onclick="updateIssueStatus(${issue.id},'resolved')" class="flex-1 h-8 rounded-xl border border-[var(--border-soft)] text-[11px] text-[var(--sage)]">已解决</button>
+      </div>
+    </div>`;
+  }
+  return html + `</div>`;
 }
 async function updateIssueStatus(id, status) {
   await authFetch(`${API}/api/issues/${id}`, {
@@ -1678,13 +1738,13 @@ async function updateIssueStatus(id, status) {
   });
   if (status === 'resolved') {
     currentIssues = currentIssues.filter((issue) => issue.id !== id);
+    expandedIssueIds.delete(id);
     toast('已从追踪中移除');
   } else {
     const issue = currentIssues.find((item) => item.id === id);
     if (issue) issue.status = status;
   }
   renderIssues();
-  loadBrief();
 }
 
 let lastTrainingReview = null;
@@ -1748,11 +1808,8 @@ async function generateTrainingReview(mode) {
       html += data.resolvedInPeriod.map(i => `<li>· ${escapeHtml(compactPhrase(i.text))}</li>`).join('');
       html += `</ul></div>`;
     }
-    if (data.openIssues.length > 0) {
-      html += `<div class="mt-3"><p class="text-[12px] font-semibold text-[var(--gold)]">还在关注的问题</p><ul class="mt-1 text-[12px] leading-6 text-[var(--ink-soft)]">`;
-      html += data.openIssues.map(i => `<li>· ${escapeHtml(compactPhrase(i.text))}（${i.occurrence_count}次）</li>`).join('');
-      html += `</ul></div>`;
-    }
+    // Still-open issues aren't repeated here on purpose — they're listed
+    // with status controls in 「反复出现的问题」at the top of this screen.
     if (data.recordCount === 0) html = `<p class="text-[12px] text-[var(--ink-faint)]">这段时间还没有新的训练记录</p>`;
     contentEl.innerHTML = html;
     contentEl.classList.remove('hidden');
@@ -1810,7 +1867,8 @@ function renderHistoryTermChips() {
   const needles = expandSearchNeedles(document.getElementById('history-search').value);
   wrap.innerHTML = HISTORY_SEARCH_CHIPS.map((term) => {
     const on = needles.includes(foldBalletText(term));
-    return `<button type="button" onclick="applyHistoryTerm(${JSON.stringify(term)})" class="h-8 px-3 rounded-full border border-[var(--border-soft)] text-[11px] ${on ? 'chip text-[var(--rose-deep)] font-medium' : 'text-[var(--mauve)]'}">${term}</button>`;
+    const fr = /[a-zàâäéèêëïîôùûüç]/i.test(term);
+    return `<button type="button" onclick="applyHistoryTerm(${JSON.stringify(term)})" aria-pressed="${on ? 'true' : 'false'}" class="term-chip ${fr ? 'is-fr' : ''} ${on ? 'is-on' : ''}">${term}</button>`;
   }).join('');
 }
 
@@ -1836,6 +1894,7 @@ let calendarCursor = new Date();
 let selectedCalendarDate = null; // 'YYYY-MM-DD' or null
 let homeCalendarCursor = new Date();
 let homeSelectedDate = null;
+let homeCalendarExpanded = false;
 
 function dateKey(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function groupRecordsByDate(rows) {
@@ -1846,30 +1905,51 @@ function groupRecordsByDate(rows) {
   });
   return byDate;
 }
+function startOfWeekSunday(d) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() - x.getDay());
+  return x;
+}
+function formatMd(d) {
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
+}
+function calendarCellHtml(key, dayNum, byDate, selectedKey, selectFnName) {
+  const todayKey = dateKey(new Date());
+  const records = byDate[key] || [];
+  const has = records.length > 0;
+  const isFuture = key > todayKey;
+  const isToday = key === todayKey;
+  const isSelected = key === selectedKey;
+  const cls = ['cal-cell'];
+  if (isToday) cls.push('is-today');
+  if (isSelected) cls.push('is-selected');
+  if (has) cls.push('has-record');
+  if (isFuture) cls.push('is-future');
+  const action = isFuture ? 'disabled' : `onclick="${selectFnName}('${key}')"`;
+  return `<button type="button" ${action} class="${cls.join(' ')}"><span>${dayNum}</span>${has ? '<img src="/img/pack-ribbon.png" class="cal-bow" alt="" aria-hidden="true">' : ''}</button>`;
+}
 function paintMonthGrid(cursor, rows, selectedKey, selectFnName) {
   const year = cursor.getFullYear(), month = cursor.getMonth();
   const byDate = groupRecordsByDate(rows);
   const startWeekday = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const todayKey = dateKey(new Date());
   let html = '';
   for (let i = 0; i < startWeekday; i++) html += `<div class="cal-cell is-empty"></div>`;
   for (let day = 1; day <= daysInMonth; day++) {
     const key = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const records = byDate[key] || [];
-    const has = records.length > 0;
-    const isFuture = key > todayKey;
-    const isToday = key === todayKey;
-    const isSelected = key === selectedKey;
-    const cls = ['cal-cell'];
-    if (isToday) cls.push('is-today');
-    if (isSelected) cls.push('is-selected');
-    if (has) cls.push('has-record');
-    if (isFuture) cls.push('is-future');
-    const action = isFuture ? 'disabled' : `onclick="${selectFnName}('${key}')"`;
-    html += `<button type="button" ${action} class="${cls.join(' ')}"><span>${day}</span>${has ? '<img src="/img/pack-ribbon.png" class="cal-bow" alt="" aria-hidden="true">' : ''}</button>`;
+    html += calendarCellHtml(key, day, byDate, selectedKey, selectFnName);
   }
   return { html, byDate, year, month };
+}
+function paintWeekGrid(focus, rows, selectedKey, selectFnName) {
+  const start = startOfWeekSunday(focus);
+  const byDate = groupRecordsByDate(rows);
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+    html += calendarCellHtml(dateKey(d), d.getDate(), byDate, selectedKey, selectFnName);
+  }
+  return { html, byDate, start };
 }
 function paintDayList(byDate, year, month, selectedKey, emptyId, listId) {
   const emptyEl = document.getElementById(emptyId);
@@ -1897,25 +1977,20 @@ function paintDayList(byDate, year, month, selectedKey, emptyId, listId) {
   // feedback showed this interaction wasn't obvious.
   emptyEl.classList.remove('hidden');
   emptyEl.innerHTML = hasAnyThisMonth
-    ? `<span class="inline-flex items-center gap-1.5 text-[var(--rose-deep)] font-medium"><iconify-icon icon="solar:cursor-linear" class="text-[15px]"></iconify-icon>点一个有蝴蝶结的日子，看看那天写了什么</span>`
+    ? `<span class="inline-flex items-center gap-1.5 text-[var(--rose-deep)] font-medium"><iconify-icon icon="solar:cursor-linear" class="text-[15px]"></iconify-icon>点有标记的日子，翻翻那天写了什么</span>`
     : `<span class="text-[var(--ink-faint)]">这个月还没有训练记录</span>`;
 }
 
 function setHistoryView(mode) {
   historyViewMode = mode;
-  const listTab = document.getElementById('history-tab-list');
-  const calTab = document.getElementById('history-tab-calendar');
-  listTab.classList.toggle('bg-white', mode === 'list');
-  listTab.classList.toggle('shadow-sm', mode === 'list');
-  listTab.classList.toggle('text-[var(--burgundy)]', mode === 'list');
-  listTab.classList.toggle('text-[var(--ink-faint)]', mode !== 'list');
-  calTab.classList.toggle('bg-white', mode === 'calendar');
-  calTab.classList.toggle('shadow-sm', mode === 'calendar');
-  calTab.classList.toggle('text-[var(--burgundy)]', mode === 'calendar');
-  calTab.classList.toggle('text-[var(--ink-faint)]', mode !== 'calendar');
+  const toggle = document.getElementById('history-view-toggle');
+  if (toggle) toggle.textContent = mode === 'list' ? '日历' : '列表';
   document.getElementById('history-list-view').classList.toggle('hidden', mode !== 'list');
   document.getElementById('history-calendar-view').classList.toggle('hidden', mode !== 'calendar');
   if (mode === 'calendar') renderCalendar();
+}
+function toggleHistoryView() {
+  setHistoryView(historyViewMode === 'list' ? 'calendar' : 'list');
 }
 function shiftCalendarMonth(delta) {
   calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1);
@@ -1935,16 +2010,51 @@ function selectCalendarDate(key) {
 }
 
 function shiftHomeCalendar(delta) {
-  homeCalendarCursor = new Date(homeCalendarCursor.getFullYear(), homeCalendarCursor.getMonth() + delta, 1);
+  if (homeCalendarExpanded) {
+    homeCalendarCursor = new Date(homeCalendarCursor.getFullYear(), homeCalendarCursor.getMonth() + delta, 1);
+  } else {
+    const focus = new Date(homeCalendarCursor.getFullYear(), homeCalendarCursor.getMonth(), homeCalendarCursor.getDate());
+    focus.setDate(focus.getDate() + delta * 7);
+    homeCalendarCursor = focus;
+  }
   homeSelectedDate = null;
   renderHomeCalendar();
 }
+function toggleHomeCalendarRange() {
+  homeCalendarExpanded = !homeCalendarExpanded;
+  if (homeCalendarExpanded) {
+    homeCalendarCursor = new Date(homeCalendarCursor.getFullYear(), homeCalendarCursor.getMonth(), 1);
+  } else if (homeSelectedDate) {
+    const [y, m, d] = homeSelectedDate.split('-').map(Number);
+    homeCalendarCursor = new Date(y, m - 1, d);
+  } else {
+    homeCalendarCursor = new Date();
+  }
+  renderHomeCalendar();
+}
 function renderHomeCalendar() {
-  const year = homeCalendarCursor.getFullYear(), month = homeCalendarCursor.getMonth();
-  document.getElementById('home-calendar-month-label').textContent = `${year}年${month+1}月`;
-  const painted = paintMonthGrid(homeCalendarCursor, homeRows, homeSelectedDate, 'selectHomeCalendarDate');
+  const rangeBtn = document.getElementById('home-cal-range-btn');
+  const emptyEl = document.getElementById('home-calendar-day-empty');
+  const listEl = document.getElementById('home-calendar-day-list');
+  if (rangeBtn) rangeBtn.textContent = homeCalendarExpanded ? '本周' : '整月';
+  if (homeCalendarExpanded) {
+    const year = homeCalendarCursor.getFullYear(), month = homeCalendarCursor.getMonth();
+    document.getElementById('home-calendar-month-label').textContent = `${year}年${month + 1}月`;
+    const painted = paintMonthGrid(homeCalendarCursor, homeRows, homeSelectedDate, 'selectHomeCalendarDate');
+    document.getElementById('home-calendar-grid').innerHTML = painted.html;
+    paintDayList(painted.byDate, painted.year, painted.month, homeSelectedDate, 'home-calendar-day-empty', 'home-calendar-day-list');
+    return;
+  }
+  const painted = paintWeekGrid(homeCalendarCursor, homeRows, homeSelectedDate, 'selectHomeCalendarDate');
+  const weekEnd = new Date(painted.start.getFullYear(), painted.start.getMonth(), painted.start.getDate() + 6);
+  document.getElementById('home-calendar-month-label').textContent = `${formatMd(painted.start)} – ${formatMd(weekEnd)}`;
   document.getElementById('home-calendar-grid').innerHTML = painted.html;
-  paintDayList(painted.byDate, painted.year, painted.month, homeSelectedDate, 'home-calendar-day-empty', 'home-calendar-day-list');
+  if (homeSelectedDate) {
+    paintDayList(painted.byDate, painted.start.getFullYear(), painted.start.getMonth(), homeSelectedDate, 'home-calendar-day-empty', 'home-calendar-day-list');
+  } else {
+    listEl.innerHTML = '';
+    emptyEl.classList.add('hidden');
+  }
 }
 function selectHomeCalendarDate(key) {
   homeSelectedDate = homeSelectedDate === key ? null : key;
@@ -2072,6 +2182,9 @@ async function exportEntry() {
   }
 }
 async function deleteEntry() {
+  // Unlike everything else on this screen, deletion is irreversible — this
+  // is the one place that should have more friction, not less.
+  if (!confirm('确定要删除这条记录吗？删除后无法恢复。')) return;
   await authFetch(`${API}/api/records/${detailId}`, { method: 'DELETE' });
   toast('已删除');
   goHome();
@@ -2266,6 +2379,9 @@ function removeSegment(i) {
   updateGenerateBtn();
 }
 function clearSegments() {
+  const hasVoice = segments.length > 0;
+  const hasTyped = (document.getElementById('manual-input')?.value || '').trim().length > 0;
+  if ((hasVoice || hasTyped) && !window.confirm('清空后刚才说的和写下的都会去掉，确定吗？')) return;
   segments = []; renderSegments();
   document.getElementById('manual-input').value = '';
   document.getElementById('rec-live-text').textContent = '';
@@ -2281,6 +2397,27 @@ let generateAbort = null;
 function defaultClassName() {
   const d = new Date();
   return `${d.getMonth() + 1}月${d.getDate()}日训练`;
+}
+function isAutoClassName(name) {
+  return /^\d{1,2}月\d{1,2}日训练$/.test((name || '').trim());
+}
+function lastKnownClassName() {
+  try {
+    return (localStorage.getItem('bm_last_class') || '').trim();
+  } catch (e) {
+    return '';
+  }
+}
+function rememberClassName(name) {
+  const n = (name || '').trim();
+  if (!n || isAutoClassName(n)) return;
+  try { localStorage.setItem('bm_last_class', n); } catch (e) {}
+}
+function rememberClassNameFromRecords(rows) {
+  const named = (rows || [])
+    .filter((r) => (r.class_name || '').trim() && !isAutoClassName(r.class_name))
+    .sort((a, b) => Number(b.created_at) - Number(a.created_at));
+  if (named[0]) rememberClassName(named[0].class_name);
 }
 function cancelGenerate() {
   if (generateAbort) generateAbort.abort();
@@ -2320,6 +2457,15 @@ async function generateReview() {
 }
 async function retryGenerate() {
   if (!lastDraft) return;
+  // Regenerating overwrites good/improve/next/tips with fresh AI output —
+  // only worth a confirm when it would actually throw away something the
+  // user typed by hand (same diff confirmSave() already does).
+  const r = lastDraft.result || {};
+  const edited = document.getElementById('review-good').value.trim() !== (r.good_points || '').trim()
+    || document.getElementById('review-improve').value.trim() !== (r.improve_points || '').trim()
+    || document.getElementById('review-next').value.trim() !== (r.next_time_reminder || '').trim()
+    || document.getElementById('review-tips').value.trim() !== (r.session_tips || '').trim();
+  if (edited && !confirm('重新生成会覆盖你刚才改过的内容，确定要继续吗？')) return;
   logEvent('ai_regenerated');
   generateAbort = new AbortController();
   show('screen-processing');
@@ -2348,12 +2494,44 @@ async function retryGenerate() {
     generateAbort = null;
   }
 }
+// 「还可以记下」starts collapsed so the first confirm screen is three
+// recap fields + save. The summary names class / duration / mood / tips
+// so extras aren't a mystery, and it relabels once the user fills them.
+const DURATION_LABELS = { 30: '30分钟', 60: '1小时', 90: '1.5小时', 120: '2小时+' };
+const MOOD_LABELS = { low: '不在状态', meh: '一般', good: '还不错', great: '很好' };
+function updateReviewExtrasSummary() {
+  const el = document.getElementById('review-extras-summary');
+  if (!el) return;
+  const parts = [];
+  const name = (document.getElementById('review-classname')?.value || '').trim();
+  if (name) parts.push(name);
+  if (selectedDurationMin) parts.push(DURATION_LABELS[selectedDurationMin]);
+  if (selectedMood) parts.push(MOOD_LABELS[selectedMood]);
+  const tips = (document.getElementById('review-tips')?.value || '').trim();
+  if (parts.length) {
+    el.textContent = tips
+      ? `已记下 ${parts.join(' · ')} · 还有小提示`
+      : `已记下 ${parts.join(' · ')}`;
+  } else {
+    el.textContent = tips
+      ? '课名、时长、心情也可记；点开可看这次的小提示'
+      : '课名、时长、心情、这次的小提示，不填也能保存';
+  }
+}
+function toggleReviewExtras(forceOpen) {
+  const body = document.getElementById('review-extras-body');
+  const icon = document.getElementById('review-extras-icon');
+  const shouldBeHidden = forceOpen === undefined ? !body.classList.contains('hidden') : !forceOpen;
+  body.classList.toggle('hidden', shouldBeHidden);
+  icon.setAttribute('icon', shouldBeHidden ? 'solar:alt-arrow-down-linear' : 'solar:alt-arrow-up-linear');
+}
 let selectedDurationMin = null;
 function selectDuration(min) {
   selectedDurationMin = (selectedDurationMin === min) ? null : min;
   document.querySelectorAll('.duration-chip').forEach(btn => {
     btn.classList.toggle('is-selected', Number(btn.dataset.min) === selectedDurationMin);
   });
+  updateReviewExtrasSummary();
 }
 // Self-reported only — the user picks this, the app never infers it from
 // voice/text. Purely descriptive, no AI judgement anywhere near it.
@@ -2373,6 +2551,7 @@ function selectMood(mood) {
     const icons = MOOD_ICONS[btn.dataset.mood];
     if (iconEl && icons) iconEl.setAttribute('icon', isSel ? icons.bold : icons.linear);
   });
+  updateReviewExtrasSummary();
 }
 // isFreshDraft=false on retry: the user's course name and duration selection
 // have nothing to do with the transcript being re-processed, so a retry must
@@ -2391,7 +2570,10 @@ function renderReview(isFreshDraft = true) {
       const icons = MOOD_ICONS[btn.dataset.mood];
       if (iconEl && icons) iconEl.setAttribute('icon', icons.linear);
     });
-    document.getElementById('review-classname').value = '';
+    document.getElementById('review-classname').value = lastKnownClassName();
+    toggleReviewExtras(false);
+  } else if (selectedDurationMin || selectedMood || (document.getElementById('review-classname')?.value || '').trim()) {
+    toggleReviewExtras(true);
   }
   document.getElementById('review-transcript').textContent = lastDraft.transcript;
   const r = lastDraft.result;
@@ -2399,6 +2581,7 @@ function renderReview(isFreshDraft = true) {
   document.getElementById('review-improve').value = r.improve_points || '';
   document.getElementById('review-next').value = r.next_time_reminder || '';
   document.getElementById('review-tips').value = r.session_tips || '';
+  updateReviewExtrasSummary();
   const noteEl = document.getElementById('review-note');
   if (r.note) { noteEl.classList.remove('hidden'); noteEl.textContent = r.note; }
   else noteEl.classList.add('hidden');
@@ -2434,7 +2617,7 @@ async function confirmSave() {
   if (savingRecord) return;
   if (!lastDraft || !lastDraft.result) { toast('草稿已失效，请返回重新生成'); return; }
   savingRecord = true;
-  const saveBtn = document.querySelector('#screen-review button[onclick="confirmSave()"]');
+  const saveBtn = document.getElementById('review-save-btn');
   if (saveBtn) saveBtn.disabled = true;
   try {
   const good = document.getElementById('review-good').value.trim();
@@ -2466,6 +2649,7 @@ async function confirmSave() {
   const res = await authFetch(`${API}/api/records`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
   const result = await res.json();
   if (!res.ok) { toast(result.error || '保存失败'); return; }
+  rememberClassName(body.className);
   captureSessionId = '';
   showSaveCeremony(result.milestone);
   } catch (e) {
