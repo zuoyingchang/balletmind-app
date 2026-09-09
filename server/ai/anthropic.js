@@ -61,10 +61,12 @@ function findToolUse(data) {
 }
 
 function reviewFromToolInput(input = {}) {
+  const tips = Array.isArray(input.session_tips) ? input.session_tips.slice(0, 3) : input.session_tips;
   return {
     good_points: joinLines(input.good_points),
     improve_points: joinLines(input.improve_points),
     next_time_reminder: joinLines(input.next_time_reminder),
+    session_tips: joinLines(tips),
     confidence_level: input.confidence_level || '',
     note: input.note || '',
   };

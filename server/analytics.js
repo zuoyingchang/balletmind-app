@@ -3,7 +3,7 @@
 // record_started → voice_completed → asr_success → ai_success → review_opened → session_confirmed
 // Edit / regenerate / history are side metrics, not funnel steps.
 
-const FIELD_NAMES = ['good_points', 'improve_points', 'next_time_reminder'];
+const FIELD_NAMES = ['good_points', 'improve_points', 'next_time_reminder', 'session_tips'];
 
 const ALIASES = {
   record_started: ['record_voice_start'],

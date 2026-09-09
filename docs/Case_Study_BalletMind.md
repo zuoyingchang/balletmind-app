@@ -63,6 +63,20 @@ Prompt 版本号（当前 v1.5）与 temperature 参数化基础设施已就位�
 - **系统层**：P95 延迟、重试/超时次数、token 用量、估算成本——`/stats.html` 内部看板实时可查。
 - **产品层**：`record_voice_start → asr_success → ai_process_success → review_opened → user_edit_ai_result → save_record → history_open → progress_open` 全链路埋点。
 
+## 6.5 规模测试（实测，非估算）
+
+生产数据量还小，无法直接压测，所以本地起了一个跟生产同引擎（libsql）的临时数据库，灌入 100 用户 × 20 条记录 × 6 条事件（2,000 条记录 / 1,200 条事件），跑生产实际会执行的三类查询：
+
+| 查询 | 耗时 |
+|---|---|
+| 单用户查记录（`GET /api/records`） | 3.7 ms |
+| 每日 AI 配额检查（`countAiCallsToday`） | 2.8 ms |
+| 后台看板全量统计（`/stats.html`，多张表全量聚合） | 25.65 ms |
+
+**结论：** 50-100 用户规模下数据库不是瓶颈，加索引（`user_id` / `issue_id` 上的 `CREATE INDEX IF NOT EXISTS`）是面向未来 10-100 倍数据量的免费保险，不是当前的紧急修复。
+
+测试脚本已沉淀为 `server/scripts/load-test.js`（`npm run load-test`，可传参改变用户/记录/事件规模），跑在临时文件库上、不碰真实数据，方便随着真实用户量增长重新跑一遍验证。
+
 ## 7. 现在的真实状态（不装作比实际更完美）
 
 - 生产 AI 调用成功率 100%（HTTP+schema层面），核心通知链路稳定。

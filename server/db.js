@@ -74,6 +74,15 @@ const ready = client.batch(
       used_at INTEGER,
       created_at INTEGER NOT NULL
     )`,
+    // Every user-scoped table is queried as "WHERE user_id = ?" on nearly
+    // every request — not urgent at MVP scale (measured: a few ms either way
+    // with 100 users / 2k records), but free to add now and matters once the
+    // tables are 10-100x bigger.
+    'CREATE INDEX IF NOT EXISTS idx_records_user ON records(user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_events_user ON events(user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_issues_user ON issues(user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_issue_occurrences_issue ON issue_occurrences(issue_id)',
+    'CREATE INDEX IF NOT EXISTS idx_term_corrections_user ON term_corrections(user_id)',
   ],
   'write'
 ).then(async () => {
@@ -82,6 +91,18 @@ const ready = client.batch(
   } catch (e) {
     // Already applied in a previous deploy/restart — idempotent, safe to ignore.
     // Any other failure here is unexpected and should still surface.
+    if (!/duplicate column/i.test(e.message || '')) throw e;
+  }
+  try {
+    // Self-reported mood at save time (V0.2 optional extra), never inferred
+    // by AI from the transcript.
+    await client.execute("ALTER TABLE records ADD COLUMN mood TEXT");
+  } catch (e) {
+    if (!/duplicate column/i.test(e.message || '')) throw e;
+  }
+  try {
+    await client.execute('ALTER TABLE records ADD COLUMN session_tips TEXT');
+  } catch (e) {
     if (!/duplicate column/i.test(e.message || '')) throw e;
   }
 });

@@ -173,6 +173,17 @@
     background: radial-gradient(70% 42% at 100% 100%, rgba(240,226,222,.28), transparent 54%);
   }
 
+  .home-cta-first {
+    box-shadow: 0 0 0 3px rgba(196, 140, 140, 0.45), 0 12px 28px -12px rgba(130, 90, 90, 0.35);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .home-cta-first { animation: home-cta-pulse 2.4s ease-in-out 3; }
+  }
+  @keyframes home-cta-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(196, 140, 140, 0.4), 0 12px 28px -12px rgba(130, 90, 90, 0.35); }
+    50% { box-shadow: 0 0 0 7px rgba(196, 140, 140, 0.18), 0 12px 28px -12px rgba(130, 90, 90, 0.35); }
+  }
+
   .deco-photo { position: absolute; pointer-events: none; z-index: 0; object-fit: contain; }
   .tint-rose { filter: saturate(1.12) brightness(.98); }
   .tint-deep { filter: saturate(1.18) brightness(.96); }
@@ -201,6 +212,8 @@
     background: linear-gradient(135deg, var(--gold), var(--rose-deep));
     border-color: transparent; color: #fff; font-weight: 600;
   }
+  .mood-chip { background: rgba(255,252,251,.7); transition: background .15s ease, border-color .15s ease, transform .15s ease; }
+  .mood-chip.is-selected { background: var(--blush); border-color: var(--rose-deep); transform: scale(1.08); }
   .nav-ballet {
     background: rgba(253,251,250,.78);
     backdrop-filter: blur(18px);
@@ -245,6 +258,13 @@
   }
   .cal-bow { width: 20px; height: 20px; margin-top: 1px; object-fit: contain; display: block; filter: drop-shadow(0 1px 2px rgba(140,100,100,.35)); }
 
+  /* Heatmap calendar (成长追踪): color depth = that day's training minutes,
+     falling back to a flat per-record weight when duration wasn't logged. */
+  .cal-cell.heat-1 { background: var(--blush); }
+  .cal-cell.heat-2 { background: linear-gradient(160deg, var(--rose), var(--blush-deep)); color: #fff; font-weight: 600; }
+  .cal-cell.heat-3 { background: linear-gradient(160deg, var(--rose-deep), var(--burgundy)); color: #fff; font-weight: 700; box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 4px 10px -8px rgba(90,50,50,.5); }
+  .cal-cell.heat-1.is-selected, .cal-cell.heat-2.is-selected, .cal-cell.heat-3.is-selected { box-shadow: inset 0 0 0 2px var(--gold); }
+
   .deco-watermark { position: absolute; pointer-events: none; z-index: 0; }
   .satin-mark {
     width: 3px; border-radius: 99px;
@@ -267,7 +287,7 @@
       <div class="relative z-10 text-center">
         <img src="/img/pack-shoes-pink.png" alt="" class="mx-auto w-[86px] h-[102px] object-contain tint-rose">
         <h1 class="font-display mt-2 text-[27px] font-semibold">BalletMind</h1>
-        <p class="mt-2 text-[12px] text-[var(--ink-faint)]" id="auth-subtitle">登录后，把今天的课记给自己听</p>
+        <p class="mt-2 text-[12px] text-[var(--ink-faint)] leading-5" id="auth-subtitle">课后口述，AI 先整理成草稿<br>你确认后才会保存</p>
       </div>
 
       <div class="relative z-10 mt-8 space-y-3">
@@ -291,7 +311,7 @@
         <span class="relative z-10" id="auth-submit-label">登录</span>
       </button>
       <button onclick="showForgotPassword()" class="relative z-10 mt-3 text-[12px] text-[var(--ink-faint)]" id="auth-forgot-btn">忘记密码？</button>
-      <button onclick="toggleAuthMode()" class="relative z-10 mt-2 text-[12px] text-[var(--rose-deep)]" id="auth-toggle-btn">还没有账号？去注册</button>
+      <button onclick="toggleAuthMode()" class="relative z-10 mt-4 text-[13px] font-medium text-[var(--rose-deep)]" id="auth-toggle-btn">还没有账号？去注册</button>
     </main>
   </div>
 
@@ -299,8 +319,8 @@
   <div class="screen flex-col w-full h-full wash-cream" id="screen-home">
     <header class="shrink-0 px-6 pt-7 pb-4 flex items-center justify-between">
       <div>
-        <p class="label-editorial text-[13px] text-[var(--rose-deep)] font-semibold">写给今天的你</p>
-        <h1 class="font-display mt-1 text-[28px] leading-tight font-semibold tracking-[-0.01em]">你的训练档案</h1>
+        <p class="label-editorial text-[13px] text-[var(--rose-deep)] font-semibold" id="home-kicker">写给今天的你</p>
+        <h1 class="font-display mt-1 text-[28px] leading-tight font-semibold tracking-[-0.01em]" id="home-title">你的训练档案</h1>
       </div>
       <button type="button" onclick="openNotices()" class="relative w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="通知">
         <iconify-icon icon="solar:bell-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon>
@@ -318,7 +338,7 @@
             <p class="label-editorial text-[13px] text-[var(--rose-deep)]">一共记了几次</p>
             <p class="mt-2 text-[34px] leading-none font-semibold text-[var(--ink)]" id="stat-count">0 <span class="text-[14px] font-medium text-[var(--ink-faint)]">次记录</span></p>
           </div>
-          <span class="px-3 py-1.5 rounded-full bg-white/40 text-[11px] text-[var(--burgundy)]" id="stat-duration">0s 累计</span>
+          <span class="px-3 py-1.5 rounded-full bg-white/40 text-[11px] text-[var(--burgundy)]" id="stat-duration">时长待记录</span>
         </div>
       </section>
 
@@ -327,20 +347,22 @@
           <h2 class="text-[17px] font-semibold">今天想记录什么？</h2>
           <span class="text-[11px] text-[var(--ink-faint)]">约 3 分钟</span>
         </div>
-        <button onclick="goRecord()" class="btn-ribbon mt-3 w-full flex items-center gap-4 rounded-[28px] px-5 py-4">
+        <button id="home-cta-btn" onclick="goRecord()" class="btn-ribbon mt-3 w-full flex items-center gap-4 rounded-[28px] px-5 py-4">
           <span class="pearl-sheen"></span>
           <span class="relative z-10 w-12 h-12 rounded-[16px] bg-white/20 flex items-center justify-center">
             <iconify-icon icon="solar:microphone-3-linear" class="text-[26px] text-white"></iconify-icon>
           </span>
           <span class="relative z-10 flex-1 text-left">
             <strong class="block text-[15px] font-bold">开始一段训练复盘</strong>
-            <span class="block mt-1 text-[11px] font-semibold text-white">说说今天的动作、感受和老师建议</span>
+          <span class="block mt-1 text-[11px] font-semibold text-white" id="home-cta-sub">说说今天的动作、感受和老师建议</span>
           </span>
           <iconify-icon icon="solar:arrow-right-linear" class="relative z-10 text-[21px]"></iconify-icon>
         </button>
       </section>
 
-      <section class="mt-7">
+      <p id="home-first-hint" class="hidden mt-3 text-[12px] leading-5 text-[var(--ink-soft)]">第一次：先按上面开始一段。下面的日历和追踪可以随便点，有记录之后会慢慢填上。</p>
+
+      <section class="mt-7" id="home-archive-block">
         <div class="flex items-center justify-between">
           <h2 class="text-[17px] font-semibold">复盘存档</h2>
           <button onclick="goHistory()" class="text-[12px] text-[var(--rose-deep)] font-medium">查看全部</button>
@@ -363,22 +385,23 @@
         <div id="home-calendar-day-list" class="mt-3 space-y-3"></div>
       </section>
 
-      <section class="mt-7">
+      <section class="mt-7" id="home-progress-block">
         <div class="flex items-center justify-between">
           <h2 class="text-[17px] font-semibold">成长追踪</h2>
+          <button type="button" onclick="goProgress()" class="text-[12px] text-[var(--rose-deep)] font-medium">打开</button>
         </div>
-        <button onclick="goProgress()" class="card-journal relative mt-3 w-full text-left rounded-2xl p-4 flex items-center gap-3">
+        <p class="mt-1 text-[11px] text-[var(--ink-faint)]">课前看一眼 · 反复问题 · 最近 7 天 / 5 次</p>
+        <button type="button" onclick="goProgress()" class="card-journal relative mt-3 w-full text-left rounded-2xl p-4">
           <div class="pearl-sheen"></div>
-          <span class="relative z-10 w-11 h-11 rounded-[15px] chip flex items-center justify-center shrink-0"><iconify-icon icon="solar:graph-up-linear" class="text-[20px] text-[var(--rose-deep)]"></iconify-icon></span>
-          <span class="relative z-10 flex-1 min-w-0">
-            <strong class="block text-[13px] font-semibold" id="progress-teaser-title">还没有足够的记录</strong>
-            <span class="block mt-0.5 text-[11px] text-[var(--ink-faint)]" id="progress-teaser-sub">多记录几次，这里会开始出现反复出现的问题</span>
-          </span>
-          <iconify-icon icon="solar:arrow-right-linear" class="text-[18px] text-[var(--ink-faint)] shrink-0"></iconify-icon>
+          <div class="relative z-10 space-y-2.5 text-[12.5px] leading-5">
+            <p><span class="font-semibold text-[var(--mauve)]">课前</span> <span id="progress-teaser-brief" class="text-[var(--ink-soft)]">还没有可看的提醒</span></p>
+            <p><span class="font-semibold text-[var(--mauve)]">反复</span> <span id="progress-teaser-issue" class="text-[var(--ink-soft)]">多记几次，重复出现的问题会列在这里</span></p>
+            <p><span class="font-semibold text-[var(--mauve)]">7天/5次</span> <span class="text-[var(--ink-soft)]">打开即可看这段时间的汇总，不是另写一份计划</span></p>
+          </div>
         </button>
       </section>
 
-      <section class="mt-7">
+      <section class="mt-7" id="home-tips-block">
         <h2 class="text-[17px] font-semibold">训练小提示</h2>
         <div class="mt-3 flex gap-3">
           <div class="satin-mark h-10 shrink-0"></div>
@@ -393,7 +416,7 @@
       <button class="flex flex-col items-center gap-1 text-[var(--rose-deep)]"><iconify-icon icon="solar:home-2-bold" class="text-[22px]"></iconify-icon><span class="text-[10px] font-semibold">首页</span></button>
       <button onclick="goRecord()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:microphone-3-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">记录</span></button>
       <button onclick="goHistory()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span></button>
-      <button onclick="goProgress()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:graph-up-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">追踪</span></button>
+      <button onclick="goProgress()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><span class="relative"><iconify-icon icon="solar:graph-up-linear" class="text-[22px]"></iconify-icon><span class="nav-progress-dot hidden absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[var(--rose-deep)] ring-2 ring-[var(--paper)]"></span></span><span class="text-[10px]">追踪</span></button>
       <button onclick="goProfile()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:user-circle-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">我的</span></button>
     </nav>
   </div>
@@ -449,6 +472,7 @@
           <iconify-icon icon="solar:microphone-3-linear" id="rec-icon" class="text-[32px]"></iconify-icon>
         </button>
       </div>
+      <p class="mt-2 text-center text-[11px] text-[var(--ink-faint)]">先按中间按钮说话；上面的卡片只是提纲，不会开始录音</p>
       <div class="mt-5 flex gap-3">
         <button onclick="clearSegments()" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">清空全部</button>
         <button id="generate-btn" onclick="generateReview()" disabled
@@ -467,15 +491,16 @@
         <img src="/img/pack-jump.png" alt="" class="w-[120px] h-[140px] object-contain tint-rose opacity-60">
       </div>
       <h2 class="font-display mt-8 text-[24px] font-semibold">听见你的练习重点</h2>
-      <p class="mt-2 text-[12px] leading-5 text-[var(--ink-faint)] text-center">AI 正在从语音里提取动作、感受<br>和下一步可以尝试的方向</p>
+      <p class="mt-2 text-[12px] leading-5 text-[var(--ink-faint)] text-center">AI 正在整理你说过的内容<br>并给出针对这次的常见练法参考（不是教练）</p>
       <p class="mt-6 text-center text-[10px] text-[var(--ink-faint)]">通常需要几秒到十几秒，请稍候</p>
+      <button type="button" onclick="cancelGenerate()" class="mt-8 text-[13px] text-[var(--rose-deep)]">返回修改</button>
     </main>
   </div>
 
   <!-- ============ REVIEW & EDIT ============ -->
   <div class="screen flex-col w-full h-full wash-dust" id="screen-review">
     <header class="shrink-0 px-6 pt-7 pb-3 flex items-center justify-between">
-      <button onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
+      <button onclick="goBackFromReview()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回修改"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
       <h1 class="text-[17px] font-semibold">Review 复盘草稿</h1>
       <div class="w-9"></div>
     </header>
@@ -494,12 +519,20 @@
         </div>
       </div>
 
+      <div class="mb-4">
+        <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">今天感觉怎么样？（可选，自己记录的感受）</p>
+        <div class="flex gap-2" id="mood-chips">
+          <button type="button" onclick="selectMood('low')" data-mood="low" aria-label="不在状态" class="mood-chip w-11 h-11 rounded-full border border-[var(--border-soft)] text-[19px] flex items-center justify-center">😔</button>
+          <button type="button" onclick="selectMood('meh')" data-mood="meh" aria-label="一般" class="mood-chip w-11 h-11 rounded-full border border-[var(--border-soft)] text-[19px] flex items-center justify-center">😐</button>
+          <button type="button" onclick="selectMood('good')" data-mood="good" aria-label="还不错" class="mood-chip w-11 h-11 rounded-full border border-[var(--border-soft)] text-[19px] flex items-center justify-center">🙂</button>
+          <button type="button" onclick="selectMood('great')" data-mood="great" aria-label="状态很好" class="mood-chip w-11 h-11 rounded-full border border-[var(--border-soft)] text-[19px] flex items-center justify-center">😄</button>
+        </div>
+      </div>
+
       <section class="rounded-[22px] bg-[var(--paper)] border border-[var(--border-soft)] p-4 mb-4">
         <div class="flex items-center gap-2 mb-2"><span class="w-7 h-7 rounded-full chip flex items-center justify-center"><iconify-icon icon="solar:microphone-3-linear" class="text-[15px] text-[var(--rose-deep)]"></iconify-icon></span><span class="text-[12px] font-semibold">语音转写</span></div>
         <p class="text-[12px] leading-6 text-[var(--ink-soft)]" id="review-transcript"></p>
       </section>
-
-      <span class="inline-block px-3 py-1 rounded-full chip text-[var(--mauve)] text-[11px] mb-4" id="review-confidence">Confidence: -</span>
 
       <div class="mb-4">
         <p class="text-[12px] font-semibold text-[var(--sage)] mb-2">✓ 做得好的地方（可编辑）</p>
@@ -512,6 +545,11 @@
       <div class="mb-4">
         <p class="text-[12px] font-semibold text-[var(--rose-deep)] mb-2">→ 下次练习注意事项（可编辑）</p>
         <textarea id="review-next" class="w-full min-h-[60px] rounded-2xl field-next p-3 text-[12.5px]"></textarea>
+      </div>
+      <div class="mb-4">
+        <p class="text-[12px] font-semibold text-[var(--mauve)] mb-1">针对这次的小提示（可编辑、可删）</p>
+        <p class="text-[11px] leading-4 text-[var(--ink-faint)] mb-2">常见练法参考，不是针对你的诊断，也不替代老师。可以删掉再保存。</p>
+        <textarea id="review-tips" class="w-full min-h-[60px] rounded-2xl border border-dashed border-[var(--border-soft)] p-3 text-[12.5px]"></textarea>
       </div>
       <div id="review-note" class="hidden mb-4 text-[11px] text-[var(--ink-faint)] border border-dashed border-[var(--border-soft)] rounded-xl p-3"></div>
 
@@ -530,8 +568,8 @@
       </div>
 
       <div class="flex gap-3">
-        <button onclick="retryGenerate()" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">Retry</button>
-        <button onclick="confirmSave()" class="btn-ribbon flex-1 h-11 rounded-full text-[12.5px] font-semibold">Confirm & Save</button>
+        <button onclick="retryGenerate()" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">重新生成</button>
+        <button onclick="confirmSave()" class="btn-ribbon flex-1 h-11 rounded-full text-[12.5px] font-semibold">确认保存</button>
       </div>
     </main>
   </div>
@@ -587,7 +625,7 @@
       <button onclick="goHistory()" class="w-11 h-11 rounded-full chip flex items-center justify-center"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
       <div class="flex-1">
         <p class="label-editorial text-[13px] text-[var(--rose-deep)]" id="detail-date"></p>
-        <h1 class="mt-0.5 text-[20px] font-semibold" id="detail-title"></h1>
+        <h1 class="mt-0.5 text-[20px] font-semibold flex items-center gap-1.5"><span id="detail-title"></span><span id="detail-mood" class="text-[16px]"></span></h1>
       </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 py-5 pb-8">
@@ -607,6 +645,11 @@
       <div class="mb-4">
         <p class="text-[12px] font-semibold text-[var(--rose-deep)] mb-2">→ 下次练习注意事项</p>
         <div class="rounded-2xl field-next p-3 text-[12.5px] leading-6 whitespace-pre-wrap" id="detail-next"></div>
+      </div>
+      <div class="mb-4 hidden" id="detail-tips-wrap">
+        <p class="text-[12px] font-semibold text-[var(--mauve)] mb-1">针对这次的小提示</p>
+        <p class="text-[11px] text-[var(--ink-faint)] mb-2">常见练法参考，不是诊断，也不替代老师</p>
+        <div class="rounded-2xl border border-dashed border-[var(--border-soft)] p-3 text-[12.5px] leading-6 whitespace-pre-wrap" id="detail-tips"></div>
       </div>
       <button onclick="exportEntry()" class="w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium mb-3">导出为纯文本</button>
       <button onclick="deleteEntry()" class="w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[var(--rose-deep)] text-[12.5px] font-medium">删除这条记录</button>
@@ -654,12 +697,13 @@
         </div>
       </section>
 
-      <section class="mt-7 rounded-2xl chip p-4">
+      <section class="mt-7">
         <div class="flex items-center gap-2">
-          <iconify-icon icon="solar:quote-up-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon>
-          <span class="text-[12px] font-semibold">写给自己的话</span>
+          <h2 class="text-[16px] font-semibold">徽章墙</h2>
+          <span class="text-[11px] text-[var(--ink-faint)]" id="badge-earned-count"></span>
         </div>
-        <p class="mt-2 text-[13px] leading-6 text-[var(--ink-soft)]" id="profile-self-tip">-</p>
+        <p class="mt-1 text-[11px] text-[var(--ink-faint)]">记录次数和坚持周数攒出来的，跟表现好不好没关系</p>
+        <div class="mt-3 grid grid-cols-4 gap-2.5" id="badge-grid"></div>
       </section>
 
       <section class="mt-7">
@@ -689,12 +733,20 @@
           </button>
         </div>
       </section>
+
+      <section class="mt-7 rounded-2xl chip p-4">
+        <div class="flex items-center gap-2">
+          <iconify-icon icon="solar:quote-up-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon>
+          <span class="text-[12px] font-semibold">写给自己的话</span>
+        </div>
+        <p class="mt-2 text-[13px] leading-6 text-[var(--ink-soft)]" id="profile-self-tip">-</p>
+      </section>
     </main>
     <nav class="shrink-0 h-[76px] nav-ballet flex items-center justify-around px-5">
       <button onclick="goHome()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:home-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">首页</span></button>
       <button onclick="goRecord()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:microphone-3-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">记录</span></button>
       <button onclick="goHistory()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span></button>
-      <button onclick="goProgress()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:graph-up-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">追踪</span></button>
+      <button onclick="goProgress()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><span class="relative"><iconify-icon icon="solar:graph-up-linear" class="text-[22px]"></iconify-icon><span class="nav-progress-dot hidden absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[var(--rose-deep)] ring-2 ring-[var(--paper)]"></span></span><span class="text-[10px]">追踪</span></button>
       <button class="flex flex-col items-center gap-1 text-[var(--rose-deep)]"><iconify-icon icon="solar:user-circle-bold" class="text-[22px]"></iconify-icon><span class="text-[10px] font-semibold">我的</span></button>
     </nav>
   </div>
@@ -703,7 +755,11 @@
   <div class="screen flex-col w-full h-full wash-rose" id="screen-progress">
     <header class="shrink-0 px-6 pt-7 pb-4 flex items-center gap-4">
       <button onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
-      <div><p class="label-editorial text-[13px] text-[var(--rose-deep)]">你的训练规律</p><h1 class="mt-0.5 text-[20px] font-semibold">成长追踪</h1></div>
+      <div>
+        <p class="label-editorial text-[13px] text-[var(--rose-deep)]">你确认过的记录</p>
+        <h1 class="mt-0.5 text-[20px] font-semibold">成长追踪</h1>
+        <p class="mt-1 text-[11px] leading-4 text-[var(--ink-faint)]">从你自己的复盘里汇总。不是教练计划，也不替代老师。</p>
+      </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-8">
       <img src="/img/pack-plie.png" alt="" aria-hidden="true" class="deco-photo tint-soft right-[-16px] bottom-4 w-[120px] h-[148px] opacity-[0.32]">
@@ -716,29 +772,60 @@
         <div id="brief-content" class="relative z-10 mt-3 pr-24 text-[12.5px] leading-6 text-[var(--ink)]">加载中…</div>
       </section>
 
+      <!-- Training heatmap: same calendar component as home/history, but
+           color depth encodes volume instead of a plain yes/no bow. -->
+      <section class="mt-7">
+        <div class="flex items-center justify-between">
+          <h2 class="text-[17px] font-semibold">训练热力</h2>
+          <span class="text-[11px] text-[var(--ink-faint)]">颜色越深，练得越多</span>
+        </div>
+        <div class="card-journal grain relative mt-3 p-4" style="border-radius:22px 14px 22px 16px">
+          <div class="pearl-sheen"></div>
+          <div class="relative z-10 flex items-center justify-between mb-3">
+            <button type="button" onclick="shiftProgressCalendar(-1)" class="w-7 h-7 rounded-full flex items-center justify-center text-[var(--rose-deep)]"><iconify-icon icon="solar:alt-arrow-left-linear" class="text-[15px]"></iconify-icon></button>
+            <p class="label-editorial text-[14px] text-[var(--ink)]" id="progress-calendar-month-label"></p>
+            <button type="button" onclick="shiftProgressCalendar(1)" class="w-7 h-7 rounded-full flex items-center justify-center text-[var(--rose-deep)]"><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[15px]"></iconify-icon></button>
+          </div>
+          <div class="relative z-10 cal-grid text-center text-[10px] text-[var(--ink-faint)] mb-1" style="aspect-ratio:auto">
+            <span class="py-1">日</span><span class="py-1">一</span><span class="py-1">二</span><span class="py-1">三</span><span class="py-1">四</span><span class="py-1">五</span><span class="py-1">六</span>
+          </div>
+          <div class="relative z-10 cal-grid" id="progress-calendar-grid"></div>
+        </div>
+        <div id="progress-calendar-day-empty" class="mt-4 text-center text-[12px]"></div>
+        <div id="progress-calendar-day-list" class="mt-3 space-y-3"></div>
+      </section>
+
+      <!-- Training Review: rules aggregation; auto-shown so it is not buried -->
+      <section class="mt-7">
+        <div class="flex items-center justify-between">
+          <h2 class="text-[17px] font-semibold">最近 7 天 / 5 次</h2>
+        </div>
+        <p class="mt-1 text-[11px] leading-4 text-[var(--ink-faint)]">打开本页会先看到最近 7 天；可改成最近 5 次。都是你确认过的记录，不是 AI 另写的指导。</p>
+        <div class="mt-3 flex gap-2">
+          <button id="review-days-btn" onclick="generateTrainingReview('days')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近7天</button>
+          <button id="review-last-btn" onclick="generateTrainingReview('last')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近5次</button>
+        </div>
+        <div id="review-content" class="mt-3 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-4 text-[12.5px] text-[var(--ink)]">加载中…</div>
+        <button id="review-export-btn" onclick="exportTrainingReview()" class="hidden mt-2 w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">复制为文本</button>
+      </section>
+
       <!-- Recurring Issue Tracking -->
       <section class="mt-7">
         <div class="flex items-center justify-between">
           <h2 class="text-[17px] font-semibold">反复出现的问题</h2>
           <span class="text-[11px] text-[var(--ink-faint)]">状态由你自己确认</span>
         </div>
+        <div id="issue-donut-wrap" class="hidden mt-3 flex items-center gap-4 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-3">
+          <svg id="issue-donut-svg" viewBox="0 0 64 64" class="w-14 h-14 shrink-0"></svg>
+          <div class="flex-1 min-w-0">
+            <p class="text-[11px] text-[var(--ink-faint)]">这段时间共 <span id="issue-donut-total">0</span> 个问题</p>
+            <div id="issue-donut-legend" class="mt-1 text-[11px] text-[var(--ink-soft)] flex flex-wrap gap-x-3 gap-y-1"></div>
+          </div>
+        </div>
         <div id="issues-empty" class="hidden mt-3 text-center py-8 text-[var(--ink-faint)] text-[12.5px] leading-relaxed">
-          目前没有需要关注的问题
+          同一个问题在训练记录里反复出现时，会自动出现在这里；有没有改善由你自己确认，不是AI替你下结论
         </div>
         <div id="issues-list" class="mt-3 space-y-3"></div>
-      </section>
-
-      <!-- Training Review: user-triggered aggregation, not a background job -->
-      <section class="mt-7">
-        <div class="flex items-center justify-between">
-          <h2 class="text-[17px] font-semibold">训练总结</h2>
-        </div>
-        <div class="mt-3 flex gap-2">
-          <button id="review-days-btn" onclick="generateTrainingReview('days')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近7天</button>
-          <button id="review-last-btn" onclick="generateTrainingReview('last')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近5次</button>
-        </div>
-        <div id="review-content" class="hidden mt-3 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-4"></div>
-        <button id="review-export-btn" onclick="exportTrainingReview()" class="hidden mt-2 w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">复制为文本</button>
       </section>
 
     </main>
@@ -924,6 +1011,19 @@ function refreshNoticeDot() {
   if (!dot) return;
   dot.classList.toggle('hidden', unreadNoticeCount() === 0);
 }
+// First-visit nudge for the "追踪" tab — a small dot, not a popup. Cleared
+// the first time the user actually opens Progress, never shown again.
+function hasVisitedProgress() {
+  try { return localStorage.getItem('bm_visited_progress') === '1'; } catch (e) { return true; }
+}
+function refreshProgressDot() {
+  const show = !hasVisitedProgress();
+  document.querySelectorAll('.nav-progress-dot').forEach((el) => el.classList.toggle('hidden', !show));
+}
+function markProgressVisited() {
+  try { localStorage.setItem('bm_visited_progress', '1'); } catch (e) {}
+  document.querySelectorAll('.nav-progress-dot').forEach((el) => el.classList.add('hidden'));
+}
 function renderNoticeList() {
   const el = document.getElementById('notice-list');
   if (!APP_NOTICES.length) {
@@ -1018,9 +1118,9 @@ function setAuthMode(mode) {
   document.getElementById('auth-password').classList.toggle('hidden', isForgot);
   document.getElementById('auth-privacy-wrap').classList.toggle('hidden', !isRegister);
   document.getElementById('auth-forgot-btn').classList.toggle('hidden', isForgot);
-  document.getElementById('auth-subtitle').textContent = isLogin
-    ? '登录后，把今天的课记给自己听'
-    : isRegister ? '建一个只属于你的小本子' : '输入注册邮箱，我们会给你重置链接';
+  document.getElementById('auth-subtitle').innerHTML = isLogin
+    ? '课后口述，AI 先整理成草稿<br>你确认后才会保存'
+    : isRegister ? '用邮箱建一个只属于你的训练本' : '输入注册邮箱，我们会给你重置链接';
   document.getElementById('auth-submit-label').textContent = isLogin ? '登录' : isRegister ? '注册' : '发送重置链接';
   document.getElementById('auth-toggle-btn').textContent = isLogin ? '还没有账号？去注册' : '已经有账号？去登录';
   document.getElementById('auth-error').classList.add('hidden');
@@ -1041,6 +1141,9 @@ async function submitAuth() {
   if (!email) { errEl.textContent = '请填写邮箱'; errEl.classList.remove('hidden'); return; }
   if (!isValidEmail(email)) { errEl.textContent = '邮箱格式不对，请写成 名字@域名 的形式'; errEl.classList.remove('hidden'); return; }
   if (authMode !== 'forgot' && !password) { errEl.textContent = '请填写邮箱和密码'; errEl.classList.remove('hidden'); return; }
+  if (authMode === 'register' && password.length < 6) {
+    errEl.textContent = '密码至少6位'; errEl.classList.remove('hidden'); return;
+  }
   if (authMode === 'register' && !document.getElementById('auth-privacy').checked) {
     errEl.textContent = '请先阅读并同意隐私政策'; errEl.classList.remove('hidden'); return;
   }
@@ -1096,8 +1199,8 @@ async function checkAuthAndInit() {
 }
 
 // ---------- navigation ----------
-function goHome() { loadHome(); show('screen-home'); refreshNoticeDot(); }
-function goRecord() {
+function goHome() { loadHome(); show('screen-home'); refreshNoticeDot(); refreshProgressDot(); }
+function resetRecordScreen() {
   segments = []; renderSegments();
   document.getElementById('manual-input').value='';
   document.getElementById('generate-btn').disabled = true;
@@ -1107,6 +1210,14 @@ function goRecord() {
   document.getElementById('rec-btn').classList.remove('opacity-40', 'hidden');
   document.getElementById('rec-state').textContent = recorderSupported ? '点击下方按钮开始录音' : '此浏览器不能录音，请在下方手动输入';
   if (!recorderSupported) document.getElementById('rec-btn').classList.add('hidden');
+  lastDraft = null;
+}
+function goRecord() {
+  enableAiEntry();
+  resetRecordScreen();
+  show('screen-record');
+}
+function goBackFromReview() {
   show('screen-record');
 }
 function goHistory() { ensureBrowseSession(); logEvent('history_opened', {}, 'browse'); loadHistory(); show('screen-history'); }
@@ -1128,6 +1239,7 @@ async function goProfile() {
   document.getElementById('profile-email').textContent = user?.email || '-';
   document.getElementById('profile-avatar').textContent = (user?.displayName || user?.email || '?').slice(0,1).toUpperCase();
   renderSelfTip();
+  refreshProgressDot();
 
   try {
     const meRes = await authFetch(`${API}/api/auth/me`);
@@ -1147,9 +1259,67 @@ async function goProfile() {
     document.getElementById('profile-count').textContent = rows.length;
     document.getElementById('profile-hours').textContent = formatTrainingHours(rows) ?? '--';
     document.getElementById('profile-month').textContent = thisMonthCount;
+    renderBadges(rows);
   } catch (e) {}
 
   show('screen-profile');
+}
+
+// ---------- badge wall ----------
+// Purely objective counting (record count, best-ever consecutive-week
+// streak) — same "no capability judgement" principle as the save-time
+// milestone toasts (V0.2 #11). No rating/grading badge on purpose, per
+// user feedback discussion: a "评级" badge would contradict the product's
+// deliberate "don't evaluate the user's performance" stance.
+const BADGES = [
+  { id: 'count-1', kind: 'count', value: 1, icon: 'solar:medal-ribbons-star-linear', label: '第一次记录' },
+  { id: 'count-3', kind: 'count', value: 3, icon: 'solar:medal-ribbons-star-linear', label: '记录 3 次' },
+  { id: 'count-5', kind: 'count', value: 5, icon: 'solar:medal-ribbons-star-linear', label: '记录 5 次' },
+  { id: 'count-10', kind: 'count', value: 10, icon: 'solar:medal-star-linear', label: '记录 10 次' },
+  { id: 'count-20', kind: 'count', value: 20, icon: 'solar:medal-star-linear', label: '记录 20 次' },
+  { id: 'count-30', kind: 'count', value: 30, icon: 'solar:medal-star-linear', label: '记录 30 次' },
+  { id: 'count-50', kind: 'count', value: 50, icon: 'solar:cup-star-linear', label: '记录 50 次' },
+  { id: 'count-100', kind: 'count', value: 100, icon: 'solar:cup-star-bold', label: '记录 100 次' },
+  { id: 'streak-2', kind: 'streak', value: 2, icon: 'solar:fire-linear', label: '连续 2 周' },
+  { id: 'streak-4', kind: 'streak', value: 4, icon: 'solar:fire-linear', label: '连续 4 周' },
+  { id: 'streak-8', kind: 'streak', value: 8, icon: 'solar:fire-linear', label: '连续 8 周' },
+  { id: 'streak-12', kind: 'streak', value: 12, icon: 'solar:fire-bold', label: '连续 12 周' },
+  { id: 'streak-26', kind: 'streak', value: 26, icon: 'solar:fire-bold', label: '连续 26 周' },
+  { id: 'streak-52', kind: 'streak', value: 52, icon: 'solar:fire-bold', label: '连续 52 周' },
+];
+function mondayKeyMs(ts) {
+  const d = new Date(ts);
+  const day = d.getDay() || 7;
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - day + 1);
+  return d.getTime();
+}
+// Longest-ever run of consecutive weeks with a record — not just the
+// current active streak — so a badge earned months ago stays earned even
+// if the user's streak has since broken.
+function computeBestWeekStreak(rows) {
+  if (!rows.length) return 0;
+  const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+  const weeks = [...new Set(rows.map(r => mondayKeyMs(r.created_at)))].sort((a, b) => a - b);
+  let best = 1, cur = 1;
+  for (let i = 1; i < weeks.length; i++) {
+    cur = (weeks[i] - weeks[i - 1] === WEEK_MS) ? cur + 1 : 1;
+    if (cur > best) best = cur;
+  }
+  return best;
+}
+function renderBadges(rows) {
+  const grid = document.getElementById('badge-grid');
+  if (!grid) return;
+  const count = rows.length;
+  const bestStreak = computeBestWeekStreak(rows);
+  const badges = BADGES.map(b => ({ ...b, earned: b.kind === 'count' ? count >= b.value : bestStreak >= b.value }));
+  document.getElementById('badge-earned-count').textContent = `已集齐 ${badges.filter(b => b.earned).length}/${badges.length}`;
+  grid.innerHTML = badges.map(b => `
+    <div class="rounded-2xl border p-2.5 text-center ${b.earned ? 'bg-[var(--paper)] border-[var(--gold)]/40' : 'bg-[var(--paper)]/40 border-[var(--border-soft)] opacity-40'}">
+      <iconify-icon icon="${b.icon}" class="text-[21px] ${b.earned ? 'text-[var(--gold)]' : 'text-[var(--ink-faint)]'}"></iconify-icon>
+      <p class="mt-1 text-[9.5px] leading-tight ${b.earned ? 'text-[var(--ink)] font-medium' : 'text-[var(--ink-faint)]'}">${escapeHtml(b.label)}</p>
+    </div>`).join('');
 }
 
 // ---------- home ----------
@@ -1198,6 +1368,9 @@ async function loadHome() {
   const trainedHours = formatTrainingHours(rows);
   document.getElementById('stat-duration').textContent = trainedHours === null ? '时长待记录' : `${trainedHours}小时 累计`;
   homeRows = Array.isArray(rows) ? rows : [];
+  const isNew = homeRows.length === 0;
+  document.getElementById('home-cta-btn').classList.toggle('home-cta-first', isNew);
+  document.getElementById('home-first-hint').classList.toggle('hidden', !isNew);
   renderHomeCalendar();
   renderCheckinStatus(homeRows);
   loadProgressTeaser();
@@ -1249,19 +1422,29 @@ function renderCheckinStatus(rows) {
   el.innerHTML = `${badge}<span class="text-[12px] text-[var(--ink-faint)]">${text}</span>`;
 }
 async function loadProgressTeaser() {
+  const briefEl = document.getElementById('progress-teaser-brief');
+  const issueEl = document.getElementById('progress-teaser-issue');
+  if (!briefEl || !issueEl) return;
   try {
-    const res = await authFetch(`${API}/api/issues`);
-    const issues = await res.json();
+    const [issuesRes, briefRes] = await Promise.all([
+      authFetch(`${API}/api/issues`),
+      authFetch(`${API}/api/progress/brief`)
+    ]);
+    const issues = await issuesRes.json();
+    const brief = await briefRes.json();
     const open = issues.filter(i => i.status !== 'resolved');
-    const titleEl = document.getElementById('progress-teaser-title');
-    const subEl = document.getElementById('progress-teaser-sub');
     if (open.length === 0) {
-      titleEl.textContent = '还没有发现重复问题';
-      subEl.textContent = '多记录几次，这里会开始出现训练规律';
+      issueEl.textContent = '多记几次，重复出现的问题会列在这里';
     } else {
-      const top = open.slice().sort((a,b)=>b.occurrence_count-a.occurrence_count)[0];
-      titleEl.textContent = compactPhrase(top.text);
-      subEl.textContent = `出现 ${top.occurrence_count} 次 · ${open.length} 个留意点`;
+      const top = open.slice().sort((a, b) => b.occurrence_count - a.occurrence_count)[0];
+      issueEl.textContent = `${compactPhrase(top.text)} · ${top.occurrence_count}次`;
+    }
+    if (brief.topIssues && brief.topIssues.length > 0) {
+      briefEl.textContent = compactPhrase(brief.topIssues[0].text);
+    } else {
+      const last = brief.lastRecord || {};
+      const tip = (last.nextTimeReminder || last.improvePoints || '').trim();
+      briefEl.textContent = tip ? compactPhrase(tip, 40) : '还没有可看的提醒';
     }
   } catch (e) {}
 }
@@ -1282,11 +1465,22 @@ function entryCard(r) {
 // ---------- progress (recurring issues / training review / pre-class brief) ----------
 async function goProgress() {
   logEvent('progress_opened', {}, 'browse');
+  markProgressVisited();
   show('screen-progress');
-  document.getElementById('review-content').classList.add('hidden');
-  document.getElementById('review-export-btn').classList.add('hidden');
   lastTrainingReview = null;
-  await Promise.all([loadBrief(), loadIssues()]);
+  progressCalendarCursor = new Date();
+  progressSelectedDate = null;
+  await Promise.all([loadBrief(), loadIssues(), generateTrainingReview('days'), loadProgressCalendar()]);
+}
+
+async function loadProgressCalendar() {
+  try {
+    const res = await authFetch(`${API}/api/records`);
+    progressRows = await res.json();
+  } catch (e) {
+    progressRows = [];
+  }
+  renderProgressCalendar();
 }
 
 async function loadBrief() {
@@ -1299,11 +1493,19 @@ async function loadBrief() {
       html += `<p class="font-semibold text-[var(--mauve)]">这次留意</p><ul class="mt-1 space-y-1">`;
       html += data.topIssues.map(i => `<li>· ${escapeHtml(compactPhrase(i.text))} <span class="text-[var(--ink-faint)]">${i.occurrence_count}次</span></li>`).join('');
       html += `</ul>`;
+      if (data.lastRecord && data.lastRecord.nextTimeReminder) {
+        html += `<p class="mt-3 pt-3 border-t border-[var(--gold)]/20"><span class="font-semibold text-[var(--mauve)]">上次提醒</span> ${escapeHtml(compactPhrase(data.lastRecord.nextTimeReminder, 22))}</p>`;
+      }
     } else {
-      html += `<p>还没有反复留意的点</p>`;
-    }
-    if (data.lastRecord && data.lastRecord.nextTimeReminder) {
-      html += `<p class="mt-3 pt-3 border-t border-[var(--gold)]/20"><span class="font-semibold text-[var(--mauve)]">上次提醒</span> ${escapeHtml(compactPhrase(data.lastRecord.nextTimeReminder, 22))}</p>`;
+      // No repeat issue to flag yet — fall back to the user's own last
+      // reminder/improve-point note so there's always something concrete
+      // here, not just an empty-state sentence. Still pure lookup, no AI.
+      const tip = data.lastRecord ? (data.lastRecord.nextTimeReminder || data.lastRecord.improvePoints || '').trim() : '';
+      if (tip) {
+        html += `<p><span class="font-semibold text-[var(--mauve)]">这次留意</span> ${escapeHtml(compactPhrase(tip, 40))}</p>`;
+      } else {
+        html += `<p>还没有反复留意的点——同一个问题多次出现，会自动提醒你</p>`;
+      }
     }
     el.innerHTML = html;
   } catch (e) {
@@ -1390,11 +1592,20 @@ function formatTrainingReviewText(data) {
   return lines.join('\n');
 }
 
+function setReviewModeUi(mode) {
+  const daysBtn = document.getElementById('review-days-btn');
+  const lastBtn = document.getElementById('review-last-btn');
+  const on = ['chip', 'font-semibold', 'text-[var(--rose-deep)]'];
+  [daysBtn, lastBtn].forEach((btn) => on.forEach((c) => btn.classList.remove(c)));
+  (mode === 'last' ? lastBtn : daysBtn).classList.add(...on);
+}
+
 async function generateTrainingReview(mode) {
   const daysBtn = document.getElementById('review-days-btn');
   const lastBtn = document.getElementById('review-last-btn');
   const contentEl = document.getElementById('review-content');
   const exportBtn = document.getElementById('review-export-btn');
+  setReviewModeUi(mode);
   daysBtn.disabled = lastBtn.disabled = true;
   const query = mode === 'last' ? 'last=5' : 'days=7';
   try {
@@ -1421,6 +1632,11 @@ async function generateTrainingReview(mode) {
     contentEl.innerHTML = html;
     contentEl.classList.remove('hidden');
     exportBtn.classList.toggle('hidden', data.recordCount === 0);
+    renderIssueDonut({
+      resolved: data.resolvedInPeriod.length,
+      improving: data.openIssues.filter(i => i.status === 'improving').length,
+      open: data.openIssues.filter(i => i.status === 'open').length,
+    });
   } catch (e) {
     toast('生成失败，请再试一次');
   } finally {
@@ -1495,6 +1711,9 @@ let calendarCursor = new Date();
 let selectedCalendarDate = null; // 'YYYY-MM-DD' or null
 let homeCalendarCursor = new Date();
 let homeSelectedDate = null;
+let progressCalendarCursor = new Date();
+let progressSelectedDate = null;
+let progressRows = [];
 
 function dateKey(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function groupRecordsByDate(rows) {
@@ -1541,15 +1760,23 @@ function paintDayList(byDate, year, month, selectedKey, emptyId, listId) {
     } else {
       listEl.innerHTML = '';
       emptyEl.classList.remove('hidden');
-      emptyEl.textContent = '这一天还没有训练记录';
+      emptyEl.innerHTML = `<span class="text-[var(--ink-faint)]">这一天还没有训练记录</span>`;
     }
     return;
   }
   listEl.innerHTML = '';
   const monthPrefix = `${year}-${String(month+1).padStart(2,'0')}-`;
   const hasAnyThisMonth = Object.keys(byDate).some(k => k.startsWith(monthPrefix));
-  emptyEl.classList.toggle('hidden', hasAnyThisMonth);
-  emptyEl.textContent = hasAnyThisMonth ? '点一个有蝴蝶结的日子，看看那天写了什么' : '这个月还没有训练记录';
+  // Previously this hint was hidden precisely when there WAS data to click
+  // into (classList.toggle('hidden', hasAnyThisMonth)) — meaning the one
+  // sentence teaching people the calendar is tappable never showed for
+  // anyone who had records. Fixed: always show something here, and make the
+  // "tap a day" hint visually louder (icon + accent color) since real user
+  // feedback showed this interaction wasn't obvious.
+  emptyEl.classList.remove('hidden');
+  emptyEl.innerHTML = hasAnyThisMonth
+    ? `<span class="inline-flex items-center gap-1.5 text-[var(--rose-deep)] font-medium"><iconify-icon icon="solar:cursor-linear" class="text-[15px]"></iconify-icon>点一个有蝴蝶结的日子，看看那天写了什么</span>`
+    : `<span class="text-[var(--ink-faint)]">这个月还没有训练记录</span>`;
 }
 
 function setHistoryView(mode) {
@@ -1602,6 +1829,92 @@ function selectHomeCalendarDate(key) {
   renderHomeCalendar();
 }
 
+// ---------- progress: training heatmap calendar ----------
+// Same day-grouping as the plain calendar, but color depth encodes volume
+// (minutes when logged, otherwise a flat per-record weight) instead of a
+// yes/no bow. Pure client-side bucketing over records already fetched —
+// no new field, no backend change.
+function dayIntensityLevel(records) {
+  if (!records.length) return 0;
+  const totalMin = records.reduce((sum, r) => sum + (r.training_duration_min != null ? r.training_duration_min : 30), 0);
+  if (totalMin >= 120) return 3;
+  if (totalMin >= 60) return 2;
+  return 1;
+}
+function paintHeatmapGrid(cursor, rows, selectedKey, selectFnName) {
+  const year = cursor.getFullYear(), month = cursor.getMonth();
+  const byDate = groupRecordsByDate(rows);
+  const startWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayKey = dateKey(new Date());
+  let html = '';
+  for (let i = 0; i < startWeekday; i++) html += `<div class="cal-cell is-empty"></div>`;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const key = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const records = byDate[key] || [];
+    const level = dayIntensityLevel(records);
+    const isFuture = key > todayKey;
+    const isToday = key === todayKey;
+    const isSelected = key === selectedKey;
+    const cls = ['cal-cell'];
+    if (level > 0) cls.push('heat-' + level);
+    if (isToday) cls.push('is-today');
+    if (isSelected) cls.push('is-selected');
+    if (isFuture) cls.push('is-future');
+    const action = isFuture ? 'disabled' : `onclick="${selectFnName}('${key}')"`;
+    html += `<button type="button" ${action} class="${cls.join(' ')}"><span>${day}</span></button>`;
+  }
+  return { html, byDate, year, month };
+}
+function shiftProgressCalendar(delta) {
+  progressCalendarCursor = new Date(progressCalendarCursor.getFullYear(), progressCalendarCursor.getMonth() + delta, 1);
+  progressSelectedDate = null;
+  renderProgressCalendar();
+}
+function renderProgressCalendar() {
+  const year = progressCalendarCursor.getFullYear(), month = progressCalendarCursor.getMonth();
+  document.getElementById('progress-calendar-month-label').textContent = `${year}年${month+1}月`;
+  const painted = paintHeatmapGrid(progressCalendarCursor, progressRows, progressSelectedDate, 'selectProgressCalendarDate');
+  document.getElementById('progress-calendar-grid').innerHTML = painted.html;
+  paintDayList(painted.byDate, painted.year, painted.month, progressSelectedDate, 'progress-calendar-day-empty', 'progress-calendar-day-list');
+}
+function selectProgressCalendarDate(key) {
+  progressSelectedDate = progressSelectedDate === key ? null : key;
+  renderProgressCalendar();
+}
+
+// ---------- progress: recurring-issue status donut ----------
+// Hand-rolled SVG ring (2 stacked <circle> stroke-dasharray segments) so we
+// don't pull in a charting library for one small breakdown. Colors reuse
+// the same status palette already used on the issue cards below (sage =
+// resolved, mauve = improving, gold = still open).
+function renderIssueDonut(counts) {
+  const wrap = document.getElementById('issue-donut-wrap');
+  if (!wrap) return;
+  const total = counts.resolved + counts.improving + counts.open;
+  if (total === 0) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  const R = 26, C = 2 * Math.PI * R;
+  const segs = [
+    { value: counts.resolved, color: 'var(--sage)', label: '已解决' },
+    { value: counts.improving, color: 'var(--mauve)', label: '有改善' },
+    { value: counts.open, color: 'var(--gold)', label: '仍存在' },
+  ].filter(s => s.value > 0);
+  let offset = 0;
+  const circles = segs.map(s => {
+    const dash = (s.value / total) * C;
+    const circle = `<circle cx="32" cy="32" r="${R}" fill="none" stroke="${s.color}" stroke-width="9" stroke-dasharray="${dash} ${C - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 32 32)"/>`;
+    offset += dash;
+    return circle;
+  }).join('');
+  document.getElementById('issue-donut-svg').innerHTML =
+    `<circle cx="32" cy="32" r="${R}" fill="none" stroke="var(--border-soft)" stroke-width="9"/>${circles}`;
+  document.getElementById('issue-donut-total').textContent = total;
+  document.getElementById('issue-donut-legend').innerHTML = segs.map(s =>
+    `<span class="inline-flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full" style="background:${s.color}"></span>${s.label} ${s.value}</span>`
+  ).join('');
+}
+
 // ---------- detail ----------
 let detailId = null;
 let currentDetailRecord = null;
@@ -1612,12 +1925,22 @@ async function openDetail(id) {
   detailId = id;
   currentDetailRecord = r;
   document.getElementById('detail-title').textContent = r.class_name;
+  const MOOD_EMOJI = { low: '😔', meh: '😐', good: '🙂', great: '😄' };
+  document.getElementById('detail-mood').textContent = MOOD_EMOJI[r.mood] || '';
   const trainedNote = r.training_duration_min != null ? ` · 训练${r.training_duration_min >= 60 ? (r.training_duration_min/60).toFixed(1)+'小时' : r.training_duration_min+'分钟'}` : '';
   document.getElementById('detail-date').textContent = fmtDate(r.created_at) + ` · ${r.duration_sec}s语音` + trainedNote;
   document.getElementById('detail-transcript').textContent = r.transcript;
   document.getElementById('detail-good').textContent = r.good_points || '（无）';
   document.getElementById('detail-improve').textContent = r.improve_points || '（无）';
   document.getElementById('detail-next').textContent = r.next_time_reminder || '（无）';
+  const tipsWrap = document.getElementById('detail-tips-wrap');
+  const tips = (r.session_tips || '').trim();
+  if (tips) {
+    tipsWrap.classList.remove('hidden');
+    document.getElementById('detail-tips').textContent = tips;
+  } else {
+    tipsWrap.classList.add('hidden');
+  }
   show('screen-detail');
   if (!browseSessionId) ensureBrowseSession();
   logEvent('history_session_opened', { recordId: Number(id) }, 'browse');
@@ -1638,6 +1961,9 @@ function formatRecordText(r) {
     '',
     '【下次练习注意事项】',
     r.next_time_reminder || '（无）',
+    '',
+    '【针对这次的小提示（常见练法参考，不是教练）】',
+    r.session_tips || '（无）',
   ].join('\n');
 }
 async function exportEntry() {
@@ -1678,6 +2004,14 @@ function updateGenerateBtn() {
   if (aiUnavailable) { document.getElementById('generate-btn').disabled = true; return; }
   const manualLen = document.getElementById('manual-input').value.trim().length;
   document.getElementById('generate-btn').disabled = (segments.length === 0 && manualLen === 0) || recognizing || transcribing;
+}
+function enableAiEntry() {
+  aiUnavailable = false;
+  const btn = document.getElementById('generate-btn');
+  btn.textContent = '完成并生成复盘';
+  const retryBtn = document.querySelector('#screen-review button[onclick="retryGenerate()"]');
+  if (retryBtn) retryBtn.disabled = false;
+  updateGenerateBtn();
 }
 function disableAiEntry(message) {
   aiUnavailable = true;
@@ -1853,6 +2187,18 @@ function clearSegments() {
 
 // ---------- AI generation (calls OUR backend, not Anthropic directly) ----------
 let lastDraft = null;
+let savingRecord = false;
+let generateAbort = null;
+function defaultClassName() {
+  const d = new Date();
+  return `${d.getMonth() + 1}月${d.getDate()}日训练`;
+}
+function cancelGenerate() {
+  if (generateAbort) generateAbort.abort();
+}
+function isAbortError(e) {
+  return e && (e.name === 'AbortError' || e.message === 'The user aborted a request.');
+}
 async function generateReview() {
   const segText = segments.map(s => s.text).join('\n');
   const manualText = document.getElementById('manual-input').value.trim();
@@ -1861,11 +2207,13 @@ async function generateReview() {
   const totalDuration = segments.reduce((a,s)=>a+s.duration,0) || 60;
   lastDraft = { transcript, durationSec: totalDuration };
   ensureCaptureSession();
+  generateAbort = new AbortController();
   show('screen-processing');
   try {
     const res = await authFetch(`${API}/api/generate`, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ transcript, sessionId: captureSessionId })
+      body: JSON.stringify({ transcript, sessionId: captureSessionId }),
+      signal: generateAbort.signal,
     });
     const result = await res.json();
     if (!res.ok) { const err = new Error(result.error || '生成失败'); err.status = res.status; throw err; }
@@ -1874,25 +2222,31 @@ async function generateReview() {
     show('screen-review');
   } catch (e) {
     show('screen-record');
+    if (isAbortError(e)) return;
     if (e.status === 429) disableAiEntry(e.message);
     else toast('AI生成失败：' + (e.message || '请重试') + '。原始录音已保留');
+  } finally {
+    generateAbort = null;
   }
 }
 async function retryGenerate() {
   if (!lastDraft) return;
   logEvent('ai_regenerated');
+  generateAbort = new AbortController();
   show('screen-processing');
   try {
     const res = await authFetch(`${API}/api/generate`, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ transcript: lastDraft.transcript, sessionId: captureSessionId })
+      body: JSON.stringify({ transcript: lastDraft.transcript, sessionId: captureSessionId }),
+      signal: generateAbort.signal,
     });
     const result = await res.json();
     if (!res.ok) { const err = new Error(result.error || '生成失败'); err.status = res.status; throw err; }
     lastDraft.result = result;
-    renderReview();
+    renderReview(false);
     show('screen-review');
   } catch (e) {
+    if (isAbortError(e)) { show('screen-review'); return; }
     show('screen-review');
     if (e.status === 429) { disableAiEntry(e.message); return; }
     const wrap = document.getElementById('review-error-wrap');
@@ -1901,6 +2255,8 @@ async function retryGenerate() {
     } else {
       toast('调用失败：' + (e.message || '') + '。原始输入未丢失');
     }
+  } finally {
+    generateAbort = null;
   }
 }
 let selectedDurationMin = null;
@@ -1910,21 +2266,37 @@ function selectDuration(min) {
     btn.classList.toggle('is-selected', Number(btn.dataset.min) === selectedDurationMin);
   });
 }
-function renderReview() {
+// Self-reported only — the user picks this, the app never infers it from
+// voice/text. Purely descriptive, no AI judgement anywhere near it.
+let selectedMood = null;
+function selectMood(mood) {
+  selectedMood = (selectedMood === mood) ? null : mood;
+  document.querySelectorAll('.mood-chip').forEach(btn => {
+    btn.classList.toggle('is-selected', btn.dataset.mood === selectedMood);
+  });
+}
+// isFreshDraft=false on retry: the user's course name and duration selection
+// have nothing to do with the transcript being re-processed, so a retry must
+// not silently wipe them — only a genuinely new recording resets those.
+function renderReview(isFreshDraft = true) {
   logEvent('review_opened');
   const errWrap = document.getElementById('review-error-wrap');
   if (errWrap) errWrap.innerHTML = '';
-  selectedDurationMin = null;
-  document.querySelectorAll('.duration-chip').forEach(btn => btn.classList.remove('is-selected'));
+  if (isFreshDraft) {
+    selectedDurationMin = null;
+    document.querySelectorAll('.duration-chip').forEach(btn => btn.classList.remove('is-selected'));
+    selectedMood = null;
+    document.querySelectorAll('.mood-chip').forEach(btn => btn.classList.remove('is-selected'));
+    document.getElementById('review-classname').value = '';
+  }
   document.getElementById('review-transcript').textContent = lastDraft.transcript;
-  document.getElementById('review-classname').value = '';
   const r = lastDraft.result;
   document.getElementById('review-good').value = r.good_points || '';
   document.getElementById('review-improve').value = r.improve_points || '';
   document.getElementById('review-next').value = r.next_time_reminder || '';
-  document.getElementById('review-confidence').textContent = 'Confidence: ' + (r.confidence_level || '-');
+  document.getElementById('review-tips').value = r.session_tips || '';
   const noteEl = document.getElementById('review-note');
-  if (r.note) { noteEl.classList.remove('hidden'); noteEl.textContent = 'Note: ' + r.note; }
+  if (r.note) { noteEl.classList.remove('hidden'); noteEl.textContent = r.note; }
   else noteEl.classList.add('hidden');
 }
 // V0.2 #12 — the user explicitly flags a term AI got wrong; never inferred
@@ -1955,24 +2327,34 @@ async function submitTermCorrection() {
 }
 
 async function confirmSave() {
+  if (savingRecord) return;
+  if (!lastDraft || !lastDraft.result) { toast('草稿已失效，请返回重新生成'); return; }
+  savingRecord = true;
+  const saveBtn = document.querySelector('#screen-review button[onclick="confirmSave()"]');
+  if (saveBtn) saveBtn.disabled = true;
+  try {
   const good = document.getElementById('review-good').value.trim();
   const improve = document.getElementById('review-improve').value.trim();
   const next = document.getElementById('review-next').value.trim();
+  const tips = document.getElementById('review-tips').value.trim();
   const editedFields = [];
   if (good !== (lastDraft.result.good_points || '').trim()) editedFields.push('good_points');
   if (improve !== (lastDraft.result.improve_points || '').trim()) editedFields.push('improve_points');
   if (next !== (lastDraft.result.next_time_reminder || '').trim()) editedFields.push('next_time_reminder');
+  if (tips !== (lastDraft.result.session_tips || '').trim()) editedFields.push('session_tips');
   const edited = editedFields.length > 0;
   const body = {
-    className: document.getElementById('review-classname').value.trim() || '训练记录',
+    className: document.getElementById('review-classname').value.trim() || defaultClassName(),
     transcript: lastDraft.transcript,
     good_points: good,
     improve_points: improve,
     next_time_reminder: next,
+    session_tips: tips,
     confidence_level: lastDraft.result.confidence_level || '',
     note: lastDraft.result.note || '',
     durationSec: lastDraft.durationSec,
     trainingDurationMin: selectedDurationMin,
+    mood: selectedMood,
     edited,
     editedFields,
     sessionId: captureSessionId,
@@ -1982,13 +2364,19 @@ async function confirmSave() {
   if (!res.ok) { toast(result.error || '保存失败'); return; }
   captureSessionId = '';
   showSaveCeremony(result.milestone);
+  } catch (e) {
+    toast('保存失败：' + (e.message || '请重试'));
+  } finally {
+    savingRecord = false;
+    if (saveBtn) saveBtn.disabled = false;
+  }
 }
 
 // V0.2 #16 (save ceremony) + #11 (objective milestone celebration — pure
 // counting, never a capability judgement). Same trigger point, one overlay.
 function milestoneText(m) {
   if (!m) return '';
-  if (m.type === 'count' && m.value === 1) return '这是你的第一次训练记录，成长追踪从这里开始。';
+  if (m.type === 'count' && m.value === 1) return '这是你的第一次训练记录，成长追踪从这里开始——多记录几次后，反复出现的问题会自动出现在"追踪"里。';
   if (m.type === 'count') return `已经完成 ${m.value} 次训练记录了。`;
   if (m.type === 'streak') return `已经连续 ${m.value} 周坚持训练了。`;
   return '';

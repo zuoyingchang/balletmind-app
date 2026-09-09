@@ -120,6 +120,7 @@ function recordMatchesSearch(record, keyword) {
     record.good_points,
     record.improve_points,
     record.next_time_reminder,
+    record.session_tips,
   ].join('\n'));
   return needles.some((needle) => hay.includes(needle));
 }

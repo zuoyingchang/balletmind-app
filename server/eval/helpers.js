@@ -2,7 +2,7 @@ function pass() { return { ok: true }; }
 function fail(reason) { return { ok: false, reason }; }
 
 function blob(r) {
-  return `${r.good_points || ''}\n${r.improve_points || ''}\n${r.next_time_reminder || ''}\n${r.note || ''}`;
+  return `${r.good_points || ''}\n${r.improve_points || ''}\n${r.next_time_reminder || ''}\n${r.session_tips || ''}\n${r.note || ''}`;
 }
 
 function improveLines(r) {

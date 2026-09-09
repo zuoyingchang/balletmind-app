@@ -22,7 +22,7 @@ Edit / Regenerate / History **不是**漏斗步骤，是侧指标。
 | asr_success / asr_fail | 同名 | 服务端；header `X-Capture-Session` |
 | ai_success / ai_fail | `ai_process_success` / `ai_process_fail` | 服务端；body `sessionId` |
 | review_opened | `review_opened` | 进入 Review。旧数据没有就没有 |
-| field_edited | `field_edited` | **只记 `field_name`**（good_points / improve_points / next_time_reminder），**永不记用户文本** |
+| field_edited | `field_edited` | **只记 `field_name`**（good_points / improve_points / next_time_reminder / session_tips），**永不记用户文本** |
 | ai_regenerated | `ai_regenerated`（旧 `retry_ai` 仍可读） | 用户点 Retry |
 | session_confirmed | `session_confirmed` + 仍写 `save_record` | Review 后确认保存。activation 仍以 `save_record` 计，避免双计用户 |
 | history_opened | `history_opened`（旧 `history_open`） | 打开档案列表；用 **browse** session，不挂 capture |

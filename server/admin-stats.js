@@ -132,7 +132,7 @@ function buildRetention(eventRows, now) {
 }
 
 function editedFieldCounts(editEvents) {
-  const fields = { good_points: 0, improve_points: 0, next_time_reminder: 0 };
+  const fields = { good_points: 0, improve_points: 0, next_time_reminder: 0, session_tips: 0 };
   let editedTrue = 0;
   for (const m of metas(editEvents)) {
     if (m.edited === true) editedTrue += 1;

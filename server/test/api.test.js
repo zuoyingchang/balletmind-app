@@ -179,6 +179,57 @@ test('one user cannot see, fetch, or delete another user\'s records', async () =
   assert.equal(getAsA.status, 200); // dave's record survived erin's delete attempt
 });
 
+test('one user cannot see, or update, another user\'s recurring issues', async () => {
+  const { body: { token: tokenA } } = await registerUser('gina@example.com');
+  const { body: { token: tokenB } } = await registerUser('hank@example.com');
+
+  // Save the same improve_points line twice so processRecordForIssues opens
+  // a real "issues" row for A (isSimilar() needs a repeated line, not a
+  // one-off — a single save never creates an issue).
+  for (let i = 0; i < 2; i++) {
+    await fetch(`${base}/api/records`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenA}` },
+      body: JSON.stringify({ className: '基训', improve_points: '转圈时骨盆晃动明显' }),
+    });
+  }
+  const issuesAsA = await (await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${tokenA}` } })).json();
+  assert.equal(issuesAsA.length, 1, 'saving the same improve_points twice should open exactly one issue');
+  const issueId = issuesAsA[0].id;
+
+  const issuesAsB = await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${tokenB}` } });
+  assert.deepEqual(await issuesAsB.json(), []); // B sees none of A's issues
+
+  const patchAsB = await fetch(`${base}/api/issues/${issueId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenB}` },
+    body: JSON.stringify({ status: 'resolved' }),
+  });
+  assert.equal(patchAsB.status, 404); // B cannot resolve A's issue by guessing its id
+
+  const issuesAsAAfter = await (await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${tokenA}` } })).json();
+  assert.equal(issuesAsAAfter[0].status, 'open'); // A's issue is untouched by B's attempt
+});
+
+test('one user cannot see another user\'s term corrections, and corrections don\'t leak into the other user\'s AI prompt hint', async () => {
+  const { body: { token: tokenA } } = await registerUser('iris@example.com');
+  const { body: { token: tokenB, user: userB } } = await registerUser('jack@example.com');
+
+  const addAsA = await fetch(`${base}/api/terms`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenA}` },
+    body: JSON.stringify({ wrongTerm: '拍赛', correctTerm: 'passé' }),
+  });
+  assert.equal(addAsA.status, 200);
+
+  const termsAsB = await fetch(`${base}/api/terms`, { headers: { Authorization: `Bearer ${tokenB}` } });
+  assert.deepEqual(await termsAsB.json(), []);
+
+  const { correctionsAsPromptHint } = require('../terms');
+  const hintForB = await correctionsAsPromptHint(userB.id);
+  assert.equal(hintForB, ''); // A's correction never reaches B's AI prompt
+});
+
 test('a user can delete their own record', async () => {
   const { body: { token } } = await registerUser('frank@example.com');
   const create = await fetch(`${base}/api/records`, {
@@ -582,13 +633,13 @@ async function withMockAnthropicFetch(mockFn, run) {
   }
 }
 
-function fakeAnthropicResponse({ good = [], improve = [], next = [], confidence = '高', note = '', inputTokens = 120, outputTokens = 60 } = {}) {
+function fakeAnthropicResponse({ good = [], improve = [], next = [], tips = [], confidence = '高', note = '', inputTokens = 120, outputTokens = 60 } = {}) {
   return {
     ok: true,
     status: 200,
     json: async () => ({
       content: [{ type: 'tool_use', name: 'submit_review', input: {
-        good_points: good, improve_points: improve, next_time_reminder: next, confidence_level: confidence, note,
+        good_points: good, improve_points: improve, next_time_reminder: next, session_tips: tips, confidence_level: confidence, note,
       } }],
       usage: {
         input_tokens: inputTokens,
@@ -637,6 +688,39 @@ test('a transient network failure is retried once and succeeds, and success is l
   assert.ok(typeof meta.latencyMs === 'number' && meta.latencyMs >= 0);
 });
 
+test('/api/generate returns session_tips from the tool payload', async () => {
+  const { body: { token } } = await registerUser('session_tips_generate@example.com');
+  await withMockAnthropicFetch(
+    async () => fakeAnthropicResponse({ good: ['passé 尚可'], tips: ['转的时候留意骨盆'] }),
+    async () => {
+      const res = await fetch(`${base}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ transcript: '今天pirouette骨盆晃' }),
+      });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(body.session_tips, '转的时候留意骨盆');
+    }
+  );
+});
+
+test('saving a record stores session_tips without opening an issue from it', async () => {
+  const { body: { token } } = await registerUser('session_tips_save@example.com');
+  await saveRecord(token, {
+    className: '基训',
+    improve_points: '重心不稳',
+    session_tips: '转的时候留意重心',
+  });
+  const recRes = await fetch(`${base}/api/records`, { headers: { Authorization: `Bearer ${token}` } });
+  const records = await recRes.json();
+  assert.equal(records[0].session_tips, '转的时候留意重心');
+  const issueRes = await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${token}` } });
+  const issues = await issueRes.json();
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].text, '重心不稳');
+});
+
 test('Sonnet 5 Anthropic body omits temperature; Sonnet 4.6 still sends it', async () => {
   const { body: { token } } = await registerUser('sonnet5_no_temp@example.com');
   const prev = process.env.AI_MODEL;
@@ -659,6 +743,7 @@ test('Sonnet 5 Anthropic body omits temperature; Sonnet 4.6 still sends it', asy
     );
     assert.equal(body5.model, 'claude-sonnet-5');
     assert.equal(body5.temperature, undefined);
+    assert.ok(body5.tools[0].input_schema.properties.session_tips);
     assert.ok(body5.tool_choice && body5.tools);
 
     process.env.AI_MODEL = 'claude-sonnet-4-6';

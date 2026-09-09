@@ -30,8 +30,8 @@ const CASES = [
     check(r) {
       if (r.confidence_level !== '低') return fail(`期望 confidence_level=低，实际=${r.confidence_level}`);
       if (!/信息.*有限|信息不足/.test(r.note)) return fail(`note 没有说明信息不足：${r.note}`);
-      if (r.good_points || r.improve_points || r.next_time_reminder) {
-        return fail(`不该凭空生成内容：good=${r.good_points} improve=${r.improve_points} next=${r.next_time_reminder}`);
+      if (r.good_points || r.improve_points || r.next_time_reminder || r.session_tips) {
+        return fail(`不该凭空生成内容：good=${r.good_points} improve=${r.improve_points} next=${r.next_time_reminder} tips=${r.session_tips}`);
       }
       return pass();
     },
@@ -44,8 +44,8 @@ const CASES = [
     transcript: '今天感觉腿没什么力气，turnout也开不太出去，可能是我平时没怎么练核心。',
     check(r) {
       const forbidden = /建议|应该|每天练习\d+分钟/;
-      if (forbidden.test(r.next_time_reminder) || forbidden.test(r.improve_points)) {
-        return fail(`疑似编造建议：improve=${r.improve_points} next=${r.next_time_reminder}`);
+      if (forbidden.test(r.next_time_reminder) || forbidden.test(r.improve_points) || /每天练习\d+分钟/.test(r.session_tips || '')) {
+        return fail(`疑似编造建议：improve=${r.improve_points} next=${r.next_time_reminder} tips=${r.session_tips}`);
       }
       if (r.confidence_level === '高') return fail('带猜测语气不该是高置信度');
       return pass();
@@ -106,6 +106,7 @@ const CASES = [
       if (!/arabesque|后腿/.test(r.good_points)) return fail(`good_points 没抓住 arabesque：${r.good_points}`);
       if (r.improve_points) return fail(`用户没说问题：${r.improve_points}`);
       if (r.next_time_reminder) return fail(`用户没说下次计划：${r.next_time_reminder}`);
+      if (r.session_tips) return fail(`只说优点时不该给小提示：${r.session_tips}`);
       return pass();
     },
   }),
@@ -158,7 +159,7 @@ const CASES = [
     transcript: '   \n\t  ',
     check(r) {
       if (r.confidence_level === '高') return fail('空白输入不该是高置信度');
-      if (r.good_points || r.improve_points || r.next_time_reminder) {
+      if (r.good_points || r.improve_points || r.next_time_reminder || r.session_tips) {
         return fail(`空白输入不该有三段内容：${JSON.stringify(r)}`);
       }
       return pass();
@@ -474,6 +475,41 @@ const CASES = [
       if (r.good_points && r.improve_points && r.next_time_reminder) {
         return fail(`无意义输入却填满三栏：${blob(r)}`);
       }
+      return pass();
+    },
+  }),
+  caseDef({
+    name: '小提示 — 紧扣本次问题，不是新计划',
+    type: 'happy',
+    dimensions: ['hallucination', 'coverage'],
+    rubric: 'next 仍是用户说的控腿；若有 session_tips 必须点到骨盆/重心/转，且不超过3条、不含每天练习',
+    transcript: '今天pirouette单圈，腿passé位置还行，但是转的时候骨盆晃，重心不稳，下次多练地面静态控腿。',
+    check(r) {
+      if (!/控腿|passé/.test(r.next_time_reminder)) return fail(`next 应留下用户说的控腿：${r.next_time_reminder}`);
+      const tips = String(r.session_tips || '').trim();
+      if (!tips) return pass();
+      const lines = tips.split('\n').map((s) => s.trim()).filter(Boolean);
+      if (lines.length > 3) return fail(`小提示超过3条：${tips}`);
+      if (/每天练习\d+分钟|应该加强|建议加强/.test(tips)) return fail(`小提示写成了处方：${tips}`);
+      if (!/骨盆|重心|转|pirouette/.test(tips)) return fail(`小提示没扣本次问题：${tips}`);
+      return pass();
+    },
+  }),
+  caseDef({
+    name: '小提示 — spotting / 转圈可给常见练法，不写进 next',
+    type: 'happy',
+    dimensions: ['hallucination', 'coverage'],
+    rubric: 'improve 记下 spotting/转；next 为空；tips 若有则点到定点/甩头/重心等，且不像处方或诊断',
+    transcript: '今天转圈转得不好，spotting定点做得不好。',
+    check(r) {
+      if (!/spotting|定点|转/.test(r.improve_points)) return fail(`improve 没记下 spotting/转：${r.improve_points}`);
+      if (r.next_time_reminder) return fail(`用户没说下次计划，next 应空：${r.next_time_reminder}`);
+      const tips = String(r.session_tips || '').trim();
+      if (!tips) return pass();
+      const lines = tips.split('\n').map((s) => s.trim()).filter(Boolean);
+      if (lines.length > 3) return fail(`小提示超过3条：${tips}`);
+      if (/每天练习\d+分钟|必须每天|原因一定是|诊断/.test(tips)) return fail(`小提示写成处方或诊断：${tips}`);
+      if (!/点|甩头|spotting|重心|支撑/.test(tips)) return fail(`小提示没对准 spotting/转：${tips}`);
       return pass();
     },
   }),

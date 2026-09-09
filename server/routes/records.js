@@ -12,25 +12,29 @@ router.use(requireAuth);
 router.post('/', async (req, res) => {
   const {
     className, transcript, good_points, improve_points,
-    next_time_reminder, confidence_level, note, durationSec, edited, editedFields,
-    trainingDurationMin,
+    next_time_reminder, session_tips, confidence_level, note, durationSec, edited, editedFields,
+    trainingDurationMin, mood,
   } = req.body || {};
   const sessionId = sessionIdFromReq(req);
   const fields = Array.isArray(editedFields)
-    ? editedFields.filter((f) => ['good_points', 'improve_points', 'next_time_reminder'].includes(f))
+    ? editedFields.filter((f) => ['good_points', 'improve_points', 'next_time_reminder', 'session_tips'].includes(f))
     : [];
   // User-provided real training duration (minutes), always optional — not to
   // be confused with duration_sec, which is just the voice memo's length.
   const trainingMin = Number.isFinite(trainingDurationMin) && trainingDurationMin > 0
     ? Math.round(trainingDurationMin)
     : null;
+  // Self-reported mood, always optional, always the user's own pick — never
+  // inferred by AI from the transcript.
+  const MOOD_VALUES = new Set(['low', 'meh', 'good', 'great']);
+  const moodValue = MOOD_VALUES.has(mood) ? mood : null;
   const info = await db.run(
     `INSERT INTO records
-      (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, confidence_level, note, duration_sec, created_at, training_duration_min)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, session_tips, confidence_level, note, duration_sec, created_at, training_duration_min, mood)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       req.userId, className || '训练记录', transcript || '', good_points || '', improve_points || '',
-      next_time_reminder || '', confidence_level || '', note || '', durationSec || 0, Date.now(), trainingMin,
+      next_time_reminder || '', session_tips || '', confidence_level || '', note || '', durationSec || 0, Date.now(), trainingMin, moodValue,
     ]
   );
   await logEvent(req.userId, 'save_record', withSession({ recordId: info.lastInsertRowid }, sessionId));

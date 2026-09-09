@@ -62,14 +62,22 @@ router.get('/brief', async (req, res) => {
     .slice(0, 3);
 
   const lastRecord = await db.get(
-    'SELECT class_name, next_time_reminder, created_at FROM records WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
+    'SELECT class_name, next_time_reminder, improve_points, created_at FROM records WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
     [req.userId]
   );
 
   res.json({
     topIssues,
+    // improvePoints rides along so the frontend can always show *something*
+    // useful even when there's no repeat issue yet — falls back to the
+    // user's own last "could improve" note. Still zero LLM calls.
     lastRecord: lastRecord
-      ? { className: lastRecord.class_name, nextTimeReminder: lastRecord.next_time_reminder, createdAt: lastRecord.created_at }
+      ? {
+          className: lastRecord.class_name,
+          nextTimeReminder: lastRecord.next_time_reminder,
+          improvePoints: lastRecord.improve_points,
+          createdAt: lastRecord.created_at,
+        }
       : null,
   });
 });

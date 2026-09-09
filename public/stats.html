@@ -157,7 +157,7 @@
         <div class="stat"><strong id="r-twoday">-</strong><span>≥2 个不同日保存</span></div>
         <div class="stat"><strong id="r-week">-</strong><span>满 7 天后再有事件（合格 / 回来）</span></div>
         <div class="stat"><strong id="m-progress">-</strong><span>打开过 Progress（次数）</span></div>
-        <div class="stat"><strong id="m-fields">-</strong><span>改过的字段 优点 / 改进 / 下次</span></div>
+        <div class="stat"><strong id="m-fields">-</strong><span>改过的字段 优点 / 改进 / 下次 / 小提示</span></div>
       </div>
       <p class="muted" id="r-note" style="margin:10px 0 0;"></p>
       <p class="muted" id="internal-note" style="margin:6px 0 0;"></p>
@@ -260,7 +260,7 @@ function render(data) {
   document.getElementById('r-week').textContent = (ret.weekReturnEligible ?? 0) + ' / ' + (ret.weekReturnReturned ?? 0);
   document.getElementById('m-progress').textContent = String(m.progressOpenCount || 0);
   const ef = m.editedFields || {};
-  document.getElementById('m-fields').textContent = (ef.good_points || 0) + ' / ' + (ef.improve_points || 0) + ' / ' + (ef.next_time_reminder || 0);
+  document.getElementById('m-fields').textContent = (ef.good_points || 0) + ' / ' + (ef.improve_points || 0) + ' / ' + (ef.next_time_reminder || 0) + ' / ' + (ef.session_tips || 0);
   document.getElementById('r-note').textContent = ret.note || '';
 
   document.getElementById('m-success').textContent = dash(m.aiProcessSuccessRate, '%');
