@@ -212,8 +212,21 @@
     background: linear-gradient(135deg, var(--gold), var(--rose-deep));
     border-color: transparent; color: #fff; font-weight: 600;
   }
-  .mood-chip { background: rgba(255,252,251,.7); transition: background .15s ease, border-color .15s ease, transform .15s ease; }
-  .mood-chip.is-selected { background: var(--blush); border-color: var(--rose-deep); transform: scale(1.08); }
+  .mood-chip {
+    background: rgba(255,252,251,.7); border: 1px solid var(--border-soft);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+    transition: background .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+  }
+  .mood-chip .mood-chip-emoji { color: var(--ink-faint); transition: color .18s ease; }
+  .mood-chip .mood-chip-label { transition: color .18s ease, font-weight .18s ease; }
+  .mood-chip.is-selected {
+    background: linear-gradient(160deg, rgba(232,197,155,.4), rgba(196,164,166,.4));
+    border-color: var(--gold);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.75), 0 8px 16px -10px rgba(140,100,100,.4);
+    transform: translateY(-2px);
+  }
+  .mood-chip.is-selected .mood-chip-emoji { color: var(--rose-deep); }
+  .mood-chip.is-selected .mood-chip-label { color: var(--burgundy); font-weight: 600; }
   .nav-ballet {
     background: rgba(253,251,250,.78);
     backdrop-filter: blur(18px);
@@ -342,7 +355,7 @@
         <p class="label-editorial text-[13px] text-[var(--rose-deep)]">课后复盘</p>
         <img src="/img/pack-shoes-pink.png" alt="" class="mx-auto mt-3 w-[92px] h-[110px] object-contain tint-rose">
         <h1 class="font-display mt-1 text-[32px] font-semibold tracking-[-0.02em]">BalletMind</h1>
-        <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="auth-subtitle">课后口述，AI 先整理成草稿<br>你确认后才会保存</p>
+        <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="auth-subtitle">每次下课说几句，整理成你的芭蕾成长笔记</p>
       </div>
 
       <div class="card-journal grain relative z-10 mt-8 overflow-hidden rounded-[24px] px-4 py-4 space-y-3">
@@ -352,6 +365,9 @@
         </div>
         <input id="auth-email" type="email" placeholder="邮箱（如 name@example.com）" class="relative z-10 auth-field">
         <input id="auth-password" type="password" placeholder="密码（至少6位）" onkeydown="if(event.key==='Enter') submitAuth()" class="relative z-10 auth-field">
+        <div id="auth-confirm-wrap" class="relative z-10 hidden">
+          <input id="auth-confirm-password" type="password" placeholder="再输一次密码" onkeydown="if(event.key==='Enter') submitAuth()" class="auth-field">
+        </div>
         <div id="auth-privacy-wrap" class="relative z-10 hidden">
           <label class="flex items-start gap-2 text-[11.5px] text-[var(--ink-soft)] leading-5 px-0.5">
             <input id="auth-privacy" type="checkbox" class="mt-0.5">
@@ -596,11 +612,23 @@
 
       <div class="mb-4">
         <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">今天感觉怎么样？（可选，自己记录的感受）</p>
-        <div class="flex gap-2" id="mood-chips">
-          <button type="button" onclick="selectMood('low')" data-mood="low" aria-label="不在状态" class="mood-chip w-11 h-11 rounded-full border border-[var(--border-soft)] text-[19px] flex items-center justify-center">😔</button>
-          <button type="button" onclick="selectMood('meh')" data-mood="meh" aria-label="一般" class="mood-chip w-11 h-11 rounded-full border border-[var(--border-soft)] text-[19px] flex items-center justify-center">😐</button>
-          <button type="button" onclick="selectMood('good')" data-mood="good" aria-label="还不错" class="mood-chip w-11 h-11 rounded-full border border-[var(--border-soft)] text-[19px] flex items-center justify-center">🙂</button>
-          <button type="button" onclick="selectMood('great')" data-mood="great" aria-label="状态很好" class="mood-chip w-11 h-11 rounded-full border border-[var(--border-soft)] text-[19px] flex items-center justify-center">😄</button>
+        <div class="flex gap-2.5" id="mood-chips">
+          <button type="button" onclick="selectMood('low')" data-mood="low" aria-label="不在状态" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+            <iconify-icon icon="solar:sad-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
+            <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">不在状态</span>
+          </button>
+          <button type="button" onclick="selectMood('meh')" data-mood="meh" aria-label="一般" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+            <iconify-icon icon="solar:confounded-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
+            <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">一般</span>
+          </button>
+          <button type="button" onclick="selectMood('good')" data-mood="good" aria-label="还不错" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+            <iconify-icon icon="solar:smile-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
+            <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">还不错</span>
+          </button>
+          <button type="button" onclick="selectMood('great')" data-mood="great" aria-label="状态很好" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+            <iconify-icon icon="solar:emoji-funny-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
+            <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">很好</span>
+          </button>
         </div>
       </div>
 
@@ -1198,10 +1226,11 @@ function setAuthMode(mode) {
   const isForgot = mode === 'forgot';
   document.getElementById('auth-name-wrap').classList.toggle('hidden', !isRegister);
   document.getElementById('auth-password').classList.toggle('hidden', isForgot);
+  document.getElementById('auth-confirm-wrap').classList.toggle('hidden', !isRegister);
   document.getElementById('auth-privacy-wrap').classList.toggle('hidden', !isRegister);
   document.getElementById('auth-forgot-btn').classList.toggle('hidden', isForgot);
   document.getElementById('auth-subtitle').innerHTML = isLogin
-    ? '课后口述，AI 先整理成草稿<br>你确认后才会保存'
+    ? '每次下课说几句，整理成你的芭蕾成长笔记'
     : isRegister ? '用邮箱建一个只属于你的训练本' : '输入注册邮箱，我们会给你重置链接';
   document.getElementById('auth-submit-label').textContent = isLogin ? '登录' : isRegister ? '注册' : '发送重置链接';
   document.getElementById('auth-toggle-btn').textContent = isLogin ? '还没有账号？去注册' : '已经有账号？去登录';
@@ -1225,6 +1254,9 @@ async function submitAuth() {
   if (authMode !== 'forgot' && !password) { errEl.textContent = '请填写邮箱和密码'; errEl.classList.remove('hidden'); return; }
   if (authMode === 'register' && password.length < 6) {
     errEl.textContent = '密码至少6位'; errEl.classList.remove('hidden'); return;
+  }
+  if (authMode === 'register' && password !== document.getElementById('auth-confirm-password').value) {
+    errEl.textContent = '两次输入的密码不一样，请再检查一下'; errEl.classList.remove('hidden'); return;
   }
   if (authMode === 'register' && !document.getElementById('auth-privacy').checked) {
     errEl.textContent = '请先阅读并同意隐私政策'; errEl.classList.remove('hidden'); return;
@@ -1259,6 +1291,7 @@ async function submitAuth() {
     setAuth(data.token, data.user);
     document.getElementById('auth-email').value = '';
     document.getElementById('auth-password').value = '';
+    document.getElementById('auth-confirm-password').value = '';
     document.getElementById('auth-name').value = '';
     goHome();
   } catch (e) {
@@ -2325,10 +2358,20 @@ function selectDuration(min) {
 // Self-reported only — the user picks this, the app never infers it from
 // voice/text. Purely descriptive, no AI judgement anywhere near it.
 let selectedMood = null;
+const MOOD_ICONS = {
+  low: { linear: 'solar:sad-circle-linear', bold: 'solar:sad-circle-bold' },
+  meh: { linear: 'solar:confounded-circle-linear', bold: 'solar:confounded-circle-bold' },
+  good: { linear: 'solar:smile-circle-linear', bold: 'solar:smile-circle-bold' },
+  great: { linear: 'solar:emoji-funny-circle-linear', bold: 'solar:emoji-funny-circle-bold' },
+};
 function selectMood(mood) {
   selectedMood = (selectedMood === mood) ? null : mood;
   document.querySelectorAll('.mood-chip').forEach(btn => {
-    btn.classList.toggle('is-selected', btn.dataset.mood === selectedMood);
+    const isSel = btn.dataset.mood === selectedMood;
+    btn.classList.toggle('is-selected', isSel);
+    const iconEl = btn.querySelector('.mood-chip-emoji');
+    const icons = MOOD_ICONS[btn.dataset.mood];
+    if (iconEl && icons) iconEl.setAttribute('icon', isSel ? icons.bold : icons.linear);
   });
 }
 // isFreshDraft=false on retry: the user's course name and duration selection
@@ -2342,7 +2385,12 @@ function renderReview(isFreshDraft = true) {
     selectedDurationMin = null;
     document.querySelectorAll('.duration-chip').forEach(btn => btn.classList.remove('is-selected'));
     selectedMood = null;
-    document.querySelectorAll('.mood-chip').forEach(btn => btn.classList.remove('is-selected'));
+    document.querySelectorAll('.mood-chip').forEach(btn => {
+      btn.classList.remove('is-selected');
+      const iconEl = btn.querySelector('.mood-chip-emoji');
+      const icons = MOOD_ICONS[btn.dataset.mood];
+      if (iconEl && icons) iconEl.setAttribute('icon', icons.linear);
+    });
     document.getElementById('review-classname').value = '';
   }
   document.getElementById('review-transcript').textContent = lastDraft.transcript;
