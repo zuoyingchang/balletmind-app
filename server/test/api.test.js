@@ -1127,3 +1127,92 @@ test('/api/progress/ask enforces the shared daily AI quota once a match is found
   const res = await fetch(`${base}/api/progress/ask?q=转圈`, { headers: { Authorization: `Bearer ${token}` } });
   assert.equal(res.status, 429);
 });
+
+// ---------- ask-your-archive: the one-hop agent (optional 2nd search) ----------
+test('/api/progress/ask costs exactly one Claude call when the model answers from round 1', async () => {
+  const { body: { token } } = await registerUser('ask_oneround@example.com');
+  await saveRecord(token, { className: '基训', improve_points: '转圈时重心不稳' });
+
+  let calls = 0;
+  await withMockAnthropicFetch(
+    async () => { calls++; return fakeAskResponse({ answered: true, answer: '重心不稳。', citedRecordIds: [] }); },
+    async () => {
+      const res = await fetch(`${base}/api/progress/ask?q=转圈`, { headers: { Authorization: `Bearer ${token}` } });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(body.rounds, 1);
+    }
+  );
+  assert.equal(calls, 1, 'a question the first batch already answers must not trigger a second hop');
+});
+
+test('/api/progress/ask makes exactly one extra search when the model asks for one, then is forced to answer', async () => {
+  const { body: { token } } = await registerUser('ask_tworound@example.com');
+  const saved = await saveRecord(token, { className: '基训', improve_points: '转圈时重心不稳' });
+
+  let calls = 0;
+  const seenToolChoiceTypes = [];
+  await withMockAnthropicFetch(
+    async (url, opts) => {
+      calls++;
+      seenToolChoiceTypes.push(JSON.parse(opts.body).tool_choice.type);
+      if (calls === 1) {
+        return {
+          ok: true, status: 200,
+          json: async () => ({
+            content: [{ type: 'tool_use', id: 'toolu_1', name: 'search_records', input: { keywords: '转圈', after: '2000-01-01' } }],
+            usage: { input_tokens: 100, output_tokens: 20, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
+          }),
+        };
+      }
+      return fakeAskResponse({ answered: true, answer: '两段时间都提到重心不稳。', citedRecordIds: [saved.id] });
+    },
+    async () => {
+      const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('这个月和上个月转圈有什么不同')}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(body.rounds, 2);
+      assert.equal(body.answered, true);
+      assert.equal(body.matchedRecords.length, 1);
+    }
+  );
+  assert.equal(calls, 2, 'expected exactly 2 Claude calls: one where the model chooses, one forced answer');
+  assert.deepEqual(seenToolChoiceTypes, ['auto', 'tool'], 'round 1 must let the model choose; round 2 must be forced to submit_answer so the loop cannot run a 3rd time');
+});
+
+test('/api/progress/ask clamps a search_records date range to the user\'s own record history', async () => {
+  const { body: { token } } = await registerUser('ask_dateclamp@example.com');
+  await saveRecord(token, { className: '基训', improve_points: '转圈时重心不稳' });
+
+  let secondCallQuestionText = null;
+  let calls = 0;
+  await withMockAnthropicFetch(
+    async (url, opts) => {
+      calls++;
+      if (calls === 1) {
+        return {
+          ok: true, status: 200,
+          json: async () => ({
+            content: [{ type: 'tool_use', id: 'toolu_1', name: 'search_records', input: { keywords: '转圈', after: '1999-01-01', before: '2999-01-01' } }],
+            usage: { input_tokens: 100, output_tokens: 20, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
+          }),
+        };
+      }
+      const body = JSON.parse(opts.body);
+      secondCallQuestionText = body.messages[body.messages.length - 1].content[0].content;
+      return fakeAskResponse({ answered: true, answer: 'ok', citedRecordIds: [] });
+    },
+    async () => {
+      const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('转圈这个月和上个月有什么不同')}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      assert.equal(res.status, 200);
+    }
+  );
+  // Out-of-range 1999/2999 dates must not have blown up the search into an
+  // error or an empty/unbounded result — it should have found the one real
+  // record, clamped to this user's actual history.
+  assert.match(secondCallQuestionText, /重心不稳/, 'the out-of-range request should still clamp to and return the real record');
+});

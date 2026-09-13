@@ -5,14 +5,42 @@ const { listIssuesWithOccurrences } = require('../issues');
 const { splitLines, sessionIdFromReq, withSession } = require('../lib/text');
 const { logEvent, countAiCallsToday } = require('../events');
 const { DAILY_AI_LIMIT } = require('../config');
-const { callAskWithRetry, findToolUse, answerFromToolInput } = require('../ai/anthropic');
+const { callAskRound1WithRetry, callAskRound2WithRetry, findToolUse, answerFromToolInput } = require('../ai/anthropic');
 const { searchRecordsByQuestion } = require('../../public/js/ballet-terms');
 
 const router = express.Router();
 router.use(requireAuth);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const dateLabel = (ts) => { const d = new Date(ts); return `${d.getMonth() + 1}月${d.getDate()}日`; };
+// Year included on purpose — the model has no ground truth for "what year
+// is it" otherwise. Verified live: without a year anchor it guessed 2024
+// against real 2026 data, and a date-ranged search silently found nothing.
+const dateLabel = (ts) => { const d = new Date(ts); return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`; };
+
+function parseDateInput(input) {
+  if (!input || !/^\d{4}-\d{2}-\d{2}$/.test(input)) return null;
+  const ms = new Date(`${input}T00:00:00Z`).getTime();
+  return Number.isFinite(ms) ? ms : null;
+}
+
+// The model can ask for a date window (search_records' before/after), but
+// it never gets to invent one outside what this user actually has. Each
+// bound is clamped into [earliestTs, latestTs] independently — not just
+// capped in the one direction that seemed obvious — because a wrong-year
+// guess like "2024-08-31" undershoots the *lower* bound just as easily as
+// a bad guess could overshoot the upper one; clamping only one direction
+// left the other free to invert the range into an empty window (afterTs
+// ended up later than beforeTs, so the filter matched nothing). If the
+// range still comes out inverted after clamping both ends, fall back to
+// the user's full history rather than searching an empty window.
+function clampDateRange(after, before, earliestTs, latestTs) {
+  const parsedAfter = parseDateInput(after);
+  const parsedBefore = parseDateInput(before);
+  let afterTs = parsedAfter === null ? earliestTs : Math.min(Math.max(parsedAfter, earliestTs), latestTs);
+  let beforeTs = parsedBefore === null ? latestTs : Math.max(Math.min(parsedBefore + DAY_MS - 1, latestTs), earliestTs);
+  if (afterTs > beforeTs) { afterTs = earliestTs; beforeTs = latestTs; }
+  return { afterTs, beforeTs };
+}
 
 // GET /api/progress/review?days=7 | ?last=5 — Training Review (V0.2 #2).
 // User-triggered, not a background job — this just aggregates data that's
@@ -88,12 +116,18 @@ router.get('/brief', async (req, res) => {
 });
 
 // GET /api/progress/ask?q=... — "问问你的档案" (ask-your-archive).
-// Retrieval is pure keyword overlap over the user's own confirmed records —
-// zero AI, zero cost. Claude is only called when retrieval actually found
-// something to answer from, and only ever sees those matched records, never
-// the full archive. Shares the same DAILY_AI_LIMIT as review generation
-// (see events.js QUOTA_EVENTS) — its per-call cost is small enough that a
-// second quota wasn't worth the extra config surface.
+// Round 1's retrieval is pure keyword overlap over the user's own confirmed
+// records — zero AI, zero cost — and Claude is only called once that found
+// something. The one place any model autonomy lives: after seeing round 1's
+// matches, the model can choose to ask for a second, differently-scoped
+// search (typically a second time window, for "compare this month to last
+// month" style questions) instead of answering immediately. That second
+// hop is hard-capped at one — round 2 forces tool_choice to submit_answer,
+// so there's no way for this to loop. Simple questions still cost exactly
+// one Claude call, same as before this feature had a second hop at all.
+// Shares the same DAILY_AI_LIMIT as review generation (see events.js
+// QUOTA_EVENTS) — per-call cost is small enough that a second quota wasn't
+// worth the extra config surface.
 router.get('/ask', async (req, res) => {
   const question = (req.query.q || '').trim();
   if (!question) return res.status(400).json({ error: '请输入问题' });
@@ -103,8 +137,8 @@ router.get('/ask', async (req, res) => {
     'SELECT id, class_name, good_points, improve_points, next_time_reminder, created_at FROM records WHERE user_id = ? ORDER BY created_at DESC',
     [req.userId]
   );
-  const matches = searchRecordsByQuestion(rows, question, 3);
-  if (matches.length === 0) {
+  const round1Matches = searchRecordsByQuestion(rows, question, 3);
+  if (round1Matches.length === 0) {
     return res.json({ answered: false, answer: '档案里还没有找到相关记录。', citedRecordIds: [], matchedRecords: [] });
   }
 
@@ -117,47 +151,86 @@ router.get('/ask', async (req, res) => {
     return res.status(500).json({ error: '服务器未配置 ANTHROPIC_API_KEY，请检查 .env 文件' });
   }
 
-  const recordsForPrompt = matches.map((r) => ({ ...r, dateLabel: dateLabel(r.created_at) }));
+  const earliestTs = rows.length ? rows[rows.length - 1].created_at : Date.now();
+  const latestTs = rows.length ? rows[0].created_at : Date.now();
+  const dateRangeLabel = rows.length ? `${dateLabel(earliestTs)} ~ ${dateLabel(latestTs)}` : '（还没有记录）';
+  const todayLabel = dateLabel(Date.now());
+  const withDateLabel = (r) => ({ ...r, dateLabel: dateLabel(r.created_at) });
+
+  async function fail(reason, extra) {
+    await logEvent(req.userId, 'ask_fail', withSession({ reason, ...extra }, sessionId));
+  }
+
   const startedAt = Date.now();
   try {
-    const { response, error, attempt } = await callAskWithRetry(question, recordsForPrompt);
-    const latencyMs = Date.now() - startedAt;
-
-    if (error) {
-      const reason = error.message === 'timeout' ? 'timeout' : 'network_error';
-      await logEvent(req.userId, 'ask_fail', withSession({ reason, attempt, latencyMs }, sessionId));
+    const round1 = await callAskRound1WithRetry(question, round1Matches.map(withDateLabel), dateRangeLabel, todayLabel);
+    if (round1.error) {
+      const reason = round1.error.message === 'timeout' ? 'timeout' : 'network_error';
+      await fail(reason, { round: 1, attempt: round1.attempt, latencyMs: Date.now() - startedAt });
       return res.status(504).json({ error: reason === 'timeout' ? 'AI处理超时，请重新尝试' : 'AI服务连接失败，请重新尝试' });
     }
-    if (!response.ok) {
-      await logEvent(req.userId, 'ask_fail', withSession({ reason: 'api_error', status: response.status, attempt, latencyMs }, sessionId));
+    if (!round1.response.ok) {
+      await fail('api_error', { round: 1, status: round1.response.status, attempt: round1.attempt, latencyMs: Date.now() - startedAt });
       return res.status(502).json({ error: 'AI服务调用失败，请重新尝试' });
     }
-
-    const data = await response.json();
-    const toolUse = findToolUse(data);
-    if (!toolUse) {
-      await logEvent(req.userId, 'ask_fail', withSession({ reason: 'no_tool_use', attempt, latencyMs }, sessionId));
+    const data1 = await round1.response.json();
+    const toolUse1 = findToolUse(data1);
+    if (!toolUse1) {
+      await fail('no_tool_use', { round: 1, attempt: round1.attempt, latencyMs: Date.now() - startedAt });
       return res.status(502).json({ error: 'AI未返回有效内容' });
     }
 
-    const answer = answerFromToolInput(toolUse.input);
+    let finalData = data1;
+    let allMatches = round1Matches;
+    let rounds = 1;
+
+    if (toolUse1.name === 'search_records') {
+      const { keywords, before, after } = toolUse1.input || {};
+      const { afterTs, beforeTs } = clampDateRange(after, before, earliestTs, latestTs);
+      const scoped = rows.filter((r) => r.created_at >= afterTs && r.created_at <= beforeTs);
+      const round2Matches = searchRecordsByQuestion(scoped, keywords || question, 3);
+      allMatches = [...round1Matches, ...round2Matches.filter((r) => !round1Matches.some((m) => m.id === r.id))];
+
+      const round2 = await callAskRound2WithRetry(round1.messages, toolUse1, round2Matches.map(withDateLabel));
+      rounds = 2;
+      if (round2.error) {
+        const reason = round2.error.message === 'timeout' ? 'timeout' : 'network_error';
+        await fail(reason, { round: 2, attempt: round2.attempt, latencyMs: Date.now() - startedAt });
+        return res.status(504).json({ error: reason === 'timeout' ? 'AI处理超时，请重新尝试' : 'AI服务连接失败，请重新尝试' });
+      }
+      if (!round2.response.ok) {
+        await fail('api_error', { round: 2, status: round2.response.status, attempt: round2.attempt, latencyMs: Date.now() - startedAt });
+        return res.status(502).json({ error: 'AI服务调用失败，请重新尝试' });
+      }
+      finalData = await round2.response.json();
+    }
+
+    const finalToolUse = findToolUse(finalData, 'submit_answer');
+    if (!finalToolUse) {
+      await fail('no_submit_answer', { round: rounds, latencyMs: Date.now() - startedAt });
+      return res.status(502).json({ error: 'AI未返回有效内容' });
+    }
+
+    const answer = answerFromToolInput(finalToolUse.input);
     await logEvent(req.userId, 'ask_success', withSession({
-      attempt, latencyMs,
+      rounds,
+      latencyMs: Date.now() - startedAt,
       answered: answer.answered,
-      matchCount: matches.length,
-      inputTokens: data.usage?.input_tokens,
-      outputTokens: data.usage?.output_tokens,
+      matchCount: allMatches.length,
+      inputTokens: finalData.usage?.input_tokens,
+      outputTokens: finalData.usage?.output_tokens,
     }, sessionId));
 
     const citedIds = new Set(answer.citedRecordIds);
     res.json({
       ...answer,
-      matchedRecords: matches
+      rounds,
+      matchedRecords: allMatches
         .filter((r) => citedIds.has(r.id))
         .map((r) => ({ id: r.id, className: r.class_name, createdAt: r.created_at })),
     });
   } catch (e) {
-    await logEvent(req.userId, 'ask_fail', withSession({ reason: 'exception', latencyMs: Date.now() - startedAt }, sessionId));
+    await fail('exception', { latencyMs: Date.now() - startedAt });
     res.status(500).json({ error: '服务器错误', detail: e.message });
   }
 });

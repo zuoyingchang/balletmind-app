@@ -35,7 +35,7 @@ const ALLOWED_META = new Set([
   'durationSec', 'asr', 'error', 'reason', 'status', 'latencyMs',
   'attempt', 'inputTokens', 'outputTokens', 'cacheReadTokens', 'cacheCreationTokens',
   'model', 'promptVersion', 'confidence_level', 'chars', 'bytes', 'from',
-  'slotsFilled',
+  'slotsFilled', 'round', 'rounds', 'matchCount', 'answered',
 ]);
 
 const BLOCKED_META = new Set([
