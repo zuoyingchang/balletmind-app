@@ -371,6 +371,10 @@ test('saving a record logs save_record and user_edit_ai_result events', async ()
 
   const saveEvent = await db.get('SELECT * FROM events WHERE user_id = ? AND event_name = ?', [user.id, 'save_record']);
   assert.ok(saveEvent);
+  const saveMeta = JSON.parse(saveEvent.metadata);
+  assert.equal(saveMeta.slotsFilled, 1);
+  assert.equal(saveMeta.from, 'typed');
+  assert.equal(saveMeta.transcript, undefined);
   const confirmed = await db.get('SELECT * FROM events WHERE user_id = ? AND event_name = ?', [user.id, 'session_confirmed']);
   assert.ok(confirmed);
   const editEvent = await db.get('SELECT * FROM events WHERE user_id = ? AND event_name = ?', [user.id, 'user_edit_ai_result']);
@@ -409,6 +413,35 @@ test('/api/admin/stats returns aggregate metrics with the correct key', async ()
   assert.ok(body.retention);
   assert.ok('p95LatencyMs' in body.aiUsage);
   assert.ok(Array.isArray(body.eventBreakdown));
+});
+
+test('/api/admin/events requires the admin key and never returns email', async () => {
+  const denied = await fetch(`${base}/api/admin/events`);
+  assert.equal(denied.status, 401);
+  const { body: { user } } = await registerUser('admin_events@example.com');
+  const { logEvent } = require('../events');
+  await logEvent(user.id, 'ai_process_fail', { reason: 'timeout', chars: 12 });
+  const res = await fetch(`${base}/api/admin/events?event=ai_process_fail&limit=20`, {
+    headers: { 'X-Admin-Key': 'test-admin-key' },
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.ok(Array.isArray(body.events));
+  const row = body.events.find((e) => e.user_id === user.id);
+  assert.ok(row);
+  assert.equal(row.event_name, 'ai_process_fail');
+  assert.equal(row.email, undefined);
+  const meta = typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata;
+  assert.equal(meta.reason, 'timeout');
+  assert.equal(meta.chars, 12);
+  assert.equal(meta.transcript, undefined);
+});
+
+test('/api/admin/events rejects an unknown event name', async () => {
+  const res = await fetch(`${base}/api/admin/events?event=not_a_real_event`, {
+    headers: { 'X-Admin-Key': 'test-admin-key' },
+  });
+  assert.equal(res.status, 400);
 });
 
 // ---------- response caching ----------
@@ -1003,5 +1036,94 @@ test('/api/transcribe enforces the shared daily AI quota', async () => {
     headers: { 'Content-Type': 'audio/webm', Authorization: `Bearer ${token}` },
     body: Buffer.from('fake-audio'),
   });
+  assert.equal(res.status, 429);
+});
+
+// ---------- ask-your-archive ----------
+function fakeAskResponse({ answered = true, answer = '', citedRecordIds = [], inputTokens = 90, outputTokens = 40 } = {}) {
+  return {
+    ok: true,
+    status: 200,
+    json: async () => ({
+      content: [{ type: 'tool_use', name: 'submit_answer', input: {
+        answered, answer, cited_record_ids: citedRecordIds,
+      } }],
+      usage: {
+        input_tokens: inputTokens, output_tokens: outputTokens,
+        cache_read_input_tokens: 0, cache_creation_input_tokens: 0,
+      },
+    }),
+  };
+}
+
+test('/api/progress/ask requires auth', async () => {
+  const res = await fetch(`${base}/api/progress/ask?q=转圈`);
+  assert.equal(res.status, 401);
+});
+
+test('/api/progress/ask with no matching records answers "not found" without calling the AI', async () => {
+  const { body: { token } } = await registerUser('ask_nomatch@example.com');
+  await saveRecord(token, { className: '基训', improve_points: '手臂位置不对' });
+
+  let calls = 0;
+  await withMockAnthropicFetch(
+    async () => { calls++; return fakeAskResponse(); },
+    async () => {
+      const res = await fetch(`${base}/api/progress/ask?q=完全无关的问题xyz`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(body.answered, false);
+      assert.deepEqual(body.matchedRecords, []);
+    }
+  );
+  assert.equal(calls, 0, 'no AI call should happen when retrieval finds nothing');
+});
+
+test('/api/progress/ask retrieves the matching record and returns a cited answer', async () => {
+  const { body: { token } } = await registerUser('ask_match@example.com');
+  const saved = await saveRecord(token, {
+    className: '基训', improve_points: '转圈的时候重心不稳', next_time_reminder: '多练习定点',
+  });
+
+  let seenQuestion = null;
+  await withMockAnthropicFetch(
+    async (url, opts) => {
+      seenQuestion = JSON.parse(opts.body).messages[0].content;
+      return fakeAskResponse({ answered: true, answer: '你在转圈时提到过重心不稳。', citedRecordIds: [saved.id] });
+    },
+    async () => {
+      const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('我转圈的时候有什么问题')}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(body.answered, true);
+      assert.match(body.answer, /重心不稳/);
+      assert.equal(body.matchedRecords.length, 1);
+      assert.equal(body.matchedRecords[0].id, saved.id);
+    }
+  );
+  assert.match(seenQuestion, /转圈的时候重心不稳/, 'the matched record content should have been sent to the model');
+});
+
+test('/api/progress/ask only searches the caller\'s own records, not another user\'s', async () => {
+  const { body: { token: tokenA } } = await registerUser('ask_owner@example.com');
+  const { body: { token: tokenB } } = await registerUser('ask_notowner@example.com');
+  await saveRecord(tokenB, { className: '基训', improve_points: '转圈时膝盖没绷直' });
+
+  const res = await fetch(`${base}/api/progress/ask?q=转圈`, { headers: { Authorization: `Bearer ${tokenA}` } });
+  const body = await res.json();
+  assert.equal(body.answered, false, "user A must not get an answer built from user B's records");
+});
+
+test('/api/progress/ask enforces the shared daily AI quota once a match is found', async () => {
+  const { body: { token, user } } = await registerUser('ask_quota@example.com');
+  await saveRecord(token, { className: '基训', improve_points: '转圈时重心不稳' });
+  const { logEvent } = require('../events');
+  for (let i = 0; i < 5; i++) await logEvent(user.id, 'ai_process_success', {});
+
+  const res = await fetch(`${base}/api/progress/ask?q=转圈`, { headers: { Authorization: `Bearer ${token}` } });
   assert.equal(res.status, 429);
 });

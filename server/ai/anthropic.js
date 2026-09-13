@@ -2,13 +2,14 @@ const { AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS, AI_TEMPERATURE } = requir
 const { fetchWithTimeout, isAbortError } = require('../lib/fetch-timeout');
 const { joinLines } = require('../lib/text');
 const { SYSTEM_PROMPT, REVIEW_TOOL } = require('./review-prompt');
+const { SYSTEM_PROMPT_ASK, ASK_TOOL, userAskMessage } = require('./ask-prompt');
 
 function userTranscriptMessage(transcript) {
   return `请整理下面 <transcript> 标签内的语音转写内容：\n<transcript>\n${transcript}\n</transcript>`;
 }
 
-function systemBlocks(termHint) {
-  const blocks = [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }];
+function systemBlocks(systemPrompt, termHint) {
+  const blocks = [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }];
   if (termHint) blocks.push({ type: 'text', text: termHint });
   return blocks;
 }
@@ -17,15 +18,17 @@ function modelRejectsTemperature(model) {
   return /^claude-(sonnet-5|opus-5|fable-5)/.test(model);
 }
 
-async function callAnthropicOnce(termHint, transcript) {
+// Shared by review-extraction and ask-your-archive — same model, retry and
+// timeout handling, different system prompt / tool / user message per call.
+async function callAnthropicToolOnce(systemPrompt, tool, userMessage, termHint) {
   const model = process.env.AI_MODEL || AI_MODEL;
   const body = {
     model,
     max_tokens: AI_MAX_OUTPUT_TOKENS,
-    system: systemBlocks(termHint),
-    messages: [{ role: 'user', content: userTranscriptMessage(transcript) }],
-    tools: [REVIEW_TOOL],
-    tool_choice: { type: 'tool', name: 'submit_review' },
+    system: systemBlocks(systemPrompt, termHint),
+    messages: [{ role: 'user', content: userMessage }],
+    tools: [tool],
+    tool_choice: { type: 'tool', name: tool.name },
   };
   // Sonnet 5 / Opus 5 / Fable 5 reject `temperature` (invalid_request_error).
   if (!modelRejectsTemperature(model)) body.temperature = AI_TEMPERATURE;
@@ -41,10 +44,10 @@ async function callAnthropicOnce(termHint, transcript) {
 }
 
 // One retry on timeout, network error, or 5xx. 4xx is not retried.
-async function callAnthropicWithRetry(termHint, transcript) {
+async function callAnthropicToolWithRetry(systemPrompt, tool, userMessage, termHint) {
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      const response = await callAnthropicOnce(termHint, transcript);
+      const response = await callAnthropicToolOnce(systemPrompt, tool, userMessage, termHint);
       if (response.ok || response.status < 500) return { response, attempt };
       if (attempt === 2) return { response, attempt };
     } catch (e) {
@@ -54,6 +57,18 @@ async function callAnthropicWithRetry(termHint, transcript) {
     }
     await new Promise((r) => setTimeout(r, 500));
   }
+}
+
+async function callAnthropicOnce(termHint, transcript) {
+  return callAnthropicToolOnce(SYSTEM_PROMPT, REVIEW_TOOL, userTranscriptMessage(transcript), termHint);
+}
+
+async function callAnthropicWithRetry(termHint, transcript) {
+  return callAnthropicToolWithRetry(SYSTEM_PROMPT, REVIEW_TOOL, userTranscriptMessage(transcript), termHint);
+}
+
+async function callAskWithRetry(question, records) {
+  return callAnthropicToolWithRetry(SYSTEM_PROMPT_ASK, ASK_TOOL, userAskMessage(question, records));
 }
 
 function findToolUse(data) {
@@ -72,9 +87,19 @@ function reviewFromToolInput(input = {}) {
   };
 }
 
+function answerFromToolInput(input = {}) {
+  return {
+    answered: !!input.answered,
+    answer: input.answer || '',
+    citedRecordIds: Array.isArray(input.cited_record_ids) ? input.cited_record_ids.filter((n) => Number.isInteger(n)) : [],
+  };
+}
+
 module.exports = {
   callAnthropicOnce,
   callAnthropicWithRetry,
+  callAskWithRetry,
   findToolUse,
   reviewFromToolInput,
+  answerFromToolInput,
 };

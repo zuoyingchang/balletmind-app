@@ -125,6 +125,57 @@ function recordMatchesSearch(record, keyword) {
   return needles.some((needle) => hay.includes(needle));
 }
 
+// Retrieval for "问问你的档案" (ask-your-archive). A free-form question like
+// "我最近转圈老在说什么" won't appear verbatim in any record, so unlike
+// recordMatchesSearch (built for typed search terms) this breaks the
+// question into overlap-able tokens first: recognized ballet-term aliases,
+// plus generic word/character n-grams with obvious filler words dropped.
+// Deliberately not an embedding/vector search — the archive per user is a
+// few dozen to low hundreds of records, so keyword overlap is enough to
+// validate the feature before reaching for anything heavier.
+const ASK_STOPWORDS = new Set([
+  '的', '了', '我', '是', '吗', '呢', '什么', '老', '在', '说', '最近', '上次',
+  '这次', '一下', '都', '过', '着', '和', '与', '给', '把', '还', '就', '也', '有',
+]);
+function questionTokens(question) {
+  const folded = foldBalletText(question);
+  if (!folded) return [];
+  const termTokens = [];
+  for (const group of TERM_ALIAS_GROUPS) {
+    if (group.some((alias) => folded.includes(foldBalletText(alias)))) {
+      termTokens.push(...group.map(foldBalletText));
+    }
+  }
+  const stripped = folded.replace(/[，。？！,.?!、；;""'']/g, ' ');
+  // Latin/digit runs (English term spellings, numbers) as whole-word tokens.
+  const latinWords = (stripped.match(/[a-z0-9]+/g) || []).filter((w) => w.length >= 2);
+  // Everything else: a *sliding* 2-character window, not fixed non-overlapping
+  // chunks — "我转圈的" chunked as "我转"/"圈的" would never produce "转圈"
+  // even though it's the word that actually matters, since it straddles a
+  // chunk boundary. Overlapping windows catch it regardless of position.
+  const cjkOnly = stripped.replace(/[a-z0-9]/g, ' ');
+  const bigrams = [];
+  for (let i = 0; i < cjkOnly.length - 1; i++) {
+    const pair = cjkOnly.slice(i, i + 2);
+    if (/\s/.test(pair) || ASK_STOPWORDS.has(pair)) continue;
+    bigrams.push(pair);
+  }
+  return [...new Set([...termTokens, ...latinWords, ...bigrams])];
+}
+function searchRecordsByQuestion(records, question, limit = 3) {
+  const tokens = questionTokens(question);
+  if (!tokens.length) return [];
+  const scored = (records || [])
+    .map((r) => {
+      const hay = foldBalletText([r.class_name, r.good_points, r.improve_points, r.next_time_reminder].join('\n'));
+      const score = tokens.reduce((n, t) => n + (hay.includes(t) ? 1 : 0), 0);
+      return { record: r, score };
+    })
+    .filter((x) => x.score > 0);
+  scored.sort((a, b) => b.score - a.score || b.record.created_at - a.record.created_at);
+  return scored.slice(0, limit).map((x) => x.record);
+}
+
 function compactPhrase(s, maxLen = 28) {
   let t = String(s || '').replace(/\s+/g, ' ').trim();
   if (t.length <= maxLen && !/需要多加练习|需要加强|的时候/.test(t)) return t;
@@ -143,6 +194,8 @@ const api = {
   TERM_GLOSSARY,
   expandSearchNeedles,
   recordMatchesSearch,
+  questionTokens,
+  searchRecordsByQuestion,
   compactPhrase,
 };
 

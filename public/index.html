@@ -401,7 +401,7 @@
         <img src="/img/pack-shoes-pink.png" alt="" class="mx-auto mt-3 w-[92px] h-[110px] object-contain tint-rose">
         <h1 class="font-display mt-1 text-[32px] font-semibold tracking-[-0.02em]">BalletMind</h1>
         <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="auth-subtitle">每次下课说几句，整理成你的芭蕾成长笔记</p>
-      </div>
+          </div>
 
       <div class="card-journal grain relative z-10 mt-8 overflow-hidden rounded-[24px] px-4 py-4 space-y-3">
         <div class="pearl-sheen"></div>
@@ -412,7 +412,7 @@
         <input id="auth-password" type="password" placeholder="密码（至少6位）" onkeydown="if(event.key==='Enter') submitAuth()" class="relative z-10 auth-field">
         <div id="auth-confirm-wrap" class="relative z-10 hidden">
           <input id="auth-confirm-password" type="password" placeholder="再输一次密码" onkeydown="if(event.key==='Enter') submitAuth()" class="auth-field">
-        </div>
+      </div>
         <div id="auth-privacy-wrap" class="relative z-10 hidden">
           <label class="flex items-start gap-2 text-[11.5px] text-[var(--ink-soft)] leading-5 px-0.5">
             <input id="auth-privacy" type="checkbox" class="mt-0.5">
@@ -444,7 +444,7 @@
       </div>
       <div class="flex items-center gap-2">
         <button type="button" onclick="openNotices()" class="relative w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="通知">
-          <iconify-icon icon="solar:bell-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon>
+        <iconify-icon icon="solar:bell-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon>
           <span id="notice-dot" class="hidden absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[var(--rose-deep)] ring-2 ring-[var(--paper)]"></span>
         </button>
         <button type="button" onclick="goProfile()" class="header-avatar flex items-center justify-center" aria-label="我的"><iconify-icon icon="solar:user-circle-linear" class="text-[20px]"></iconify-icon></button>
@@ -598,8 +598,8 @@
         class="btn-ribbon flex-1 h-11 rounded-full text-[12.5px] font-semibold disabled:opacity-40">
         <span class="pearl-sheen"></span>
         <span class="relative z-10">完成并生成复盘</span>
-      </button>
-    </div>
+        </button>
+      </div>
   </div>
 
   <!-- ============ PROCESSING ============ -->
@@ -695,18 +695,18 @@
           </section>
 
           <div class="rounded-2xl bg-[var(--ivory)] border border-dashed border-[var(--rose)]/40 p-3">
-            <button type="button" onclick="toggleTermCorrection()" class="w-full flex items-center justify-between text-left">
-              <span class="text-[11.5px] text-[var(--mauve)]">发现某个动作名称被识别错了？点这里纠正</span>
-              <iconify-icon icon="solar:alt-arrow-down-linear" id="term-toggle-icon" class="text-[14px] text-[var(--ink-faint)]"></iconify-icon>
-            </button>
-            <div id="term-correction-form" class="hidden mt-3 space-y-2">
-              <input id="term-wrong" placeholder="AI 识别成了什么（如：拍赛）" class="w-full px-3 py-2 rounded-xl border border-[var(--border-soft)] text-[12px]">
-              <input id="term-correct" placeholder="正确写法是什么（如：passé）" class="w-full px-3 py-2 rounded-xl border border-[var(--border-soft)] text-[12px]">
-              <button type="button" onclick="submitTermCorrection()" class="btn-ribbon w-full h-9 rounded-full text-[11.5px] font-medium">
-                <span class="pearl-sheen"></span><span class="relative z-10">记住这个纠正</span>
-              </button>
-            </div>
-          </div>
+        <button type="button" onclick="toggleTermCorrection()" class="w-full flex items-center justify-between text-left">
+          <span class="text-[11.5px] text-[var(--mauve)]">发现某个动作名称被识别错了？点这里纠正</span>
+          <iconify-icon icon="solar:alt-arrow-down-linear" id="term-toggle-icon" class="text-[14px] text-[var(--ink-faint)]"></iconify-icon>
+        </button>
+        <div id="term-correction-form" class="hidden mt-3 space-y-2">
+          <input id="term-wrong" placeholder="AI 识别成了什么（如：拍赛）" class="w-full px-3 py-2 rounded-xl border border-[var(--border-soft)] text-[12px]">
+          <input id="term-correct" placeholder="正确写法是什么（如：passé）" class="w-full px-3 py-2 rounded-xl border border-[var(--border-soft)] text-[12px]">
+          <button type="button" onclick="submitTermCorrection()" class="btn-ribbon w-full h-9 rounded-full text-[11.5px] font-medium">
+            <span class="pearl-sheen"></span><span class="relative z-10">记住这个纠正</span>
+          </button>
+        </div>
+      </div>
         </div>
       </div>
     </main>
@@ -835,11 +835,11 @@
           <div class="text-center px-1">
             <p class="font-display text-[24px] leading-none font-semibold text-[var(--ink)]" id="profile-count">0</p>
             <span class="mt-1.5 block text-[10px] text-[var(--ink-faint)]">训练次数</span>
-          </div>
+        </div>
           <div class="text-center px-1 border-x border-[var(--border-soft)]">
             <p class="font-display text-[24px] leading-none font-semibold text-[var(--ink)]" id="profile-hours">0</p>
             <span class="mt-1.5 block text-[10px] text-[var(--ink-faint)]">训练小时</span>
-          </div>
+        </div>
           <div class="text-center px-1">
             <p class="font-display text-[24px] leading-none font-semibold text-[var(--ink)]" id="profile-month">0</p>
             <span class="mt-1.5 block text-[10px] text-[var(--ink-faint)]">本月次数</span>
@@ -852,7 +852,7 @@
           <div>
             <h2 class="font-display text-[21px] font-semibold tracking-[-0.01em]">徽章墙</h2>
             <p class="mt-1 text-[11px] leading-4 text-[var(--ink-faint)]">记下了、连续记下了。不是能力评级。</p>
-          </div>
+        </div>
           <span class="shrink-0 label-editorial text-[12px] text-[var(--rose-deep)]" id="badge-earned-count"></span>
         </div>
         <div class="badge-wall grain relative mt-3 rounded-[24px] px-3.5 pt-4 pb-5" id="badge-wall">
@@ -944,6 +944,28 @@
         <div id="brief-content" class="relative z-10 mt-2 text-[12.5px] leading-6 text-[var(--ink)]">加载中…</div>
       </section>
 
+      <!-- Ask-your-archive: retrieval is pure keyword overlap over the
+           user's own confirmed records (zero AI); Claude only runs when a
+           match was actually found, and only ever sees those matched
+           records — same "no unverified claims" boundary as the rest of
+           the app, just answering from what you already said instead of
+           judging progress across it. -->
+      <section class="card-journal grain relative overflow-hidden mt-5 p-3.5" style="border-radius:18px 22px 16px 22px">
+        <div class="pearl-sheen"></div>
+        <div class="relative z-10 flex items-center gap-2 mb-2">
+          <iconify-icon icon="solar:magnifer-linear" class="text-[16px] text-[var(--gold)]"></iconify-icon>
+          <span class="label-editorial text-[13px] text-[var(--rose-deep)]">问问你的档案</span>
+        </div>
+        <p class="relative z-10 text-[11px] text-[var(--ink-faint)] mb-2">只根据你自己确认过的记录回答，查不到就说没有</p>
+        <div class="relative z-10 flex gap-2">
+          <input id="ask-archive-input" type="text" placeholder="比如：我最近转圈老说什么问题" class="flex-1 h-10 px-3 rounded-xl border border-[var(--border-soft)] text-[12.5px] bg-white/70" onkeydown="if(event.key==='Enter') askArchive()">
+          <button type="button" onclick="askArchive()" id="ask-archive-btn" class="btn-ribbon shrink-0 h-10 px-4 rounded-xl text-[12.5px] font-medium">
+            <span class="pearl-sheen"></span><span class="relative z-10">问</span>
+          </button>
+        </div>
+        <div id="ask-archive-result" class="relative z-10 mt-3 hidden text-[12.5px] leading-6 text-[var(--ink)]"></div>
+      </section>
+
       <details class="progress-more mt-5">
         <summary class="flex items-center justify-between gap-2 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] px-3.5 py-3">
           <span class="min-w-0">
@@ -958,13 +980,13 @@
             <div class="relative z-10 flex items-center justify-between">
               <div class="flex items-center gap-2"><iconify-icon icon="solar:fire-linear" class="text-[16px] text-[var(--gold)]"></iconify-icon><span class="label-editorial text-[12px] text-[var(--rose-deep)]">近14天</span></div>
               <span class="text-[10.5px] text-[var(--ink-faint)]">颜色越深，练得越多</span>
-            </div>
+        </div>
             <div class="relative z-10 mt-3 flex items-center justify-center gap-1.5" id="progress-strip"></div>
-          </div>
+        </div>
           <div class="mt-3 flex gap-2">
             <button id="review-days-btn" onclick="generateTrainingReview('days')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近7天</button>
             <button id="review-last-btn" onclick="generateTrainingReview('last')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近5次</button>
-          </div>
+        </div>
           <div id="review-content" class="mt-3 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-4 text-[12.5px] text-[var(--ink)]">加载中…</div>
           <button id="review-export-btn" onclick="exportTrainingReview()" class="hidden mt-2 w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">复制为文本</button>
         </div>
@@ -1230,6 +1252,24 @@ function ensureCaptureSession() {
       : ('s-' + Date.now() + '-' + Math.random().toString(16).slice(2));
   }
   return captureSessionId;
+}
+
+function captureInputFrom() {
+  const hasVoice = segments.length > 0;
+  const hasTyped = (document.getElementById('manual-input')?.value || '').trim().length > 0;
+  if (hasVoice && hasTyped) return 'mixed';
+  if (hasVoice) return 'voice';
+  return 'typed';
+}
+
+function asrFailCode(e) {
+  const name = e && e.name;
+  if (name === 'NotAllowedError' || name === 'PermissionDeniedError') return 'not-allowed';
+  if (name === 'NotFoundError') return 'no-device';
+  if (name === 'NotReadableError') return 'device-busy';
+  if (name === 'AbortError') return 'aborted';
+  if (e && e.status) return 'http-' + e.status;
+  return 'client-error';
 }
 
 function logEvent(event, metadata, sessionKind) {
@@ -1680,6 +1720,33 @@ async function loadBrief() {
   }
 }
 
+async function askArchive() {
+  const input = document.getElementById('ask-archive-input');
+  const btn = document.getElementById('ask-archive-btn');
+  const resultEl = document.getElementById('ask-archive-result');
+  const question = input.value.trim();
+  if (!question) { toast('先输入一个问题'); return; }
+  btn.disabled = true;
+  resultEl.classList.remove('hidden');
+  resultEl.innerHTML = '<p class="text-[var(--ink-faint)]">正在查你的档案…</p>';
+  try {
+    const res = await authFetch(`${API}/api/progress/ask?q=${encodeURIComponent(question)}`);
+    const data = await res.json();
+    if (!res.ok) { resultEl.innerHTML = `<p class="text-[var(--rose-deep)]">${escapeHtml(data.error || '查询失败')}</p>`; return; }
+    let html = `<p>${escapeHtml(data.answer)}</p>`;
+    if (data.matchedRecords && data.matchedRecords.length > 0) {
+      html += `<div class="mt-2 flex flex-wrap gap-1.5">` + data.matchedRecords.map((r) =>
+        `<button type="button" onclick="openDetail(${r.id})" class="chip rounded-full px-2.5 py-1 text-[10.5px] text-[var(--rose-deep)]">${escapeHtml(fmtDate(r.createdAt).split(' ')[0])} · ${escapeHtml(r.className || '训练记录')}</button>`
+      ).join('') + `</div>`;
+    }
+    resultEl.innerHTML = html;
+  } catch (e) {
+    resultEl.innerHTML = '<p class="text-[var(--rose-deep)]">查询失败，请再试一次</p>';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 let currentIssues = [];
 async function loadIssues() {
   const res = await authFetch(`${API}/api/issues`);
@@ -1719,11 +1786,11 @@ function issueCard(issue) {
     html += `<div class="px-4 pb-4">
       <p class="text-[11px] text-[var(--ink-faint)] mb-3">出现 ${issue.occurrence_count} 次 · ${escapeHtml(dates)} · 当前：${statusLabel}</p>
       <div class="flex gap-2">
-        <button onclick="updateIssueStatus(${issue.id},'improving')" class="flex-1 h-8 rounded-xl border border-[var(--border-soft)] text-[11px] text-[var(--mauve)] ${issue.status==='improving'?'chip':''}">有改善</button>
-        <button onclick="updateIssueStatus(${issue.id},'open')" class="flex-1 h-8 rounded-xl border border-[var(--border-soft)] text-[11px] text-[var(--mauve)] ${issue.status==='open'?'chip':''}">仍然存在</button>
+      <button onclick="updateIssueStatus(${issue.id},'improving')" class="flex-1 h-8 rounded-xl border border-[var(--border-soft)] text-[11px] text-[var(--mauve)] ${issue.status==='improving'?'chip':''}">有改善</button>
+      <button onclick="updateIssueStatus(${issue.id},'open')" class="flex-1 h-8 rounded-xl border border-[var(--border-soft)] text-[11px] text-[var(--mauve)] ${issue.status==='open'?'chip':''}">仍然存在</button>
         <button onclick="updateIssueStatus(${issue.id},'resolved')" class="flex-1 h-8 rounded-xl border border-[var(--border-soft)] text-[11px] text-[var(--sage)]">已解决</button>
-      </div>
-    </div>`;
+    </div>
+  </div>`;
   }
   return html + `</div>`;
 }
@@ -1738,7 +1805,7 @@ async function updateIssueStatus(id, status) {
     toast('已从追踪中移除');
   } else {
     const issue = currentIssues.find((item) => item.id === id);
-    if (issue) issue.status = status;
+  if (issue) issue.status = status;
   }
   renderIssues();
 }
@@ -1987,14 +2054,14 @@ function setHistoryView(mode) {
   const listTab = document.getElementById('history-tab-list');
   const calTab = document.getElementById('history-tab-calendar');
   if (listTab && calTab) {
-    listTab.classList.toggle('bg-white', mode === 'list');
-    listTab.classList.toggle('shadow-sm', mode === 'list');
-    listTab.classList.toggle('text-[var(--burgundy)]', mode === 'list');
-    listTab.classList.toggle('text-[var(--ink-faint)]', mode !== 'list');
-    calTab.classList.toggle('bg-white', mode === 'calendar');
-    calTab.classList.toggle('shadow-sm', mode === 'calendar');
-    calTab.classList.toggle('text-[var(--burgundy)]', mode === 'calendar');
-    calTab.classList.toggle('text-[var(--ink-faint)]', mode !== 'calendar');
+  listTab.classList.toggle('bg-white', mode === 'list');
+  listTab.classList.toggle('shadow-sm', mode === 'list');
+  listTab.classList.toggle('text-[var(--burgundy)]', mode === 'list');
+  listTab.classList.toggle('text-[var(--ink-faint)]', mode !== 'list');
+  calTab.classList.toggle('bg-white', mode === 'calendar');
+  calTab.classList.toggle('shadow-sm', mode === 'calendar');
+  calTab.classList.toggle('text-[var(--burgundy)]', mode === 'calendar');
+  calTab.classList.toggle('text-[var(--ink-faint)]', mode !== 'calendar');
   }
   document.getElementById('history-list-view').classList.toggle('hidden', mode !== 'list');
   document.getElementById('history-calendar-view').classList.toggle('hidden', mode !== 'calendar');
@@ -2060,7 +2127,7 @@ function renderHomeCalendar() {
   if (homeSelectedDate) {
     paintDayList(painted.byDate, painted.start.getFullYear(), painted.start.getMonth(), homeSelectedDate, 'home-calendar-day-empty', 'home-calendar-day-list');
   } else {
-    listEl.innerHTML = '';
+  listEl.innerHTML = '';
     emptyEl.classList.add('hidden');
   }
 }
@@ -2315,7 +2382,7 @@ function stopRecording() {
     recordedChunks = [];
     if (blob.size < 200) {
       toast('这段太短了，请再说一次或手动输入');
-      document.getElementById('rec-state').textContent = '已暂停 · 可以继续或完成';
+  document.getElementById('rec-state').textContent = '已暂停 · 可以继续或完成';
       updateGenerateBtn();
       return;
     }
@@ -2356,11 +2423,11 @@ async function transcribeSegment(blob, duration) {
     } else {
       toast('没有听清内容，请再说一次或手动输入');
     }
-    renderSegments();
+  renderSegments();
   } catch (e) {
     if (e.status === 429) disableAiEntry(e.message);
     else {
-      logEvent('asr_fail', { error: e.message });
+      logEvent('asr_fail', { error: asrFailCode(e) });
       toast((e.message || '识别失败') + '。可以重试或手动输入');
     }
   } finally {
@@ -2368,8 +2435,8 @@ async function transcribeSegment(blob, duration) {
     document.getElementById('rec-btn').disabled = segments.length >= 3;
     if (segments.length >= 3) document.getElementById('rec-btn').classList.add('opacity-40');
     document.getElementById('rec-state').textContent = '已暂停 · 可以继续或完成';
-    updateGenerateBtn();
-  }
+  updateGenerateBtn();
+}
 }
 
 function renderSegments() {
@@ -2439,14 +2506,14 @@ async function generateReview() {
   const transcript = [segText, manualText].filter(Boolean).join('\n');
   if (!transcript) { toast('请先录音或输入内容'); return; }
   const totalDuration = segments.reduce((a,s)=>a+s.duration,0) || 60;
-  lastDraft = { transcript, durationSec: totalDuration };
+  lastDraft = { transcript, durationSec: totalDuration, from: captureInputFrom() };
   ensureCaptureSession();
   generateAbort = new AbortController();
   show('screen-processing');
   try {
     const res = await authFetch(`${API}/api/generate`, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ transcript, sessionId: captureSessionId }),
+      body: JSON.stringify({ transcript, sessionId: captureSessionId, from: captureInputFrom() }),
       signal: generateAbort.signal,
     });
     const result = await res.json();
@@ -2480,7 +2547,7 @@ async function retryGenerate() {
   try {
     const res = await authFetch(`${API}/api/generate`, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ transcript: lastDraft.transcript, sessionId: captureSessionId }),
+      body: JSON.stringify({ transcript: lastDraft.transcript, sessionId: captureSessionId, from: lastDraft.from || captureInputFrom() }),
       signal: generateAbort.signal,
     });
     const result = await res.json();
@@ -2653,6 +2720,7 @@ async function confirmSave() {
     edited,
     editedFields,
     sessionId: captureSessionId,
+    from: lastDraft.from || (lastDraft.durationSec > 0 ? 'voice' : 'typed'),
   };
   const res = await authFetch(`${API}/api/records`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
   const result = await res.json();

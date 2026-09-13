@@ -2,12 +2,17 @@ const express = require('express');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { listIssuesWithOccurrences } = require('../issues');
-const { splitLines } = require('../lib/text');
+const { splitLines, sessionIdFromReq, withSession } = require('../lib/text');
+const { logEvent, countAiCallsToday } = require('../events');
+const { DAILY_AI_LIMIT } = require('../config');
+const { callAskWithRetry, findToolUse, answerFromToolInput } = require('../ai/anthropic');
+const { searchRecordsByQuestion } = require('../../public/js/ballet-terms');
 
 const router = express.Router();
 router.use(requireAuth);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const dateLabel = (ts) => { const d = new Date(ts); return `${d.getMonth() + 1}月${d.getDate()}日`; };
 
 // GET /api/progress/review?days=7 | ?last=5 — Training Review (V0.2 #2).
 // User-triggered, not a background job — this just aggregates data that's
@@ -80,6 +85,81 @@ router.get('/brief', async (req, res) => {
         }
       : null,
   });
+});
+
+// GET /api/progress/ask?q=... — "问问你的档案" (ask-your-archive).
+// Retrieval is pure keyword overlap over the user's own confirmed records —
+// zero AI, zero cost. Claude is only called when retrieval actually found
+// something to answer from, and only ever sees those matched records, never
+// the full archive. Shares the same DAILY_AI_LIMIT as review generation
+// (see events.js QUOTA_EVENTS) — its per-call cost is small enough that a
+// second quota wasn't worth the extra config surface.
+router.get('/ask', async (req, res) => {
+  const question = (req.query.q || '').trim();
+  if (!question) return res.status(400).json({ error: '请输入问题' });
+  if (question.length > 200) return res.status(400).json({ error: '问题太长了，精简一下' });
+
+  const rows = await db.all(
+    'SELECT id, class_name, good_points, improve_points, next_time_reminder, created_at FROM records WHERE user_id = ? ORDER BY created_at DESC',
+    [req.userId]
+  );
+  const matches = searchRecordsByQuestion(rows, question, 3);
+  if (matches.length === 0) {
+    return res.json({ answered: false, answer: '档案里还没有找到相关记录。', citedRecordIds: [], matchedRecords: [] });
+  }
+
+  const sessionId = sessionIdFromReq(req);
+  if ((await countAiCallsToday(req.userId)) >= DAILY_AI_LIMIT) {
+    await logEvent(req.userId, 'ask_fail', withSession({ reason: 'quota_exceeded' }, sessionId));
+    return res.status(429).json({ error: '今天的AI调用次数已经用完了，明天再问吧' });
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(500).json({ error: '服务器未配置 ANTHROPIC_API_KEY，请检查 .env 文件' });
+  }
+
+  const recordsForPrompt = matches.map((r) => ({ ...r, dateLabel: dateLabel(r.created_at) }));
+  const startedAt = Date.now();
+  try {
+    const { response, error, attempt } = await callAskWithRetry(question, recordsForPrompt);
+    const latencyMs = Date.now() - startedAt;
+
+    if (error) {
+      const reason = error.message === 'timeout' ? 'timeout' : 'network_error';
+      await logEvent(req.userId, 'ask_fail', withSession({ reason, attempt, latencyMs }, sessionId));
+      return res.status(504).json({ error: reason === 'timeout' ? 'AI处理超时，请重新尝试' : 'AI服务连接失败，请重新尝试' });
+    }
+    if (!response.ok) {
+      await logEvent(req.userId, 'ask_fail', withSession({ reason: 'api_error', status: response.status, attempt, latencyMs }, sessionId));
+      return res.status(502).json({ error: 'AI服务调用失败，请重新尝试' });
+    }
+
+    const data = await response.json();
+    const toolUse = findToolUse(data);
+    if (!toolUse) {
+      await logEvent(req.userId, 'ask_fail', withSession({ reason: 'no_tool_use', attempt, latencyMs }, sessionId));
+      return res.status(502).json({ error: 'AI未返回有效内容' });
+    }
+
+    const answer = answerFromToolInput(toolUse.input);
+    await logEvent(req.userId, 'ask_success', withSession({
+      attempt, latencyMs,
+      answered: answer.answered,
+      matchCount: matches.length,
+      inputTokens: data.usage?.input_tokens,
+      outputTokens: data.usage?.output_tokens,
+    }, sessionId));
+
+    const citedIds = new Set(answer.citedRecordIds);
+    res.json({
+      ...answer,
+      matchedRecords: matches
+        .filter((r) => citedIds.has(r.id))
+        .map((r) => ({ id: r.id, className: r.class_name, createdAt: r.created_at })),
+    });
+  } catch (e) {
+    await logEvent(req.userId, 'ask_fail', withSession({ reason: 'exception', latencyMs: Date.now() - startedAt }, sessionId));
+    res.status(500).json({ error: '服务器错误', detail: e.message });
+  }
 });
 
 module.exports = router;
