@@ -1,0 +1,12 @@
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#F7E8E8','primaryTextColor':'#3D2C2C','primaryBorderColor':'#C9A3A3','lineColor':'#8B6B6B','secondaryColor':'#F3EFE8','tertiaryColor':'#FFF8F5','fontFamily':'PingFang SC, Noto Sans SC, sans-serif','fontSize':'14px'}}}%%
+flowchart LR
+  S1[record_started<br/>开始录音] --> S2[voice_completed<br/>录完出字]
+  S2 --> S3[asr_success]
+  S3 --> S4[ai_process_success]
+  S4 --> S5[review_opened]
+  S5 --> S6[session_confirmed<br/>确认保存]
+
+  S3x[asr_fail] -.-> S3
+  S4x[ai_process_fail] -.-> S4
+  S5e[field_edited<br/>只记字段名] -.-> S5
+  S5r[ai_regenerated<br/>Retry] -.-> S4

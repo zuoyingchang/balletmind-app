@@ -1,7 +1,7 @@
 // Offline golden set for /api/generate (Layer 1: AI Quality).
 // Each case: Input (transcript) → Rubric → Type → dimensions.
 // Checks stay conservative: product rules, not exact wording.
-// Precision/Recall for RAG are out of scope until Ask My Training.
+// Precision/Recall for archive retrieval are not scored here.
 
 const { pass, fail, blob, improveLines, caseDef } = require('./helpers');
 

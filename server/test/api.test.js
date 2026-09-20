@@ -14,14 +14,23 @@ const { countAiCallsToday } = require('../events');
 
 let server;
 let base;
+let originalFetch;
 
 test.before(async () => {
   await db.ready;
   server = app.listen(0);
   base = `http://localhost:${server.address().port}`;
+  originalFetch = global.fetch;
+  global.fetch = (url, opts) => {
+    if (String(url).includes('api.openai.com') && String(url).includes('/embeddings')) {
+      return fakeOrthogonalEmbeddings(opts);
+    }
+    return originalFetch(url, opts);
+  };
 });
 
 test.after(() => {
+  global.fetch = originalFetch;
   server.close();
 });
 
@@ -590,6 +599,7 @@ test('/api/progress/brief returns top open issues and the last record, zero AI c
   const body = await res.json();
   assert.equal(body.topIssues.length, 1);
   assert.equal(body.lastRecord.nextTimeReminder, '多练习passé');
+  assert.equal(body.experimentBrief, undefined, 'experiment gate default-off must not attach LLM copy');
   const after = await countAiCallsToday(user.id);
   assert.equal(after, before, 'pre-class brief must not consume the AI quota');
 });
@@ -653,10 +663,15 @@ test('correctionsAsPromptHint returns an empty string when the user has no corre
 // swap it out for the duration of one test, delegating anything that isn't
 // an api.anthropic.com call (i.e. this file's own HTTP calls to our test
 // server) through to the real fetch, then always restore it.
-async function withMockAnthropicFetch(mockFn, run) {
+async function withMockAnthropicFetch(mockFn, run, embeddingsFn) {
   const realFetch = global.fetch;
   global.fetch = (url, opts) => {
-    if (String(url).includes('api.anthropic.com')) return mockFn(url, opts);
+    const u = String(url);
+    if (u.includes('api.anthropic.com')) return mockFn(url, opts);
+    if (u.includes('api.openai.com') && u.includes('/embeddings')) {
+      const fn = embeddingsFn || fakeOrthogonalEmbeddings;
+      return fn(opts);
+    }
     return realFetch(url, opts);
   };
   try {
@@ -664,6 +679,21 @@ async function withMockAnthropicFetch(mockFn, run) {
   } finally {
     global.fetch = realFetch;
   }
+}
+
+function fakeOrthogonalEmbeddings(opts) {
+  const parsed = opts && opts.body ? JSON.parse(opts.body) : {};
+  const input = Array.isArray(parsed.input) ? parsed.input : [parsed.input || ''];
+  return {
+    ok: true,
+    status: 200,
+    json: async () => ({
+      data: input.map((_, i) => ({
+        index: i,
+        embedding: i === 0 ? [1, 0] : [0, 1],
+      })),
+    }),
+  };
 }
 
 function fakeAnthropicResponse({ good = [], improve = [], next = [], tips = [], confidence = '高', note = '', inputTokens = 120, outputTokens = 60 } = {}) {
@@ -1076,6 +1106,7 @@ test('/api/progress/ask with no matching records answers "not found" without cal
       const body = await res.json();
       assert.equal(body.answered, false);
       assert.deepEqual(body.matchedRecords, []);
+      assert.equal(body.retrievalPath, 'none');
     }
   );
   assert.equal(calls, 0, 'no AI call should happen when retrieval finds nothing');
@@ -1215,4 +1246,70 @@ test('/api/progress/ask clamps a search_records date range to the user\'s own re
   // error or an empty/unbounded result — it should have found the one real
   // record, clamped to this user's actual history.
   assert.match(secondCallQuestionText, /重心不稳/, 'the out-of-range request should still clamp to and return the real record');
+});
+
+test('/api/progress/ask uses embedding when keywords miss a paraphrase of the record', async () => {
+  const { body: { token } } = await registerUser('ask_embed@example.com');
+  const saved = await saveRecord(token, {
+    className: '基训', improve_points: '转圈的时候重心不稳', next_time_reminder: '多练习定点',
+  });
+
+  let embedCalls = 0;
+  let claudeCalls = 0;
+  await withMockAnthropicFetch(
+    async () => {
+      claudeCalls++;
+      return fakeAskResponse({ answered: true, answer: '记录里写过重心不稳。', citedRecordIds: [saved.id] });
+    },
+    async () => {
+      const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('感觉站不太住')}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(body.answered, true);
+      assert.equal(body.retrievalPath, 'embedding');
+      assert.equal(body.matchedRecords[0].id, saved.id);
+    },
+    (opts) => {
+      embedCalls++;
+      const input = JSON.parse(opts.body).input;
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          data: input.map((text, i) => ({
+            index: i,
+            embedding: (i === 0 || String(text).includes('重心不稳')) ? [1, 0] : [0, 1],
+          })),
+        }),
+      };
+    }
+  );
+  assert.equal(embedCalls, 1, 'sparse keyword must trigger one embedding call');
+  assert.equal(claudeCalls, 1);
+});
+
+test('/api/progress/ask skips embedding when keyword already returned 2+ records', async () => {
+  const { body: { token } } = await registerUser('ask_dense@example.com');
+  await saveRecord(token, { className: '基训', improve_points: '转圈重心不稳' });
+  await saveRecord(token, { className: '基训', improve_points: '转圈骨盆晃' });
+
+  let embedCalls = 0;
+  await withMockAnthropicFetch(
+    async () => fakeAskResponse({ answered: true, answer: '两条都写了转圈。', citedRecordIds: [] }),
+    async () => {
+      const res = await fetch(`${base}/api/progress/ask?q=转圈`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(body.retrievalPath, 'keyword');
+    },
+    () => {
+      embedCalls++;
+      return fakeOrthogonalEmbeddings({ body: JSON.stringify({ input: ['x'] }) });
+    }
+  );
+  assert.equal(embedCalls, 0);
 });

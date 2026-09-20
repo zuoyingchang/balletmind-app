@@ -1,7 +1,8 @@
 # BalletMind｜Offline Eval + 双轨道（停扩功能）
 
-> V0.1 核心已够作品集。Agent / Fine-tuning / RAG / Ask My Training / 月度报告 **放到 V0.2+**，现在不实现。  
-> 近期只做：Eval Set → Baseline → Model Selection → Bad Case / Prompt → Guardrails → 埋点 → 3–6 人试用。
+> **冻结于 V0.1（2026-09）**：当时决定先把抽取评测做扎实，Ask My Training 后置。  
+> **现网（2026-09-13）**：问问你的档案已上线（RAG 检索已确认课记，Agent 据此回答）。下面表格是当时的判断，不要当成当前范围。  
+> 近期仍优先：Eval Set → Baseline → Model Selection → Bad Case / Prompt → Guardrails → 埋点 → 3–6 人试用。
 
 面试和日常对照用这一份操作说明：[`docs/Metrics_Runbook.md`](Metrics_Runbook.md)（怎么跑、怎么看、每层现有指标）。
 
@@ -17,7 +18,7 @@
 | 为什么没有 Fine-tuning？ | 没有足够标注的「正确复盘」。先 Prompt + Eval + Model Selection。 |
 | 为什么没有 RAG？ | 当前是**单次 session 抽取**，没有外部知识库检索。纵向洞察先用规则 + 用户确认；用户真需要再做 Ask My Training。 |
 
-这三个「不做」是产品/技术取舍，写进 case study，不要为简历硬接 LangGraph。
+这三个判断服务的是抽取主路径。问问档案后来按「检索课记 + 据此回答」做上了。
 
 ---
 

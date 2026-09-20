@@ -25,6 +25,8 @@ const AI_TEMPERATURE = process.env.AI_TEMPERATURE === undefined ? 0.2 : Number(p
 // still works as a timer + manual typing, but there is no server-side ASR.
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const ASR_MODEL = process.env.ASR_MODEL || 'whisper-1';
+// Same key as Whisper. Used only when keyword retrieval for 问问档案 is sparse
+// (0 or 1 hit). Unset key → skip embedding, keep keyword-only behavior.
 const ASR_TIMEOUT_MS = Number(process.env.ASR_TIMEOUT_MS) || 30000;
 const MAX_AUDIO_BYTES = Number(process.env.MAX_AUDIO_BYTES) || 10 * 1024 * 1024;
 
@@ -47,6 +49,10 @@ const ANALYTICS_INTERNAL_EMAILS = (process.env.ANALYTICS_INTERNAL_EMAILS || '')
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
 
+// Multi-agent 课前卡实验。两道闸都开才会跑 LLM；默认全关，所有用户仍走规则卡。
+const EXPERIMENT_ISSUE_BRIEF = /^(1|true|yes)$/i.test(String(process.env.EXPERIMENT_ISSUE_BRIEF || ''));
+const EXPERIMENT_ISSUE_BRIEF_USER_IDS = process.env.EXPERIMENT_ISSUE_BRIEF_USER_IDS || '';
+
 if (!JWT_SECRET) {
   console.error('缺少 JWT_SECRET，请在 .env 里配置（用于登录令牌签名）');
   process.exit(1);
@@ -59,4 +65,5 @@ module.exports = {
   RESEND_API_KEY, EMAIL_FROM, APP_PUBLIC_URL, RESET_TOKEN_TTL_MS,
   ANTHROPIC_INPUT_USD_PER_MTOK, ANTHROPIC_OUTPUT_USD_PER_MTOK,
   ANALYTICS_INTERNAL_EMAILS,
+  EXPERIMENT_ISSUE_BRIEF, EXPERIMENT_ISSUE_BRIEF_USER_IDS,
 };

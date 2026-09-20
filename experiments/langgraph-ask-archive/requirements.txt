@@ -1,0 +1,11 @@
+anthropic==0.125.0
+langchain==0.3.30
+langchain-anthropic==0.3.22
+langchain-core==0.3.86
+langchain-text-splitters==0.3.11
+langgraph==0.6.11
+langgraph-checkpoint==2.1.2
+langgraph-prebuilt==0.6.5
+langgraph-sdk==0.2.9
+pydantic==2.13.5
+pydantic_core==2.46.5

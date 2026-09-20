@@ -215,10 +215,10 @@ async function buildAdminStats() {
     db.all("SELECT metadata FROM events WHERE event_name = 'asr_fail'"),
     loadTotals(weekAgo),
     db.all(`
-      SELECT user_id, event_name, metadata, created_at
+      SELECT id, user_id, event_name, metadata, created_at
       FROM events
       ORDER BY id DESC
-      LIMIT 30
+      LIMIT 50
     `),
     db.all('SELECT user_id, event_name, metadata, created_at FROM events'),
     db.all('SELECT id, email FROM users'),
@@ -341,4 +341,21 @@ async function buildAdminStats() {
   };
 }
 
-module.exports = { buildAdminStats, pct, num };
+async function listAdminEvents({ eventName, limit } = {}) {
+  const cap = Math.min(200, Math.max(1, Number(limit) || 50));
+  const name = typeof eventName === 'string' ? eventName.trim() : '';
+  if (name) {
+    return db.all(
+      `SELECT id, user_id, event_name, metadata, created_at
+       FROM events WHERE event_name = ? ORDER BY id DESC LIMIT ?`,
+      [name, cap]
+    );
+  }
+  return db.all(
+    `SELECT id, user_id, event_name, metadata, created_at
+     FROM events ORDER BY id DESC LIMIT ?`,
+    [cap]
+  );
+}
+
+module.exports = { buildAdminStats, listAdminEvents, pct, num };

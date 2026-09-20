@@ -16,6 +16,8 @@
 - `npm test` **不跑** eval（不花钱、不打 Claude）。
 - `/stats.html` **没有** Layer 1 五维。线上「AI 成功率」是 HTTP 通不通，不是抽取质量。
 - 看数地址：`https://balletmind-app.onrender.com/stats.html`（要 `ADMIN_KEY`）。不要用浏览器直接打开本地 html 文件。
+- **查原始 log**：同一页底部「查原始 log」。按事件名筛选（如 `ai_process_fail`），最多 200 条。接口：`GET /api/admin/events?event=asr_fail&limit=50`，Header `X-Admin-Key`。只有 `user_id`，没有邮箱/转写。
+- Render 控制台那是服务器 stdout，不是用户埋点。
 
 ---
 
@@ -25,7 +27,7 @@
 2. **怎么看**：每个现有指标是干什么的、什么时候能下结论、常见误读。  
 3. **何时跑**：改 Prompt / 换模型 / 上线后 / 真人测试前。  
 4. **坏了怎么闭环**：归因链 → 改一处 → 回归 35 条 → 再部署。  
-5. **明确没有的**：NPS、edit reason、RAG Precision/Recall、真人留存（D7 在样本极小时只是占位）。
+5. **明确没有的**：NPS、edit reason、问问档案的 Precision/Recall、真人留存（D7 在样本极小时只是占位）。
 
 ---
 
@@ -46,7 +48,7 @@ AI_MODEL=claude-sonnet-5 npm run eval
 AI_MODEL=claude-sonnet-4-6 npm run eval   # 对照
 ```
 
-- Prompt 版本：`PROMPT_VERSION`（当前 1.5），在 `server/ai/review-prompt.js`。  
+- Prompt 版本：`PROMPT_VERSION`（当前 **1.7**），在 `server/ai/review-prompt.js`。评测对照报告里写的 1.5 是当时冻结版本。  
 - Case：约 35 条，`server/eval/cases.js`。  
 - 结果 JSON：`server/eval/results/<model>.json`。  
 - Sonnet 5 **请求里不传 temperature**；终端若写 `temperature=omitted` 是正常的。
@@ -62,7 +64,7 @@ AI_MODEL=claude-sonnet-4-6 npm run eval   # 对照
 
 Eval **没有 ASR**（输入已经是 transcript）。ASR 口误 case 测的是「转写已经错了，模型会不会归一」。
 
-**现在不算 Precision/Recall**（那是以后 RAG 检索的）。
+**Layer 1 不算** 问问档案检索的 Precision/Recall。离线对照脚本：`server/eval/ask-retrieve-cases.js`（标准问法 vs 换说法），不进抽取黄金集。
 
 ### 现有指标
 
@@ -171,9 +173,11 @@ Edit / Retry / History **不是**漏斗步骤，是侧指标。
 | **D7 Retention** | 首次保存满 7 天之后还有任意事件 | 样本 &lt; 十人时不要当结论 |
 | **保存 ≥2 条 / ≥2 个自然日** | 会不会记第二次 | 习惯养成 |
 | **打开 Progress 次数** | 进度页有没有人看 | 页有价值（可能只有你自己点） |
+| **experiment_issue_brief_*** | 课前卡多 Agent 实验 | 默认双开关关，应为 0；有量才说明误开了闸 |
 | **附录：事件次数** | 调试埋点有没有打上 | conversion |
 
-`field_edited` **只记字段名**，不记用户写了什么。
+`field_edited` **只记字段名**，不记用户写了什么。  
+保存事件另有 `from`（voice / typed / mixed）、`slotsFilled`（0–4 个槽非空）、`durationSec`。ASR/AI 另有 `chars`（字数，不是正文）、`reason`、`latencyMs`、`promptVersion`。
 
 ---
 
@@ -216,9 +220,9 @@ Edit / Retry / History **不是**漏斗步骤，是侧指标。
 ## 8. 现在没有、runbook 也不装有的
 
 - NPS、问卷、edit reason  
-- RAG Precision/Recall  
+- 问问档案检索的 Precision/Recall  
 - 按自然周的严格 cohort（只有「首次保存 +7 天」）  
 - 线上自动 Layer 1 五维（没有 LLM-as-judge）  
-- Agent / Fine-tuning / Ask My Training 相关指标  
+- Fine-tuning / AI 周报相关指标  
 
 这些等真人试用或以后的产品再加。

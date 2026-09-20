@@ -28,8 +28,14 @@ Edit / Regenerate / History **不是**漏斗步骤，是侧指标。
 | history_opened | `history_opened`（旧 `history_open`） | 打开档案列表；用 **browse** session，不挂 capture |
 | history_session_opened | `history_session_opened` | 打开某一条过去记录；metadata 只有 `recordId` |
 | progress_opened | `progress_opened`（旧 `progress_open`） | 打开 Progress |
+| ask_success / ask_fail | 同名 | 问问档案。metadata 可有 `rounds`、`latencyMs`、`answered`、`matchCount`、`retrievalPath`、`keywordCount`、`embeddingCount`、token；**不记问题正文** |
+| experiment_issue_brief_success / fail | 同名 | 课前卡多 Agent 实验。默认无流量（双开关关）。metadata 可有 `attempts`、`latencyMs`、`reason`；**不记生成正文** |
 
 每条都有 `user_id` + `created_at`。Capture 链路带 `sessionId`；History/Progress 用另一条 browse session。
+
+**metadata 白名单（永不记转写/复盘/邮箱）**：`sessionId`、`recordId`、`field_name`、`edited` / `editedFields`、`from`（voice|typed|mixed）、`slotsFilled`（0–4）、`durationSec`、`chars` / `bytes`、`error` / `reason` / `status`、`latencyMs`、`attempt`、token、`model`、`promptVersion`、`confidence_level`、`rounds` / `round`、`matchCount`、`answered`。
+
+查原始行：`/stats.html` 底部筛选，或 `GET /api/admin/events?event=&limit=` + `X-Admin-Key`。
 
 ## 指标定义
 

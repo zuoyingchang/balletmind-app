@@ -1,0 +1,23 @@
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#F7E8E8','primaryTextColor':'#3D2C2C','primaryBorderColor':'#C9A3A3','lineColor':'#8B6B6B','secondaryColor':'#F3EFE8','tertiaryColor':'#FFF8F5','fontFamily':'PingFang SC, Noto Sans SC, sans-serif','fontSize':'14px'}}}%%
+flowchart TD
+  IN[已有录音或转写] --> A{哪一步坏了?}
+
+  A -->|麦克风 / 浏览器| B[手打转写 · 不卡死]
+  A -->|ASR 失败 / 超时| C[不调用假整理]
+  C --> D[重录 或 手打]
+  A -->|AI 失败 / 超时 / 无 tool| E[不展示假 Success]
+  E --> F[保留转写]
+  F --> G[Retry 或 手填后保存]
+  A -->|配额用尽| H[入口说明 · 禁用生成]
+  A -->|信息不足| I[空字段合法<br/>note：用户描述信息有限]
+  A -->|注入 / 与课无关| J[低置信 · note 说明 · 不执行指令]
+
+  B --> K[仍可进入生成]
+  D --> K
+  G --> L{Confirm?}
+  K --> L
+  H --> M[本次无法走 AI]
+  I --> L
+  J --> L
+  L -->|是| N[入库]
+  L -->|否| O[不进长期档案]

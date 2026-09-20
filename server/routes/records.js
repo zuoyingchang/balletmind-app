@@ -28,6 +28,12 @@ router.post('/', async (req, res) => {
   // inferred by AI from the transcript.
   const MOOD_VALUES = new Set(['low', 'meh', 'good', 'great']);
   const moodValue = MOOD_VALUES.has(mood) ? mood : null;
+  const slotsFilled = [good_points, improve_points, next_time_reminder, session_tips]
+    .filter((s) => String(s || '').trim()).length;
+  const fromClient = req.body && req.body.from;
+  const from = (fromClient === 'voice' || fromClient === 'typed' || fromClient === 'mixed')
+    ? fromClient
+    : (Number(durationSec) > 0 ? 'voice' : 'typed');
   const info = await db.run(
     `INSERT INTO records
       (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, session_tips, confidence_level, note, duration_sec, created_at, training_duration_min, mood)
@@ -37,8 +43,17 @@ router.post('/', async (req, res) => {
       next_time_reminder || '', session_tips || '', confidence_level || '', note || '', durationSec || 0, Date.now(), trainingMin, moodValue,
     ]
   );
-  await logEvent(req.userId, 'save_record', withSession({ recordId: info.lastInsertRowid }, sessionId));
-  await logEvent(req.userId, 'session_confirmed', withSession({ recordId: info.lastInsertRowid }, sessionId));
+  await logEvent(req.userId, 'save_record', withSession({
+    recordId: info.lastInsertRowid,
+    from,
+    slotsFilled,
+    durationSec: Number(durationSec) || 0,
+  }, sessionId));
+  await logEvent(req.userId, 'session_confirmed', withSession({
+    recordId: info.lastInsertRowid,
+    from,
+    slotsFilled,
+  }, sessionId));
   await logEvent(req.userId, 'user_edit_ai_result', withSession({
     edited: !!edited,
     editedFields: fields,

@@ -1,0 +1,21 @@
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#F7E8E8','primaryTextColor':'#3D2C2C','primaryBorderColor':'#C9A3A3','lineColor':'#8B6B6B','secondaryColor':'#F3EFE8','tertiaryColor':'#FFF8F5','fontFamily':'PingFang SC, Noto Sans SC, sans-serif','fontSize':'14px'}}}%%
+flowchart TD
+  A[语音录制 / 手打降级] --> B[Whisper ASR 转写<br/>术语库纠偏 · 规则]
+  B --> C[AI 结构化<br/>单次 LLM 调用]:::llm
+  C --> D[人工确认后保存]
+  D --> E[History 关键词搜索<br/>规则匹配 · 无 AI]
+  D --> F[反复问题 + 课前卡<br/>规则 · 0 次 LLM · 默认全员]:::rule
+  D --> G[问问你的档案<br/>RAG + 单 Agent · 生产]:::agent
+
+  subgraph EXP[Experiment / 新Feature]
+    H[LangGraph 问问档案<br/>对照实现 · 不替换生产]:::agent
+    I[课前卡多 Agent<br/>分析→写作→审核<br/>已接线 · 双开关默认关]:::multiagent
+  end
+
+  G -. 对照 .-> H
+  F -. 闸门关闭时不走 .-> I
+
+  classDef llm fill:#B5D4F4,stroke:#185FA5,color:#042C53
+  classDef agent fill:#9FE1CB,stroke:#0F6E56,color:#04342C
+  classDef multiagent fill:#CECBF6,stroke:#534AB7,color:#26215C
+  classDef rule fill:#E8E8E8,stroke:#888,color:#333

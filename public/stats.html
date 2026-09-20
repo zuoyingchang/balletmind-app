@@ -70,7 +70,7 @@
       <span>本页下半：同一 session 的漏斗 + Activation / Completion / Edit / Regenerated / History / D7。含自测，部署前没有 session 的旧数据不会被补。</span>
     </div>
   </div>
-  <p class="jump"><a href="#layer2">跳到 Layer 2</a> · <a href="#layer3">跳到 Layer 3</a></p>
+  <p class="jump"><a href="#layer2">跳到 Layer 2</a> · <a href="#layer3">跳到 Layer 3</a> · <a href="#raw-logs">查原始 log</a></p>
 
   <div class="layer" id="layer2">
     <div class="layer-head">
@@ -180,9 +180,30 @@
     </div>
   </details>
 
-  <details class="card">
-    <summary>附录 · 最近 30 条原始事件</summary>
+  <details class="card" open id="raw-logs">
+    <summary>查原始 log（不含转写 / 邮箱）</summary>
     <div class="inner">
+      <p class="muted" style="margin:0 0 10px;">聚合看上面 Layer 2/3。这里按事件名拉最近若干条。只有 <code>user_id</code>，没有邮箱，metadata 里没有课记正文。</p>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px;">
+        <select id="log-event" style="padding:8px 10px; border-radius:10px; border:1px solid #eee9e4; font-size:13px;">
+          <option value="">全部事件</option>
+          <option value="asr_fail">asr_fail</option>
+          <option value="asr_success">asr_success</option>
+          <option value="ai_process_fail">ai_process_fail</option>
+          <option value="ai_process_success">ai_process_success</option>
+          <option value="save_record">save_record</option>
+          <option value="field_edited">field_edited</option>
+          <option value="record_voice_start">record_voice_start</option>
+          <option value="review_opened">review_opened</option>
+        </select>
+        <select id="log-limit" style="padding:8px 10px; border-radius:10px; border:1px solid #eee9e4; font-size:13px;">
+          <option value="50">50 条</option>
+          <option value="100">100 条</option>
+          <option value="200">200 条</option>
+        </select>
+        <button type="button" id="log-query-btn" style="padding:8px 12px; border-radius:10px; border:none; background:#4b4850; color:#fff; font-size:13px; cursor:pointer;">查询</button>
+        <span id="log-query-err" class="err"></span>
+      </div>
       <table>
         <thead><tr><th>时间</th><th>用户</th><th>事件</th><th>详情</th></tr></thead>
         <tbody id="recent-events-body"></tbody>
@@ -301,7 +322,39 @@ function render(data) {
     : '<tr><td colspan="4" class="muted">还没有数据</td></tr>';
 }
 
+async function loadEvents(key) {
+  const event = document.getElementById('log-event').value;
+  const limit = document.getElementById('log-limit').value || '50';
+  const q = new URLSearchParams({ limit });
+  if (event) q.set('event', event);
+  const res = await fetch('/api/admin/events?' + q.toString(), { headers: { 'X-Admin-Key': key } });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || ('HTTP ' + res.status));
+  }
+  return res.json();
+}
+
+function paintEvents(rows) {
+  document.getElementById('recent-events-body').innerHTML = (rows || []).length
+    ? rows.map((e) => `<tr><td>${fmtTime(e.created_at)}</td><td>${e.user_id ?? '-'}</td><td>${escapeHtml(e.event_name)}</td><td><pre>${e.metadata ? escapeHtml(typeof e.metadata === 'string' ? e.metadata : JSON.stringify(e.metadata)) : ''}</pre></td></tr>`).join('')
+    : '<tr><td colspan="4" class="muted">没有匹配的事件</td></tr>';
+}
+
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function bindLogQuery(key) {
+  document.getElementById('log-query-btn').onclick = async () => {
+    const errEl = document.getElementById('log-query-err');
+    errEl.textContent = '';
+    try {
+      const pack = await loadEvents(key);
+      paintEvents(pack.events);
+    } catch (e) {
+      errEl.textContent = e.message;
+    }
+  };
+}
 
 async function unlock() {
   const key = document.getElementById('admin-key').value.trim();
@@ -314,6 +367,7 @@ async function unlock() {
     document.getElementById('gate').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     render(data);
+    bindLogQuery(key);
   } catch (e) {
     errEl.textContent = e.message;
   }
@@ -327,6 +381,7 @@ async function unlock() {
     document.getElementById('gate').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     render(data);
+    bindLogQuery(saved);
   } catch (e) {
     localStorage.removeItem('bm_admin_key');
   }

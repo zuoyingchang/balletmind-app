@@ -1,7 +1,7 @@
 # BalletMind｜传统 PM + AI PM 能力对照
 
-> 更新：2026-09-07  
-> 对应代码版本：当前 `main`（V0.1 主流程已上线，V0.2 Progress Intelligence 已部分落地，并补了 Whisper ASR / 账号隐私 / 评测加厚）  
+> 更新：2026-09-19  
+> 对应代码：当前仓库（V0.1 主路径 + V0.2 规则版 Progress + 问问档案 + 课前卡多 Agent Experiment 默认关 + Whisper / 账号 / Eval）  
 > 用途：面试作品集、内部对齐「岗位要什么 / 我们做了什么 / 刻意没做什么」
 
 本文把 **传统产品经理** 和 **AI 产品经理** 放在同一张表里。能力项来自国内招聘与面经的高频重合点（人人都是产品经理对 JD 的拆解、猎聘 AI PM 任职要求、牛客/备考帖里的追问；与小红书面经主题一致：Prompt 版本、幻觉、RAG vs 微调、评测集、人审、成本），不是某一家公司的官方大纲。
@@ -13,12 +13,12 @@
 | 版本 | 定位 | 状态 |
 |---|---|---|
 | **文档 V0.1 / 实现 MVP** | Capture & Structure：语音 → 转写 → AI 结构化 → 人确认 → 档案 | **已上线** `https://balletmind-app.onrender.com` |
-| **V0.2 Progress Intelligence** | Track → Understand → Act：反复问题、课前卡、跨训练汇总 | **业务功能已做**（规则聚合，默认 0 次 LLM）；可视化 / 老师寄语等仍在 P2 |
+| **V0.2 Progress Intelligence** | Track → Understand → Act：反复问题、课前卡、跨训练汇总 | **业务功能已做**（规则聚合，默认 0 次 LLM）；多 Agent 课前卡 Experiment 已接线、默认关；可视化 / 老师寄语等仍在 P2 |
 | **账号与合规补丁** | 注册同意隐私、找回密码、隐私政策 | **已做**（线上发信需另配 Resend） |
 | **ASR 升级** | 浏览器识别 → OpenAI Whisper + 芭蕾术语 prompt | **已做**（需 `OPENAI_API_KEY`） |
 | **评测加厚** | 黄金集 30+ 条 Offline Eval；五维质量 + 本跑 latency/token | **已做骨架**，换模型对照仍要跑 `npm run eval` |
 
-相关文档：`docs/V0.1-复盘.md`、`docs/BalletMind_V2_优先级总表.md`、`docs/2.0.md`；原始 Brief / PRD / Prompt Spec 在上一级 `芭蕾产品/docs/`。第一版墨刀原型**有意过时**，以线上为准。
+相关文档：`docs/pm_docs/` 下 2.0 Brief / PRD / Prompt / 补充材料 / User Flow；`docs/V0.1-复盘.md`、`docs/BalletMind_V2_优先级总表.md`。上一级 `芭蕾产品/docs/` 的 1.0 是归档。第一版墨刀原型**有意过时**，以线上为准。
 
 ### 当前 AI 链路（传播时一句话说清）
 
@@ -26,11 +26,11 @@
 语音(MediaRecorder)
   → Whisper 转写（术语 prompt）
   → Claude 结构化（tool-use JSON，temperature 0.2）
-  → 用户 Review / Edit / Confirm
+  → 用户 Review（默认三段，确认后入库）
   → 仅 Confirmed Records 进入档案与成长追踪
 ```
 
-跨记录洞察（反复问题 / 课前卡 / 周报）**不走大模型**，避免把幻觉写成「你进步了」。
+跨记录洞察（反复问题 / 课前卡 / 周报）**默认不走大模型**，避免把幻觉写成「你进步了」。多 Agent 课前卡仅 Experiment。
 
 ---
 
@@ -41,8 +41,8 @@
 | # | 能力 | 岗位在考什么 | 我们 | 落在哪一版 |
 |---|---|---|---|---|
 | T1 | 问题定义 / JTBD | 痛点是不是真的 | **已做** Project Brief | V0.1 文档 |
-| T2 | PRD：范围、AC、Out of Scope | 能砍、能验收 | **已做** V0.1 PRD；实现已超过文档，**文档未完全同步** | V0.1 |
-| T3 | 用户流程 / 原型 | 主路径 + 异常路径 | **部分做** 墨刀 7 页是第一版；线上多了登录 / 追踪 | V0.1 原型过时 |
+| T2 | PRD：范围、AC、Out of Scope | 能砍、能验收 | **已做** 2.0 PRD 与现网对齐 | V0.1 → 2.0 |
+| T3 | 用户流程 / 原型 | 主路径 + 异常路径 | **已做** `2.0_User_Flow.md` + 2.0 可点击原型 | 2.0 |
 | T4 | 优先级与明确不做 | P0–P2、归档争议 | **已做** V0.2 优先级总表 | V0.2 文档 |
 | T5 | 埋点与北极星 | 完成率，不编造目标 | **已做** 录音→保存、编辑率、现含 `progress_open` | V0.1，追踪补于本次 |
 | T6 | 空态 / 失败 / 降级 | 核心 AI 挂了还能记 | **已做** 手打、配额置灰、不丢原文 | V0.1 |
@@ -63,7 +63,7 @@
 | # | 能力 | 岗位在考什么 | 我们 | 版本 |
 |---|---|---|---|---|
 | A1 | 任务适不适合 LLM | 抽取 vs 诊断 vs 创作 | **已做且是亮点**：单次笔记用模型；「有没有进步」不用模型 | V0.1–V0.2 |
-| A2 | Prompt vs RAG vs 微调 vs 规则 | 说得出依据 | **已做判断** 见下文 §5；**没接 RAG / 微调**（有意） | 全程 |
+| A2 | Prompt vs RAG vs 微调 vs 规则 | 说得出依据 | **已做判断**：抽取用 Prompt；跨次进步用规则；问问档案用 RAG + Agent | 全程 |
 | A3 | ASR / 多模态选型 | 术语、隐私、成本 | **已做** Whisper + 术语 prompt；未做 Deepgram/Azure 词表 A/B | ASR 升级 |
 | A4 | Token / 上下文 / 延迟 | 账单进方案 | **已做** 日配额、长度上限、超时、token 日志 | V0.1 硬化 |
 
@@ -73,13 +73,13 @@
 |---|---|---|---|---|
 | P1 | 模型选型 | 质量 / 贵 / 慢 | **已做** 35 条对照：Sonnet 5 胜出（质量打平、更便宜更快）；不换 Haiku | `docs/Eval_Model_Selection_Report.md` |
 | P2 | temperature / max_tokens / timeout | 抽取用低温度 | **已做** 4.6 默认 0.2；**Sonnet 5 不传 temperature**（API 会 400） | anthropic.js |
-| P3 | System Prompt + few-shot + 版本 | 改过几版、每版修什么 | **已做** Spec V1.1 → 代码 `PROMPT_VERSION=1.5` | V0.1 |
+| P3 | System Prompt + few-shot + 版本 | 改过几版、每版修什么 | **已做** Spec V1.1 → 护栏 1.5 → 代码 `PROMPT_VERSION=1.7`（含 `session_tips`） | V0.1 |
 | P4 | 结构化输出 | JSON 崩了怎么办 | **已做** Anthropic tool-use | V0.1 |
 | P5 | 领域词表 | 术语怎么进模型 | **已做** 芭蕾词表 + 用户纠错写回 prompt；ASR 同样喂术语 | V0.1 / ASR |
 | P6 | Prompt 注入 | 口述里带「忽略指令」 | **已做** `<transcript>` 当数据；eval 有注入 case | V0.1 + 本次评测 |
-| P7 | 多轮 Agent / 工具编排 | 工作流产品 | **没做** 单次整理。产品层已是「模型 / 规则 / 人」分工，不必硬上 Agent 框架 | 刻意不做 |
+| P7 | Agent / 工具编排 | 工作流产品 | **已做** 问问档案单 Agent（硬顶两轮）。多 Agent 课前卡 Experiment 已接线、默认关 | 问问你的档案；课前卡实验 |
 
-换模型怎么判定更好：改 `.env` 的 `AI_MODEL` 或 `AI_TEMPERATURE`，`cd server && npm run eval`。同一套 30+ 条 case，看五维质量、Schema、延迟、估算费用。线上再看 Edit Rate、延迟、token。**一次只改一个变量。** Precision/Recall 留给以后的 RAG，现在不硬套。
+换模型怎么判定更好：改 `.env` 的 `AI_MODEL` 或 `AI_TEMPERATURE`，`cd server && npm run eval`。同一套 30+ 条 case，看五维质量、Schema、延迟、估算费用。线上再看 Edit Rate、延迟、token。**一次只改一个变量。**
 
 详见 `docs/Eval_双轨道.md`。
 
@@ -134,13 +134,12 @@
 
 ---
 
-## 5. 面试必问：为什么不是 RAG、不是微调、不是 Agent
+## 5. 面试必问：模型用在哪
 
-- **不是微调**：没有大规模标注的「正确复盘」；任务是忠实抽取，Prompt + schema 足够。JD 趋势也是「会判断不微调」。
-- **不是 RAG**：没有需要检索的外部知识库。用户自己的历史若交给模型做「成长结论」，幻觉风险高于规则匹配。跨记录用文本相似 + 用户改状态 + 证据链。
-- **不是多步 Agent**：课后一次性整理，不是连续工具调用。Agent 加在这里会增加成本和失败面，用户每次记录还会变重。
-
-若以后做「可选 AI 周报」，也应：**只引用传入的 N 条记录、每条带 record id、不足则拒绝生成**——那才是有 grounding 的生成，而不是先上向量库。
+- **抽取**：Prompt + schema。没有大规模标注的「正确复盘」，所以不微调。
+- **跨课次进步**：规则匹配 + 用户改状态。
+- **问问档案**：RAG 先关键词、命中 ≤1 再 Embedding；Agent 据此回答，对比两个时间段时可再检索一次。
+- **不写 AI 周报、不当教练。**
 
 ---
 
@@ -161,5 +160,5 @@
 ## 7. 一句话履历
 
 传统 PM：Brief、PRD、原型、优先级、埋点、异常、隐私账号、导出，按真产品走过。  
-AI PM：Prompt 有版本和 30+ 条评测；参数与模型可配；幻觉靠规则 + HITL +「有的环节不用模型」；刻意不做 Agent/RAG/微调。  
+AI PM：Prompt 有版本和 30+ 条评测；参数与模型可配；幻觉靠规则 + HITL；问问档案用关键词优先的 RAG、必要时 Embedding，Agent 作答。  
 下一步：**本地跑一遍 `npm run eval` 记下 Baseline**，以及 **3–6 人试用把 Edit Rate 跑出来**。

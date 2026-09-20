@@ -75,7 +75,7 @@ router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), 
     const timedOut = isAbortError(e);
     await logEvent(req.userId, 'asr_fail', withSession({
       reason: timedOut ? 'timeout' : 'exception',
-      message: e.message,
+      error: timedOut ? 'timeout' : 'exception',
       latencyMs: Date.now() - startedAt,
       model: ASR_MODEL,
     }, sessionIdFromReq(req)));

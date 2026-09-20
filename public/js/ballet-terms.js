@@ -130,9 +130,8 @@ function recordMatchesSearch(record, keyword) {
 // recordMatchesSearch (built for typed search terms) this breaks the
 // question into overlap-able tokens first: recognized ballet-term aliases,
 // plus generic word/character n-grams with obvious filler words dropped.
-// Deliberately not an embedding/vector search — the archive per user is a
-// few dozen to low hundreds of records, so keyword overlap is enough to
-// validate the feature before reaching for anything heavier.
+// This is the cheap first pass. Embedding only runs when keyword hits are
+// sparse (see server/ai/ask-retrieve.js).
 const ASK_STOPWORDS = new Set([
   '的', '了', '我', '是', '吗', '呢', '什么', '老', '在', '说', '最近', '上次',
   '这次', '一下', '都', '过', '着', '和', '与', '给', '把', '还', '就', '也', '有',

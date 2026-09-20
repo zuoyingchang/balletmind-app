@@ -14,8 +14,14 @@ const {
 
 const router = express.Router();
 
+function inputFrom(req) {
+  const from = req.body && req.body.from;
+  return (from === 'voice' || from === 'typed' || from === 'mixed') ? from : undefined;
+}
+
 function failMeta(req, extra) {
-  return withSession({ promptVersion: PROMPT_VERSION, ...extra }, sessionIdFromReq(req));
+  const from = inputFrom(req);
+  return withSession({ promptVersion: PROMPT_VERSION, ...(from ? { from } : {}), ...extra }, sessionIdFromReq(req));
 }
 
 router.post('/', requireAuth, async (req, res) => {
@@ -27,7 +33,7 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(400).json({ error: `本次内容过长（超过${MAX_TRANSCRIPT_LENGTH}字），请分段录制` });
   }
   if ((await countAiCallsToday(req.userId)) >= DAILY_AI_LIMIT) {
-    await logEvent(req.userId, 'ai_process_fail', failMeta(req, { reason: 'quota_exceeded' }));
+    await logEvent(req.userId, 'ai_process_fail', failMeta(req, { reason: 'quota_exceeded', chars: transcript.length }));
     return res.status(429).json({ error: '今天的AI整理次数已经用完了，可以先手动记录内容，明天再生成复盘' });
   }
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -42,21 +48,21 @@ router.post('/', requireAuth, async (req, res) => {
 
     if (error) {
       const reason = error.message === 'timeout' ? 'timeout' : 'network_error';
-      await logEvent(req.userId, 'ai_process_fail', failMeta(req, { reason, attempt, latencyMs }));
+      await logEvent(req.userId, 'ai_process_fail', failMeta(req, { reason, attempt, latencyMs, chars: transcript.length }));
       const msg = reason === 'timeout' ? 'AI处理超时，请重新尝试' : 'AI服务连接失败，请重新尝试';
       return res.status(504).json({ error: msg });
     }
 
     if (!response.ok) {
       const errText = await response.text();
-      await logEvent(req.userId, 'ai_process_fail', failMeta(req, { reason: 'api_error', status: response.status, attempt, latencyMs }));
+      await logEvent(req.userId, 'ai_process_fail', failMeta(req, { reason: 'api_error', status: response.status, attempt, latencyMs, chars: transcript.length }));
       return res.status(502).json({ error: 'AI服务调用失败，请Retry', detail: errText });
     }
 
     const data = await response.json();
     const toolUse = findToolUse(data);
     if (!toolUse) {
-      await logEvent(req.userId, 'ai_process_fail', failMeta(req, { reason: 'no_tool_use', attempt, latencyMs }));
+      await logEvent(req.userId, 'ai_process_fail', failMeta(req, { reason: 'no_tool_use', attempt, latencyMs, chars: transcript.length }));
       return res.status(502).json({ error: 'AI未返回有效内容' });
     }
 
@@ -65,6 +71,8 @@ router.post('/', requireAuth, async (req, res) => {
       confidence_level: input.confidence_level,
       attempt,
       latencyMs,
+      chars: transcript.length,
+      from: inputFrom(req),
       inputTokens: data.usage?.input_tokens,
       outputTokens: data.usage?.output_tokens,
       cacheReadTokens: data.usage?.cache_read_input_tokens,
@@ -76,8 +84,9 @@ router.post('/', requireAuth, async (req, res) => {
   } catch (e) {
     await logEvent(req.userId, 'ai_process_fail', failMeta(req, {
       reason: 'exception',
-      message: e.message,
+      error: 'exception',
       latencyMs: Date.now() - startedAt,
+      chars: transcript.length,
     }));
     res.status(500).json({ error: '服务器错误', detail: e.message });
   }

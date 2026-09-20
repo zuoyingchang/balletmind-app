@@ -6,7 +6,11 @@ const KNOWN_EVENTS = knownEventNames();
 // "问问你的档案" shares this same daily budget on purpose — its per-call
 // cost is tiny (a few hundred tokens vs a full transcript), so it wasn't
 // worth a second quota knob. See ask_success/ask_fail below.
-const QUOTA_EVENTS = ['ai_process_success', 'ai_process_fail', 'asr_success', 'asr_fail', 'ask_success', 'ask_fail'];
+const QUOTA_EVENTS = [
+  'ai_process_success', 'ai_process_fail', 'asr_success', 'asr_fail',
+  'ask_success', 'ask_fail',
+  'experiment_issue_brief_success', 'experiment_issue_brief_fail',
+];
 
 function startOfLocalDayMs() {
   const start = new Date();

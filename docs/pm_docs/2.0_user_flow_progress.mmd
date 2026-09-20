@@ -1,0 +1,27 @@
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#F7E8E8','primaryTextColor':'#3D2C2C','primaryBorderColor':'#C9A3A3','lineColor':'#8B6B6B','secondaryColor':'#F3EFE8','tertiaryColor':'#FFF8F5','fontFamily':'PingFang SC, Noto Sans SC, sans-serif','fontSize':'14px'}}}%%
+flowchart TD
+  SAVE[用户确认保存] --> REC[Turso 一条 Confirmed Record]
+  REC --> HIST[History<br/>日期 / 课名 / 搜索]
+  REC --> MATCH[文本归一化匹配<br/>improve_points]
+
+  MATCH --> NEW{对得上已有未解决条目?}
+  NEW -->|是| BUMP[出现次数 +1 · 记下课次]
+  NEW -->|否| OPEN[新建反复问题]
+
+  BUMP --> LIST[追踪列表]
+  OPEN --> LIST
+  LIST --> ST[用户点状态]
+  ST --> ST1[有改善]
+  ST --> ST2[仍然存在]
+  ST --> ST3[已解决 · 离开列表]
+
+  LIST --> EVI[证据：次数 + 日期 · 回链记录]
+  LIST --> BRIEF[课前看一眼 · 规则卡<br/>最多 3 条 · 多Agent实验默认关]
+  LIST --> ASK[问问你的档案]
+  HIST --> WIN[最近 7 天 或 最近 5 次<br/>规则汇总]
+
+  WIN --> EMPTY{样本不够?}
+  EMPTY -->|是| ES[空态 · 不编规律]
+  EMPTY -->|否| SUM[次数 / 反复问题 / 用户写过的进步原话]
+
+  NOTE[禁止：模型宣布进步、打分、百分比提升]

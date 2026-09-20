@@ -36,6 +36,8 @@ const ALLOWED_META = new Set([
   'attempt', 'inputTokens', 'outputTokens', 'cacheReadTokens', 'cacheCreationTokens',
   'model', 'promptVersion', 'confidence_level', 'chars', 'bytes', 'from',
   'slotsFilled', 'round', 'rounds', 'matchCount', 'answered',
+  'retrievalPath', 'keywordCount', 'embeddingCount',
+  'attempts',
 ]);
 
 const BLOCKED_META = new Set([
@@ -49,6 +51,7 @@ function knownEventNames() {
     'asr_fail', 'asr_success',
     'ai_process_success', 'ai_process_fail',
     'ask_success', 'ask_fail',
+    'experiment_issue_brief_success', 'experiment_issue_brief_fail',
     'user_edit_ai_result', 'retry_ai', 'ai_regenerated',
     'save_record', 'session_confirmed',
     'review_opened', 'field_edited',
@@ -71,7 +74,8 @@ function sanitizeEventMetadata(metadata) {
     if (key === 'recordId' || key === 'latencyMs' || key === 'attempt'
       || key === 'inputTokens' || key === 'outputTokens' || key === 'cacheReadTokens'
       || key === 'cacheCreationTokens' || key === 'chars' || key === 'bytes'
-      || key === 'durationSec' || key === 'status' || key === 'slotsFilled') {
+      || key === 'durationSec' || key === 'status' || key === 'slotsFilled'
+      || key === 'keywordCount' || key === 'embeddingCount') {
       const n = Number(value);
       if (!Number.isFinite(n)) continue;
       if (key === 'slotsFilled') {

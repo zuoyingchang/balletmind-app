@@ -956,7 +956,7 @@
           <iconify-icon icon="solar:magnifer-linear" class="text-[16px] text-[var(--gold)]"></iconify-icon>
           <span class="label-editorial text-[13px] text-[var(--rose-deep)]">问问你的档案</span>
         </div>
-        <p class="relative z-10 text-[11px] text-[var(--ink-faint)] mb-2">只根据你自己确认过的记录回答，查不到就说没有</p>
+        <p class="relative z-10 text-[11px] text-[var(--ink-faint)] mb-2">只根据你自己确认过的记录回答。用词对不上时会再按意思找，查不到就说没有</p>
         <div class="relative z-10 flex gap-2">
           <input id="ask-archive-input" type="text" placeholder="比如：我最近转圈老说什么问题" class="flex-1 h-10 px-3 rounded-xl border border-[var(--border-soft)] text-[12.5px] bg-white/70" onkeydown="if(event.key==='Enter') askArchive()">
           <button type="button" onclick="askArchive()" id="ask-archive-btn" class="btn-ribbon shrink-0 h-10 px-4 rounded-xl text-[12.5px] font-medium">
@@ -1658,7 +1658,10 @@ async function loadProgressTeaser() {
       const top = open.slice().sort((a, b) => b.occurrence_count - a.occurrence_count)[0];
       issueEl.textContent = `${compactPhrase(top.text)} · ${top.occurrence_count}次`;
     }
-    if (brief.topIssues && brief.topIssues.length > 0) {
+    const expLine = brief.experimentBrief && brief.experimentBrief.lines && brief.experimentBrief.lines[0];
+    if (expLine) {
+      briefEl.textContent = compactPhrase(expLine);
+    } else if (brief.topIssues && brief.topIssues.length > 0) {
       briefEl.textContent = compactPhrase(brief.topIssues[0].text);
     } else {
       const last = brief.lastRecord || {};
@@ -1711,6 +1714,12 @@ async function loadBrief() {
   try {
     const res = await authFetch(`${API}/api/progress/brief`);
     const data = await res.json();
+    const expLines = data.experimentBrief && !data.experimentBrief.usedFallback ? (data.experimentBrief.lines || []) : [];
+    if (expLines.length) {
+      el.innerHTML = `<p class="text-[10px] text-[var(--ink-faint)]">实验版课前提醒</p>`
+        + expLines.map((line) => `<p>${escapeHtml(line)}</p>`).join('');
+      return;
+    }
     const tip = data.lastRecord ? (data.lastRecord.nextTimeReminder || data.lastRecord.improvePoints || '').trim() : '';
     el.innerHTML = tip
       ? `<p><span class="font-semibold text-[var(--mauve)]">上次提醒</span> ${escapeHtml(compactPhrase(tip, 44))}</p>`

@@ -6,7 +6,9 @@ const { splitLines, sessionIdFromReq, withSession } = require('../lib/text');
 const { logEvent, countAiCallsToday } = require('../events');
 const { DAILY_AI_LIMIT } = require('../config');
 const { callAskRound1WithRetry, callAskRound2WithRetry, findToolUse, answerFromToolInput } = require('../ai/anthropic');
-const { searchRecordsByQuestion } = require('../../public/js/ballet-terms');
+const { retrieveAskRecords, KEYWORD_SPARSE_MAX } = require('../ai/ask-retrieve');
+const { isIssueBriefExperimentOn } = require('../experiments/issue-brief-gate');
+const { runIssueBriefExperiment } = require('../ai/issue-brief-experiment');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -99,35 +101,58 @@ router.get('/brief', async (req, res) => {
     [req.userId]
   );
 
-  res.json({
+  const lastRecordPayload = lastRecord
+    ? {
+        className: lastRecord.class_name,
+        nextTimeReminder: lastRecord.next_time_reminder,
+        improvePoints: lastRecord.improve_points,
+        createdAt: lastRecord.created_at,
+      }
+    : null;
+
+  const payload = {
     topIssues,
     // improvePoints rides along so the frontend can always show *something*
     // useful even when there's no repeat issue yet — falls back to the
-    // user's own last "could improve" note. Still zero LLM calls.
-    lastRecord: lastRecord
-      ? {
-          className: lastRecord.class_name,
-          nextTimeReminder: lastRecord.next_time_reminder,
-          improvePoints: lastRecord.improve_points,
-          createdAt: lastRecord.created_at,
+    // user's own last "could improve" note. Default path is still zero LLM.
+    lastRecord: lastRecordPayload,
+  };
+
+  // Dual gate default-off: no user hits this unless both env vars are set.
+  if (isIssueBriefExperimentOn(req.userId) && topIssues.length > 0) {
+    const overQuota = (await countAiCallsToday(req.userId)) >= DAILY_AI_LIMIT;
+    if (!overQuota) {
+      const startedAt = Date.now();
+      try {
+        const result = await runIssueBriefExperiment(topIssues);
+        const usedFallback = !result || result.usedFallback || !result.lines || !result.lines.length;
+        await logEvent(req.userId, usedFallback ? 'experiment_issue_brief_fail' : 'experiment_issue_brief_success', {
+          reason: usedFallback ? 'fallback' : undefined,
+          attempts: result && result.attempts,
+          latencyMs: Date.now() - startedAt,
+        });
+        if (!usedFallback) {
+          payload.experimentBrief = { lines: result.lines, usedFallback: false };
         }
-      : null,
-  });
+      } catch (e) {
+        await logEvent(req.userId, 'experiment_issue_brief_fail', {
+          reason: 'error',
+          latencyMs: Date.now() - startedAt,
+        });
+      }
+    }
+  }
+
+  res.json(payload);
 });
 
 // GET /api/progress/ask?q=... — "问问你的档案" (ask-your-archive).
-// Round 1's retrieval is pure keyword overlap over the user's own confirmed
-// records — zero AI, zero cost — and Claude is only called once that found
-// something. The one place any model autonomy lives: after seeing round 1's
-// matches, the model can choose to ask for a second, differently-scoped
-// search (typically a second time window, for "compare this month to last
-// month" style questions) instead of answering immediately. That second
-// hop is hard-capped at one — round 2 forces tool_choice to submit_answer,
-// so there's no way for this to loop. Simple questions still cost exactly
-// one Claude call, same as before this feature had a second hop at all.
-// Shares the same DAILY_AI_LIMIT as review generation (see events.js
-// QUOTA_EVENTS) — per-call cost is small enough that a second quota wasn't
-// worth the extra config surface.
+// Retrieval is keyword-first. Embedding runs only when keyword hits are
+// 0 or 1 (KEYWORD_SPARSE_MAX) — enough signal (>=2) skips the extra cost.
+// Claude is only called after retrieval found something. The one place any
+// model autonomy lives: after seeing round 1's matches, the model can ask
+// for a second, differently-scoped search (typically a second time window)
+// instead of answering immediately. That hop is hard-capped at one.
 router.get('/ask', async (req, res) => {
   const question = (req.query.q || '').trim();
   if (!question) return res.status(400).json({ error: '请输入问题' });
@@ -137,13 +162,40 @@ router.get('/ask', async (req, res) => {
     'SELECT id, class_name, good_points, improve_points, next_time_reminder, created_at FROM records WHERE user_id = ? ORDER BY created_at DESC',
     [req.userId]
   );
-  const round1Matches = searchRecordsByQuestion(rows, question, 3);
-  if (round1Matches.length === 0) {
-    return res.json({ answered: false, answer: '档案里还没有找到相关记录。', citedRecordIds: [], matchedRecords: [] });
+  const keywordRound = await retrieveAskRecords(rows, question, { mode: 'keyword' });
+  const sessionId = sessionIdFromReq(req);
+  const overQuota = (await countAiCallsToday(req.userId)) >= DAILY_AI_LIMIT;
+
+  let round1 = keywordRound;
+  if (keywordRound.keywordCount <= KEYWORD_SPARSE_MAX) {
+    if (overQuota) {
+      if (keywordRound.matches.length === 0) {
+        return res.json({
+          answered: false,
+          answer: '档案里还没有找到相关记录。',
+          citedRecordIds: [],
+          matchedRecords: [],
+          retrievalPath: 'none',
+        });
+      }
+      await logEvent(req.userId, 'ask_fail', withSession({ reason: 'quota_exceeded' }, sessionId));
+      return res.status(429).json({ error: '今天的AI调用次数已经用完了，明天再问吧' });
+    }
+    round1 = await retrieveAskRecords(rows, question);
   }
 
-  const sessionId = sessionIdFromReq(req);
-  if ((await countAiCallsToday(req.userId)) >= DAILY_AI_LIMIT) {
+  const round1Matches = round1.matches;
+  if (round1Matches.length === 0) {
+    return res.json({
+      answered: false,
+      answer: '档案里还没有找到相关记录。',
+      citedRecordIds: [],
+      matchedRecords: [],
+      retrievalPath: round1.retrievalPath,
+    });
+  }
+
+  if (overQuota) {
     await logEvent(req.userId, 'ask_fail', withSession({ reason: 'quota_exceeded' }, sessionId));
     return res.status(429).json({ error: '今天的AI调用次数已经用完了，明天再问吧' });
   }
@@ -163,35 +215,44 @@ router.get('/ask', async (req, res) => {
 
   const startedAt = Date.now();
   try {
-    const round1 = await callAskRound1WithRetry(question, round1Matches.map(withDateLabel), dateRangeLabel, todayLabel);
-    if (round1.error) {
-      const reason = round1.error.message === 'timeout' ? 'timeout' : 'network_error';
-      await fail(reason, { round: 1, attempt: round1.attempt, latencyMs: Date.now() - startedAt });
+    const round1Call = await callAskRound1WithRetry(question, round1Matches.map(withDateLabel), dateRangeLabel, todayLabel);
+    if (round1Call.error) {
+      const reason = round1Call.error.message === 'timeout' ? 'timeout' : 'network_error';
+      await fail(reason, { round: 1, attempt: round1Call.attempt, latencyMs: Date.now() - startedAt });
       return res.status(504).json({ error: reason === 'timeout' ? 'AI处理超时，请重新尝试' : 'AI服务连接失败，请重新尝试' });
     }
-    if (!round1.response.ok) {
-      await fail('api_error', { round: 1, status: round1.response.status, attempt: round1.attempt, latencyMs: Date.now() - startedAt });
+    if (!round1Call.response.ok) {
+      await fail('api_error', { round: 1, status: round1Call.response.status, attempt: round1Call.attempt, latencyMs: Date.now() - startedAt });
       return res.status(502).json({ error: 'AI服务调用失败，请重新尝试' });
     }
-    const data1 = await round1.response.json();
+    const data1 = await round1Call.response.json();
     const toolUse1 = findToolUse(data1);
     if (!toolUse1) {
-      await fail('no_tool_use', { round: 1, attempt: round1.attempt, latencyMs: Date.now() - startedAt });
+      await fail('no_tool_use', { round: 1, attempt: round1Call.attempt, latencyMs: Date.now() - startedAt });
       return res.status(502).json({ error: 'AI未返回有效内容' });
     }
 
     let finalData = data1;
     let allMatches = round1Matches;
     let rounds = 1;
+    let retrievalPath = round1.retrievalPath;
+    let keywordCount = round1.keywordCount;
+    let embeddingCount = round1.embeddingCount;
 
     if (toolUse1.name === 'search_records') {
       const { keywords, before, after } = toolUse1.input || {};
       const { afterTs, beforeTs } = clampDateRange(after, before, earliestTs, latestTs);
       const scoped = rows.filter((r) => r.created_at >= afterTs && r.created_at <= beforeTs);
-      const round2Matches = searchRecordsByQuestion(scoped, keywords || question, 3);
+      const round2Retrieve = await retrieveAskRecords(scoped, keywords || question);
+      const round2Matches = round2Retrieve.matches;
       allMatches = [...round1Matches, ...round2Matches.filter((r) => !round1Matches.some((m) => m.id === r.id))];
+      keywordCount += round2Retrieve.keywordCount;
+      embeddingCount += round2Retrieve.embeddingCount;
+      if (round2Retrieve.retrievalPath === 'embedding' || round2Retrieve.retrievalPath === 'hybrid') {
+        retrievalPath = retrievalPath === 'keyword' ? 'hybrid' : round2Retrieve.retrievalPath;
+      }
 
-      const round2 = await callAskRound2WithRetry(round1.messages, toolUse1, round2Matches.map(withDateLabel));
+      const round2 = await callAskRound2WithRetry(round1Call.messages, toolUse1, round2Matches.map(withDateLabel));
       rounds = 2;
       if (round2.error) {
         const reason = round2.error.message === 'timeout' ? 'timeout' : 'network_error';
@@ -217,6 +278,9 @@ router.get('/ask', async (req, res) => {
       latencyMs: Date.now() - startedAt,
       answered: answer.answered,
       matchCount: allMatches.length,
+      retrievalPath,
+      keywordCount,
+      embeddingCount,
       inputTokens: finalData.usage?.input_tokens,
       outputTokens: finalData.usage?.output_tokens,
     }, sessionId));
@@ -225,6 +289,7 @@ router.get('/ask', async (req, res) => {
     res.json({
       ...answer,
       rounds,
+      retrievalPath,
       matchedRecords: allMatches
         .filter((r) => citedIds.has(r.id))
         .map((r) => ({ id: r.id, className: r.class_name, createdAt: r.created_at })),

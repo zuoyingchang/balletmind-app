@@ -30,9 +30,11 @@ async function callAnthropicMessagesOnce(systemPrompt, tools, toolChoice, messag
     max_tokens: AI_MAX_OUTPUT_TOKENS,
     system: systemBlocks(systemPrompt, termHint),
     messages,
-    tools,
-    tool_choice: toolChoice,
   };
+  if (tools && tools.length) {
+    body.tools = tools;
+    body.tool_choice = toolChoice;
+  }
   // Sonnet 5 / Opus 5 / Fable 5 reject `temperature` (invalid_request_error).
   if (!modelRejectsTemperature(model)) body.temperature = AI_TEMPERATURE;
   return fetchWithTimeout('https://api.anthropic.com/v1/messages', {

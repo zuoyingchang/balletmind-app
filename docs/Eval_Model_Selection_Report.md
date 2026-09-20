@@ -6,7 +6,7 @@
 - **Layer 3：** 生产库 events 全量快照（含自测；样本仍小）  
 - **原始 JSON：** `server/eval/results/`（`claude-sonnet-4-6.json`、`claude-sonnet-5.json`、`claude-haiku-4-5-20251001.json`）
 
-**结论（2026-09-08 对照 + 回归后）：生产切到 `claude-sonnet-5`。**  
+> 本报告冻结于 2026-09-08，评的是抽取 Prompt 1.5。现网抽取已是 1.7，另有问问档案 Prompt 2.0。不要把文中「当时没做的功能」读成当前产品范围。  
 请求体对 Sonnet 5 **不传 temperature**（传了会整批 400）。同一套 35 条、Prompt 1.5：质量与 4.6 打平（35/35），更便宜、略快。
 
 **不换 Haiku：** 34/35，且本轮估算 $0.15 > Sonnet 5 的 $0.10，没有充分理由。
@@ -197,7 +197,7 @@ Haiku 单价更低，但本轮 **cache 未命中**，121k input 按全价算，3
 
 1. **生产默认 `claude-sonnet-5`**，请求不传 `temperature`。部署后看线上 latency / error / cost；Render 若写死了 `AI_MODEL=claude-sonnet-4-6` 需要改掉。  
 2. **不换 Haiku**（质量与费用都没有优势）。  
-3. **不要为简历换 Agent / Fine-tuning / RAG**；本任务是确定工作流上的抽取。  
+3. 本报告评的是**单次抽取**，不是问问档案。  
 4. 部署后才能读 `review_opened` 和带 `sessionId` 的漏斗。  
 5. Eval 顶格之后，优先加更难的线上 bad case。  
 6. 然后才是 3–6 人 User Test。
