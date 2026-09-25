@@ -200,7 +200,8 @@ router.get('/ask', async (req, res) => {
     return res.status(429).json({ error: '今天的AI调用次数已经用完了，明天再问吧' });
   }
   if (!process.env.ANTHROPIC_API_KEY) {
-    return res.status(500).json({ error: '服务器未配置 ANTHROPIC_API_KEY，请检查 .env 文件' });
+    console.error('[ALERT][config] ANTHROPIC_API_KEY is not set');
+    return res.status(500).json({ error: 'AI服务暂时不可用，请稍后再试' });
   }
 
   const earliestTs = rows.length ? rows[rows.length - 1].created_at : Date.now();
@@ -210,6 +211,8 @@ router.get('/ask', async (req, res) => {
   const withDateLabel = (r) => ({ ...r, dateLabel: dateLabel(r.created_at) });
 
   async function fail(reason, extra) {
+    console.error('[ask] fail', reason, JSON.stringify(extra || {}));
+    if (extra && (extra.status === 401 || extra.status === 402 || extra.status === 403)) console.error('[ALERT][billing-or-key] anthropic/ask HTTP', extra.status);
     await logEvent(req.userId, 'ask_fail', withSession({ reason, ...extra }, sessionId));
   }
 
@@ -296,7 +299,8 @@ router.get('/ask', async (req, res) => {
     });
   } catch (e) {
     await fail('exception', { latencyMs: Date.now() - startedAt });
-    res.status(500).json({ error: '服务器错误', detail: e.message });
+    console.error('[ask] exception', e);
+    res.status(500).json({ error: '服务器错误，请稍后重试' });
   }
 });
 

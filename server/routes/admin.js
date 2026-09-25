@@ -1,4 +1,5 @@
 const express = require('express');
+const db = require('../db');
 const { ADMIN_KEY } = require('../config');
 const { buildAdminStats, listAdminEvents } = require('../admin-stats');
 const { knownEventNames } = require('../analytics');
@@ -32,6 +33,16 @@ router.get('/events', requireAdminKey, async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: '事件查询失败', detail: e.message });
   }
+});
+
+// Feedback users chose to send. Shows only the contact they typed voluntarily, never their account email.
+router.get('/feedback', requireAdminKey, async (req, res) => {
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+  const rows = await db.all(
+    'SELECT id, user_id, message, contact, user_agent, created_at FROM feedback ORDER BY created_at DESC LIMIT ?',
+    [limit]
+  );
+  res.json({ feedback: rows });
 });
 
 module.exports = router;

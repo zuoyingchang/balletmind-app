@@ -74,6 +74,16 @@ const ready = client.batch(
       used_at INTEGER,
       created_at INTEGER NOT NULL
     )`,
+    // In-app feedback: free text the user chose to send, plus an optional contact
+    // they typed themselves (we never join their account email here).
+    `CREATE TABLE IF NOT EXISTS feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      message TEXT NOT NULL,
+      contact TEXT,
+      user_agent TEXT,
+      created_at INTEGER NOT NULL
+    )`,
     // Every user-scoped table is queried as "WHERE user_id = ?" on nearly
     // every request — not urgent at MVP scale (measured: a few ms either way
     // with 100 users / 2k records), but free to add now and matters once the

@@ -129,6 +129,8 @@
         <div class="stat"><strong id="w-savers">-</strong><span>近 7 天保存过的账号</span></div>
         <div class="stat"><strong id="w-active">-</strong><span>近 7 天有过操作</span></div>
         <div class="stat"><strong id="w-events">-</strong><span>近 7 天事件次数</span></div>
+        <div class="stat"><strong id="m-active">-</strong><span>近 30 天有过操作（月活）</span></div>
+        <div class="stat"><strong id="m-savers">-</strong><span>近 30 天保存过的账号</span></div>
       </div>
     </div>
 
@@ -179,6 +181,14 @@
       </table>
     </div>
   </details>
+
+    <div class="card">
+      <h3>用户反馈（App 里「我的 → 意见反馈」发来的）</h3>
+      <table>
+        <thead><tr><th>时间</th><th>用户</th><th>内容</th><th>联系方式（自愿填写）</th></tr></thead>
+        <tbody id="feedback-body"><tr><td colspan="4" class="muted">还没有反馈</td></tr></tbody>
+      </table>
+    </div>
 
   <details class="card" open id="raw-logs">
     <summary>查原始 log（不含转写 / 邮箱）</summary>
@@ -248,6 +258,8 @@ function render(data) {
   document.getElementById('w-records').textContent = t.recordsLast7Days;
   document.getElementById('w-savers').textContent = t.usersWhoSavedLast7Days;
   document.getElementById('w-active').textContent = t.activeUsersLast7Days;
+  document.getElementById('m-active').textContent = t.activeUsersLast30Days;
+  document.getElementById('m-savers').textContent = t.usersWhoSavedLast30Days;
   document.getElementById('w-events').textContent = t.eventsLast7Days;
 
   const f = data.funnel || { steps: [] };
@@ -356,6 +368,18 @@ function bindLogQuery(key) {
   };
 }
 
+async function loadFeedback(key) {
+  try {
+    const res = await fetch('/api/admin/feedback?limit=50', { headers: { 'X-Admin-Key': key } });
+    if (!res.ok) return;
+    const rows = (await res.json()).feedback || [];
+    if (!rows.length) return;
+    document.getElementById('feedback-body').innerHTML = rows.map((f) =>
+      `<tr><td>${fmtTime(f.created_at)}</td><td>${f.user_id ?? '-'}</td><td style="white-space:pre-wrap">${escapeHtml(f.message)}<div class="muted" style="font-size:11px">${escapeHtml(f.user_agent || '')}</div></td><td>${escapeHtml(f.contact || '')}</td></tr>`
+    ).join('');
+  } catch (e) { /* the rest of the dashboard still works */ }
+}
+
 async function unlock() {
   const key = document.getElementById('admin-key').value.trim();
   const errEl = document.getElementById('gate-err');
@@ -368,6 +392,7 @@ async function unlock() {
     document.getElementById('app').style.display = 'block';
     render(data);
     bindLogQuery(key);
+    loadFeedback(key);
   } catch (e) {
     errEl.textContent = e.message;
   }
@@ -382,6 +407,7 @@ async function unlock() {
     document.getElementById('app').style.display = 'block';
     render(data);
     bindLogQuery(saved);
+    loadFeedback(saved);
   } catch (e) {
     localStorage.removeItem('bm_admin_key');
   }

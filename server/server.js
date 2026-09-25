@@ -1,3 +1,5 @@
+process.on('unhandledRejection', (reason) => console.error('[unhandledRejection]', reason));
+process.on('uncaughtException', (err) => console.error('[uncaughtException]', err));
 const app = require('./app');
 const { PORT } = require('./config');
 const db = require('./db');
@@ -6,6 +8,12 @@ db.ready
   .then(() => {
     app.listen(PORT, () => {
       console.log(`BalletMind server running at http://localhost:${PORT}`);
+      const cfg = require('./config');
+      console.log(`[startup] node=${process.version} env=${process.env.NODE_ENV || 'dev'} model=${cfg.AI_MODEL} asr=${cfg.ASR_MODEL} dailyLimit=${cfg.DAILY_AI_LIMIT}`);
+      console.log(`[startup] anthropic=${!!process.env.ANTHROPIC_API_KEY} openai=${!!cfg.OPENAI_API_KEY} email=${!!cfg.RESEND_API_KEY} adminKey=${!!cfg.ADMIN_KEY} publicUrl=${!!cfg.APP_PUBLIC_URL}`);
+      if (!process.env.ANTHROPIC_API_KEY) console.error('[ALERT][config] ANTHROPIC_API_KEY is not set');
+      if (!cfg.RESEND_API_KEY) console.warn('[ALERT][config] RESEND_API_KEY is not set: password-reset emails cannot be sent');
+      if (/example\.com/.test(cfg.EMAIL_FROM)) console.warn('[ALERT][config] EMAIL_FROM still uses the example.com placeholder');
     });
   })
   .catch((err) => {

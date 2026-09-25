@@ -862,32 +862,44 @@
       </section>
 
       <section class="mt-7">
-        <h2 class="font-display text-[21px] font-semibold tracking-[-0.01em]">账号</h2>
+        <button type="button" onclick="showGlossary()" class="card-journal grain relative w-full overflow-hidden rounded-[24px] px-4 py-3.5 text-left">
+          <div class="pearl-sheen"></div>
+          <span class="relative z-10 block">
+            <span class="block text-[13px]">芭蕾术语</span>
+            <span class="mt-0.5 block text-[11px] text-[var(--ink-faint)]">中英法对照，搜档案时也能用</span>
+          </span>
+        </button>
+      </section>
+
+      <section class="mt-7">
+        <h2 class="font-display text-[21px] font-semibold tracking-[-0.01em]">帮助</h2>
         <div class="card-journal grain relative mt-3 overflow-hidden rounded-[24px] divide-y divide-[var(--border-soft)]">
           <div class="pearl-sheen"></div>
           <button onclick="showAbout()" class="relative z-10 w-full flex items-center gap-3 px-4 py-3.5 text-left">
-            <span class="w-10 h-10 rounded-[13px] chip flex items-center justify-center"><iconify-icon icon="solar:info-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></span>
             <span class="flex-1 text-[13px]">关于 BalletMind</span>
             <span class="text-[11px] text-[var(--ink-faint)]">v0.1</span>
-            <iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px] text-[var(--ink-faint)]"></iconify-icon>
           </button>
-          <button onclick="showGlossary()" class="relative z-10 w-full flex items-center gap-3 px-4 py-3.5 text-left">
-            <span class="w-10 h-10 rounded-[13px] chip flex items-center justify-center"><iconify-icon icon="solar:notebook-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></span>
-            <span class="flex-1 text-[13px]">芭蕾术语</span>
-            <span class="text-[11px] text-[var(--ink-faint)]">中英法</span>
-            <iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px] text-[var(--ink-faint)]"></iconify-icon>
-          </button>
-          <a href="/privacy.html" class="relative z-10 w-full flex items-center gap-3 px-4 py-3.5 text-left">
-            <span class="w-10 h-10 rounded-[13px] chip flex items-center justify-center"><iconify-icon icon="solar:shield-check-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></span>
-            <span class="flex-1 text-[13px]">隐私政策</span>
-            <iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px] text-[var(--ink-faint)]"></iconify-icon>
-          </a>
-          <button onclick="logout()" class="relative z-10 w-full flex items-center gap-3 px-4 py-3.5 text-left">
-            <span class="w-10 h-10 rounded-[13px] chip flex items-center justify-center"><iconify-icon icon="solar:logout-2-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></span>
-            <span class="flex-1 text-[13px] text-[var(--rose-deep)]">退出登录</span>
-            <iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px] text-[var(--ink-faint)]"></iconify-icon>
+          <button onclick="showFeedback()" class="relative z-10 w-full flex items-center gap-3 px-4 py-3.5 text-left">
+            <span class="flex-1 text-[13px]">意见反馈</span>
           </button>
         </div>
+      </section>
+
+      <section class="mt-7">
+        <h2 class="font-display text-[21px] font-semibold tracking-[-0.01em]">账号</h2>
+        <div class="card-journal grain relative mt-3 overflow-hidden rounded-[24px] divide-y divide-[var(--border-soft)]">
+          <div class="pearl-sheen"></div>
+          <a href="/privacy.html" class="relative z-10 w-full flex items-center gap-3 px-4 py-3.5 text-left">
+            <span class="flex-1 text-[13px]">隐私政策</span>
+          </a>
+          <button onclick="exportMyData()" class="relative z-10 w-full flex items-center gap-3 px-4 py-3.5 text-left">
+            <span class="flex-1 text-[13px]">导出我的数据</span>
+          </button>
+          <button onclick="logout()" class="relative z-10 w-full flex items-center gap-3 px-4 py-3.5 text-left">
+            <span class="flex-1 text-[13px] text-[var(--rose-deep)]">退出登录</span>
+          </button>
+        </div>
+        <button type="button" onclick="showDeleteAccount()" class="mt-3 w-full py-2 text-center text-[11px] text-[var(--ink-faint)]">注销并删除账号</button>
       </section>
 
       <section class="card-journal tinted-rose grain relative overflow-hidden mt-7 p-4" style="border-radius:20px 26px 18px 24px">
@@ -1076,6 +1088,29 @@
 
 </div>
 
+<div id="feedback-modal" class="hidden fixed inset-0 z-[60] items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideFeedback()">
+  <div class="relative w-full max-w-[340px] rounded-[26px] bg-[var(--paper)] p-6">
+    <button onclick="hideFeedback()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></button>
+    <h2 class="font-display text-[19px] font-semibold">意见反馈</h2>
+    <p class="mt-1 text-[12px] leading-5 text-[var(--ink-soft)]">遇到问题、想要的功能、哪里不顺手，都可以写在这里，我会看。</p>
+    <textarea id="feedback-text" maxlength="1000" rows="5" placeholder="想说点什么…" class="mt-3 w-full rounded-[16px] border border-[var(--border-soft)] bg-white/70 p-3 text-[13px] outline-none"></textarea>
+    <input id="feedback-contact" maxlength="100" placeholder="联系方式（选填，方便我回复你）" class="mt-2 w-full rounded-[14px] border border-[var(--border-soft)] bg-white/70 px-3 py-2.5 text-[13px] outline-none">
+    <p class="mt-2 text-[10.5px] leading-4 text-[var(--ink-faint)]">会同时发送你的设备/浏览器信息，方便排查问题；不会附带你的训练记录内容。</p>
+    <button id="feedback-send" onclick="submitFeedback()" class="mt-3 w-full rounded-[16px] bg-[var(--rose-deep)] py-3 text-[13px] text-white">发送</button>
+  </div>
+</div>
+
+<div id="delete-account-modal" class="hidden fixed inset-0 z-[60] items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideDeleteAccount()">
+  <div class="relative w-full max-w-[340px] rounded-[26px] bg-[var(--paper)] p-6" onclick="event.stopPropagation()">
+    <button type="button" onclick="hideDeleteAccount()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></button>
+    <h2 class="font-display pr-8 text-[21px] font-semibold">注销并删除账号</h2>
+    <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]">删除后无法恢复课记、追踪和问答记录。建议先「导出我的数据」。请输入密码确认。</p>
+    <input id="delete-account-password" type="password" autocomplete="current-password" placeholder="当前密码" class="mt-3 w-full rounded-[14px] border border-[var(--border-soft)] bg-white/70 px-3 py-2.5 text-[13px] outline-none">
+    <p id="delete-account-err" class="hidden mt-2 text-[12px] text-[var(--rose-deep)]"></p>
+    <button id="delete-account-confirm" type="button" onclick="submitDeleteAccount()" class="mt-4 w-full rounded-[16px] bg-[var(--rose-deep)] py-3 text-[13px] text-white">确认删除</button>
+  </div>
+</div>
+
 <div id="about-modal" class="hidden fixed inset-0 z-[60] items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideAbout()">
   <div class="relative w-full max-w-[340px] rounded-[26px] bg-[var(--paper)] p-6">
     <button onclick="hideAbout()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></button>
@@ -1118,7 +1153,7 @@
 const API = ''; // same-origin; server serves this file too
 
 function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 2200); }
+function toast(msg, ms = 2200) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), ms); }
 function showAbout() { const m = document.getElementById('about-modal'); m.classList.remove('hidden'); m.classList.add('flex'); }
 function hideAbout() { const m = document.getElementById('about-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
 function showGlossary() {
@@ -1238,6 +1273,8 @@ function clearAuth() { localStorage.removeItem('bm_token'); localStorage.removeI
 async function authFetch(url, opts = {}) {
   opts.headers = Object.assign({}, opts.headers, { Authorization: 'Bearer ' + getToken() });
   const res = await fetch(url, opts);
+  const renewed = res.headers.get('X-New-Token');
+  if (renewed) { try { localStorage.setItem('bm_token', renewed); } catch (e) {} }
   if (res.status === 401) { clearAuth(); show('screen-auth'); throw new Error('登录已过期，请重新登录'); }
   return res;
 }
@@ -1372,6 +1409,81 @@ async function submitAuth() {
 }
 function logout() { clearAuth(); setAuthMode('login'); show('screen-auth'); }
 
+function showFeedback() { const m = document.getElementById('feedback-modal'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => document.getElementById('feedback-text').focus(), 50); }
+function hideFeedback() { const m = document.getElementById('feedback-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+async function submitFeedback() {
+  const message = document.getElementById('feedback-text').value.trim();
+  const contact = document.getElementById('feedback-contact').value.trim();
+  if (!message) { toast('先写点内容再发送吧'); return; }
+  const btn = document.getElementById('feedback-send');
+  btn.disabled = true;
+  try {
+    const res = await authFetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, contact }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || '发送失败，请稍后再试');
+    document.getElementById('feedback-text').value = '';
+    hideFeedback();
+    toast('收到了，谢谢你！');
+  } catch (e) { toast(e.message || '发送失败，请稍后再试'); }
+  finally { btn.disabled = false; }
+}
+
+function showDeleteAccount() {
+  const err = document.getElementById('delete-account-err');
+  const pw = document.getElementById('delete-account-password');
+  err.classList.add('hidden');
+  err.textContent = '';
+  pw.value = '';
+  document.getElementById('delete-account-modal').classList.remove('hidden');
+  document.getElementById('delete-account-modal').classList.add('flex');
+}
+function hideDeleteAccount() {
+  document.getElementById('delete-account-modal').classList.add('hidden');
+  document.getElementById('delete-account-modal').classList.remove('flex');
+}
+async function submitDeleteAccount() {
+  const err = document.getElementById('delete-account-err');
+  const pw = document.getElementById('delete-account-password');
+  const btn = document.getElementById('delete-account-confirm');
+  const password = (pw.value || '').trim();
+  err.classList.add('hidden');
+  if (!password) { err.textContent = '请输入密码'; err.classList.remove('hidden'); return; }
+  btn.disabled = true;
+  try {
+    const res = await authFetch(`${API}/api/auth/account`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || '注销失败');
+    hideDeleteAccount();
+    logout();
+    toast('账号已删除');
+  } catch (e) {
+    err.textContent = e.message || '注销失败';
+    err.classList.remove('hidden');
+  } finally { btn.disabled = false; }
+}
+
+async function exportMyData() {
+  try {
+    const res = await authFetch('/api/auth/export');
+    if (!res.ok) throw new Error('导出失败');
+    const blob = await res.blob();
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'balletmind-export.json';
+    link.click();
+    URL.revokeObjectURL(link.href);
+    toast('已导出');
+  } catch (e) { toast(e.message || '导出失败'); }
+}
+
 async function checkAuthAndInit() {
   await loadNotices();
   if (!getToken()) { show('screen-auth'); return; }
@@ -1395,6 +1507,7 @@ function resetRecordScreen() {
   document.getElementById('rec-btn').disabled = false;
   document.getElementById('rec-btn').classList.remove('opacity-40', 'hidden');
   document.getElementById('rec-state').textContent = recorderSupported ? '轻触开始' : '此浏览器不能录音，请在下方手动输入';
+  if (inAppBrowser) document.getElementById('rec-live-text').textContent = IN_APP_MIC_TIP;
   if (!recorderSupported) document.getElementById('rec-btn').classList.add('hidden');
   lastDraft = null;
   const prompts = document.querySelector('#screen-record .rec-prompts');
@@ -2283,6 +2396,9 @@ let mediaRecorder = null;
 let recordedChunks = [];
 let timerInterval = null;
 let currentSegSeconds = 0;
+// Xiaohongshu / WeChat in-app browsers often block the microphone; nudge people to a real browser.
+const inAppBrowser = /MicroMessenger|xhsdiscover|xiaohongshu|\bdiscover\/\d/i.test(navigator.userAgent);
+const IN_APP_MIC_TIP = '在小红书/微信里录音可能被限制，点右上角「···」选「在浏览器打开」会更稳';
 let recorderSupported = typeof MediaRecorder !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
 
 let aiUnavailable = false;
@@ -2342,7 +2458,8 @@ async function startRecording() {
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch (e) {
     logEvent('asr_fail', { error: 'not-allowed' });
-    toast('无法使用麦克风，请允许权限或改用手动输入');
+    if (inAppBrowser) toast(IN_APP_MIC_TIP + '，或改用手动输入', 5000);
+    else toast('无法使用麦克风，请允许权限或改用手动输入');
     return;
   }
   const mime = pickRecorderMime();

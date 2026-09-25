@@ -48,13 +48,19 @@ async function callAnthropicMessagesOnce(systemPrompt, tools, toolChoice, messag
   }, AI_TIMEOUT_MS);
 }
 
-// One retry on timeout, network error, or 5xx. 4xx is not retried.
+// One retry on timeout, network error, 5xx, or 429 (rate limited). Other 4xx are not retried.
 async function callAnthropicMessagesWithRetry(systemPrompt, tools, toolChoice, messages, termHint) {
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const response = await callAnthropicMessagesOnce(systemPrompt, tools, toolChoice, messages, termHint);
-      if (response.ok || response.status < 500) return { response, attempt };
+      const retryable = response.status >= 500 || response.status === 429;
+      if (response.ok || !retryable) return { response, attempt };
       if (attempt === 2) return { response, attempt };
+      const wait = Number(response.headers.get('retry-after')) * 1000;
+      if (wait > 0) {
+        await new Promise((r) => setTimeout(r, Math.min(wait, 3000)));
+        continue;
+      }
     } catch (e) {
       if (attempt === 2) {
         return { error: isAbortError(e) ? new Error('timeout') : e, attempt };

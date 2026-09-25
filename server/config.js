@@ -6,7 +6,7 @@ const ADMIN_KEY = process.env.ADMIN_KEY; // optional — gates the /stats.html m
 
 // Guards against a runaway retry loop or a single oversized request burning
 // through the Anthropic budget — not a business feature, just a safety cap.
-const DAILY_AI_LIMIT = Number(process.env.DAILY_AI_LIMIT) || 30; // per user, per calendar day
+const DAILY_AI_LIMIT = Number(process.env.DAILY_AI_LIMIT) || 20; // per user, per calendar day
 const MAX_TRANSCRIPT_LENGTH = Number(process.env.MAX_TRANSCRIPT_LENGTH) || 4000; // characters
 
 // Model is env-configurable so swapping tiers (e.g. to A/B a cheaper/faster

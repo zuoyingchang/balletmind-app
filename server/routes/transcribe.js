@@ -1,6 +1,7 @@
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
 const { logEvent, countAiCallsToday } = require('../events');
+const { logUpstreamFailure, logQuota } = require('../lib/log');
 const {
   DAILY_AI_LIMIT, OPENAI_API_KEY, ASR_MODEL, ASR_TIMEOUT_MS, MAX_AUDIO_BYTES,
 } = require('../config');
@@ -26,7 +27,8 @@ router.get('/status', requireAuth, (req, res) => {
 
 router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), async (req, res) => {
   if (!OPENAI_API_KEY) {
-    return res.status(503).json({ error: '服务器未配置语音识别（OPENAI_API_KEY），请手动输入复盘内容' });
+    console.error('[ALERT][config] OPENAI_API_KEY is not set');
+    return res.status(503).json({ error: '语音识别暂时不可用，请手动输入复盘内容' });
   }
   const audio = req.body;
   if (!Buffer.isBuffer(audio) || audio.length === 0) {
@@ -36,6 +38,7 @@ router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), 
     return res.status(400).json({ error: '这段录音太长了，请录短一点再试' });
   }
   if ((await countAiCallsToday(req.userId)) >= DAILY_AI_LIMIT) {
+    logQuota('transcribe blocked', req.userId);
     await logEvent(req.userId, 'asr_fail', withSession({ reason: 'quota_exceeded', model: ASR_MODEL }, sessionIdFromReq(req)));
     return res.status(429).json({ error: '今天的AI次数已经用完了，可以先手动记录内容' });
   }
@@ -51,16 +54,29 @@ router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), 
   form.append('response_format', 'json');
 
   try {
-    const response = await fetchWithTimeout('https://api.openai.com/v1/audio/transcriptions', {
+    const callWhisper = () => fetchWithTimeout('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
       body: form,
     }, ASR_TIMEOUT_MS);
+    let response;
+    try {
+      response = await callWhisper();
+      if (response.status >= 500 || response.status === 429) {
+        await new Promise((r) => setTimeout(r, 500));
+        response = await callWhisper();
+      }
+    } catch (firstErr) {
+      if (isAbortError(firstErr)) throw firstErr; // a timeout already cost ASR_TIMEOUT_MS; do not double the wait
+      await new Promise((r) => setTimeout(r, 500));
+      response = await callWhisper();
+    }
     const latencyMs = Date.now() - startedAt;
     if (!response.ok) {
       const detail = await response.text();
+      logUpstreamFailure('openai/whisper', response.status, detail);
       await logEvent(req.userId, 'asr_fail', withSession({ reason: 'api_error', status: response.status, latencyMs, model: ASR_MODEL }, sessionIdFromReq(req)));
-      return res.status(502).json({ error: '语音识别失败，请重试或改用手动输入', detail });
+      return res.status(502).json({ error: '语音识别失败，请重试或改用手动输入' });
     }
     const data = await response.json();
     const text = (data.text || '').trim();
@@ -73,6 +89,7 @@ router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), 
     res.json({ text, model: ASR_MODEL });
   } catch (e) {
     const timedOut = isAbortError(e);
+    console.error(`[whisper] ${timedOut ? 'timeout' : 'exception'}`, timedOut ? '' : e);
     await logEvent(req.userId, 'asr_fail', withSession({
       reason: timedOut ? 'timeout' : 'exception',
       error: timedOut ? 'timeout' : 'exception',

@@ -2,6 +2,7 @@ process.env.JWT_SECRET = 'test-secret-do-not-use-in-prod';
 process.env.TURSO_DATABASE_URL = 'file::memory:';
 process.env.ADMIN_KEY = 'test-admin-key';
 process.env.DAILY_AI_LIMIT = '5';
+process.env.RATE_LIMIT_DISABLED = '1'; // this suite registers many users from one IP; limiter has its own test file
 process.env.AI_TIMEOUT_MS = '200'; // short, so the timeout test doesn't take 25s
 process.env.ANTHROPIC_API_KEY = 'test-key-unused-fetch-is-mocked'; // real calls are always mocked in this file
 process.env.OPENAI_API_KEY = 'test-openai-key';
@@ -1312,4 +1313,109 @@ test('/api/progress/ask skips embedding when keyword already returned 2+ records
     }
   );
   assert.equal(embedCalls, 0);
+});
+
+test('/api/transcribe retries Whisper once on a 5xx and succeeds', async () => {
+  const { body: { token } } = await registerUser('asr-retry@example.com');
+  let calls = 0;
+  await withMockOpenAIFetch(
+    async () => {
+      calls += 1;
+      if (calls === 1) return { ok: false, status: 503, text: async () => 'upstream busy' };
+      return { ok: true, status: 200, json: async () => ({ text: '重试之后成功了' }) };
+    },
+    async () => {
+      const res = await fetch(`${base}/api/transcribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'audio/webm', Authorization: `Bearer ${token}` },
+        body: Buffer.from('fake-audio-bytes-that-are-long-enough'),
+      });
+      assert.equal(res.status, 200);
+      assert.match((await res.json()).text, /重试/);
+    }
+  );
+  assert.equal(calls, 2);
+});
+
+test('/api/transcribe does not retry a 4xx from Whisper (e.g. bad audio / no credit)', async () => {
+  const { body: { token } } = await registerUser('asr-noretry@example.com');
+  let calls = 0;
+  await withMockOpenAIFetch(
+    async () => { calls += 1; return { ok: false, status: 400, text: async () => 'bad audio' }; },
+    async () => {
+      const res = await fetch(`${base}/api/transcribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'audio/webm', Authorization: `Bearer ${token}` },
+        body: Buffer.from('fake-audio-bytes-that-are-long-enough'),
+      });
+      assert.equal(res.status, 502);
+    }
+  );
+  assert.equal(calls, 1);
+});
+
+test('Anthropic 429 is retried once, honouring the retry-after header', async () => {
+  const { callAnthropicWithRetry } = require('../ai/anthropic');
+  let calls = 0;
+  const realFetch = global.fetch;
+  global.fetch = async (url) => {
+    if (!String(url).includes('api.anthropic.com')) return realFetch(url);
+    calls += 1;
+    if (calls === 1) return { ok: false, status: 429, headers: { get: () => '0' } };
+    return { ok: true, status: 200, headers: { get: () => null } };
+  };
+  try {
+    const { response, attempt } = await callAnthropicWithRetry('', 'transcript');
+    assert.equal(response.status, 200);
+    assert.equal(attempt, 2);
+  } finally {
+    global.fetch = realFetch;
+  }
+});
+
+test('upstream error text (e.g. "credit balance too low") is logged with an ALERT tag but never sent to the user', async () => {
+  const { body: { token } } = await registerUser('no_leak@example.com');
+  const logged = [];
+  const realErr = console.error;
+  console.error = (...args) => { logged.push(args.join(' ')); };
+  try {
+    await withMockAnthropicFetch(
+      async () => ({ ok: false, status: 400, text: async () => 'Your credit balance is too low to access the Anthropic API' }),
+      async () => {
+        const res = await fetch(`${base}/api/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ transcript: '今天练了基本功' }),
+        });
+        assert.equal(res.status, 502);
+        const raw = await res.text();
+        assert.ok(!/credit|balance|anthropic/i.test(raw), `response leaked upstream text: ${raw}`);
+      }
+    );
+  } finally {
+    console.error = realErr;
+  }
+  assert.ok(logged.some((l) => l.includes('[ALERT][billing-or-key]') && /credit balance/.test(l)), 'expected an ALERT log line');
+});
+
+test('Whisper failure body is not sent to the user', async () => {
+  const { body: { token } } = await registerUser('asr_no_leak@example.com');
+  const realErr = console.error;
+  console.error = () => {};
+  try {
+    await withMockOpenAIFetch(
+      async () => ({ ok: false, status: 429, text: async () => 'You exceeded your current quota, please check your plan and billing details' }),
+      async () => {
+        const res = await fetch(`${base}/api/transcribe`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'audio/webm', Authorization: `Bearer ${token}` },
+          body: Buffer.from('fake-audio-bytes-that-are-long-enough'),
+        });
+        assert.equal(res.status, 502);
+        assert.ok(!/quota|billing/i.test(await res.text()));
+      }
+    );
+  } finally {
+    console.error = realErr;
+  }
 });

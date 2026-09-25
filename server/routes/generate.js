@@ -1,6 +1,7 @@
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
 const { logEvent, countAiCallsToday } = require('../events');
+const { logUpstreamFailure, logQuota } = require('../lib/log');
 const { DAILY_AI_LIMIT, MAX_TRANSCRIPT_LENGTH, AI_MODEL } = require('../config');
 const { sessionIdFromReq, withSession } = require('../lib/text');
 const { correctionsAsPromptHint } = require('../terms');
@@ -33,11 +34,13 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(400).json({ error: `本次内容过长（超过${MAX_TRANSCRIPT_LENGTH}字），请分段录制` });
   }
   if ((await countAiCallsToday(req.userId)) >= DAILY_AI_LIMIT) {
+    logQuota('generate blocked', req.userId);
     await logEvent(req.userId, 'ai_process_fail', failMeta(req, { reason: 'quota_exceeded', chars: transcript.length }));
     return res.status(429).json({ error: '今天的AI整理次数已经用完了，可以先手动记录内容，明天再生成复盘' });
   }
   if (!process.env.ANTHROPIC_API_KEY) {
-    return res.status(500).json({ error: '服务器未配置 ANTHROPIC_API_KEY，请检查 .env 文件' });
+    console.error('[ALERT][config] ANTHROPIC_API_KEY is not set');
+    return res.status(500).json({ error: 'AI服务暂时不可用，可以先手动记录内容' });
   }
 
   const startedAt = Date.now();
@@ -48,6 +51,7 @@ router.post('/', requireAuth, async (req, res) => {
 
     if (error) {
       const reason = error.message === 'timeout' ? 'timeout' : 'network_error';
+      console.error(`[anthropic] generate ${reason} after ${attempt} attempt(s), ${latencyMs}ms`, error.message);
       await logEvent(req.userId, 'ai_process_fail', failMeta(req, { reason, attempt, latencyMs, chars: transcript.length }));
       const msg = reason === 'timeout' ? 'AI处理超时，请重新尝试' : 'AI服务连接失败，请重新尝试';
       return res.status(504).json({ error: msg });
@@ -55,8 +59,9 @@ router.post('/', requireAuth, async (req, res) => {
 
     if (!response.ok) {
       const errText = await response.text();
+      logUpstreamFailure('anthropic/generate', response.status, errText);
       await logEvent(req.userId, 'ai_process_fail', failMeta(req, { reason: 'api_error', status: response.status, attempt, latencyMs, chars: transcript.length }));
-      return res.status(502).json({ error: 'AI服务调用失败，请Retry', detail: errText });
+      return res.status(502).json({ error: 'AI服务暂时不可用，请稍后重试，或先手动记录' });
     }
 
     const data = await response.json();
@@ -88,7 +93,8 @@ router.post('/', requireAuth, async (req, res) => {
       latencyMs: Date.now() - startedAt,
       chars: transcript.length,
     }));
-    res.status(500).json({ error: '服务器错误', detail: e.message });
+    console.error('[generate] exception', e);
+    res.status(500).json({ error: '服务器错误，请稍后重试' });
   }
 });
 

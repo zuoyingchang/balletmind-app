@@ -4,6 +4,7 @@ const { ANTHROPIC_INPUT_USD_PER_MTOK, ANTHROPIC_OUTPUT_USD_PER_MTOK, ANALYTICS_I
 const { canonicalSessionFunnel, productKpis, splitInternal } = require('./analytics');
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
 const VOLUME_EVENTS = [
   { key: 'voiceStart', event: 'record_voice_start', label: '开始录音（次数，不是 conversion）' },
@@ -144,6 +145,7 @@ function editedFieldCounts(editEvents) {
 }
 
 async function loadTotals(weekAgo) {
+  const monthAgo = Date.now() - MONTH_MS;
   const [
     usersCount,
     recordsCount,
@@ -153,6 +155,8 @@ async function loadTotals(weekAgo) {
     weekRecordUsersRow,
     weekEventUsersRow,
     weekEventsRow,
+    monthEventUsersRow,
+    monthRecordUsersRow,
   ] = await Promise.all([
     db.get('SELECT COUNT(*) AS c FROM users'),
     db.get('SELECT COUNT(*) AS c FROM records'),
@@ -162,6 +166,8 @@ async function loadTotals(weekAgo) {
     db.get('SELECT COUNT(DISTINCT user_id) AS c FROM records WHERE created_at >= ?', [weekAgo]),
     db.get('SELECT COUNT(DISTINCT user_id) AS c FROM events WHERE created_at >= ?', [weekAgo]),
     db.get('SELECT COUNT(*) AS c FROM events WHERE created_at >= ?', [weekAgo]),
+    db.get('SELECT COUNT(DISTINCT user_id) AS c FROM events WHERE created_at >= ?', [monthAgo]),
+    db.get('SELECT COUNT(DISTINCT user_id) AS c FROM records WHERE created_at >= ?', [monthAgo]),
   ]);
 
   const registeredUsers = num(usersCount.c);
@@ -183,6 +189,8 @@ async function loadTotals(weekAgo) {
       activeUsersLast7Days: num(weekEventUsersRow.c),
       usersWhoSavedLast7Days: num(weekRecordUsersRow.c),
       eventsLast7Days: num(weekEventsRow.c),
+      activeUsersLast30Days: num(monthEventUsersRow.c),
+      usersWhoSavedLast30Days: num(monthRecordUsersRow.c),
     },
   };
 }
