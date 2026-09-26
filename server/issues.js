@@ -61,6 +61,40 @@ async function processRecordForIssues(userId, recordId, improvePointsText) {
   }
 }
 
+// Called when a record is deleted. Takes that record out of every issue it was
+// counted in: drops its occurrence rows, recomputes each issue's count and
+// first/last record, and removes an issue that has no evidence left. The user's
+// own status choice on a surviving issue is untouched.
+async function removeRecordFromIssues(userId, recordId) {
+  const affected = await db.all(
+    `SELECT DISTINCT io.issue_id AS id
+     FROM issue_occurrences io JOIN issues i ON i.id = io.issue_id
+     WHERE io.record_id = ? AND i.user_id = ?`,
+    [recordId, userId]
+  );
+  await db.run(
+    'DELETE FROM issue_occurrences WHERE record_id = ? AND issue_id IN (SELECT id FROM issues WHERE user_id = ?)',
+    [recordId, userId]
+  );
+  for (const { id } of affected) {
+    const rest = await db.all(
+      `SELECT io.record_id FROM issue_occurrences io
+       JOIN records r ON r.id = io.record_id
+       WHERE io.issue_id = ? AND io.record_id != ?
+       ORDER BY r.created_at ASC, io.id ASC`,
+      [id, recordId]
+    );
+    if (rest.length === 0) {
+      await db.run('DELETE FROM issues WHERE id = ?', [id]);
+      continue;
+    }
+    await db.run(
+      'UPDATE issues SET occurrence_count = ?, first_record_id = ?, last_record_id = ?, updated_at = ? WHERE id = ?',
+      [rest.length, rest[0].record_id, rest[rest.length - 1].record_id, Date.now(), id]
+    );
+  }
+}
+
 // Issues + the record dates/ids they trace back to (evidence linking).
 async function listIssuesWithOccurrences(userId) {
   const issues = await db.all(
@@ -86,4 +120,4 @@ async function listIssuesWithOccurrences(userId) {
   }));
 }
 
-module.exports = { processRecordForIssues, listIssuesWithOccurrences, isSimilar };
+module.exports = { processRecordForIssues, removeRecordFromIssues, listIssuesWithOccurrences, isSimilar };

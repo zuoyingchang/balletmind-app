@@ -3,7 +3,7 @@ const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { logEvent } = require('../events');
 const { sessionIdFromReq, withSession } = require('../lib/text');
-const { processRecordForIssues } = require('../issues');
+const { processRecordForIssues, removeRecordFromIssues } = require('../issues');
 const { checkMilestone } = require('../milestones');
 
 const router = express.Router();
@@ -78,7 +78,11 @@ router.get('/:id', async (req, res) => {
 });
 
 router.delete('/:id', async (req, res) => {
-  await db.run('DELETE FROM records WHERE id = ? AND user_id = ?', [req.params.id, req.userId]);
+  const mine = await db.get('SELECT id FROM records WHERE id = ? AND user_id = ?', [req.params.id, req.userId]);
+  if (mine) {
+    await removeRecordFromIssues(req.userId, mine.id);
+    await db.run('DELETE FROM records WHERE id = ? AND user_id = ?', [mine.id, req.userId]);
+  }
   res.json({ ok: true });
 });
 

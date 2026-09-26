@@ -1419,3 +1419,49 @@ test('Whisper failure body is not sent to the user', async () => {
     console.error = realErr;
   }
 });
+
+test('deleting a record takes it out of the recurring-issue counts (and removes an issue that had no other evidence)', async () => {
+  const { body: { token, user } } = await registerUser('issue_delete_record@example.com');
+  const r1 = await saveRecord(token, { className: '基训1', improve_points: '重心不稳' });
+  const r2 = await saveRecord(token, { className: '基训2', improve_points: '转圈的时候重心不稳，需要多加练习' });
+  await saveRecord(token, { className: '基训3', improve_points: '后腿高度不够' });
+  const auth = { Authorization: `Bearer ${token}` };
+  const listIssues = async () => (await fetch(`${base}/api/issues`, { headers: auth })).json();
+
+  let issues = await listIssues();
+  const balance = issues.find((i) => i.text.includes('重心'));
+  assert.equal(balance.occurrence_count, 2);
+  assert.equal(issues.length, 2);
+
+  // delete the FIRST record: the issue survives with one occurrence, pointing only at the remaining record
+  const del1 = await fetch(`${base}/api/records/${r1.id}`, { method: 'DELETE', headers: auth });
+  assert.equal(del1.status, 200);
+  issues = await listIssues();
+  const after1 = issues.find((i) => i.text.includes('重心'));
+  assert.equal(after1.occurrence_count, 1);
+  assert.equal(after1.occurrences.length, 1);
+  assert.equal(after1.occurrences[0].recordId, r2.id);
+  assert.equal(after1.first_record_id, r2.id);
+  assert.equal(after1.last_record_id, r2.id);
+
+  // delete the LAST record backing that issue: with no evidence left, the issue goes away entirely
+  await fetch(`${base}/api/records/${r2.id}`, { method: 'DELETE', headers: auth });
+  issues = await listIssues();
+  assert.equal(issues.length, 1);
+  assert.match(issues[0].text, /后腿/);
+
+  const leftovers = await db.get(
+    'SELECT COUNT(*) AS c FROM issue_occurrences WHERE record_id IN (?, ?)', [r1.id, r2.id]
+  );
+  assert.equal(leftovers.c, 0, 'no occurrence rows may point at deleted records');
+});
+
+test("deleting someone else's record does not touch my issues", async () => {
+  const a = await registerUser('issue_del_a@example.com');
+  const b = await registerUser('issue_del_b@example.com');
+  const recA = await saveRecord(a.body.token, { className: '基训', improve_points: '重心不稳' });
+  await fetch(`${base}/api/records/${recA.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${b.body.token}` } });
+  const issues = await (await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${a.body.token}` } })).json();
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].occurrence_count, 1);
+});
