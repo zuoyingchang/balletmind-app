@@ -24,6 +24,11 @@ function userPublic(user, email, displayName) {
   };
 }
 
+function canExposeResetUrl() {
+  const env = process.env.NODE_ENV || '';
+  return process.env.EXPOSE_RESET_URL === '1' || !!process.env.NODE_TEST_CONTEXT || env === 'development' || env === 'test';
+}
+
 function publicBase(req) {
   if (APP_PUBLIC_URL) return APP_PUBLIC_URL;
   const host = req.get('x-forwarded-host') || req.get('host');
@@ -97,6 +102,14 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
   if (!email || !String(email).trim()) return res.status(400).json({ error: '请填写邮箱' });
   if (!isValidEmail(email)) return res.status(400).json({ error: '邮箱格式不对' });
 
+  // Without an email provider (and outside local dev / tests) we cannot deliver a reset link.
+  // Say so plainly instead of claiming "we sent it". Checked before the user lookup so the
+  // answer is identical for registered and unregistered emails.
+  if (!RESEND_API_KEY && !canExposeResetUrl()) {
+    console.error('[ALERT][email] forgot-password requested but RESEND_API_KEY is not set');
+    return res.status(503).json({ error: '重置邮件功能暂时还没开通，请稍后再试' });
+  }
+
   const user = await db.get('SELECT id, email FROM users WHERE email = ?', [normalizeEmail(email)]);
   if (!user) return res.json(generic);
 
@@ -120,8 +133,7 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
   // Never return the reset URL unless we are clearly in tests or local
   // development. Unset NODE_ENV on Render used to count as "not production"
   // and leaked the link whenever Resend was missing.
-  const env = process.env.NODE_ENV || '';
-  if (process.env.EXPOSE_RESET_URL === '1' || process.env.NODE_TEST_CONTEXT || env === 'development' || env === 'test') {
+  if (canExposeResetUrl()) {
     return res.json({ ...generic, resetUrl });
   }
   res.json(generic);

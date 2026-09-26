@@ -172,3 +172,25 @@ test('backup then restore into an empty database brings every row back, and refu
   const back = await db.get('SELECT good_points FROM records WHERE user_id = ?', [user.id]);
   assert.equal(back.good_points, 'keep me');
 });
+
+test('forgot-password says plainly that email is unavailable (instead of pretending it was sent) when no provider is configured', async () => {
+  await register('noemail@example.com');
+  const savedCtx = process.env.NODE_TEST_CONTEXT;
+  const savedEnv = process.env.NODE_ENV;
+  const realErr = console.error;
+  delete process.env.NODE_TEST_CONTEXT;
+  process.env.NODE_ENV = 'production';
+  console.error = () => {};
+  try {
+    for (const email of ['noemail@example.com', 'nobody-here@example.com']) {
+      const res = await post('/api/auth/forgot-password', { email });
+      assert.equal(res.status, 503);
+      const body = await res.json();
+      assert.equal(body.resetUrl, undefined);
+    }
+  } finally {
+    process.env.NODE_TEST_CONTEXT = savedCtx;
+    if (savedEnv === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = savedEnv;
+    console.error = realErr;
+  }
+});
