@@ -401,6 +401,7 @@
         <img src="/img/pack-shoes-pink.png" alt="" class="mx-auto mt-3 w-[92px] h-[110px] object-contain tint-rose">
         <h1 class="font-display mt-1 text-[32px] font-semibold tracking-[-0.02em]">BalletMind</h1>
         <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="auth-subtitle">每次下课说几句，整理成你的芭蕾成长笔记</p>
+        <p id="auth-in-app-tip" class="hidden mt-3 rounded-[14px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]">请用 Safari 打开；Chrome 或其他浏览器也可以。小红书、微信里录音经常被拦住。</p>
           </div>
 
       <div class="card-journal grain relative z-10 mt-8 overflow-hidden rounded-[24px] px-4 py-4 space-y-3">
@@ -473,6 +474,7 @@
         </button>
       </section>
 
+      <p id="home-in-app-tip" class="hidden mt-3 rounded-[14px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]">请用 Safari 打开；Chrome 或其他浏览器也可以。小红书、微信里录音经常被拦住。</p>
       <p id="home-first-hint" class="hidden mt-2.5 text-[11.5px] leading-5 text-[var(--ink-faint)]">第一次就说几句：今天练了什么、老师提了什么。不是打卡，是留给以后的自己。</p>
 
       <section class="mt-6" id="home-archive-block">
@@ -545,7 +547,8 @@
       <div><p class="label-editorial text-[13px] text-[var(--rose-deep)]">训练记录</p><h1 class="mt-0.5 text-[20px] font-semibold">说说今天的训练</h1></div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-8">
-      <p class="text-[12.5px] leading-6 text-[var(--ink-soft)]">点中间按钮开始说，最多 3 段、每段 60 秒。停了会转成文字，不用组织得很完美。</p>
+        <p class="hidden relative z-10 mb-3 rounded-[14px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]" id="in-app-browser-tip">请用 Safari 打开；Chrome 或其他浏览器也可以。小红书、微信里录音经常被拦住，点右上角「···」选「在浏览器打开」。</p>
+        <p class="text-[12.5px] leading-6 text-[var(--ink-soft)]">点中间按钮开始说，最多 3 段、每段 60 秒。停了会转成文字，不用组织得很完美。</p>
 
       <section class="card-journal tinted-rose grain relative mt-5 overflow-hidden rounded-[26px] px-5 pt-6 pb-7 text-center">
         <div class="pearl-sheen"></div>
@@ -862,22 +865,16 @@
       </section>
 
       <section class="mt-7">
-        <button type="button" onclick="showGlossary()" class="card-journal grain relative w-full overflow-hidden rounded-[24px] px-4 py-3.5 text-left">
-          <div class="pearl-sheen"></div>
-          <span class="relative z-10 block">
-            <span class="block text-[13px]">芭蕾术语</span>
-            <span class="mt-0.5 block text-[11px] text-[var(--ink-faint)]">中英法对照，搜档案时也能用</span>
-          </span>
-        </button>
-      </section>
-
-      <section class="mt-7">
         <h2 class="font-display text-[21px] font-semibold tracking-[-0.01em]">帮助</h2>
         <div class="card-journal grain relative mt-3 overflow-hidden rounded-[24px] divide-y divide-[var(--border-soft)]">
           <div class="pearl-sheen"></div>
           <button onclick="showAbout()" class="relative z-10 w-full flex items-center gap-3 px-4 py-3.5 text-left">
             <span class="flex-1 text-[13px]">关于 BalletMind</span>
             <span class="text-[11px] text-[var(--ink-faint)]">v0.1</span>
+          </button>
+          <button onclick="showGlossary()" class="relative z-10 w-full flex items-center gap-3 px-4 py-3.5 text-left">
+            <span class="flex-1 text-[13px]">芭蕾术语</span>
+            <span class="text-[11px] text-[var(--ink-faint)]">中英法</span>
           </button>
           <button onclick="showFeedback()" class="relative z-10 w-full flex items-center gap-3 px-4 py-3.5 text-left">
             <span class="flex-1 text-[13px]">意见反馈</span>
@@ -1507,7 +1504,10 @@ function resetRecordScreen() {
   document.getElementById('rec-btn').disabled = false;
   document.getElementById('rec-btn').classList.remove('opacity-40', 'hidden');
   document.getElementById('rec-state').textContent = recorderSupported ? '轻触开始' : '此浏览器不能录音，请在下方手动输入';
-  if (inAppBrowser) document.getElementById('rec-live-text').textContent = IN_APP_MIC_TIP;
+  if (inAppBrowser) {
+    const tip = document.getElementById('in-app-browser-tip');
+    if (tip) tip.classList.remove('hidden');
+  }
   if (!recorderSupported) document.getElementById('rec-btn').classList.add('hidden');
   lastDraft = null;
   const prompts = document.querySelector('#screen-record .rec-prompts');
@@ -2398,7 +2398,7 @@ let timerInterval = null;
 let currentSegSeconds = 0;
 // Xiaohongshu / WeChat in-app browsers often block the microphone; nudge people to a real browser.
 const inAppBrowser = /MicroMessenger|xhsdiscover|xiaohongshu|\bdiscover\/\d/i.test(navigator.userAgent);
-const IN_APP_MIC_TIP = '在小红书/微信里录音可能被限制，点右上角「···」选「在浏览器打开」会更稳';
+const IN_APP_MIC_TIP = '请用 Safari 打开（Chrome 或其他浏览器也可以）。点右上角「···」选「在浏览器打开」，或改用手动输入';
 let recorderSupported = typeof MediaRecorder !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
 
 let aiUnavailable = false;
@@ -2438,6 +2438,11 @@ function pickRecorderMime() {
 
 function initSpeech() {
   document.getElementById('manual-input').addEventListener('input', updateGenerateBtn);
+  if (inAppBrowser) {
+    document.getElementById('home-in-app-tip')?.classList.remove('hidden');
+    document.getElementById('in-app-browser-tip')?.classList.remove('hidden');
+    document.getElementById('auth-in-app-tip')?.classList.remove('hidden');
+  }
   if (!recorderSupported) {
     document.getElementById('rec-btn').classList.add('hidden');
     document.getElementById('rec-state').textContent = '此浏览器不能录音，请在下方手动输入内容';
@@ -2458,7 +2463,7 @@ async function startRecording() {
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch (e) {
     logEvent('asr_fail', { error: 'not-allowed' });
-    if (inAppBrowser) toast(IN_APP_MIC_TIP + '，或改用手动输入', 5000);
+    if (inAppBrowser) toast(IN_APP_MIC_TIP, 5000);
     else toast('无法使用麦克风，请允许权限或改用手动输入');
     return;
   }

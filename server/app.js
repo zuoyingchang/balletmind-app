@@ -53,6 +53,7 @@ app.get('/api/health', async (req, res) => {
       publicUrlConfigured: Boolean(APP_PUBLIC_URL),
       experimentIssueBrief: Boolean(EXPERIMENT_ISSUE_BRIEF),
       experimentAllowlist: Boolean(String(EXPERIMENT_ISSUE_BRIEF_USER_IDS || '').trim()),
+      nodeEnvProduction: process.env.NODE_ENV === 'production',
     });
   } catch (e) {
     res.status(503).json({ ok: false });

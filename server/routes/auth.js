@@ -117,8 +117,11 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
     return res.status(502).json({ error: '重置邮件发送失败，请稍后再试' });
   }
 
-  // No email provider: expose the URL only in non-production so local/tests work.
-  if (process.env.NODE_ENV !== 'production') {
+  // Never return the reset URL unless we are clearly in tests or local
+  // development. Unset NODE_ENV on Render used to count as "not production"
+  // and leaked the link whenever Resend was missing.
+  const env = process.env.NODE_ENV || '';
+  if (process.env.EXPOSE_RESET_URL === '1' || process.env.NODE_TEST_CONTEXT || env === 'development' || env === 'test') {
     return res.json({ ...generic, resetUrl });
   }
   res.json(generic);
