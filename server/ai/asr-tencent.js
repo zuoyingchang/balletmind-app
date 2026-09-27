@@ -4,9 +4,13 @@
 //
 // Signature verified against the real API (2026-09-27, via scripts/test-tencent-asr.js) — the
 // TC3 signing and audio handling both work. Term accuracy on ballet vocabulary is noticeably
-// worse than Whisper without a configured hotword list (ASR_FALLBACK_HOTWORD_ID unset), which is
-// acceptable for an emergency fallback but not for the primary path — ASR_FALLBACK_PROVIDER stays
-// unset in production until that's revisited.
+// worse than Whisper. Also tried a HotwordId table (58 ballet terms, weight 10) — zero effect,
+// byte-for-byte identical output with and without it. Per Tencent's own hotword docs, a normal
+// hotword table has limited power against severe homophone interference, and the one feature that
+// can push through that ("热词增强版", weight up to 100) only supports Mandarin content — it does
+// not help French/English-spelled terms like these. This looks like a structural limit of this
+// engine for this vocabulary, not a config mistake; not worth further hotword tuning. ASR_FALLBACK_PROVIDER
+// stays unset in production.
 const crypto = require('crypto');
 const { fetchWithTimeout, isAbortError } = require('../lib/fetch-timeout');
 
