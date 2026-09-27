@@ -1111,7 +1111,7 @@ function fakeAskResponse({ answered = true, answer = '', citedRecordIds = [], in
     status: 200,
     json: async () => ({
       content: [{ type: 'tool_use', name: 'submit_answer', input: {
-        answered, answer, cited_record_ids: citedRecordIds,
+        answered, answer_points: answer ? [answer] : [], cited_record_ids: citedRecordIds,
       } }],
       usage: {
         input_tokens: inputTokens, output_tokens: outputTokens,
@@ -1166,7 +1166,7 @@ test('/api/progress/ask retrieves the matching record and returns a cited answer
       assert.equal(res.status, 200);
       const body = await res.json();
       assert.equal(body.answered, true);
-      assert.match(body.answer, /重心不稳/);
+      assert.match(body.answerPoints.join(' '), /重心不稳/);
       assert.equal(body.matchedRecords.length, 1);
       assert.equal(body.matchedRecords[0].id, saved.id);
     }

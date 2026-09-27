@@ -162,7 +162,9 @@ function reviewFromToolInput(input = {}) {
 function answerFromToolInput(input = {}) {
   return {
     answered: !!input.answered,
-    answer: input.answer || '',
+    answerPoints: Array.isArray(input.answer_points)
+      ? input.answer_points.map((s) => String(s).trim()).filter(Boolean)
+      : [],
     citedRecordIds: Array.isArray(input.cited_record_ids) ? input.cited_record_ids.filter((n) => Number.isInteger(n)) : [],
   };
 }

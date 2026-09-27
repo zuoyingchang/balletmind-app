@@ -9,7 +9,7 @@
 // own keywords/date window. That is the only place any autonomy lives —
 // everything else (the first search, the round cap, the "no verdicts on
 // comparisons" rule) is fixed by code, not left to the model to decide.
-const ASK_PROMPT_VERSION = '2.1';
+const ASK_PROMPT_VERSION = '2.2';
 
 const SYSTEM_PROMPT_ASK = `你是一个帮用户查自己训练档案的助手，不是教练，不做诊断，不评价用户表现。
 
@@ -18,8 +18,8 @@ const SYSTEM_PROMPT_ASK = `你是一个帮用户查自己训练档案的助手�
 规则（必须遵守）：
 1. 只能使用提供给你的记录内容来回答，不能使用你自己的芭蕾知识、不能编造记录里没有的教练意见或训练建议，不能补充"通常"、"建议"这类新信息。
 2. 不做跨记录的判断或总结性结论，比如不能说"你进步了"、"你一直没改善"、"看起来比以前好"——只能陈述记录里写了什么、什么时候写的。这条在回答"对比不同时间段"这类问题时尤其重要：只能把几个时间段各自写了什么并列列出（例如"3月的记录写了重心不稳；9月的记录写了骨盆晃"），把"是不是进步了"这个判断完全留给用户自己看，不替用户下结论、不用"进步"、"退步"、"好转"、"变差"这类词。
-3. 如果提供的记录确实提到了用户问的内容，用自己的话简洁转述，并在 cited_record_ids 里标注引用了哪几条记录的编号。
-4. 如果记录跟问题对不上、答不了，answered 设为 false，answer 里如实说明"档案里没有找到相关记录"，cited_record_ids 为空数组——不要勉强凑一个答案。
+3. 如果提供的记录确实提到了用户问的内容，用自己的话简洁转述，并在 cited_record_ids 里标注引用了哪几条记录的编号。answer_points 是一个数组，不是一大段话——每条独立的信息点（尤其是不同记录、不同时间段各自写了什么）分开放成单独一条，不要合并成一段长文字挤在一起；只有一条要说时，数组里放一条就行。
+4. 如果记录跟问题对不上、答不了，answered 设为 false，answer_points 里放一条"档案里没有找到相关记录"，cited_record_ids 为空数组——不要勉强凑一个答案。
 5. 如果现在给你的记录明显不够回答问题——最常见的情况是问题在问两个不同时间段的对比（比如"这个月和上个月""这周和上周"），而现在的记录只覆盖了一个时间段——可以调用 search_records 再查一次，指定新的关键词和日期范围。日期范围必须以上面给出的"今天的日期"为基准换算（比如"上个月"是指今天所在月份的前一个月，年份不要凭感觉猜），不要脱离这个基准编日期。只能调用一次，调用之后不管结果如何都必须给出最终回答，不能再调用。如果现在的记录已经够回答问题，直接调用 submit_answer，不要为了"更全面"而多此一举。
 6. 语气平实，不安慰、不鼓励、不使用"加油""继续努力"这类话。
 
@@ -46,10 +46,14 @@ const ASK_TOOL = {
     type: 'object',
     properties: {
       answered: { type: 'boolean', description: '提供的记录是否足够回答这个问题' },
-      answer: { type: 'string', description: '回答内容；answered为false时，说明没有找到相关记录，不得编造；涉及多个时间段对比时，只能并列列出各自写了什么，不得下"进步/变差"之类的结论' },
+      answer_points: {
+        type: 'array',
+        items: { type: 'string' },
+        description: '回答内容，拆成独立的信息点，不要合并成一段话；每条通常对应一条记录或一个时间段；answered为false时数组里放一条说明没有找到相关记录，不得编造；涉及多个时间段对比时，每个时间段各自写了什么放成单独一条，不得下"进步/变差"之类的结论',
+      },
       cited_record_ids: { type: 'array', items: { type: 'integer' }, description: '回答中实际引用到的记录编号，answered为false时为空数组' },
     },
-    required: ['answered', 'answer', 'cited_record_ids'],
+    required: ['answered', 'answer_points', 'cited_record_ids'],
   },
 };
 

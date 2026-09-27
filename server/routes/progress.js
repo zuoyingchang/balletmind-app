@@ -175,7 +175,7 @@ router.get('/ask', async (req, res) => {
       if (keywordRound.matches.length === 0) {
         return res.json({
           answered: false,
-          answer: '档案里还没有找到相关记录。',
+          answerPoints: ['档案里还没有找到相关记录。'],
           citedRecordIds: [],
           matchedRecords: [],
           retrievalPath: 'none',
@@ -191,7 +191,7 @@ router.get('/ask', async (req, res) => {
   if (round1Matches.length === 0) {
     return res.json({
       answered: false,
-      answer: '档案里还没有找到相关记录。',
+      answerPoints: ['档案里还没有找到相关记录。'],
       citedRecordIds: [],
       matchedRecords: [],
       retrievalPath: round1.retrievalPath,

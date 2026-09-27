@@ -1856,7 +1856,8 @@ async function askArchive() {
     const res = await authFetch(`${API}/api/progress/ask?q=${encodeURIComponent(question)}`);
     const data = await res.json();
     if (!res.ok) { resultEl.innerHTML = `<p class="text-[var(--rose-deep)]">${escapeHtml(data.error || '查询失败')}</p>`; return; }
-    let html = `<p>${escapeHtml(data.answer)}</p>`;
+    const points = Array.isArray(data.answerPoints) ? data.answerPoints : [];
+    let html = points.map((p) => `<p class="mb-1.5 last:mb-0">${escapeHtml(p)}</p>`).join('');
     if (data.matchedRecords && data.matchedRecords.length > 0) {
       html += `<div class="mt-2 flex flex-wrap gap-1.5">` + data.matchedRecords.map((r) =>
         `<button type="button" onclick="openDetail(${r.id})" class="chip rounded-full px-2.5 py-1 text-[10.5px] text-[var(--rose-deep)]">${escapeHtml(fmtDate(r.createdAt).split(' ')[0])} · ${escapeHtml(r.className || '训练记录')}</button>`
