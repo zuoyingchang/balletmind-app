@@ -117,7 +117,7 @@
 | C4 | 流式输出 | 体感延迟 | **没做** | 后置 |
 | C5 | 成长追踪是否被打开 | 长期价值 | **已做** `progress_open` 计入看板 | 本次 |
 
-内部看板：登录后的产品不展示费用；看 `https://你的域名/stats.html`（`ADMIN_KEY`）。费用是按默认 Sonnet 单价估算，换模型请改环境变量 `ANTHROPIC_INPUT_USD_PER_MTOK` / `ANTHROPIC_OUTPUT_USD_PER_MTOK`。
+内部看板：登录后的产品不展示费用；看 `https://你的域名/stats.html`（`ADMIN_KEY`）。费用分列 DeepSeek / Anthropic / Whisper。单价：`DEEPSEEK_*_USD_PER_MTOK`、`ANTHROPIC_*_USD_PER_MTOK`、`WHISPER_USD_PER_MIN`。
 
 ---
 

@@ -120,8 +120,9 @@ P95 比平均值重要：平均值好看、P95 8 秒，真人会觉得卡。
 | **失败原因** | timeout / api_error / quota / no_tool_use… | 没有行 = 还没失败，不是「永远不会失败」 |
 | **AI 平均 / P95** | 整理接口耗时 | Eval 里的 2.5s（纯模型）。线上通常更慢 |
 | **ASR 平均 / P95** | 语音识别耗时 | |
-| **Token 输入/输出** | 用量 | 账单以 Anthropic 控制台为准 |
-| **估算 LLM 费用 / 每次保存费用** | 按环境变量单价粗算 | 正式账单 |
+| **Token 输入/输出** | DeepSeek / Anthropic 各自加总 | 账单以各厂商控制台为准 |
+| **估算费用（分列 + 合计）** | DeepSeek、Anthropic 按 token 单价；Whisper 按分钟（无 token） | 正式账单 |
+| **每次保存费用** | 只摊 LLM，不含 Whisper | |
 | **模型自报 confidence** | 高/中/低次数 | **不是 Layer 1**，模型自己打分 |
 
 ---

@@ -1,6 +1,11 @@
 const db = require('./db');
 const { parseJson, latencyStats } = require('./lib/text');
-const { ANTHROPIC_INPUT_USD_PER_MTOK, ANTHROPIC_OUTPUT_USD_PER_MTOK, ANALYTICS_INTERNAL_EMAILS } = require('./config');
+const {
+  ANTHROPIC_INPUT_USD_PER_MTOK, ANTHROPIC_OUTPUT_USD_PER_MTOK,
+  DEEPSEEK_INPUT_USD_PER_MTOK, DEEPSEEK_OUTPUT_USD_PER_MTOK, WHISPER_USD_PER_MIN,
+  ANALYTICS_INTERNAL_EMAILS,
+} = require('./config');
+const { collectLlmByProvider, collectWhisperUsage } = require('./lib/usage-cost');
 const { canonicalSessionFunnel, productKpis, splitInternal } = require('./analytics');
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -51,37 +56,35 @@ function utcDay(ts) {
 }
 
 function collectAiUsage(successEvents) {
-  const usage = {
-    inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, latencies: [],
-  };
-  const confidence = { 高: 0, 中: 0, 低: 0, other: 0 };
-  for (const m of metas(successEvents)) {
-    if (typeof m.inputTokens === 'number') usage.inputTokens += m.inputTokens;
-    if (typeof m.outputTokens === 'number') usage.outputTokens += m.outputTokens;
-    if (typeof m.cacheReadTokens === 'number') usage.cacheReadTokens += m.cacheReadTokens;
-    if (typeof m.cacheCreationTokens === 'number') usage.cacheCreationTokens += m.cacheCreationTokens;
-    if (typeof m.latencyMs === 'number') usage.latencies.push(m.latencyMs);
-    const c = m.confidence_level;
-    if (c === '高' || c === '中' || c === '低') confidence[c] += 1;
-    else if (c) confidence.other += 1;
-  }
-  const lat = latencyStats(usage.latencies);
-  const estimatedUsd = (usage.inputTokens / 1e6) * ANTHROPIC_INPUT_USD_PER_MTOK
-    + (usage.outputTokens / 1e6) * ANTHROPIC_OUTPUT_USD_PER_MTOK
-    + (usage.cacheCreationTokens / 1e6) * ANTHROPIC_INPUT_USD_PER_MTOK * 1.25
-    + (usage.cacheReadTokens / 1e6) * ANTHROPIC_INPUT_USD_PER_MTOK * 0.1;
+  const packed = collectLlmByProvider(metas(successEvents), {
+    deepseek: { input: DEEPSEEK_INPUT_USD_PER_MTOK, output: DEEPSEEK_OUTPUT_USD_PER_MTOK },
+    anthropic: { input: ANTHROPIC_INPUT_USD_PER_MTOK, output: ANTHROPIC_OUTPUT_USD_PER_MTOK },
+  });
+  const lat = latencyStats(packed.totals.latencies);
   return {
-    totalInputTokens: usage.inputTokens,
-    totalOutputTokens: usage.outputTokens,
-    cacheReadTokens: usage.cacheReadTokens,
-    cacheCreationTokens: usage.cacheCreationTokens,
+    totalInputTokens: packed.totals.inputTokens,
+    totalOutputTokens: packed.totals.outputTokens,
+    cacheReadTokens: packed.totals.cacheReadTokens,
+    cacheCreationTokens: packed.totals.cacheCreationTokens,
     avgLatencyMs: lat.avgMs,
     p95LatencyMs: lat.p95Ms,
-    callCount: lat.count,
-    estimatedUsd: Math.round(estimatedUsd * 10000) / 10000,
-    estimateNote: '按环境变量里的 Anthropic 单价估算（含 cache 粗算），请以控制台账单为准',
-    confidence,
-    _estimatedUsd: estimatedUsd,
+    callCount: packed.totals.callCount,
+    estimatedUsd: packed.totals.estimatedUsd,
+    estimateNote: '按 DeepSeek / Anthropic / Whisper 各自单价估算，请以控制台账单为准。Whisper 没有 token。',
+    confidence: packed.confidence,
+    _estimatedUsd: packed.totals._estimatedUsd,
+    byProvider: {
+      deepseek: packed.deepseek,
+      anthropic: packed.anthropic,
+      unknown: packed.unknown.callCount ? packed.unknown : null,
+    },
+    rates: {
+      deepseekInputUsdPerMTok: DEEPSEEK_INPUT_USD_PER_MTOK,
+      deepseekOutputUsdPerMTok: DEEPSEEK_OUTPUT_USD_PER_MTOK,
+      anthropicInputUsdPerMTok: ANTHROPIC_INPUT_USD_PER_MTOK,
+      anthropicOutputUsdPerMTok: ANTHROPIC_OUTPUT_USD_PER_MTOK,
+      whisperUsdPerMin: WHISPER_USD_PER_MIN,
+    },
   };
 }
 
@@ -215,9 +218,10 @@ async function buildAdminStats() {
   const voiceStarts = click('record_voice_start');
   const retries = click('retry_ai');
 
-  const [editEvents, successEvents, asrSuccessEvents, failEvents, asrFailEvents, totalsBundle, recentEvents, allEvents, userRows] = await Promise.all([
+  const [editEvents, successEvents, askSuccessEvents, asrSuccessEvents, failEvents, asrFailEvents, totalsBundle, recentEvents, allEvents, userRows] = await Promise.all([
     db.all("SELECT metadata FROM events WHERE event_name = 'user_edit_ai_result'"),
     db.all("SELECT metadata FROM events WHERE event_name = 'ai_process_success'"),
+    db.all("SELECT metadata FROM events WHERE event_name = 'ask_success'"),
     db.all("SELECT metadata FROM events WHERE event_name = 'asr_success'"),
     db.all("SELECT metadata FROM events WHERE event_name = 'ai_process_fail'"),
     db.all("SELECT metadata FROM events WHERE event_name = 'asr_fail'"),
@@ -232,8 +236,10 @@ async function buildAdminStats() {
     db.all('SELECT id, email FROM users'),
   ]);
 
-  const aiUsage = collectAiUsage(successEvents);
+  const aiUsage = collectAiUsage([...successEvents, ...askSuccessEvents]);
   const asrLat = latencyStats(metas(asrSuccessEvents).map((m) => m.latencyMs).filter((n) => typeof n === 'number'));
+  const whisperUsage = collectWhisperUsage(metas(asrSuccessEvents), WHISPER_USD_PER_MIN);
+  const whisperLat = latencyStats(whisperUsage.latencies);
 
   const { registeredUsers, records, activatedUsers, totals } = totalsBundle;
   const internalUserIds = new Set(
@@ -332,6 +338,8 @@ async function buildAdminStats() {
       estimateNote: aiUsage.estimateNote,
       confidence: aiUsage.confidence,
       failReasons: reasonCounts(failEvents),
+      byProvider: aiUsage.byProvider,
+      rates: aiUsage.rates,
     },
     asrUsage: {
       success: click('asr_success'),
@@ -340,6 +348,16 @@ async function buildAdminStats() {
       avgLatencyMs: asrLat.avgMs,
       p95LatencyMs: asrLat.p95Ms,
       failReasons: reasonCounts(asrFailEvents),
+      whisper: {
+        callCount: whisperUsage.callCount,
+        estimatedMinutes: whisperUsage.estimatedMinutes,
+        estimatedUsd: whisperUsage.estimatedUsd,
+        estimatedTokens: null,
+        withDurationSec: whisperUsage.withDurationSec,
+        avgLatencyMs: whisperLat.avgMs,
+        p95LatencyMs: whisperLat.p95Ms,
+        usageNote: whisperUsage.usageNote,
+      },
     },
     onlineQualityProxy: {
       note: '不是 Layer 1。模型自报 confidence，不能代替 Eval 五维。',

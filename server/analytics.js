@@ -34,7 +34,7 @@ const ALLOWED_META = new Set([
   'sessionId', 'field_name', 'recordId', 'edited', 'editedFields',
   'durationSec', 'asr', 'error', 'reason', 'status', 'latencyMs',
   'attempt', 'inputTokens', 'outputTokens', 'cacheReadTokens', 'cacheCreationTokens',
-  'model', 'promptVersion', 'confidence_level', 'chars', 'bytes', 'from',
+  'model', 'provider', 'fellBack', 'promptVersion', 'confidence_level', 'chars', 'bytes', 'from',
   'slotsFilled', 'round', 'rounds', 'matchCount', 'answered',
   'retrievalPath', 'keywordCount', 'embeddingCount',
   'attempts',

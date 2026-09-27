@@ -7,6 +7,7 @@ const { logEvent, countAiCallsToday } = require('../events');
 const { aiConfigured, missingConfigHint } = require('../ai/provider');
 const { DAILY_AI_LIMIT } = require('../config');
 const { callAskRound1WithRetry, callAskRound2WithRetry, findToolUse, answerFromToolInput } = require('../ai/anthropic');
+const { llmUsageMeta } = require('../lib/llm-event-meta');
 const { retrieveAskRecords, KEYWORD_SPARSE_MAX } = require('../ai/ask-retrieve');
 const { isIssueBriefExperimentOn } = require('../experiments/issue-brief-gate');
 const { runIssueBriefExperiment } = require('../ai/issue-brief-experiment');
@@ -236,6 +237,7 @@ router.get('/ask', async (req, res) => {
       return res.status(502).json({ error: 'AI未返回有效内容' });
     }
 
+    let lastLlmCall = round1Call;
     let finalData = data1;
     let allMatches = round1Matches;
     let rounds = 1;
@@ -268,6 +270,7 @@ router.get('/ask', async (req, res) => {
         return res.status(502).json({ error: 'AI服务调用失败，请重新尝试' });
       }
       finalData = await round2.response.json();
+      lastLlmCall = round2;
     }
 
     const finalToolUse = findToolUse(finalData, 'submit_answer');
@@ -277,17 +280,20 @@ router.get('/ask', async (req, res) => {
     }
 
     const answer = answerFromToolInput(finalToolUse.input);
-    await logEvent(req.userId, 'ask_success', withSession({
-      rounds,
-      latencyMs: Date.now() - startedAt,
-      answered: answer.answered,
-      matchCount: allMatches.length,
-      retrievalPath,
-      keywordCount,
-      embeddingCount,
-      inputTokens: finalData.usage?.input_tokens,
-      outputTokens: finalData.usage?.output_tokens,
-    }, sessionId));
+    await logEvent(req.userId, 'ask_success', withSession(llmUsageMeta({
+      data: finalData,
+      attempt: lastLlmCall.attempt,
+      fellBack: lastLlmCall.fellBack,
+      extra: {
+        rounds,
+        latencyMs: Date.now() - startedAt,
+        answered: answer.answered,
+        matchCount: allMatches.length,
+        retrievalPath,
+        keywordCount,
+        embeddingCount,
+      },
+    }), sessionId));
 
     const citedIds = new Set(answer.citedRecordIds);
     res.json({

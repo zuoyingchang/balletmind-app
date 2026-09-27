@@ -3,7 +3,8 @@ const { requireAuth } = require('../middleware/auth');
 const { logEvent, countAiCallsToday } = require('../events');
 const { logUpstreamFailure, logQuota } = require('../lib/log');
 const { aiConfigured, missingConfigHint } = require('../ai/provider');
-const { DAILY_AI_LIMIT, MAX_TRANSCRIPT_LENGTH, AI_MODEL } = require('../config');
+const { DAILY_AI_LIMIT, MAX_TRANSCRIPT_LENGTH } = require('../config');
+const { llmUsageMeta } = require('../lib/llm-event-meta');
 const { sessionIdFromReq, withSession } = require('../lib/text');
 const { correctionsAsPromptHint } = require('../terms');
 const { PROMPT_VERSION, SYSTEM_PROMPT, REVIEW_TOOL } = require('../ai/review-prompt');
@@ -47,7 +48,7 @@ router.post('/', requireAuth, async (req, res) => {
   const startedAt = Date.now();
   try {
     const termHint = await correctionsAsPromptHint(req.userId);
-    const { response, error, attempt } = await callAnthropicWithRetry(termHint, transcript);
+    const { response, error, attempt, fellBack } = await callAnthropicWithRetry(termHint, transcript);
     const latencyMs = Date.now() - startedAt;
 
     if (error) {
@@ -73,19 +74,18 @@ router.post('/', requireAuth, async (req, res) => {
     }
 
     const input = toolUse.input || {};
-    await logEvent(req.userId, 'ai_process_success', withSession({
-      confidence_level: input.confidence_level,
+    await logEvent(req.userId, 'ai_process_success', withSession(llmUsageMeta({
+      data,
       attempt,
-      latencyMs,
-      chars: transcript.length,
-      from: inputFrom(req),
-      inputTokens: data.usage?.input_tokens,
-      outputTokens: data.usage?.output_tokens,
-      cacheReadTokens: data.usage?.cache_read_input_tokens,
-      cacheCreationTokens: data.usage?.cache_creation_input_tokens,
-      model: process.env.AI_MODEL || AI_MODEL,
-      promptVersion: PROMPT_VERSION,
-    }, sessionIdFromReq(req)));
+      fellBack,
+      extra: {
+        confidence_level: input.confidence_level,
+        latencyMs,
+        chars: transcript.length,
+        from: inputFrom(req),
+        promptVersion: PROMPT_VERSION,
+      },
+    }), sessionIdFromReq(req)));
     res.json(reviewFromToolInput(input));
   } catch (e) {
     await logEvent(req.userId, 'ai_process_fail', failMeta(req, {
