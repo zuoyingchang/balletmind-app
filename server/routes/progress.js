@@ -4,6 +4,7 @@ const { requireAuth } = require('../middleware/auth');
 const { listIssuesWithOccurrences } = require('../issues');
 const { splitLines, sessionIdFromReq, withSession } = require('../lib/text');
 const { logEvent, countAiCallsToday } = require('../events');
+const { aiConfigured, missingConfigHint } = require('../ai/provider');
 const { DAILY_AI_LIMIT } = require('../config');
 const { callAskRound1WithRetry, callAskRound2WithRetry, findToolUse, answerFromToolInput } = require('../ai/anthropic');
 const { retrieveAskRecords, KEYWORD_SPARSE_MAX } = require('../ai/ask-retrieve');
@@ -199,8 +200,8 @@ router.get('/ask', async (req, res) => {
     await logEvent(req.userId, 'ask_fail', withSession({ reason: 'quota_exceeded' }, sessionId));
     return res.status(429).json({ error: '今天的AI调用次数已经用完了，明天再问吧' });
   }
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('[ALERT][config] ANTHROPIC_API_KEY is not set');
+  if (!aiConfigured()) {
+    console.error(`[ALERT][config] ${missingConfigHint()}`);
     return res.status(500).json({ error: 'AI服务暂时不可用，请稍后再试' });
   }
 

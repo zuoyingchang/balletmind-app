@@ -1,3 +1,6 @@
+// Tests must not depend on the developer's local .env (dotenv never overrides a variable that is already set).
+for (const k of ['AI_BASE_URL', 'AI_MODEL', 'AI_API_KEY', 'AI_FALLBACK_PROVIDER', 'AI_FALLBACK_MODEL', 'AI_FORCED_TOOL_CHOICE']) process.env[k] = '';
+process.env.AI_PROVIDER = 'anthropic';
 process.env.JWT_SECRET = 'test-secret-do-not-use-in-prod';
 process.env.TURSO_DATABASE_URL = 'file::memory:';
 process.env.ADMIN_KEY = 'test-admin-key';

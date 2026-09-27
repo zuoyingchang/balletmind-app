@@ -2,6 +2,7 @@ const express = require('express');
 const { requireAuth } = require('../middleware/auth');
 const { logEvent, countAiCallsToday } = require('../events');
 const { logUpstreamFailure, logQuota } = require('../lib/log');
+const { aiConfigured, missingConfigHint } = require('../ai/provider');
 const { DAILY_AI_LIMIT, MAX_TRANSCRIPT_LENGTH, AI_MODEL } = require('../config');
 const { sessionIdFromReq, withSession } = require('../lib/text');
 const { correctionsAsPromptHint } = require('../terms');
@@ -38,8 +39,8 @@ router.post('/', requireAuth, async (req, res) => {
     await logEvent(req.userId, 'ai_process_fail', failMeta(req, { reason: 'quota_exceeded', chars: transcript.length }));
     return res.status(429).json({ error: '今天的AI整理次数已经用完了，可以先手动记录内容，明天再生成复盘' });
   }
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('[ALERT][config] ANTHROPIC_API_KEY is not set');
+  if (!aiConfigured()) {
+    console.error(`[ALERT][config] ${missingConfigHint()}`);
     return res.status(500).json({ error: 'AI服务暂时不可用，可以先手动记录内容' });
   }
 

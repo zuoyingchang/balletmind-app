@@ -24,6 +24,12 @@ const MODEL_RATES = {
 };
 
 function ratesFor(model) {
+  // Non-Claude models: set EVAL_INPUT_USD_PER_MTOK / EVAL_OUTPUT_USD_PER_MTOK (convert from CNY yourself),
+  // otherwise the cost column below would silently use Sonnet's prices.
+  if (process.env.EVAL_INPUT_USD_PER_MTOK && process.env.EVAL_OUTPUT_USD_PER_MTOK) {
+    const input = Number(process.env.EVAL_INPUT_USD_PER_MTOK);
+    return { input, output: Number(process.env.EVAL_OUTPUT_USD_PER_MTOK), cacheWrite: input, cacheHit: input * 0.1 };
+  }
   const key = Object.keys(MODEL_RATES).find((k) => model === k || model.startsWith(k));
   return MODEL_RATES[key] || MODEL_RATES['claude-sonnet-4-6'];
 }

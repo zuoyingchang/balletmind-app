@@ -1,5 +1,7 @@
 const { AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS, AI_TEMPERATURE } = require('../config');
 const { fetchWithTimeout, isAbortError } = require('../lib/fetch-timeout');
+const { providerName, fallbackProviderName, fallbackModel, isFallbackEligible, recordFallback } = require('./provider');
+const { callOpenAICompatible } = require('./openai-compat');
 const { joinLines } = require('../lib/text');
 const { SYSTEM_PROMPT, REVIEW_TOOL } = require('./review-prompt');
 const {
@@ -24,7 +26,13 @@ function modelRejectsTemperature(model) {
 // Everything else (review extraction, single-shot ask, the ask-agent's two
 // rounds) is a thin wrapper over this one HTTP shape.
 async function callAnthropicMessagesOnce(systemPrompt, tools, toolChoice, messages, termHint) {
-  const model = process.env.AI_MODEL || AI_MODEL;
+  if (providerName() === 'openai-compatible') {
+    return callOpenAICompatible(systemPrompt, tools, toolChoice, messages, termHint);
+  }
+  return callAnthropicNative(systemPrompt, tools, toolChoice, messages, termHint, process.env.AI_MODEL || AI_MODEL);
+}
+
+async function callAnthropicNative(systemPrompt, tools, toolChoice, messages, termHint, model) {
   const body = {
     model,
     max_tokens: AI_MAX_OUTPUT_TOKENS,
@@ -49,7 +57,9 @@ async function callAnthropicMessagesOnce(systemPrompt, tools, toolChoice, messag
 }
 
 // One retry on timeout, network error, 5xx, or 429 (rate limited). Other 4xx are not retried.
-async function callAnthropicMessagesWithRetry(systemPrompt, tools, toolChoice, messages, termHint) {
+// With a fallback provider configured, a timeout skips the retry (another 25s wait would only make the
+// user wait longer) and goes straight to the fallback.
+async function primaryWithRetry(systemPrompt, tools, toolChoice, messages, termHint, hasFallback) {
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const response = await callAnthropicMessagesOnce(systemPrompt, tools, toolChoice, messages, termHint);
@@ -62,11 +72,28 @@ async function callAnthropicMessagesWithRetry(systemPrompt, tools, toolChoice, m
         continue;
       }
     } catch (e) {
-      if (attempt === 2) {
-        return { error: isAbortError(e) ? new Error('timeout') : e, attempt };
+      const timedOut = isAbortError(e);
+      if (attempt === 2 || (timedOut && hasFallback)) {
+        return { error: timedOut ? new Error('timeout') : e, attempt };
       }
     }
     await new Promise((r) => setTimeout(r, 500));
+  }
+}
+
+async function callAnthropicMessagesWithRetry(systemPrompt, tools, toolChoice, messages, termHint) {
+  const fallback = fallbackProviderName();
+  const primary = await primaryWithRetry(systemPrompt, tools, toolChoice, messages, termHint, Boolean(fallback));
+  if (!fallback || primary.response?.ok || !isFallbackEligible(primary)) return primary;
+
+  const why = primary.error ? `error=${primary.error.message}` : `status=${primary.response.status}`;
+  recordFallback();
+  console.error(`[ALERT][fallback] primary provider failed (${why}); retrying on ${fallback} (${fallbackModel()})`);
+  try {
+    const response = await callAnthropicNative(systemPrompt, tools, toolChoice, messages, termHint, fallbackModel());
+    return { response, attempt: primary.attempt, fellBack: true };
+  } catch (e) {
+    return { error: isAbortError(e) ? new Error('timeout') : e, attempt: primary.attempt, fellBack: true };
   }
 }
 
