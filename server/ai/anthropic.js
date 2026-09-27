@@ -170,6 +170,7 @@ function answerFromToolInput(input = {}) {
 module.exports = {
   callAnthropicOnce,
   callAnthropicWithRetry,
+  callAnthropicMessagesWithRetry,
   callAskRound1WithRetry,
   callAskRound2WithRetry,
   findToolUse,
