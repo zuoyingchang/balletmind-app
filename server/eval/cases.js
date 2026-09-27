@@ -24,12 +24,12 @@ const CASES = [
     name: '信息不足 — 不能瞎编',
     type: 'insufficient',
     dimensions: ['hallucination', 'coverage'],
-    rubric: '置信度低；note 说明信息有限；三段为空',
+    rubric: '置信度低；三段为空；note 不得用"信息不足/信息有限"这类字段已经能说明的话再重复一遍',
     rootCauseHint: 'prompt',
     transcript: '嗯……今天没什么特别的。',
     check(r) {
       if (r.confidence_level !== '低') return fail(`期望 confidence_level=低，实际=${r.confidence_level}`);
-      if (!/信息.*有限|信息不足/.test(r.note)) return fail(`note 没有说明信息不足：${r.note}`);
+      if (/信息.*有限|信息不足|描述.*有限/.test(r.note || '')) return fail(`note 不该只是重复"信息不足"这种字段已经说明的话：${r.note}`);
       if (r.good_points || r.improve_points || r.next_time_reminder || r.session_tips) {
         return fail(`不该凭空生成内容：good=${r.good_points} improve=${r.improve_points} next=${r.next_time_reminder} tips=${r.session_tips}`);
       }
