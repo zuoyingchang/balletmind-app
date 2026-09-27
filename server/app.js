@@ -26,7 +26,7 @@ app.set('trust proxy', 1);
 app.use('/api', (req, res, next) => {
   const started = Date.now();
   res.on('finish', () => {
-    if (req.path === '/health' || process.env.NODE_TEST_CONTEXT) return;
+    if (req.path.startsWith('/health') || process.env.NODE_TEST_CONTEXT) return;
     const ms = Date.now() - started;
     const level = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';
     console[level === 'info' ? 'log' : level](`[req] ${req.method} ${req.baseUrl}${req.path} ${res.statusCode} ${ms}ms${ms > 5000 ? ' [slow]' : ''}`);
@@ -55,6 +55,18 @@ app.get('/api/health', async (req, res) => {
       experimentAllowlist: Boolean(String(EXPERIMENT_ISSUE_BRIEF_USER_IDS || '').trim()),
       nodeEnvProduction: process.env.NODE_ENV === 'production',
     });
+  } catch (e) {
+    res.status(503).json({ ok: false });
+  }
+});
+// Separate from /api/health on purpose: this one goes red when Anthropic/OpenAI are failing
+// (out of credit, bad key, outage). Point an uptime monitor at it, NOT Render's own health
+// check — restarting our server would not fix a provider problem.
+app.get('/api/health/ai', async (req, res) => {
+  try {
+    const status = await require('./lib/ai-health').assessAiHealth(db);
+    if (!status.ok) console.error('[ALERT][ai-health] providers failing:', JSON.stringify(status));
+    res.status(status.ok ? 200 : 503).json(status);
   } catch (e) {
     res.status(503).json({ ok: false });
   }

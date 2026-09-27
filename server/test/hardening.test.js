@@ -194,3 +194,57 @@ test('forgot-password says plainly that email is unavailable (instead of pretend
     console.error = realErr;
   }
 });
+
+test('/api/health/ai: idle and healthy with no traffic; 503 only when a provider has repeated upstream failures and no successes', async () => {
+  const { logEvent } = require('../events');
+  const realErr = console.error;
+  console.error = () => {};
+  try {
+    await db.run('DELETE FROM events');
+    let res = await fetch(base + '/api/health/ai');
+    assert.equal(res.status, 200);
+    let body = await res.json();
+    assert.equal(body.ok, true);
+    assert.equal(body.whisper, 'idle');
+
+    // two failures are not enough to call it an outage
+    await logEvent(1, 'asr_fail', { reason: 'api_error', status: 429 });
+    await logEvent(1, 'asr_fail', { reason: 'api_error', status: 429 });
+    assert.equal((await fetch(base + '/api/health/ai')).status, 200);
+
+    // users hitting their own daily cap never count
+    for (let i = 0; i < 10; i++) await logEvent(1, 'asr_fail', { reason: 'quota_exceeded' });
+    assert.equal((await fetch(base + '/api/health/ai')).status, 200);
+
+    // a third real upstream failure with no success in the window: whisper is failing
+    await logEvent(2, 'asr_fail', { reason: 'api_error', status: 402 });
+    res = await fetch(base + '/api/health/ai');
+    assert.equal(res.status, 503);
+    body = await res.json();
+    assert.equal(body.ok, false);
+    assert.equal(body.whisper, 'failing');
+    assert.notEqual(body.anthropic, 'failing');
+    assert.equal(JSON.stringify(body).includes('402'), false, 'must not leak upstream details');
+
+    // one success in the window means it is working again
+    await logEvent(2, 'asr_success', { latencyMs: 900 });
+    res = await fetch(base + '/api/health/ai');
+    assert.equal(res.status, 200);
+    assert.equal((await res.json()).whisper, 'ok');
+
+    // failures older than the window are ignored
+    await db.run('DELETE FROM events');
+    const old = Date.now() - 60 * 60 * 1000;
+    for (let i = 0; i < 5; i++) {
+      await db.run("INSERT INTO events (user_id, event_name, metadata, created_at) VALUES (1, 'ai_process_fail', ?, ?)", [JSON.stringify({ reason: 'api_error', status: 500 }), old]);
+    }
+    assert.equal((await fetch(base + '/api/health/ai')).status, 200);
+
+    // and the plain liveness endpoint is unaffected by any of this
+    for (let i = 0; i < 4; i++) await logEvent(1, 'ai_process_fail', { reason: 'api_error', status: 500 });
+    assert.equal((await fetch(base + '/api/health/ai')).status, 503);
+    assert.equal((await fetch(base + '/api/health')).status, 200);
+  } finally {
+    console.error = realErr;
+  }
+});
