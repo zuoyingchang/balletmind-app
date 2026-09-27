@@ -2,11 +2,11 @@
 // Implements Tencent Cloud API 3.0's common TC3-HMAC-SHA256 signing scheme, used by all their
 // services (this file only calls the one ASR action, but the signer itself is generic).
 //
-// NOT YET VERIFIED AGAINST THE REAL API. The signing algorithm here follows Tencent's published spec,
-// but has only been checked structurally (see test/asr-tencent.test.js) — there is no way to confirm the
-// signature bytes are byte-for-byte correct without real credentials. Before enabling ASR_FALLBACK_PROVIDER
-// in production, run `node scripts/test-tencent-asr.js <path-to-a-short-webm-or-wav-file>` locally with
-// real keys and confirm it returns real transcribed text.
+// Signature verified against the real API (2026-09-27, via scripts/test-tencent-asr.js) — the
+// TC3 signing and audio handling both work. Term accuracy on ballet vocabulary is noticeably
+// worse than Whisper without a configured hotword list (ASR_FALLBACK_HOTWORD_ID unset), which is
+// acceptable for an emergency fallback but not for the primary path — ASR_FALLBACK_PROVIDER stays
+// unset in production until that's revisited.
 const crypto = require('crypto');
 const { fetchWithTimeout, isAbortError } = require('../lib/fetch-timeout');
 
