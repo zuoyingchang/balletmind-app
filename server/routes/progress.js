@@ -3,9 +3,9 @@ const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { listIssuesWithOccurrences } = require('../issues');
 const { splitLines, sessionIdFromReq, withSession } = require('../lib/text');
-const { logEvent, countAiCallsToday } = require('../events');
+const { logEvent, countSecondaryAiCallsToday } = require('../events');
 const { aiConfigured, missingConfigHint } = require('../ai/provider');
-const { dailyAiLimitFor } = require('../config');
+const { dailySecondaryAiLimitFor } = require('../config');
 const { callAskRound1WithRetry, callAskRound2WithRetry, findToolUse, answerFromToolInput } = require('../ai/anthropic');
 const { llmUsageMeta } = require('../lib/llm-event-meta');
 const { retrieveAskRecords, KEYWORD_SPARSE_MAX } = require('../ai/ask-retrieve');
@@ -122,7 +122,7 @@ router.get('/brief', async (req, res) => {
 
   // Dual gate default-off: no user hits this unless both env vars are set.
   if (isIssueBriefExperimentOn(req.userId) && topIssues.length > 0) {
-    const overQuota = (await countAiCallsToday(req.userId)) >= dailyAiLimitFor(req.userId);
+    const overQuota = (await countSecondaryAiCallsToday(req.userId)) >= dailySecondaryAiLimitFor(req.userId);
     if (!overQuota) {
       const startedAt = Date.now();
       try {
@@ -167,7 +167,7 @@ router.get('/ask', async (req, res) => {
   );
   const keywordRound = await retrieveAskRecords(rows, question, { mode: 'keyword' });
   const sessionId = sessionIdFromReq(req);
-  const overQuota = (await countAiCallsToday(req.userId)) >= dailyAiLimitFor(req.userId);
+  const overQuota = (await countSecondaryAiCallsToday(req.userId)) >= dailySecondaryAiLimitFor(req.userId);
 
   let round1 = keywordRound;
   if (keywordRound.keywordCount <= KEYWORD_SPARSE_MAX) {

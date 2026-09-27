@@ -6,21 +6,30 @@ const ADMIN_KEY = process.env.ADMIN_KEY; // optional — gates the /stats.html m
 
 // Guards against a runaway retry loop or a single oversized request burning
 // through the Anthropic budget — not a business feature, just a safety cap.
-const DAILY_AI_LIMIT = Number(process.env.DAILY_AI_LIMIT) || 15; // per user, per calendar day
+// Core flow only (record a class: transcribe + structure into a draft) — see events.js
+// CORE_QUOTA_EVENTS. Kept separate from DAILY_SECONDARY_AI_LIMIT so an optional feature
+// (ask-your-archive, the gated pre-class experiment) can never crowd out the quota a user
+// needs to actually record and save a real class.
+const DAILY_AI_LIMIT = Number(process.env.DAILY_AI_LIMIT) || 16; // per user, per calendar day
+const DAILY_SECONDARY_AI_LIMIT = Number(process.env.DAILY_SECONDARY_AI_LIMIT) || 5; // ask + issue-brief experiment
 const MAX_TRANSCRIPT_LENGTH = Number(process.env.MAX_TRANSCRIPT_LENGTH) || 4000; // characters
 
 // Same allowlist shape as experiments/issue-brief-gate.js: a higher limit for a short list of
 // user IDs (e.g. the builder's own account doing real-device testing), everyone else unaffected.
+// Applies to both pools (core and secondary) for whoever is on the allowlist.
 const DAILY_AI_LIMIT_OVERRIDE = Number(process.env.DAILY_AI_LIMIT_OVERRIDE) || 0;
 const DAILY_AI_LIMIT_OVERRIDE_USER_IDS = String(process.env.DAILY_AI_LIMIT_OVERRIDE_USER_IDS || '')
   .split(',')
   .map((s) => Number(s.trim()))
   .filter((n) => Number.isInteger(n) && n > 0);
+function isDailyAiLimitOverridden(userId) {
+  return DAILY_AI_LIMIT_OVERRIDE > 0 && DAILY_AI_LIMIT_OVERRIDE_USER_IDS.includes(Number(userId));
+}
 function dailyAiLimitFor(userId) {
-  if (DAILY_AI_LIMIT_OVERRIDE > 0 && DAILY_AI_LIMIT_OVERRIDE_USER_IDS.includes(Number(userId))) {
-    return DAILY_AI_LIMIT_OVERRIDE;
-  }
-  return DAILY_AI_LIMIT;
+  return isDailyAiLimitOverridden(userId) ? DAILY_AI_LIMIT_OVERRIDE : DAILY_AI_LIMIT;
+}
+function dailySecondaryAiLimitFor(userId) {
+  return isDailyAiLimitOverridden(userId) ? DAILY_AI_LIMIT_OVERRIDE : DAILY_SECONDARY_AI_LIMIT;
 }
 
 // Model is env-configurable so swapping tiers (e.g. to A/B a cheaper/faster
@@ -89,7 +98,8 @@ if (!JWT_SECRET) {
 }
 
 module.exports = {
-  PORT, JWT_SECRET, ADMIN_KEY, DAILY_AI_LIMIT, dailyAiLimitFor, MAX_TRANSCRIPT_LENGTH,
+  PORT, JWT_SECRET, ADMIN_KEY, DAILY_AI_LIMIT, dailyAiLimitFor,
+  DAILY_SECONDARY_AI_LIMIT, dailySecondaryAiLimitFor, MAX_TRANSCRIPT_LENGTH,
   AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS, AI_TEMPERATURE,
   OPENAI_API_KEY, ASR_MODEL, ASR_TIMEOUT_MS, MAX_AUDIO_BYTES,
   RESEND_API_KEY, EMAIL_FROM, APP_PUBLIC_URL, RESET_TOKEN_TTL_MS,

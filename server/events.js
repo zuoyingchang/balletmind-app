@@ -3,14 +3,19 @@ const { knownEventNames, sanitizeEventMetadata } = require('./analytics');
 
 const KNOWN_EVENTS = knownEventNames();
 
-// "问问你的档案" shares this same daily budget on purpose — its per-call
-// cost is tiny (a few hundred tokens vs a full transcript), so it wasn't
-// worth a second quota knob. See ask_success/ask_fail below.
-const QUOTA_EVENTS = [
-  'ai_process_success', 'ai_process_fail', 'asr_success', 'asr_fail',
+// Core flow: recording a class (transcribe + structure into a draft). This is the thing the
+// product exists to do, so it gets the main daily budget (DAILY_AI_LIMIT).
+const CORE_QUOTA_EVENTS = ['ai_process_success', 'ai_process_fail', 'asr_success', 'asr_fail'];
+
+// Secondary: optional, exploratory features (ask-your-archive, the gated pre-class multi-agent
+// experiment). Separate, smaller budget (DAILY_SECONDARY_AI_LIMIT) so poking around in these can
+// never crowd out the quota a user needs to actually record and save a real class.
+const SECONDARY_QUOTA_EVENTS = [
   'ask_success', 'ask_fail',
   'experiment_issue_brief_success', 'experiment_issue_brief_fail',
 ];
+
+const QUOTA_EVENTS = [...CORE_QUOTA_EVENTS, ...SECONDARY_QUOTA_EVENTS];
 
 function startOfLocalDayMs() {
   const start = new Date();
@@ -28,14 +33,22 @@ async function logEvent(userId, eventName, metadata) {
   return true;
 }
 
-async function countAiCallsToday(userId) {
-  const placeholders = QUOTA_EVENTS.map(() => '?').join(', ');
+async function countEventsToday(userId, eventNames) {
+  const placeholders = eventNames.map(() => '?').join(', ');
   const row = await db.get(
     `SELECT COUNT(*) AS c FROM events
      WHERE user_id = ? AND event_name IN (${placeholders}) AND created_at >= ?`,
-    [userId, ...QUOTA_EVENTS, startOfLocalDayMs()]
+    [userId, ...eventNames, startOfLocalDayMs()]
   );
   return row.c;
 }
 
-module.exports = { logEvent, KNOWN_EVENTS, countAiCallsToday };
+function countAiCallsToday(userId) {
+  return countEventsToday(userId, CORE_QUOTA_EVENTS);
+}
+
+function countSecondaryAiCallsToday(userId) {
+  return countEventsToday(userId, SECONDARY_QUOTA_EVENTS);
+}
+
+module.exports = { logEvent, KNOWN_EVENTS, countAiCallsToday, countSecondaryAiCallsToday };

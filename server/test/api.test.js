@@ -1184,14 +1184,42 @@ test('/api/progress/ask only searches the caller\'s own records, not another use
   assert.equal(body.answered, false, "user A must not get an answer built from user B's records");
 });
 
-test('/api/progress/ask enforces the shared daily AI quota once a match is found', async () => {
+test('/api/progress/ask enforces the secondary daily AI quota once a match is found', async () => {
   const { body: { token, user } } = await registerUser('ask_quota@example.com');
   await saveRecord(token, { className: '基训', improve_points: '转圈时重心不稳' });
   const { logEvent } = require('../events');
-  for (let i = 0; i < 5; i++) await logEvent(user.id, 'ai_process_success', {});
+  // Fills the secondary pool (ask + issue-brief), not the core one -- recording/saving a class
+  // should never be blocked by this, which is the whole point of the two pools being separate.
+  for (let i = 0; i < 5; i++) await logEvent(user.id, 'ask_success', {});
 
   const res = await fetch(`${base}/api/progress/ask?q=转圈`, { headers: { Authorization: `Bearer ${token}` } });
   assert.equal(res.status, 429);
+});
+
+test('core and secondary daily AI quotas are isolated from each other', async () => {
+  const { logEvent } = require('../events');
+
+  // Maxing out the core pool (asr + generate) must not block ask-your-archive.
+  const { body: { token: coreMaxed, user: coreUser } } = await registerUser('quota_core_maxed@example.com');
+  await saveRecord(coreMaxed, { className: '基训', improve_points: '转圈时重心不稳' });
+  for (let i = 0; i < 5; i++) await logEvent(coreUser.id, 'ai_process_success', {});
+  await withMockAnthropicFetch(
+    async () => fakeAskResponse({ answered: true, answer: '重心不稳。', citedRecordIds: [] }),
+    async () => {
+      const res = await fetch(`${base}/api/progress/ask?q=转圈`, { headers: { Authorization: `Bearer ${coreMaxed}` } });
+      assert.equal(res.status, 200, 'a maxed-out core pool must not block the secondary pool');
+    }
+  );
+
+  // Maxing out the secondary pool (ask + issue-brief) must not block /api/generate.
+  const { body: { token: secondaryMaxed, user: secondaryUser } } = await registerUser('quota_secondary_maxed@example.com');
+  for (let i = 0; i < 5; i++) await logEvent(secondaryUser.id, 'ask_success', {});
+  const res = await fetch(`${base}/api/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secondaryMaxed}` },
+    body: JSON.stringify({ transcript: '今天练了tendu' }),
+  });
+  assert.notEqual(res.status, 429, 'a maxed-out secondary pool must not block the core pool');
 });
 
 // ---------- ask-your-archive: the one-hop agent (optional 2nd search) ----------
