@@ -24,7 +24,7 @@ const AI_TEMPERATURE = process.env.AI_TEMPERATURE === undefined ? 0.2 : Number(p
 // OpenAI Whisper (or gpt-4o-mini-transcribe). Optional: if unset, recording
 // still works as a timer + manual typing, but there is no server-side ASR.
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
-const ASR_MODEL = process.env.ASR_MODEL || 'whisper-1';
+const ASR_MODEL = process.env.ASR_MODEL || 'gpt-4o-transcribe';
 // Same key as Whisper. Used only when keyword retrieval for 问问档案 is sparse
 // (0 or 1 hit). Unset key → skip embedding, keep keyword-only behavior.
 const ASR_TIMEOUT_MS = Number(process.env.ASR_TIMEOUT_MS) || 30000;

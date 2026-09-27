@@ -13,6 +13,7 @@ process.env.OPENAI_API_KEY = 'test-openai-key';
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const app = require('../app.js');
+const { ASR_MODEL } = require('../config');
 const db = require('../db');
 const { countAiCallsToday } = require('../events');
 
@@ -1045,10 +1046,10 @@ test('/api/transcribe/status reports that Whisper is configured in tests', async
   assert.equal(res.status, 200);
   const body = await res.json();
   assert.equal(body.configured, true);
-  assert.equal(body.model, 'whisper-1');
+  assert.equal(body.model, ASR_MODEL);
 });
 
-test('/api/transcribe returns Whisper text and logs asr_success with model/latency', async () => {
+test('/api/transcribe returns transcribed text and logs asr_success with model/latency', async () => {
   const { body: { token, user } } = await registerUser('asr-ok@example.com');
   await withMockOpenAIFetch(
     async () => ({
@@ -1068,7 +1069,7 @@ test('/api/transcribe returns Whisper text and logs asr_success with model/laten
       assert.equal(res.status, 200);
       const body = await res.json();
       assert.match(body.text, /pirouette/);
-      assert.equal(body.model, 'whisper-1');
+      assert.equal(body.model, ASR_MODEL);
     }
   );
   const event = await db.get(
@@ -1076,7 +1077,7 @@ test('/api/transcribe returns Whisper text and logs asr_success with model/laten
     [user.id]
   );
   const meta = JSON.parse(event.metadata);
-  assert.equal(meta.model, 'whisper-1');
+  assert.equal(meta.model, ASR_MODEL);
   assert.equal(meta.durationSec, 12.5);
   assert.ok(typeof meta.latencyMs === 'number');
 });

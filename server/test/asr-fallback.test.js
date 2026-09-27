@@ -36,6 +36,9 @@ async function register(email) {
 
 // ---------- config gating ----------
 test('ASR fallback is off unless ASR_FALLBACK_PROVIDER=tencent AND both Tencent credentials are set', () => {
+  // require('../app.js') above re-triggers dotenv, which refills these from a real .env
+  // (module-load-time delete only runs once) — clear them again right before asserting.
+  for (const k of ['ASR_FALLBACK_PROVIDER', 'ASR_FALLBACK_SECRET_ID', 'ASR_FALLBACK_SECRET_KEY']) delete process.env[k];
   assert.equal(asrFallbackProviderName(), null);
   process.env.ASR_FALLBACK_PROVIDER = 'tencent';
   assert.equal(asrFallbackProviderName(), null, 'no credentials yet');

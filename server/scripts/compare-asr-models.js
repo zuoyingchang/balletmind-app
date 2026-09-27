@@ -44,12 +44,13 @@ async function transcribe(model, buffer, contentType, filename) {
   const buffer = fs.readFileSync(file);
   console.log(`input: ${file} (${buffer.length} bytes, ${contentType})\n`);
 
-  const [a, b] = await Promise.all([
+  const [a, b, c] = await Promise.all([
     transcribe('whisper-1', buffer, contentType, path.basename(file)),
     transcribe('gpt-4o-mini-transcribe', buffer, contentType, path.basename(file)),
+    transcribe('gpt-4o-transcribe', buffer, contentType, path.basename(file)),
   ]);
 
-  for (const r of [a, b]) {
+  for (const r of [a, b, c]) {
     console.log(`--- ${r.model} (${r.latencyMs}ms) ---`);
     console.log(r.ok ? r.text : `FAILED: ${r.error}`);
     console.log();
