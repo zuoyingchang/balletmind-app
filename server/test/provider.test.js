@@ -301,6 +301,6 @@ test('/api/health/ai reports how many requests fell back recently, without turni
   global.fetch = realFetch;
   const res = await fetch(`${base}/api/health/ai`);
   const body = await res.json();
-  assert.ok(body.fallbackUses >= 1);
+  assert.ok(body.llmFallbackUses >= 1);
   assert.equal(res.status, 200);
 });

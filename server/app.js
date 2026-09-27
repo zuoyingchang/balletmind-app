@@ -65,7 +65,8 @@ app.get('/api/health', async (req, res) => {
 app.get('/api/health/ai', async (req, res) => {
   try {
     const status = await require('./lib/ai-health').assessAiHealth(db);
-    status.fallbackUses = require('./ai/provider').recentFallbackCount();
+    status.llmFallbackUses = require('./ai/provider').recentFallbackCount();
+    status.asrFallbackUses = require('./ai/asr-provider').recentAsrFallbackCount();
     if (!status.ok) console.error('[ALERT][ai-health] providers failing:', JSON.stringify(status));
     res.status(status.ok ? 200 : 503).json(status);
   } catch (e) {
