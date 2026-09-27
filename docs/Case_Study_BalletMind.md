@@ -59,7 +59,7 @@ Prompt 版本号（线上 **1.7**；模型对照当时用 1.5）与 temperature 
 
 三层指标框架：
 - **AI 质量层**：Field Coverage、Classification Accuracy、Unsupported Content Rate（幻觉）、Terminology Accuracy、Schema Validity——来自离线评测。
-- **系统层**：P95 延迟、重试/超时次数、token 用量、估算成本——`/stats.html` 内部看板实时可查。
+- **系统层**：P95 延迟、重试/超时次数、DeepSeek / Anthropic token、Whisper 分钟、估算成本——`/stats.html` 内部看板实时可查。
 - **产品层**：`record_voice_start → asr_success → ai_process_success → review_opened → user_edit_ai_result → save_record → history_open → progress_open` 全链路埋点。
 
 ## 6.5 规模测试（实测，非估算）

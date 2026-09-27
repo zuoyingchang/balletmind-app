@@ -96,15 +96,19 @@
     <div class="card">
       <h3>速度与成本（估算，不是账单）</h3>
       <div class="grid">
-        <div class="stat"><strong id="u-calls">-</strong><span>记到 token 的 AI 次数</span></div>
+        <div class="stat"><strong id="u-calls">-</strong><span>LLM 次数（整理 + 问问档案）</span></div>
         <div class="stat"><strong id="u-latency">-</strong><span>AI 平均 / P95</span></div>
         <div class="stat"><strong id="u-asr-lat">-</strong><span>ASR 平均 / P95</span></div>
         <div class="stat"><strong id="u-tokens">-</strong><span>Token 输入 / 输出</span></div>
-        <div class="stat"><strong id="u-usd">-</strong><span>估算 LLM 费用</span></div>
+        <div class="stat"><strong id="u-usd">-</strong><span>估算总费用（LLM + Whisper）</span></div>
         <div class="stat"><strong id="u-per-save">-</strong><span>每次保存估算费用</span></div>
       </div>
       <p class="muted" id="u-note" style="margin:10px 0 0;"></p>
       <p class="muted" id="u-conf" style="margin:6px 0 0;"></p>
+      <table style="margin-top:12px;">
+        <thead><tr><th>服务</th><th>次数</th><th>用量</th><th>估算 $</th></tr></thead>
+        <tbody id="cost-by-provider-body"></tbody>
+      </table>
     </div>
   </div>
 
@@ -317,11 +321,35 @@ function render(data) {
     + ' / ' + (u.p95LatencyMs == null ? '-' : (u.p95LatencyMs / 1000).toFixed(1) + 's');
   document.getElementById('u-asr-lat').textContent = (asr.avgLatencyMs == null ? '-' : (asr.avgLatencyMs / 1000).toFixed(1) + 's')
     + ' / ' + (asr.p95LatencyMs == null ? '-' : (asr.p95LatencyMs / 1000).toFixed(1) + 's');
-  document.getElementById('u-usd').textContent = u.estimatedUsd == null ? '-' : '$' + u.estimatedUsd;
+  document.getElementById('u-usd').textContent = (function () {
+    const llm = u.estimatedUsd;
+    const wh = asr.whisper && asr.whisper.estimatedUsd;
+    if (llm == null && wh == null) return '-';
+    const sum = (llm || 0) + (wh || 0);
+    return '$' + (Math.round(sum * 10000) / 10000);
+  })();
   document.getElementById('u-per-save').textContent = u.usdPerSave == null ? '-' : '$' + u.usdPerSave;
   document.getElementById('u-note').textContent = u.estimateNote || '';
   const conf = (data.onlineQualityProxy && data.onlineQualityProxy.confidence) || u.confidence || {};
   document.getElementById('u-conf').textContent = '模型自报 confidence（不是 Layer 1）：高 ' + (conf['高'] || 0) + ' · 中 ' + (conf['中'] || 0) + ' · 低 ' + (conf['低'] || 0);
+
+  function usdCell(v) { return v == null ? '-' : '$' + v; }
+  const bp = u.byProvider || {};
+  const wh = asr.whisper || {};
+  const rows = [];
+  function llmRow(label, block) {
+    if (!block) return;
+    rows.push('<tr><td>' + label + '</td><td>' + (block.callCount || 0) + '</td><td>'
+      + (block.inputTokens || 0) + ' / ' + (block.outputTokens || 0) + ' token</td><td>'
+      + usdCell(block.estimatedUsd) + '</td></tr>');
+  }
+  llmRow('DeepSeek', bp.deepseek);
+  llmRow('Anthropic', bp.anthropic);
+  if (bp.unknown && bp.unknown.callCount) llmRow('未标注（旧事件）', bp.unknown);
+  rows.push('<tr><td>Whisper</td><td>' + (wh.callCount || 0) + '</td><td>'
+    + (wh.estimatedMinutes != null ? wh.estimatedMinutes + ' 分钟' : '-')
+    + '（无 token）</td><td>' + usdCell(wh.estimatedUsd) + '</td></tr>');
+  document.getElementById('cost-by-provider-body').innerHTML = rows.join('');
 
   const breakdown = data.eventBreakdown
     || Object.entries(data.eventCounts || {}).map(([name, count]) => ({ name, count, uniqueUsers: '-' }));

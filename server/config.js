@@ -38,10 +38,26 @@ const EMAIL_FROM = process.env.EMAIL_FROM || 'BalletMind <beth.t@example.com>';
 const APP_PUBLIC_URL = (process.env.APP_PUBLIC_URL || '').replace(/\/$/, '');
 const RESET_TOKEN_TTL_MS = Number(process.env.RESET_TOKEN_TTL_MS) || 60 * 60 * 1000;
 
-// Rough $/1M token rates for the internal stats page — not a billing API.
-// Override when you switch model tiers so "usd per save" stays in the right ballpark.
-const ANTHROPIC_INPUT_USD_PER_MTOK = Number(process.env.ANTHROPIC_INPUT_USD_PER_MTOK) || 2;
-const ANTHROPIC_OUTPUT_USD_PER_MTOK = Number(process.env.ANTHROPIC_OUTPUT_USD_PER_MTOK) || 10;
+// Rough list prices for /stats.html — not a billing API.
+function envNum(name) {
+  const v = process.env[name];
+  if (v === undefined || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+const aIn = envNum('ANTHROPIC_INPUT_USD_PER_MTOK');
+const aOut = envNum('ANTHROPIC_OUTPUT_USD_PER_MTOK');
+const dIn = envNum('DEEPSEEK_INPUT_USD_PER_MTOK');
+const dOut = envNum('DEEPSEEK_OUTPUT_USD_PER_MTOK');
+// If DeepSeek prices were parked on ANTHROPIC_* (common after the provider switch),
+// keep those numbers for DeepSeek and use Claude defaults for Anthropic until both pairs are set.
+const anthropicEnvLooksLikeDeepSeek = aIn != null && aIn < 1 && aOut != null && aOut < 2 && dIn == null && dOut == null;
+const DEEPSEEK_INPUT_USD_PER_MTOK = dIn ?? (anthropicEnvLooksLikeDeepSeek ? aIn : 0.28);
+const DEEPSEEK_OUTPUT_USD_PER_MTOK = dOut ?? (anthropicEnvLooksLikeDeepSeek ? aOut : 0.42);
+const ANTHROPIC_INPUT_USD_PER_MTOK = anthropicEnvLooksLikeDeepSeek ? 2 : (aIn ?? 2);
+const ANTHROPIC_OUTPUT_USD_PER_MTOK = anthropicEnvLooksLikeDeepSeek ? 10 : (aOut ?? 10);
+const WHISPER_USD_PER_MIN = envNum('WHISPER_USD_PER_MIN') ?? 0.006;
 
 // Optional comma-separated emails excluded from the "real users" Layer 3 slice.
 const ANALYTICS_INTERNAL_EMAILS = (process.env.ANALYTICS_INTERNAL_EMAILS || '')
@@ -64,6 +80,7 @@ module.exports = {
   OPENAI_API_KEY, ASR_MODEL, ASR_TIMEOUT_MS, MAX_AUDIO_BYTES,
   RESEND_API_KEY, EMAIL_FROM, APP_PUBLIC_URL, RESET_TOKEN_TTL_MS,
   ANTHROPIC_INPUT_USD_PER_MTOK, ANTHROPIC_OUTPUT_USD_PER_MTOK,
+  DEEPSEEK_INPUT_USD_PER_MTOK, DEEPSEEK_OUTPUT_USD_PER_MTOK, WHISPER_USD_PER_MIN,
   ANALYTICS_INTERNAL_EMAILS,
   EXPERIMENT_ISSUE_BRIEF, EXPERIMENT_ISSUE_BRIEF_USER_IDS,
 };

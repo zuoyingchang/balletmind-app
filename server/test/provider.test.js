@@ -137,6 +137,9 @@ test('/api/generate works end to end through an OpenAI-compatible provider, call
   const meta = JSON.parse(ev.metadata);
   assert.equal(meta.inputTokens, 800);
   assert.equal(meta.outputTokens, 90);
+  assert.equal(meta.provider, 'deepseek');
+  assert.equal(meta.model, 'deepseek-chat');
+  assert.equal(meta.fellBack, false);
 });
 
 test('provider failures behave like Anthropic ones: 5xx retried once, error text never reaches the user', async () => {

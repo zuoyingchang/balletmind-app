@@ -936,7 +936,32 @@ test('/api/admin/stats aggregates real token usage and latency from ai_process_s
   assert.ok(stats.aiUsage.callCount >= 1);
   assert.ok(stats.aiUsage.p95LatencyMs === null || typeof stats.aiUsage.p95LatencyMs === 'number');
   assert.ok(typeof stats.aiUsage.estimatedUsd === 'number');
+  assert.ok(stats.aiUsage.byProvider);
+  assert.ok(stats.asrUsage.whisper);
+  assert.equal(stats.asrUsage.whisper.estimatedTokens, null);
   assert.ok(stats.metrics.progressOpenCount === 0 || typeof stats.metrics.progressOpenCount === 'number');
+});
+
+test('admin stats splits DeepSeek / Anthropic tokens and Whisper minutes', async () => {
+  const { body: { user } } = await registerUser('cost-split@example.com');
+  const { logEvent } = require('../events');
+  const { buildAdminStats } = require('../admin-stats');
+  await logEvent(user.id, 'ai_process_success', {
+    provider: 'deepseek', model: 'deepseek-chat', inputTokens: 1000000, outputTokens: 0, latencyMs: 10,
+  });
+  await logEvent(user.id, 'ask_success', {
+    provider: 'anthropic', model: 'claude-sonnet-5', fellBack: true, inputTokens: 0, outputTokens: 1000000, latencyMs: 12,
+  });
+  await logEvent(user.id, 'asr_success', { model: 'whisper-1', durationSec: 60, latencyMs: 8 });
+  const stats = await buildAdminStats();
+  assert.ok(stats.aiUsage.byProvider.deepseek.callCount >= 1);
+  assert.ok(stats.aiUsage.byProvider.anthropic.callCount >= 1);
+  assert.ok(stats.aiUsage.byProvider.deepseek.inputTokens >= 1000000);
+  assert.ok(stats.aiUsage.byProvider.anthropic.outputTokens >= 1000000);
+  assert.ok(stats.asrUsage.whisper.callCount >= 1);
+  assert.ok(stats.asrUsage.whisper.estimatedMinutes >= 1);
+  assert.equal(stats.asrUsage.whisper.estimatedTokens, null);
+  assert.ok(stats.asrUsage.whisper.estimatedUsd != null);
 });
 
 // ---------- password reset ----------
@@ -1033,7 +1058,11 @@ test('/api/transcribe returns Whisper text and logs asr_success with model/laten
     async () => {
       const res = await fetch(`${base}/api/transcribe`, {
         method: 'POST',
-        headers: { 'Content-Type': 'audio/webm', Authorization: `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'audio/webm',
+          Authorization: `Bearer ${token}`,
+          'X-Audio-Duration-Sec': '12.5',
+        },
         body: Buffer.from('fake-audio-bytes-that-are-long-enough'),
       });
       assert.equal(res.status, 200);
@@ -1048,6 +1077,7 @@ test('/api/transcribe returns Whisper text and logs asr_success with model/laten
   );
   const meta = JSON.parse(event.metadata);
   assert.equal(meta.model, 'whisper-1');
+  assert.equal(meta.durationSec, 12.5);
   assert.ok(typeof meta.latencyMs === 'number');
 });
 

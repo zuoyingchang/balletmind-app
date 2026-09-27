@@ -25,6 +25,6 @@ cp .env.example .env   # 填 ANTHROPIC_API_KEY、OPENAI_API_KEY、数据库等
 npm start              # http://localhost:3001
 ```
 
-详见 `server/.env.example`。评测：`cd server && npm run eval`（抽取黄金集）；问问档案检索对照：`npm run eval:ask-retrieve`（加 `--live-embed` 才打 Embedding 列）。内部看板：`/stats.html`（需 `ADMIN_KEY`）。查原始埋点：看板底部筛选，或 `GET /api/admin/events`。
+详见 `server/.env.example`。评测：`cd server && npm run eval`（抽取黄金集）；问问档案检索对照：`npm run eval:ask-retrieve`（加 `--live-embed` 才打 Embedding 列）。内部看板：`/stats.html`（需 `ADMIN_KEY`）。费用分列 DeepSeek / Anthropic / Whisper。查原始埋点：看板底部筛选，或 `GET /api/admin/events`。
 
 数据库备份（含课记和密码哈希，不要提交）：`cd server && npm run backup`，文件默认写到 `~/Documents/BalletMind-backups`。本机每周日 10:00：`npm run backup:install-weekly`（电脑当时要开机）。Turso 免费档另有约 24 小时点回档。

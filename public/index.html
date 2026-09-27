@@ -2541,7 +2541,8 @@ async function transcribeSegment(blob, duration) {
       method: 'POST',
       headers: Object.assign(
         { 'Content-Type': blob.type || 'audio/webm' },
-        captureSessionId ? { 'X-Capture-Session': captureSessionId } : {}
+        captureSessionId ? { 'X-Capture-Session': captureSessionId } : {},
+        duration > 0 ? { 'X-Audio-Duration-Sec': String(Math.round(duration * 10) / 10) } : {}
       ),
       body: blob,
     });
