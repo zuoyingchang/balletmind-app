@@ -3,7 +3,7 @@ const { requireAuth } = require('../middleware/auth');
 const { logEvent, countAiCallsToday } = require('../events');
 const { logUpstreamFailure, logQuota } = require('../lib/log');
 const {
-  DAILY_AI_LIMIT, OPENAI_API_KEY, ASR_MODEL, ASR_TIMEOUT_MS, MAX_AUDIO_BYTES,
+  dailyAiLimitFor, OPENAI_API_KEY, ASR_MODEL, ASR_TIMEOUT_MS, MAX_AUDIO_BYTES,
 } = require('../config');
 const { WHISPER_PROMPT } = require('../ballet-glossary');
 const { fetchWithTimeout, isAbortError } = require('../lib/fetch-timeout');
@@ -40,7 +40,7 @@ router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), 
   if (audio.length > MAX_AUDIO_BYTES) {
     return res.status(400).json({ error: '这段录音太长了，请录短一点再试' });
   }
-  if ((await countAiCallsToday(req.userId)) >= DAILY_AI_LIMIT) {
+  if ((await countAiCallsToday(req.userId)) >= dailyAiLimitFor(req.userId)) {
     logQuota('transcribe blocked', req.userId);
     await logEvent(req.userId, 'asr_fail', withSession({ reason: 'quota_exceeded', model: ASR_MODEL }, sessionIdFromReq(req)));
     return res.status(429).json({ error: '今天的AI次数已经用完了，可以先手动记录内容' });

@@ -3,7 +3,7 @@ const { requireAuth } = require('../middleware/auth');
 const { logEvent, countAiCallsToday } = require('../events');
 const { logUpstreamFailure, logQuota } = require('../lib/log');
 const { aiConfigured, missingConfigHint } = require('../ai/provider');
-const { DAILY_AI_LIMIT, MAX_TRANSCRIPT_LENGTH } = require('../config');
+const { dailyAiLimitFor, MAX_TRANSCRIPT_LENGTH } = require('../config');
 const { llmUsageMeta } = require('../lib/llm-event-meta');
 const { sessionIdFromReq, withSession } = require('../lib/text');
 const { correctionsAsPromptHint } = require('../terms');
@@ -35,7 +35,7 @@ router.post('/', requireAuth, async (req, res) => {
   if (transcript.length > MAX_TRANSCRIPT_LENGTH) {
     return res.status(400).json({ error: `本次内容过长（超过${MAX_TRANSCRIPT_LENGTH}字），请分段录制` });
   }
-  if ((await countAiCallsToday(req.userId)) >= DAILY_AI_LIMIT) {
+  if ((await countAiCallsToday(req.userId)) >= dailyAiLimitFor(req.userId)) {
     logQuota('generate blocked', req.userId);
     await logEvent(req.userId, 'ai_process_fail', failMeta(req, { reason: 'quota_exceeded', chars: transcript.length }));
     return res.status(429).json({ error: '今天的AI整理次数已经用完了，可以先手动记录内容，明天再生成复盘' });

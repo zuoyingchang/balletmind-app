@@ -9,6 +9,20 @@ const ADMIN_KEY = process.env.ADMIN_KEY; // optional — gates the /stats.html m
 const DAILY_AI_LIMIT = Number(process.env.DAILY_AI_LIMIT) || 15; // per user, per calendar day
 const MAX_TRANSCRIPT_LENGTH = Number(process.env.MAX_TRANSCRIPT_LENGTH) || 4000; // characters
 
+// Same allowlist shape as experiments/issue-brief-gate.js: a higher limit for a short list of
+// user IDs (e.g. the builder's own account doing real-device testing), everyone else unaffected.
+const DAILY_AI_LIMIT_OVERRIDE = Number(process.env.DAILY_AI_LIMIT_OVERRIDE) || 0;
+const DAILY_AI_LIMIT_OVERRIDE_USER_IDS = String(process.env.DAILY_AI_LIMIT_OVERRIDE_USER_IDS || '')
+  .split(',')
+  .map((s) => Number(s.trim()))
+  .filter((n) => Number.isInteger(n) && n > 0);
+function dailyAiLimitFor(userId) {
+  if (DAILY_AI_LIMIT_OVERRIDE > 0 && DAILY_AI_LIMIT_OVERRIDE_USER_IDS.includes(Number(userId))) {
+    return DAILY_AI_LIMIT_OVERRIDE;
+  }
+  return DAILY_AI_LIMIT;
+}
+
 // Model is env-configurable so swapping tiers (e.g. to A/B a cheaper/faster
 // model against quality) doesn't require a code change or redeploy of logic.
 // Default: Sonnet 5. Do not send `temperature` for this family (API rejects it).
@@ -75,7 +89,7 @@ if (!JWT_SECRET) {
 }
 
 module.exports = {
-  PORT, JWT_SECRET, ADMIN_KEY, DAILY_AI_LIMIT, MAX_TRANSCRIPT_LENGTH,
+  PORT, JWT_SECRET, ADMIN_KEY, DAILY_AI_LIMIT, dailyAiLimitFor, MAX_TRANSCRIPT_LENGTH,
   AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS, AI_TEMPERATURE,
   OPENAI_API_KEY, ASR_MODEL, ASR_TIMEOUT_MS, MAX_AUDIO_BYTES,
   RESEND_API_KEY, EMAIL_FROM, APP_PUBLIC_URL, RESET_TOKEN_TTL_MS,
