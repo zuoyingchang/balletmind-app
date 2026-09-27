@@ -7,6 +7,9 @@ const {
 } = require('../config');
 const { WHISPER_PROMPT } = require('../ballet-glossary');
 const { fetchWithTimeout, isAbortError } = require('../lib/fetch-timeout');
+const { asrFallbackProviderName, recordAsrFallback } = require('../ai/asr-provider');
+const { transcribeWithTencent } = require('../ai/asr-tencent');
+const { prepareForTencentAsr } = require('../lib/audio-convert');
 const { sessionIdFromReq, withSession } = require('../lib/text');
 
 const router = express.Router();
@@ -75,6 +78,8 @@ router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), 
     if (!response.ok) {
       const detail = await response.text();
       logUpstreamFailure('openai/whisper', response.status, detail);
+      const fell = await tryTencentFallback(req, audio, contentType, startedAt);
+      if (fell) return res.json(fell);
       await logEvent(req.userId, 'asr_fail', withSession({ reason: 'api_error', status: response.status, latencyMs, model: ASR_MODEL }, sessionIdFromReq(req)));
       return res.status(502).json({ error: '语音识别失败，请重试或改用手动输入' });
     }
@@ -90,6 +95,8 @@ router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), 
   } catch (e) {
     const timedOut = isAbortError(e);
     console.error(`[whisper] ${timedOut ? 'timeout' : 'exception'}`, timedOut ? '' : e);
+    const fell = await tryTencentFallback(req, audio, contentType, startedAt);
+    if (fell) return res.json(fell);
     await logEvent(req.userId, 'asr_fail', withSession({
       reason: timedOut ? 'timeout' : 'exception',
       error: timedOut ? 'timeout' : 'exception',
@@ -100,5 +107,28 @@ router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), 
     res.status(timedOut ? 504 : 500).json({ error: msg });
   }
 });
+
+
+// Whisper failed (any reason). If a domestic fallback is configured, remux the same audio and try
+// once on Tencent Cloud. Returns the response payload on success, or null to fall through to the
+// normal Whisper failure handling (which logs asr_fail and answers with the neutral error message).
+async function tryTencentFallback(req, audio, contentType, startedAt) {
+  const fallback = asrFallbackProviderName();
+  if (!fallback) return null;
+  try {
+    const { buffer, voiceFormat } = await prepareForTencentAsr(audio, contentType);
+    const { text } = await transcribeWithTencent(buffer, voiceFormat);
+    recordAsrFallback();
+    const latencyMs = Date.now() - startedAt;
+    console.error(`[ALERT][fallback] Whisper failed; transcribed via Tencent instead (${latencyMs}ms)`);
+    await logEvent(req.userId, 'asr_success', withSession({
+      latencyMs, model: 'tencent-sentence-recognition', chars: text.length, bytes: audio.length, fellBack: true,
+    }, sessionIdFromReq(req)));
+    return { text, model: 'tencent-sentence-recognition' };
+  } catch (e) {
+    console.error('[ALERT][fallback] Tencent ASR fallback also failed:', e.message, e.detail ? String(e.detail).slice(0, 300) : '');
+    return null;
+  }
+}
 
 module.exports = router;
