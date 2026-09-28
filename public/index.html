@@ -865,10 +865,20 @@
     border-radius: 28px 18px 28px 20px;
   }
   .home-empty-hint {
-    margin-top: 8px;
-    font-size: 12px;
-    letter-spacing: .04em;
-    color: var(--ink-faint);
+    margin: 4px 0 10px;
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-size: 15px;
+    font-style: italic;
+    line-height: 1.55;
+    letter-spacing: .02em;
+    color: var(--ink-soft);
+  }
+  .rec-stage {
+    background: radial-gradient(circle at 50% 58%, rgba(255,255,255,.55) 0%, rgba(244,232,230,.18) 42%, transparent 68%);
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    overflow: visible;
   }
   .home-week-ribbon {
     padding: 8px 4px 4px;
@@ -900,13 +910,6 @@
     padding: 8px 2px 0;
   }
   #home-tips-block .pearl-sheen { display: none; }
-  .rec-stage {
-    background:
-      radial-gradient(circle at 50% 58%, rgba(255,255,255,.72) 0%, rgba(244,232,230,.2) 38%, transparent 64%),
-      linear-gradient(180deg, #efe4e3 0%, #f7f1f0 48%, #f3e9e8 100%);
-    border: none;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
-  }
 </style>
 <!-- Compiled Tailwind (tools/). Placed after the page styles on purpose: the CDN version injected its CSS last, so utilities win ties the same way. -->
 <link rel="stylesheet" href="/css/tailwind.css">
@@ -1137,8 +1140,7 @@
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-8">
         <p class="hidden relative z-10 mb-3 rounded-[14px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]" id="in-app-browser-tip">请点右上角「···」，选「在浏览器打开」，录音会更顺利。</p>
 
-      <section class="rec-stage grain relative mt-2 overflow-hidden rounded-[28px] px-5 pt-10 pb-10 text-center">
-        <div class="pearl-sheen"></div>
+      <section class="rec-stage relative mt-1 px-2 pt-8 pb-6 text-center">
         <p class="relative z-10" id="rec-timer"><span class="rec-timer-num">0</span><span class="rec-timer-unit">秒</span></p>
         <p class="relative z-10 mt-2 text-[12px] text-[var(--ink-faint)]" id="rec-state">请点中间开始</p>
         <p class="relative z-10 mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="rec-live-text"></p>
@@ -1196,7 +1198,7 @@
   <div class="screen flex-col w-full h-full wash-rose" id="screen-processing">
     <header class="shrink-0 px-6 pt-7 pb-3 flex items-center gap-4">
       <div>
-        <p class="label-editorial text-[13px] text-[var(--rose-deep)]">请稍等一会儿</p>
+        <p class="label-editorial text-[13px] text-[var(--rose-deep)]">幕布正缓缓拉开</p>
         <h1 class="page-title mt-0.5">正在整理</h1>
       </div>
     </header>
