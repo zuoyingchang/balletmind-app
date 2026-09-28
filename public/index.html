@@ -201,6 +201,13 @@
     color: var(--ink-soft);
   }
   #home-stat-nums > div { text-align: center; }
+  #home-stat-nums .home-stat-icon {
+    width: 32px; height: 32px; font-size: 16px;
+  }
+  #home-stat-nums .archive-stat-label { font-size: 14px; letter-spacing: .08em; }
+  #home-stat-nums .archive-stat-num { font-size: 36px; gap: 5px; }
+  #home-stat-nums .archive-stat-num span { font-size: 14px; }
+  #home-stat-nums .archive-stat-num.is-empty { font-size: 13px; }
   .home-stat-icon {
     display: inline-flex; align-items: center; justify-content: center;
     width: 26px; height: 26px; border-radius: 50%;
@@ -753,6 +760,15 @@
     border: 1px solid var(--border-soft);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
   }
+  .month-pick {
+    position: relative; flex: 1; min-width: 0; margin: 0 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .month-pick-input {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    width: 100%; height: 100%; border: 0; font-size: 16px;
+  }
   .term-chip-row {
     display: flex; flex-wrap: nowrap; gap: 6px;
     overflow-x: auto;
@@ -885,6 +901,18 @@
     font-family: "Cormorant Garamond", serif; font-style: italic;
     font-size: 13px; color: var(--rose-deep); letter-spacing: .06em;
   }
+  .story-meta {
+    display: inline-flex; align-items: center; gap: 8px;
+    flex-shrink: 0;
+  }
+  .story-meta .mood-mark { color: var(--rose-deep); }
+  .story-dur {
+    font-family: "Cormorant Garamond", serif; font-style: italic;
+    font-size: 13px; color: var(--ink-faint); letter-spacing: .04em;
+  }
+  .story-beat.is-checkin .story-mod { cursor: pointer; }
+  .story-beat.is-checkin .story-toc { align-items: center; }
+  .story-beat.is-checkin .story-toc .rule { transform: none; }
   .story-beat.is-open .story-toc {
     padding-bottom: 14px;
     margin-bottom: 4px;
@@ -1349,7 +1377,7 @@
           <iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span>
         </button>
         <div id="nav-archive-tip" class="coach-tip hidden">
-          课记和日历在这里。
+          统计和列表在这里。
         </div>
       </div>
       <div class="relative">
@@ -1579,14 +1607,17 @@
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-7">
       <div class="hist-tabs flex items-center gap-1 mb-3 rounded-full p-1">
-        <button type="button" id="history-tab-checkin" onclick="setHistoryView('checkin')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium bg-white shadow-sm text-[var(--burgundy)]">打卡</button>
-        <button type="button" id="history-tab-list" onclick="setHistoryView('list')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium text-[var(--ink-faint)]">课记</button>
+        <button type="button" id="history-tab-checkin" onclick="setHistoryView('checkin')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium bg-white shadow-sm text-[var(--burgundy)]">统计</button>
+        <button type="button" id="history-tab-list" onclick="setHistoryView('list')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium text-[var(--ink-faint)]">列表</button>
       </div>
 
       <div id="history-list-view" class="hidden">
         <div class="relative z-10 flex items-center justify-between mb-3">
           <button type="button" onclick="shiftStoryMonth(-1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]" aria-label="上个月"><iconify-icon icon="solar:alt-arrow-left-linear" class="text-[16px]"></iconify-icon></button>
-          <p class="label-editorial text-[14px] text-[var(--ink)]" id="story-month-label"></p>
+          <label class="month-pick">
+            <span id="story-month-label" class="label-editorial text-[14px] text-[var(--ink)]"></span>
+            <input id="story-month-input" type="month" class="month-pick-input" aria-label="选择年月" onchange="setStoryMonthFromInput(this)">
+          </label>
           <button type="button" id="story-month-next" onclick="shiftStoryMonth(1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]" aria-label="下个月"><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px]"></iconify-icon></button>
         </div>
         <div class="card-journal grain relative flex items-center gap-2 rounded-[18px] px-4 h-12 mb-3">
@@ -1599,7 +1630,7 @@
           <img src="/img/pack-plie.png" alt="" aria-hidden="true" class="mx-auto w-[86px] h-[86px] opacity-60 tint-rose">
           <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]">这本课记还是空的，等你写下第一页。</p>
         </div>
-        <div id="history-month-empty" class="hidden mt-8 text-center text-[12.5px] leading-6 text-[var(--ink-soft)]">这个月还没有课记，可以换一个月。</div>
+        <div id="history-month-empty" class="hidden mt-8 text-center text-[12.5px] leading-6 text-[var(--ink-soft)]">这个月还没有课记。左右换月，或点中间选年月。</div>
         <div id="history-search-empty" class="hidden mt-10 text-center text-[var(--ink-faint)] text-[12.5px]">这个月没有找到相关的记录</div>
         <div id="history-list" class="relative z-10 story"></div>
       </div>
@@ -1631,7 +1662,10 @@
           <div class="pearl-sheen"></div>
           <div class="relative z-10 flex items-center justify-between mb-1">
             <button type="button" onclick="shiftCheckinMonth(-1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]" aria-label="上个月"><iconify-icon icon="solar:alt-arrow-left-linear" class="text-[16px]"></iconify-icon></button>
-            <p class="label-editorial text-[14px] text-[var(--ink)]" id="checkin-month-label"></p>
+            <label class="month-pick">
+              <span id="checkin-month-label" class="label-editorial text-[14px] text-[var(--ink)]"></span>
+              <input id="checkin-month-input" type="month" class="month-pick-input" aria-label="选择年月" onchange="setCheckinMonthFromInput(this)">
+            </label>
             <button type="button" onclick="shiftCheckinMonth(1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]" aria-label="下个月"><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px]"></iconify-icon></button>
           </div>
           <div class="relative z-10 cal-grid text-center text-[11px] tracking-[0.06em] text-[var(--ink-faint)] mb-0.5">
@@ -3462,39 +3496,49 @@ function storyBeatHtml(r, monthEnd) {
   const day = d.getDate();
   const wd = '日一二三四五六'[d.getDay()];
   const checkin = isCheckinOnly(r);
-  const name = checkin ? '来过' : classNameOf(r);
-  const kind = checkin ? '打卡' : '课记';
-  const recapClass = checkin ? '' : ' is-recap';
+  const name = checkin ? '打卡' : (() => {
+    const n = classNameOf(r);
+    return n === '其他' ? '复盘' : n;
+  })();
+  const recapClass = checkin ? ' is-checkin' : ' is-recap';
   const monthEndClass = monthEnd ? ' is-month-end' : '';
-  let form;
+  let tocRight;
+  let form = '';
+  let modOpen;
   if (checkin) {
-    const note = (r.note || '').trim() || '当天只打了卡';
-    form = `<div class="story-box" style="background:rgba(253,251,250,.7);border:1px dashed var(--border-soft)">${escapeHtml(note)}</div>
-      <button type="button" class="story-open-link" onclick="event.stopPropagation(); openDetail(${r.id})">查看</button>`;
+    const mood = r.mood ? moodMark(r.mood, 18) : '';
+    const hasMin = r.training_duration_min != null && Number(r.training_duration_min) > 0;
+    const dur = hasMin ? `<span class="story-dur">${escapeHtml(minutesLabel(r.training_duration_min))}</span>` : '';
+    tocRight = (mood || dur)
+      ? `<span class="story-meta">${mood}${dur}</span>`
+      : '';
+    modOpen = `onclick="openDetail(${r.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDetail(${r.id})}"`;
   } else {
+    tocRight = `<span class="kind">课记</span>`;
     const good = r.good_points ? emFrenchTerms(r.good_points) : '（无）';
     const improve = r.improve_points ? emFrenchTerms(r.improve_points) : '（无）';
     const next = r.next_time_reminder ? emFrenchTerms(r.next_time_reminder) : '（无）';
-    form = `<p class="story-lbl"><iconify-icon icon="solar:star-shine-bold" class="text-[13px]"></iconify-icon>做得好的地方</p>
+    form = `<span class="story-form"><p class="story-lbl"><iconify-icon icon="solar:star-shine-bold" class="text-[13px]"></iconify-icon>做得好的地方</p>
       <div class="story-box field-good field-good-lift">${good}</div>
       <p class="story-lbl is-improve">待改进点</p>
       <div class="story-box field-improve">${improve}</div>
       <p class="story-lbl is-next">我自己定的下次计划</p>
       <div class="story-box field-next">${next}</div>
-      <button type="button" class="story-open-link" onclick="event.stopPropagation(); openDetail(${r.id})">查看</button>`;
+      <button type="button" class="story-open-link" onclick="event.stopPropagation(); openDetail(${r.id})">查看</button></span>`;
+    modOpen = `onclick="toggleStoryBeat(${r.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleStoryBeat(${r.id})}"`;
   }
   return `<article class="story-beat${recapClass}${monthEndClass}" data-id="${r.id}">
     <div class="story-rail">
       <div class="story-node">${day}<small>${wd}</small></div>
       <span class="story-dot"></span>
     </div>
-    <div class="story-mod card-journal grain relative" role="button" tabindex="0" onclick="toggleStoryBeat(${r.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleStoryBeat(${r.id})}">
+    <div class="story-mod card-journal grain relative" role="button" tabindex="0" ${modOpen}>
       <span class="pearl-sheen"></span>
       <span class="story-wm">${day}</span>
       <span class="satin-mark"></span>
       <span class="relative z-10 block">
-        <span class="story-toc"><span class="name">${checkin ? '来过' : emFrenchTerms(name)}</span><span class="rule"></span><span class="kind">${kind}</span></span>
-        <span class="story-form">${form}</span>
+        <span class="story-toc"><span class="name">${checkin ? '打卡' : emFrenchTerms(name)}</span><span class="rule"></span>${tocRight}</span>
+        ${form}
       </span>
     </div>
   </article>`;
@@ -3865,15 +3909,54 @@ async function exportTrainingReview() {
 let historyRows = [];
 let historyViewMode = 'checkin';
 let storyMonthCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+function monthKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+function currentMonthStart() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+function clampMonth(d) {
+  const cap = currentMonthStart();
+  const next = new Date(d.getFullYear(), d.getMonth(), 1);
+  return next > cap ? cap : next;
+}
+function parseMonthInput(value) {
+  const m = String(value || '').match(/^(\d{4})-(\d{2})$/);
+  if (!m) return null;
+  return clampMonth(new Date(Number(m[1]), Number(m[2]) - 1, 1));
+}
+function monthInputBounds() {
+  const max = monthKey(currentMonthStart());
+  let minDate = currentMonthStart();
+  (historyRows || []).forEach((r) => {
+    const d = new Date(r.created_at);
+    if (!Number.isNaN(d.getTime()) && d < minDate) minDate = new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  if (!(historyRows || []).length) minDate = new Date(minDate.getFullYear() - 1, minDate.getMonth(), 1);
+  return { min: monthKey(minDate), max };
+}
+function syncMonthInput(id, cursor) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const { min, max } = monthInputBounds();
+  el.min = min;
+  el.max = max;
+  el.value = monthKey(cursor);
+}
 function inStoryMonth(r, cursor = storyMonthCursor) {
   const d = new Date(r.created_at);
   return d.getFullYear() === cursor.getFullYear() && d.getMonth() === cursor.getMonth();
 }
 function shiftStoryMonth(delta) {
-  const next = new Date(storyMonthCursor.getFullYear(), storyMonthCursor.getMonth() + delta, 1);
-  const now = new Date();
-  const cap = new Date(now.getFullYear(), now.getMonth(), 1);
-  if (delta > 0 && next > cap) return;
+  const next = clampMonth(new Date(storyMonthCursor.getFullYear(), storyMonthCursor.getMonth() + delta, 1));
+  if (monthKey(next) === monthKey(storyMonthCursor) && delta > 0) return;
+  storyMonthCursor = next;
+  filterHistory();
+}
+function setStoryMonthFromInput(el) {
+  const next = parseMonthInput(el.value);
+  if (!next) return;
   storyMonthCursor = next;
   filterHistory();
 }
@@ -3881,12 +3964,12 @@ function renderStoryMonthNav() {
   const label = document.getElementById('story-month-label');
   if (label) {
     const { cn, fr } = storyMonthLabel(storyMonthCursor);
-    label.innerHTML = `<span class="block text-[10px] tracking-[0.16em] text-[var(--ink-faint)]">${fr}</span>${storyMonthCursor.getFullYear()}年${cn}`;
+    label.innerHTML = `<span class="block text-[10px] tracking-[0.16em] text-[var(--ink-faint)]">${fr}</span><span class="inline-flex items-center gap-1">${storyMonthCursor.getFullYear()}年${cn}<iconify-icon icon="solar:calendar-minimalistic-linear" class="text-[13px] text-[var(--rose-deep)]"></iconify-icon></span>`;
   }
+  syncMonthInput('story-month-input', storyMonthCursor);
   const nextBtn = document.getElementById('story-month-next');
   if (nextBtn) {
-    const now = new Date();
-    const atCap = storyMonthCursor.getFullYear() === now.getFullYear() && storyMonthCursor.getMonth() === now.getMonth();
+    const atCap = monthKey(storyMonthCursor) === monthKey(currentMonthStart());
     nextBtn.disabled = atCap;
     nextBtn.classList.toggle('opacity-35', atCap);
   }
@@ -3964,7 +4047,15 @@ function classHourStats(rows) {
 }
 let selectedCheckinDate = null;
 function shiftCheckinMonth(delta) {
-  calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1);
+  calendarCursor = clampMonth(new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1));
+  selectedCheckinDate = null;
+  classStatsShowAll = false;
+  renderCheckinArchive();
+}
+function setCheckinMonthFromInput(el) {
+  const next = parseMonthInput(el.value);
+  if (!next) return;
+  calendarCursor = next;
   selectedCheckinDate = null;
   classStatsShowAll = false;
   renderCheckinArchive();
@@ -3980,7 +4071,8 @@ function renderCheckinArchive() {
   const year = calendarCursor.getFullYear();
   const month = calendarCursor.getMonth();
   const monthLabel = document.getElementById('checkin-month-label');
-  if (monthLabel) monthLabel.textContent = `${year}年${month + 1}月`;
+  if (monthLabel) monthLabel.innerHTML = `<span class="inline-flex items-center gap-1">${year}年${month + 1}月<iconify-icon icon="solar:calendar-minimalistic-linear" class="text-[13px] text-[var(--rose-deep)]"></iconify-icon></span>`;
+  syncMonthInput('checkin-month-input', calendarCursor);
   const painted = paintMonthGrid(calendarCursor, historyRows, selectedCheckinDate, 'selectCheckinDate');
   grid.innerHTML = painted.html;
   const came = monthCameDays(historyRows, year, month);
