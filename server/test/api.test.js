@@ -183,6 +183,43 @@ test('check-in works without a recap, stores optional mood/duration/class, skips
   assert.equal(names.filter((n) => n === 'session_confirmed').length, 0);
 });
 
+test('check-in does not re-fire recap-count milestones', async () => {
+  const { body: { token } } = await registerUser('checkin-no-count-ms@example.com');
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  for (let i = 0; i < 3; i++) await saveRecord(token, { className: '基训' });
+  const res = await fetch(`${base}/api/records/checkin`, {
+    method: 'POST', headers, body: JSON.stringify({ tzOffsetMin: new Date().getTimezoneOffset() }),
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.milestone, null);
+});
+
+test('first visit of a second week can celebrate a 来过 streak on check-in', async () => {
+  const { body: { token, user } } = await registerUser('checkin-week-ms@example.com');
+  const d = new Date();
+  const day = d.getDay() || 7;
+  d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() - day + 1 - 7);
+  await db.run(
+    `INSERT INTO records
+      (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, session_tips, confidence_level, note, duration_sec, created_at, is_checkin_only)
+    VALUES (?, '基训', '', '', '', '', '', '', '', 0, ?, 1)`,
+    [user.id, d.getTime()]
+  );
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  const first = await fetch(`${base}/api/records/checkin`, {
+    method: 'POST', headers, body: JSON.stringify({ tzOffsetMin: new Date().getTimezoneOffset() }),
+  });
+  assert.equal(first.status, 200);
+  assert.deepEqual(await first.json().then((b) => b.milestone), { type: 'streak', value: 2 });
+  const second = await fetch(`${base}/api/records/checkin`, {
+    method: 'POST', headers, body: JSON.stringify({ tzOffsetMin: new Date().getTimezoneOffset() }),
+  });
+  assert.equal(second.status, 200);
+  assert.equal((await second.json()).milestone, null);
+});
+
 test('training_duration_min is optional and distinct from the voice memo length (duration_sec)', async () => {
   const { body: { token } } = await registerUser('trainedhours@example.com');
 

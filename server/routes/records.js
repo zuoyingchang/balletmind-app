@@ -62,7 +62,7 @@ router.post('/', async (req, res) => {
     await logEvent(req.userId, 'field_edited', withSession({ field_name }, sessionId));
   }
   await processRecordForIssues(req.userId, info.lastInsertRowid, improve_points);
-  const milestone = await checkMilestone(req.userId);
+  const milestone = await checkMilestone(req.userId, { source: 'recap' });
   res.json({ id: info.lastInsertRowid, milestone });
 });
 
@@ -85,7 +85,7 @@ router.post('/checkin', async (req, res) => {
   await logEvent(req.userId, 'checkin_saved', withSession({
     recordId: info.lastInsertRowid, from: 'checkin', slotsFilled: 0,
   }, sessionIdFromReq(req)));
-  const milestone = await checkMilestone(req.userId);
+  const milestone = await checkMilestone(req.userId, { source: 'checkin' });
   res.json({ id: info.lastInsertRowid, milestone });
 });
 

@@ -172,16 +172,26 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,.98), 0 16px 28px -16px rgba(110,80,80,.2);
   }
   .archive-month {
-    background: linear-gradient(155deg, #ffffff 0%, #ffffff 60%, #fffbfa 100%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,1), 0 16px 28px -16px rgba(110,80,80,.16), 0 0 0 1px rgba(255,255,255,.6);
+    background:
+      radial-gradient(88% 70% at 12% -8%, rgba(255,255,255,.96), transparent 50%),
+      radial-gradient(72% 58% at 100% 108%, rgba(232,208,208,.32), transparent 54%),
+      linear-gradient(158deg, #fffcfb 0%, #f6eeed 48%, #efe4e3 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.98), 0 16px 28px -16px rgba(110,80,80,.2);
   }
-  .archive-month .pearl-sheen { opacity: .55; }
+  .archive-month .pearl-sheen { opacity: .88; }
   .archive-stat {
+    position: relative;
+    overflow: hidden;
     text-align: center;
-    padding: 8px 4px 7px;
-    border-radius: 16px;
-    background: linear-gradient(165deg, rgba(255,253,252,.92), rgba(255,255,255,.62));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.92), 0 3px 10px -8px rgba(110,80,80,.22);
+    padding: 12px 6px 11px;
+    border-radius: 18px;
+    background: linear-gradient(165deg, rgba(255,255,255,.94) 0%, rgba(247,238,236,.78) 52%, rgba(236,220,218,.58) 100%);
+    border: 1px solid rgba(255,255,255,.78);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.96), 0 8px 16px -12px rgba(110,80,80,.22);
+  }
+  .archive-stat .pearl-sheen { opacity: .72; }
+  .archive-stat.is-hours {
+    background: linear-gradient(165deg, rgba(255,252,251,.95) 0%, rgba(244,230,226,.82) 48%, rgba(226,204,200,.62) 100%);
   }
   .archive-stat-label {
     font-size: 11px; letter-spacing: .12em;
@@ -201,6 +211,22 @@
   .archive-stat-num.is-hours { color: var(--burgundy); }
   .archive-stat-num.is-empty {
     font-size: 15px; font-weight: 500; letter-spacing: 0;
+    color: var(--ink-faint);
+  }
+  #rec-timer {
+    color: var(--burgundy);
+    font-variant-numeric: tabular-nums;
+  }
+  #rec-timer .rec-timer-num {
+    font-family: "Cormorant Garamond", "Noto Serif SC", Georgia, serif;
+    font-size: 34px; font-weight: 600; line-height: 1;
+    letter-spacing: -.03em;
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+  #rec-timer .rec-timer-unit {
+    margin-left: 4px;
+    font-family: "Songti SC", "STSongti-SC-Regular", "Noto Serif SC", serif;
+    font-size: 14px; font-weight: 500; letter-spacing: 0.04em;
     color: var(--ink-faint);
   }
 
@@ -240,8 +266,29 @@
   @media (prefers-reduced-motion: no-preference) {
     #home-cta-btn .pearl-sheen { animation: ctaSheenSweep 5.5s ease-in-out infinite; }
   }
-  .home-cta-row { display: flex; gap: 8px; align-items: stretch; }
+  .home-cta-row { position: relative; display: flex; gap: 8px; align-items: stretch; }
   .home-cta-row #home-cta-btn { flex: 1; min-width: 0; }
+  .coach-tip {
+    position: absolute; z-index: 20;
+    width: 176px; padding: 10px 12px; border-radius: 14px;
+    background: var(--burgundy); color: #fdf6f4;
+    font-size: 12px; line-height: 1.55; text-align: left;
+    box-shadow: 0 10px 22px -10px rgba(90,60,60,.45);
+  }
+  .coach-tip::after {
+    content: ''; position: absolute; top: 100%;
+    border: 6px solid transparent; border-top-color: var(--burgundy);
+  }
+  .coach-tip.hidden { display: none !important; }
+  #home-recap-tip { left: 0; bottom: calc(100% + 10px); }
+  #home-recap-tip::after { left: 36px; }
+  #home-checkin-tip { right: 0; bottom: calc(100% + 10px); }
+  #home-checkin-tip::after { right: 22px; }
+  #nav-archive-tip {
+    left: 50%; bottom: calc(100% + 10px); width: 148px;
+    transform: translateX(-50%);
+  }
+  #nav-archive-tip::after { left: 50%; margin-left: -6px; }
   .home-checkin-btn {
     flex: 0 0 58px; width: 58px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -256,6 +303,57 @@
   .home-checkin-mark {
     width: 22px; height: 22px; display: block;
     filter: drop-shadow(0 1px 0 rgba(255,255,255,.95)) drop-shadow(0 2px 4px rgba(120,70,70,.32));
+  }
+  #detail-transcript-wrap summary { list-style: none; }
+  #detail-transcript-wrap summary::-webkit-details-marker { display: none; }
+  .checkin-sheet-panel {
+    border-radius: 40px 40px 0 0;
+    box-shadow: 0 -28px 50px -16px rgba(90,60,60,.34), inset 0 1px 0 rgba(255,255,255,.96);
+  }
+  .checkin-sheet-head { text-align: center; padding: 0 6px 2px; }
+  .checkin-sheet-rule {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin: 12px auto 0; width: 92px;
+  }
+  .checkin-sheet-rule i {
+    display: block; width: 4px; height: 4px; border-radius: 50%;
+    background: rgba(168,141,140,.55);
+  }
+  .checkin-sheet-rule::before,
+  .checkin-sheet-rule::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(168,141,140,.42), transparent);
+  }
+  .checkin-sheet-fields {
+    margin-top: 16px;
+    padding: 14px 14px 15px;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255,255,255,.82) 0%, rgba(252,246,245,.52) 100%);
+    border: 1px solid rgba(255,255,255,.86);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.98), 0 12px 24px -18px rgba(110,80,80,.2);
+  }
+  .checkin-sheet-field + .checkin-sheet-field {
+    margin-top: 13px;
+    padding-top: 13px;
+    border-top: 1px solid rgba(214,198,196,.3);
+  }
+  .checkin-sheet-k {
+    margin-bottom: 8px;
+    font-size: 10px; letter-spacing: .16em;
+    color: var(--ink-faint);
+  }
+  #home-today-summary {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 10.5px; line-height: 1.4; font-weight: 400;
+    letter-spacing: 0; color: var(--ink-soft);
+  }
+  #checkin-today-summary:not(.hidden) {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.55);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
   }
   .checkin-mod-stats {
     background: rgba(255,255,255,.9);
@@ -327,6 +425,8 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
   }
   .nav-ballet {
+    position: relative;
+    overflow: visible;
     background: rgba(253,251,250,.78);
     backdrop-filter: blur(18px);
     border-top: 1px solid rgba(255,255,255,.7);
@@ -429,6 +529,55 @@
     display: block; flex-shrink: 0;
     filter: brightness(1.03) saturate(1.04) drop-shadow(0 1px 1.5px rgba(130,80,80,.22));
   }
+  @keyframes calMarkPop {
+    0% { transform: scale(.45); opacity: .35; }
+    58% { transform: scale(1.22); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+  .cal-marks.cal-mark-pop .cal-check,
+  .cal-marks.cal-mark-pop .cal-bow {
+    animation: calMarkPop .5s cubic-bezier(.34,1.45,.64,1) both;
+  }
+  @keyframes sheetSlideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes shareCardIn {
+    from { opacity: 0; transform: scale(.9) translateY(14px) rotate(-5deg); }
+    60% { transform: scale(1.02) translateY(0) rotate(1.5deg); }
+    to { opacity: 1; transform: scale(1) translateY(0) rotate(0deg); }
+  }
+  #checkin-sheet-mask { transition: background-color .32s ease; z-index: 70; }
+  #checkin-sheet-mask .checkin-sheet-panel {
+    animation: sheetSlideUp .4s cubic-bezier(.32,.72,.24,1);
+  }
+  #checkin-sheet-mask.is-leaving { background-color: transparent; pointer-events: none; }
+  #checkin-sheet-mask.is-leaving .checkin-sheet-panel {
+    animation: none;
+    transform: translateY(108%);
+    transition: transform .36s cubic-bezier(.4,0,.2,1);
+  }
+  #checkin-share-mask { z-index: 80; }
+  #checkin-share-card {
+    animation: shareCardIn .42s cubic-bezier(.34,1.12,.64,1) both;
+  }
+  #checkin-share-close {
+    position: absolute; z-index: 30; pointer-events: auto;
+    right: 8px; top: 8px;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 999px;
+    background: rgba(244,235,233,.9);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cal-marks.cal-mark-pop .cal-check,
+    .cal-marks.cal-mark-pop .cal-bow,
+    #checkin-sheet-mask .checkin-sheet-panel,
+    #checkin-share-card { animation: none; }
+    #checkin-sheet-mask.is-leaving .checkin-sheet-panel {
+      transform: none; transition: none;
+    }
+  }
   .checkin-class-head,
   .checkin-class-row {
     display: grid;
@@ -529,35 +678,41 @@
   }
   .badge-medal.is-earned .medal {
     background: linear-gradient(150deg, #fff8f4 0%, #f0ddd4 48%, #e4c8bc 100%);
-    border: 1.5px solid rgba(232, 208, 196, .85);
+    border: 1.5px solid rgba(220, 184, 176, .9);
     box-shadow:
-      inset 0 1px 0 rgba(255,255,255,.98),
-      0 0 0 3px rgba(255,252,248,.5),
-      0 0 12px 2px rgba(255,248,236,.38),
+      inset 0 1px 0 rgba(255,255,255,.95),
+      0 0 0 2px rgba(232, 218, 214, .95),
+      0 0 8px 2px rgba(220, 200, 196, .4),
+      0 0 14px 4px rgba(210, 192, 188, .16),
       0 8px 16px -10px rgba(140,100,100,.2);
   }
   .badge-medal.is-earned .medal::before {
-    content: ''; position: absolute; inset: -9px; border-radius: 50%; pointer-events: none; z-index: 0;
-    background: radial-gradient(circle, transparent 42%, rgba(255,252,246,.4) 56%, rgba(255,248,236,.18) 66%, transparent 76%);
+    content: ''; position: absolute; inset: -7px; border-radius: 50%; pointer-events: none; z-index: 0;
+    background: radial-gradient(circle, transparent 44%, rgba(228, 212, 208, .65) 58%, rgba(216, 196, 192, .22) 70%, transparent 82%);
   }
   .badge-medal.is-earned .medal::after {
     content: ''; position: absolute; inset: 5px; border-radius: 50%; pointer-events: none; z-index: 1;
-    border: 1px solid rgba(255,255,255,.7);
-    box-shadow: inset 0 0 8px rgba(255,255,255,.35);
+    border: 1px solid rgba(255,255,255,.75);
+    box-shadow: inset 0 0 8px rgba(255,255,255,.4);
   }
   .badge-medal.is-earned .medal > * { position: relative; z-index: 2; }
   @media (prefers-reduced-motion: no-preference) {
     .badge-medal.is-earned .medal::before {
-      animation: badge-halo 3.4s ease-in-out infinite;
+      animation: badge-halo 3.2s ease-in-out infinite;
     }
   }
   @keyframes badge-halo {
-    0%, 100% { opacity: .72; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.06); }
+    0%, 100% { opacity: .78; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
   }
   .badge-medal.is-locked .medal {
     background: rgba(253,251,250,.55);
     border: 1px dashed rgba(214,198,196,.7);
+  }
+  #review-tips-open #review-tips-field {
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(214,198,196,.32);
   }
   .auth-field {
     height: 48px; width: 100%;
@@ -648,18 +803,21 @@
         <div class="pearl-sheen"></div>
         <img src="/img/shoes.png" alt="" aria-hidden="true" class="deco-photo tint-rose right-3 top-2 w-[64px] h-[76px] opacity-[0.55] z-[1] pointer-events-none">
         <div class="relative z-10 pr-16">
-          <div id="home-stat-nums" class="grid grid-cols-2 gap-3">
+          <div id="home-stat-nums" class="grid grid-cols-3 gap-2">
           <div>
             <p class="archive-stat-label">复盘</p>
             <p class="archive-stat-num mt-1.5" id="stat-count">0<span>次</span></p>
+          </div>
+          <div>
+            <p class="archive-stat-label">连续</p>
+            <p class="archive-stat-num mt-1.5" id="stat-streak">0<span>天</span></p>
           </div>
           <div>
             <p class="archive-stat-label">时长</p>
             <p class="archive-stat-num is-hours mt-1.5" id="stat-duration">—</p>
           </div>
           </div>
-          <p id="home-stat-empty" class="hidden text-[12.5px] leading-6 text-[var(--ink-soft)]">次数和时长会写在这儿。说几句，或打个卡就好。</p>
-          <p id="home-highlight-line" class="hidden mt-2 text-[12px] leading-5 text-[var(--rose-deep)] font-medium"></p>
+          <p id="home-stat-empty" class="hidden text-[12.5px] leading-6 text-[var(--ink-soft)]">从今天开始就好。</p>
         </div>
         <div class="relative z-10 mt-4 home-cta-row">
         <button id="home-cta-btn" onclick="goRecord()" class="btn-ribbon flex items-center gap-3 rounded-[22px] px-4 py-3.5">
@@ -686,11 +844,18 @@
           <strong id="home-checkin-title">打卡</strong>
           <span id="home-checkin-sub" class="home-checkin-hint">不写内容也行</span>
         </button>
+        <div id="home-recap-tip" class="coach-tip hidden">
+          下课说几句，会整理成课记。
+          <button type="button" onclick="dismissGuide('recap')">知道了</button>
+        </div>
+        <div id="home-checkin-tip" class="coach-tip hidden">
+          左边是复盘，说几句就好。这边只打个卡。
+          <button type="button" onclick="dismissGuide('checkin')">知道了</button>
+        </div>
         </div>
       </section>
 
       <p id="home-in-app-tip" class="hidden mt-3 rounded-[14px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]">请用 Safari 打开这一页，录音会更顺利。</p>
-      <p id="home-first-hint" class="hidden mt-2.5 text-[11.5px] leading-5 text-[var(--ink-faint)]">也可以先打卡。</p>
 
       <section class="mt-6" id="home-archive-block">
         <div class="flex items-center justify-between gap-2">
@@ -712,7 +877,7 @@
           <div class="relative z-10 cal-grid" id="home-calendar-grid"></div>
           <p id="home-cal-came-label" class="relative z-10 mt-2 text-center text-[11px] text-[var(--ink-faint)]"></p>
         </div>
-        <p id="home-today-summary" class="hidden mt-2.5 text-[12.5px] leading-5 text-[var(--burgundy)] font-medium"></p>
+        <p id="home-today-summary" class="hidden mt-2"></p>
         <div id="home-calendar-day-empty" class="mt-3 text-center text-[var(--ink-faint)] text-[12px]"></div>
         <div id="home-calendar-day-list" class="mt-2.5 space-y-3"></div>
       </section>
@@ -748,7 +913,15 @@
     <nav class="shrink-0 h-[76px] nav-ballet flex items-center justify-around px-5">
       <button class="flex flex-col items-center gap-1 text-[var(--rose-deep)]"><iconify-icon icon="solar:home-2-bold" class="text-[22px]"></iconify-icon><span class="text-[10px] font-semibold">首页</span></button>
       <button onclick="goRecord()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:microphone-3-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">记录</span></button>
-      <button onclick="goHistory()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span></button>
+      <div class="relative">
+        <button onclick="goHistory()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]">
+          <iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span>
+        </button>
+        <div id="nav-archive-tip" class="coach-tip hidden">
+          课记和日历，都在这里。
+          <button type="button" onclick="dismissGuide('archive')">知道了</button>
+        </div>
+      </div>
       <button onclick="goProgress()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><span class="relative"><iconify-icon icon="solar:graph-up-linear" class="text-[22px]"></iconify-icon><span class="nav-progress-dot hidden absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[var(--rose-deep)] ring-2 ring-[var(--paper)]"></span></span><span class="text-[10px]">追踪</span></button>
     </nav>
   </div>
@@ -759,7 +932,7 @@
       <button onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
       <div>
         <p class="label-editorial text-[13px] text-[var(--rose-deep)]">说给你自己听</p>
-        <h1 class="page-title mt-0.5">说说今天</h1>
+        <h1 class="page-title mt-0.5">记录</h1>
       </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-8">
@@ -767,7 +940,7 @@
 
       <section class="card-journal tinted-rose grain relative mt-2 overflow-hidden rounded-[26px] px-5 pt-8 pb-8 text-center">
         <div class="pearl-sheen"></div>
-        <p class="relative z-10 text-[32px] leading-none font-medium tracking-[0.02em] text-[var(--burgundy)]" id="rec-timer" style="font-variant-numeric:tabular-nums">0s</p>
+        <p class="relative z-10" id="rec-timer"><span class="rec-timer-num">0</span><span class="rec-timer-unit">秒</span></p>
         <p class="relative z-10 mt-2 text-[12px] text-[var(--ink-faint)]" id="rec-state">请点中间开始</p>
         <p class="relative z-10 mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="rec-live-text"></p>
         <div class="relative z-10 mt-6 flex justify-center">
@@ -864,6 +1037,7 @@
         <p class="text-[11.5px] font-semibold text-[var(--rose-deep)] mb-2 opacity-90">我自己定的下次计划</p>
         <textarea id="review-next" class="w-full min-h-[60px] rounded-2xl field-next p-3 text-[12.5px]"></textarea>
       </div>
+      <div id="review-tips-open" class="relative z-10 mb-2 hidden"></div>
       </div>
 
       <div class="card-journal grain relative overflow-hidden mb-4 px-4 py-3.5" style="border-radius:22px">
@@ -915,9 +1089,11 @@
             </div>
           </div>
 
-          <div>
-            <p class="text-[12px] font-semibold text-[var(--mauve)] mb-2">给这次的小提示</p>
-            <textarea id="review-tips" class="w-full min-h-[60px] rounded-2xl border border-dashed border-[var(--border-soft)] p-3 text-[12.5px]" oninput="updateReviewExtrasSummary()"></textarea>
+          <div id="review-tips-fold">
+            <div id="review-tips-field">
+              <p class="text-[12px] font-semibold text-[var(--mauve)] mb-2">给这次的小提示</p>
+              <textarea id="review-tips" class="w-full min-h-[60px] rounded-2xl border border-dashed border-[var(--border-soft)] p-3 text-[12.5px]" oninput="updateReviewExtrasSummary()"></textarea>
+            </div>
           </div>
 
           <section class="rounded-[18px] bg-[var(--ivory)] border border-[var(--border-soft)] p-3">
@@ -972,7 +1148,7 @@
           <input id="history-search" oninput="filterHistory()" placeholder="搜 plie 或蹲都可以" class="relative z-10 flex-1 bg-transparent outline-none text-[12.5px] placeholder:text-[var(--ink-faint)]">
         </div>
         <div id="history-term-chips" class="term-chip-row mb-4" onclick="onHistoryChipClick(event)"></div>
-        <div id="history-empty" class="mt-10 text-center text-[12.5px] leading-6 text-[var(--ink-soft)]">复盘保存后，会出现在这里。</div>
+        <div id="history-empty" class="mt-10 text-center text-[12.5px] leading-6 text-[var(--ink-soft)]">还没有课记。</div>
         <div id="history-search-empty" class="hidden mt-10 text-center text-[var(--ink-faint)] text-[12.5px]">没有找到相关的记录</div>
         <div id="history-list" class="relative z-10 space-y-3"></div>
       </div>
@@ -984,15 +1160,17 @@
             <p class="label-editorial text-[12px] text-[var(--rose-deep)]">这个月</p>
             <div id="checkin-month-stats" class="mt-2.5 grid grid-cols-2 gap-2">
               <div class="archive-stat">
-                <p class="archive-stat-label">来过</p>
-                <p class="archive-stat-num" id="checkin-month-days">0<span>天</span></p>
+                <span class="pearl-sheen"></span>
+                <p class="relative z-10 archive-stat-label">来过</p>
+                <p class="relative z-10 archive-stat-num" id="checkin-month-days">0<span>天</span></p>
               </div>
-              <div class="archive-stat">
-                <p class="archive-stat-label">时长</p>
-                <p class="archive-stat-num is-hours" id="checkin-month-hours">—</p>
+              <div class="archive-stat is-hours">
+                <span class="pearl-sheen"></span>
+                <p class="relative z-10 archive-stat-label">时长</p>
+                <p class="relative z-10 archive-stat-num is-hours" id="checkin-month-hours">—</p>
               </div>
             </div>
-            <p id="checkin-month-empty" class="hidden mt-3 text-[12.5px] leading-6 text-[var(--ink-soft)]">来过几天、练了多久，都会写在这儿。先从今天开始就好。</p>
+            <p id="checkin-month-empty" class="hidden mt-3 text-[12.5px] leading-6 text-[var(--ink-soft)]">从今天开始就好。</p>
             <div id="checkin-class-stats"></div>
           </div>
         </div>
@@ -1007,7 +1185,7 @@
             <span class="py-0.5">日</span><span class="py-0.5">一</span><span class="py-0.5">二</span><span class="py-0.5">三</span><span class="py-0.5">四</span><span class="py-0.5">五</span><span class="py-0.5">六</span>
           </div>
           <div class="relative z-10 cal-grid" id="checkin-cal-grid"></div>
-          <p class="relative z-10 mt-1.5 text-center text-[10px] tracking-[0.04em] text-[var(--ink-faint)]">对勾 · 打卡　　蝴蝶结 · 复盘</p>
+          <p class="relative z-10 mt-1.5 text-center text-[10.5px] leading-4 text-[var(--ink-faint)]">对勾是打卡，蝴蝶结是复盘。</p>
           <p id="checkin-day-empty" class="relative z-10 mt-1.5 text-center text-[12px] text-[var(--ink-soft)]"></p>
           <div id="checkin-day-list" class="relative z-10 mt-1.5 space-y-2"></div>
         </div>
@@ -1026,12 +1204,6 @@
       </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 py-5 pb-8">
-      <img src="/img/pack-stretch.png" alt="" aria-hidden="true" class="deco-photo tint-soft right-[-12px] bottom-2 w-[130px] h-[160px] opacity-[0.22]">
-      <section class="card-journal grain relative overflow-hidden rounded-[22px] p-4 mb-4">
-        <div class="pearl-sheen"></div>
-        <div class="relative z-10 flex items-center gap-2 mb-2"><span class="w-7 h-7 rounded-full chip flex items-center justify-center"><iconify-icon icon="solar:microphone-3-linear" class="text-[15px] text-[var(--rose-deep)]"></iconify-icon></span><span class="text-[12px] font-semibold">语音转写</span></div>
-        <p class="relative z-10 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="detail-transcript"></p>
-      </section>
       <div id="detail-fields" class="card-journal card-satin grain relative overflow-hidden mb-4 px-4 pt-4 pb-2" style="border-radius:24px">
       <div class="pearl-sheen"></div>
       <div class="relative z-10 mb-4">
@@ -1051,6 +1223,10 @@
         <div class="rounded-2xl border border-dashed border-[var(--border-soft)] p-3 text-[12.5px] leading-6 whitespace-pre-wrap" id="detail-tips"></div>
       </div>
       </div>
+      <details id="detail-transcript-wrap" class="mb-4 rounded-[22px] bg-[var(--paper)] border border-[var(--border-soft)] px-4 py-3">
+        <summary class="flex items-center justify-between text-[12.5px] font-medium text-[var(--ink-soft)] cursor-pointer">语音转写<iconify-icon icon="solar:alt-arrow-down-linear" class="text-[16px] text-[var(--ink-faint)]"></iconify-icon></summary>
+        <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="detail-transcript"></p>
+      </details>
       <button id="detail-fill-btn" type="button" onclick="goRecord()" class="btn-ribbon hidden relative w-full h-11 rounded-full text-[13px] font-medium mb-3"><span class="pearl-sheen"></span><span class="relative z-10">补上今天的复盘</span></button>
       <button id="detail-share-btn" type="button" onclick="shareCheckinCard()" class="btn-pearl hidden relative w-full h-11 rounded-full text-[12.5px] mb-3"><span class="pearl-sheen"></span><span class="relative z-10">分享卡片</span></button>
       <button onclick="exportEntry()" class="w-full h-11 rounded-full border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium mb-3">导出为纯文本</button>
@@ -1088,7 +1264,6 @@
         <div class="flex items-end justify-between gap-3">
           <div>
             <h2 class="font-display text-[21px] font-semibold tracking-[-0.01em]">徽章墙</h2>
-            <p class="mt-1 text-[11px] leading-4 text-[var(--ink-faint)]">亮起来的，才摆在这里。</p>
         </div>
           <span class="shrink-0 label-editorial text-[12px] text-[var(--rose-deep)]" id="badge-earned-count"></span>
         </div>
@@ -1372,19 +1547,25 @@
 </div>
 
 <div id="checkin-sheet-mask" class="hidden fixed inset-0 z-[70] items-end justify-center bg-black/40" onclick="if(event.target===this) hideCheckinSheet()">
-  <div class="w-full max-w-[393px] rounded-t-[26px] bg-[var(--paper)] px-5 pt-4 pb-7" onclick="event.stopPropagation()">
+  <div class="checkin-sheet-panel card-journal card-satin grain relative w-full max-w-[393px] overflow-hidden rounded-t-[30px] px-5 pt-3.5 pb-7" onclick="event.stopPropagation()">
+    <div class="pearl-sheen"></div>
+    <div class="relative z-10">
     <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--border-soft)]"></div>
-    <p class="label-editorial text-[12px] text-[var(--rose-deep)]">今天练过了</p>
-    <h2 class="font-display mt-0.5 text-[20px] font-semibold">打个卡</h2>
-        <p class="mt-1 text-[11.5px] leading-5 text-[var(--ink-faint)]">都可以先空着。</p>
-    <p id="checkin-today-summary" class="hidden mt-2 text-[12px] leading-5 text-[var(--burgundy)] font-medium"></p>
-    <div class="mt-4">
-      <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">课名</p>
-      <input id="checkin-classname" maxlength="40" placeholder="如：基训、把杆、足尖" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] text-[12.5px]">
+    <div class="checkin-sheet-head">
+      <p class="label-editorial text-[11px] text-[var(--rose-deep)]">BalletMind</p>
+      <h2 class="font-display mt-1 text-[24px] font-semibold tracking-wide">今天练过了</h2>
+      <p class="mt-1 text-[11.5px] leading-5 text-[var(--ink-faint)]">都可以先空着</p>
+      <p id="checkin-today-summary" class="hidden text-[10.5px] leading-4 text-[var(--burgundy)]"></p>
+      <div class="checkin-sheet-rule" aria-hidden="true"><i></i></div>
+    </div>
+    <div class="checkin-sheet-fields">
+    <div class="checkin-sheet-field">
+      <p class="checkin-sheet-k">课名</p>
+      <input id="checkin-classname" maxlength="40" placeholder="如：基训、把杆、足尖" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] bg-white/70 text-[12.5px]">
       <div id="checkin-class-chips" class="mt-2 flex gap-2 flex-wrap"></div>
     </div>
-    <div class="mt-4">
-      <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">时长</p>
+    <div class="checkin-sheet-field">
+      <p class="checkin-sheet-k">时长</p>
       <div class="flex gap-2 flex-wrap">
         <button type="button" onclick="selectCheckinDuration(30)" data-min="30" class="checkin-duration-chip duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">0.5小时</button>
         <button type="button" onclick="selectCheckinDuration(60)" data-min="60" class="checkin-duration-chip duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1小时</button>
@@ -1392,41 +1573,51 @@
         <button type="button" onclick="selectCheckinDuration(120)" data-min="120" class="checkin-duration-chip duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">2小时+</button>
       </div>
     </div>
-    <div class="mt-4">
-      <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">心情</p>
-      <div class="flex gap-2.5">
-        <button type="button" onclick="selectCheckinMood('low')" data-mood="low" aria-label="不在状态" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+    <div class="checkin-sheet-field">
+      <p class="checkin-sheet-k">心情</p>
+      <div class="flex gap-2">
+        <button type="button" onclick="selectCheckinMood('low')" data-mood="low" aria-label="不在状态" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
           <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7.2 15.2a4.2 4.2 0 0 1 .1-8.3 5.6 5.6 0 0 1 10.6 1.7A3.6 3.6 0 0 1 17.8 15.2Z"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M9.2 17.4v1.8M12 17.8v2.1M14.8 17.4v1.8"/></svg>
           <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">不在状态</span>
         </button>
-        <button type="button" onclick="selectCheckinMood('meh')" data-mood="meh" aria-label="一般" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+        <button type="button" onclick="selectCheckinMood('meh')" data-mood="meh" aria-label="一般" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
           <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7 16a4.4 4.4 0 0 1 .2-8.7 5.8 5.8 0 0 1 11 1.8A3.7 3.7 0 0 1 18.2 16Z"/></svg>
           <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">一般</span>
         </button>
-        <button type="button" onclick="selectCheckinMood('good')" data-mood="good" aria-label="还不错" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+        <button type="button" onclick="selectCheckinMood('good')" data-mood="good" aria-label="还不错" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
           <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M12 4.2v1.5M12 18.3v1.5M4.2 12h1.5M18.3 12h1.5M6.4 6.4l1.1 1.1M16.5 16.5l1.1 1.1M6.4 17.6l1.1-1.1M16.5 7.5l1.1-1.1"/></svg>
           <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">还不错</span>
         </button>
-        <button type="button" onclick="selectCheckinMood('great')" data-mood="great" aria-label="状态很好" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+        <button type="button" onclick="selectCheckinMood('great')" data-mood="great" aria-label="状态很好" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
           <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M12 4.2l1.7 4.6 4.9.3-3.8 3.2 1.3 4.7L12 14.6 7.9 17l1.3-4.7-3.8-3.2 4.9-.3Z"/></svg>
           <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">很好</span>
         </button>
       </div>
     </div>
-    <button type="button" id="checkin-submit-btn" onclick="submitCheckin()" class="btn-pearl relative mt-5 w-full h-11 rounded-full text-[13px]"><span class="pearl-sheen"></span><span class="relative z-10">记下</span></button>
-    <button type="button" onclick="hideCheckinSheet()" class="mt-2 w-full h-10 text-[12px] text-[var(--ink-faint)]">先不了</button>
+    </div>
+    <button type="button" id="checkin-submit-btn" onclick="submitCheckin()" class="btn-ribbon relative mt-5 w-full h-11 rounded-full text-[13px] font-medium"><span class="pearl-sheen"></span><span class="relative z-10">记下</span></button>
+    <button type="button" onclick="hideCheckinSheet()" class="mt-1.5 w-full h-10 text-[12px] text-[var(--ink-faint)]">先不了</button>
+    </div>
   </div>
 </div>
 
 <div id="checkin-share-mask" class="hidden fixed inset-0 z-[70] items-center justify-center bg-black/45 px-6" onclick="if(event.target===this) hideCheckinShare()">
-  <div class="relative w-full max-w-[340px] rounded-[26px] bg-[var(--paper)] p-4" onclick="event.stopPropagation()">
-    <button type="button" onclick="hideCheckinShare()" class="absolute right-3 top-3 w-8 h-8 rounded-full bg-[var(--blush)]/60 flex items-center justify-center z-10"><iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></button>
-    <p class="label-editorial text-[12px] text-[var(--rose-deep)]">今天练过了</p>
-    <h2 class="font-display mt-0.5 text-[20px] font-semibold">打卡卡片</h2>
-    <p class="mt-1 text-[11px] leading-5 text-[var(--ink-faint)]">保存后，可以发到朋友圈或小红书。</p>
+  <div id="checkin-share-card" class="card-journal card-satin grain relative w-full max-w-[228px] overflow-hidden rounded-[26px] p-4" onclick="event.stopPropagation()">
+    <div class="pearl-sheen"></div>
+    <div id="checkin-share-petals" class="pointer-events-none absolute inset-0 overflow-hidden z-20" aria-hidden="true"></div>
+    <button type="button" id="checkin-share-close" onclick="hideCheckinShare()" aria-label="关掉">
+      <iconify-icon icon="solar:close-circle-linear" class="text-[22px] text-[var(--rose-deep)]"></iconify-icon>
+    </button>
+    <div class="relative z-10 text-center">
+    <p class="label-editorial text-[12px] text-[var(--rose-deep)]">BalletMind</p>
+    <h2 class="font-display mt-0.5 text-[20px] font-semibold">来过了</h2>
+    <p class="mt-1 text-[11px] leading-5 text-[var(--ink-faint)]">保存图片，可以发到朋友圈。</p>
+    <p id="checkin-share-milestone" class="hidden mt-1.5 text-[12.5px] leading-5 text-[var(--burgundy)]"></p>
     <canvas id="checkin-share-canvas" class="mt-3 w-full rounded-[18px] border border-[var(--border-soft)]" width="621" height="828"></canvas>
-    <button type="button" onclick="downloadCheckinCard()" class="mt-3 w-full h-11 rounded-2xl bg-[var(--rose-deep)] text-white text-[13px] font-medium">保存图片</button>
+    <button type="button" onclick="downloadCheckinCard()" class="btn-pearl relative mt-3 w-full h-11 rounded-full text-[13px]"><span class="pearl-sheen"></span><span class="relative z-10">保存图片</span></button>
     <button type="button" id="checkin-share-native" onclick="nativeShareCheckinCard()" class="mt-2 w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">系统分享</button>
+    <button type="button" onclick="hideCheckinShare()" class="mt-1 w-full h-10 text-[12px] text-[var(--ink-faint)]">关掉</button>
+    </div>
   </div>
 </div>
 
@@ -1437,8 +1628,8 @@
 const API = ''; // same-origin; server serves this file too
 const calBowImg = new Image();
 calBowImg.src = '/img/bow.png';
-const shareShoeImg = new Image();
-shareShoeImg.src = '/img/pack-shoes-pink.png';
+const shareQrImg = new Image();
+shareQrImg.src = '/img/qr-balletmind.png';
 
 function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 function toast(msg, ms = 2200) {
@@ -1799,12 +1990,17 @@ async function checkAuthAndInit() {
 
 // ---------- navigation ----------
 function goHome() { loadHome(); show('screen-home'); refreshNoticeDot(); refreshProgressDot(); }
+function setRecTimer(sec) {
+  const el = document.getElementById('rec-timer');
+  if (!el) return;
+  el.innerHTML = `<span class="rec-timer-num">${Number(sec) || 0}</span><span class="rec-timer-unit">秒</span>`;
+}
 function resetRecordScreen() {
   segments = []; renderSegments();
   document.getElementById('manual-input').value='';
   document.getElementById('generate-btn').disabled = true;
   document.getElementById('rec-live-text').textContent='';
-  document.getElementById('rec-timer').textContent='0s';
+  setRecTimer(0);
   document.getElementById('rec-btn').disabled = false;
   document.getElementById('rec-btn').classList.remove('opacity-40', 'hidden');
   document.getElementById('rec-state').textContent = recorderSupported ? '请点中间开始' : '这台设备暂时不能录音，请在下面打字';
@@ -1818,6 +2014,8 @@ function resetRecordScreen() {
   if (prompts) prompts.open = false;
 }
 function goRecord() {
+  const recapEl = document.getElementById('home-recap-tip');
+  if (recapEl && !recapEl.classList.contains('hidden')) markGuideSeen('recap');
   enableAiEntry();
   resetRecordScreen();
   show('screen-record');
@@ -1825,7 +2023,14 @@ function goRecord() {
 function goBackFromReview() {
   show('screen-record');
 }
-function goHistory() { ensureBrowseSession(); logEvent('history_opened', {}, 'browse'); loadHistory(); show('screen-history'); }
+function goHistory() {
+  const archiveEl = document.getElementById('nav-archive-tip');
+  if (archiveEl && !archiveEl.classList.contains('hidden')) markGuideSeen('archive');
+  ensureBrowseSession();
+  logEvent('history_opened', {}, 'browse');
+  loadHistory();
+  show('screen-history');
+}
 
 function headerInitial() {
   const user = getUser();
@@ -1862,7 +2067,7 @@ async function goProfile() {
 // user feedback discussion: a "评级" badge would contradict the product's
 // deliberate "don't evaluate the user's performance" stance.
 const BADGES = [
-  { id: 'count-1', kind: 'count', value: 1, icon: 'solar:medal-ribbons-star-linear', label: '第一次记录' },
+  { id: 'count-1', kind: 'count', value: 1, icon: 'solar:medal-ribbons-star-linear', label: '第一次课记' },
   { id: 'count-3', kind: 'count', value: 3, icon: 'solar:medal-ribbons-star-linear', label: '记录 3 次' },
   { id: 'count-5', kind: 'count', value: 5, icon: 'solar:medal-ribbons-star-linear', label: '记录 5 次' },
   { id: 'count-10', kind: 'count', value: 10, icon: 'solar:medal-star-linear', label: '记录 10 次' },
@@ -1870,12 +2075,12 @@ const BADGES = [
   { id: 'count-30', kind: 'count', value: 30, icon: 'solar:medal-star-linear', label: '记录 30 次' },
   { id: 'count-50', kind: 'count', value: 50, icon: 'solar:cup-star-linear', label: '记录 50 次' },
   { id: 'count-100', kind: 'count', value: 100, icon: 'solar:cup-star-bold', label: '记录 100 次' },
-  { id: 'streak-2', kind: 'streak', value: 2, icon: 'solar:fire-linear', label: '连续 2 周' },
-  { id: 'streak-4', kind: 'streak', value: 4, icon: 'solar:fire-linear', label: '连续 4 周' },
-  { id: 'streak-8', kind: 'streak', value: 8, icon: 'solar:fire-linear', label: '连续 8 周' },
-  { id: 'streak-12', kind: 'streak', value: 12, icon: 'solar:fire-bold', label: '连续 12 周' },
-  { id: 'streak-26', kind: 'streak', value: 26, icon: 'solar:fire-bold', label: '连续 26 周' },
-  { id: 'streak-52', kind: 'streak', value: 52, icon: 'solar:fire-bold', label: '连续 52 周' },
+  { id: 'streak-2', kind: 'streak', value: 2, icon: 'solar:fire-linear', label: '来过 2 周' },
+  { id: 'streak-4', kind: 'streak', value: 4, icon: 'solar:fire-linear', label: '来过 4 周' },
+  { id: 'streak-8', kind: 'streak', value: 8, icon: 'solar:fire-linear', label: '来过 8 周' },
+  { id: 'streak-12', kind: 'streak', value: 12, icon: 'solar:fire-bold', label: '来过 12 周' },
+  { id: 'streak-26', kind: 'streak', value: 26, icon: 'solar:fire-bold', label: '来过 26 周' },
+  { id: 'streak-52', kind: 'streak', value: 52, icon: 'solar:fire-bold', label: '来过 52 周' },
 ];
 function mondayKeyMs(ts) {
   const d = new Date(ts);
@@ -1916,7 +2121,9 @@ function classSessionCounts(rows, dayKey) {
 }
 function formatSessionSummary(counts) {
   if (!counts.length) return '';
-  return counts.map(([n, c]) => `${n} ${c}节`).join(' · ');
+  // At most three classes — the home/share line cannot hold more.
+  // Unnamed sessions: just the count, not "未写课名 4节".
+  return counts.slice(0, 3).map(([n, c]) => (n === '未写课名' ? `${c}节` : `${n} ${c}节`)).join('｜');
 }
 function recentClassNames(rows) {
   const seen = [];
@@ -1927,11 +2134,15 @@ function recentClassNames(rows) {
   });
   return seen.slice(0, 6);
 }
+// Shown only when the user has no class-name history yet (recentClassNames comes back
+// empty) -- new users otherwise see an empty row here with nothing to tap.
+const DEFAULT_CLASS_TAGS = ['基训', '软开拉伸', 'PBT'];
 function fillClassNameChips(containerId, inputId, rows) {
   const chips = document.getElementById(containerId);
   const nameInput = document.getElementById(inputId);
   if (!chips) return;
-  const names = recentClassNames(rows);
+  const recent = recentClassNames(rows);
+  const names = recent.length ? recent : DEFAULT_CLASS_TAGS;
   chips.innerHTML = names.map((n) =>
     `<button type="button" data-class="${escapeHtml(n)}" class="px-3 py-1 rounded-full border border-[var(--border-soft)] text-[11px] text-[var(--burgundy)] bg-white/70">${escapeHtml(n)}</button>`
   ).join('');
@@ -1948,7 +2159,7 @@ function paintTodayClassSummary(rows) {
   if (!el) return;
   const text = formatSessionSummary(classSessionCounts(rows, dateKey(new Date())));
   el.classList.toggle('hidden', !text);
-  el.textContent = text ? `今天 · ${text}` : '';
+  el.textContent = text ? `今天 ${text}` : '';
 }
 function renderBadges(rows) {
   const grid = document.getElementById('badge-grid');
@@ -1968,7 +2179,7 @@ function renderBadges(rows) {
     </div>`;
   const earnedBlock = earned.length
     ? `<div class="grid grid-cols-4 gap-x-2 gap-y-4 pt-2">${earned.map(cell).join('')}</div>`
-    : `<p class="text-[12.5px] leading-6 text-[var(--ink-soft)]">复盘几次后，第一枚会亮在这儿。</p>`;
+    : `<p class="text-[12.5px] leading-6 text-[var(--ink-soft)]">写下课后，会亮起来。</p>`;
   const lockedBlock = locked.length
     ? `<details class="badge-locked mt-4">
         <summary class="flex items-center justify-between gap-2 py-1">
@@ -2025,11 +2236,13 @@ async function loadHome() {
   const rows = await res.json();
   const recapCount = rows.filter((r) => !isCheckinOnly(r)).length;
   const trainedHours = formatTrainingHours(rows);
-  const homeEmpty = recapCount === 0 && trainedHours === null;
+  const streak = computeDailyStreak(rows);
+  const homeEmpty = !rows.length;
   document.getElementById('home-stat-nums').classList.toggle('hidden', homeEmpty);
   document.getElementById('home-stat-empty').classList.toggle('hidden', !homeEmpty);
   if (!homeEmpty) {
     document.getElementById('stat-count').innerHTML = `${recapCount}<span>次</span>`;
+    document.getElementById('stat-streak').innerHTML = `${streak}<span>天</span>`;
     const hoursEl = document.getElementById('stat-duration');
     if (trainedHours === null) {
       hoursEl.classList.add('is-empty');
@@ -2039,19 +2252,11 @@ async function loadHome() {
       hoursEl.innerHTML = `${String(trainedHours).replace(/\.0$/, '')}<span>小时</span>`;
     }
   }
-  const highlightEl = document.getElementById('home-highlight-line');
-  if (highlightEl) {
-    const streak = computeDailyStreak(rows);
-    const line = homeEmpty ? '' : homeHighlightLine(recapCount, trainedHours, streak);
-    highlightEl.textContent = line;
-    highlightEl.classList.toggle('hidden', !line);
-  }
   homeRows = Array.isArray(rows) ? rows : [];
   rememberClassNameFromRecords(homeRows);
   homeCalendarExpanded = false;
   homeCalendarCursor = new Date();
   paintHomeCta(homeRows);
-  document.getElementById('home-first-hint').classList.toggle('hidden', recapCount !== 0);
   renderHomeCalendar();
   paintTodayClassSummary(homeRows);
   renderCheckinStatus(homeRows);
@@ -2078,6 +2283,7 @@ function paintHomeCta(rows) {
     const ct = document.getElementById('home-checkin-title');
     if (ct) ct.textContent = '打卡';
   }
+  paintHomeGuides();
   if (!title || !sub) return;
   if (fullToday) {
     title.textContent = '再记一笔';
@@ -2090,8 +2296,47 @@ function paintHomeCta(rows) {
     sub.textContent = '说几句就好';
   }
 }
+const GUIDE_KEYS = {
+  recap: 'bm_guide_recap',
+  checkin: 'bm_checkin_tip_seen',
+  archive: 'bm_guide_archive',
+};
+function guideSeen(name) {
+  try { return !!localStorage.getItem(GUIDE_KEYS[name]); } catch (e) { return true; }
+}
+function markGuideSeen(name) {
+  try { localStorage.setItem(GUIDE_KEYS[name], '1'); } catch (e) {}
+  const ids = { recap: 'home-recap-tip', checkin: 'home-checkin-tip', archive: 'nav-archive-tip' };
+  const el = document.getElementById(ids[name]);
+  if (el) el.classList.add('hidden');
+}
+function dismissGuide(name) {
+  if (window.event) window.event.stopPropagation();
+  markGuideSeen(name);
+  paintHomeGuides();
+}
+function paintHomeGuides() {
+  const recapEl = document.getElementById('home-recap-tip');
+  const checkinEl = document.getElementById('home-checkin-tip');
+  const archiveEl = document.getElementById('nav-archive-tip');
+  [recapEl, checkinEl, archiveEl].forEach((el) => { if (el) el.classList.add('hidden'); });
+  const empty = !(homeRows && homeRows.length);
+  if (!guideSeen('recap') && empty) {
+    if (recapEl) recapEl.classList.remove('hidden');
+    return;
+  }
+  if (!guideSeen('checkin') && (empty || guideSeen('recap'))) {
+    if (checkinEl) checkinEl.classList.remove('hidden');
+    return;
+  }
+  if (!guideSeen('archive') && empty && guideSeen('recap') && guideSeen('checkin')) {
+    if (archiveEl) archiveEl.classList.remove('hidden');
+  }
+}
+function dismissCheckinTip() { dismissGuide('checkin'); }
 let checkinSheetSource = 'home';
 async function openCheckinSheet(source) {
+  dismissCheckinTip();
   checkinSheetSource = source === 'history' ? 'history' : 'home';
   checkinDurationMin = null;
   checkinMood = null;
@@ -2110,16 +2355,56 @@ async function openCheckinSheet(source) {
   }
   fillClassNameChips('checkin-class-chips', 'checkin-classname', rowsForSheet);
   const m = document.getElementById('checkin-sheet-mask');
+  m.classList.remove('is-leaving');
   m.classList.remove('hidden');
   m.classList.add('flex');
+  const panel = m.querySelector('.checkin-sheet-panel');
+  if (panel) replayAnimation(panel);
 }
-function hideCheckinSheet() {
+function actuallyHideCheckinSheet() {
   const m = document.getElementById('checkin-sheet-mask');
+  if (!m) return;
   m.classList.add('hidden');
-  m.classList.remove('flex');
+  m.classList.remove('flex', 'is-leaving');
+}
+function hideCheckinSheet() { dismissCheckinSheet(); }
+function dismissCheckinSheet() {
+  const m = document.getElementById('checkin-sheet-mask');
+  return new Promise((resolve) => {
+    if (!m || m.classList.contains('hidden')) { resolve(); return; }
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { actuallyHideCheckinSheet(); resolve(); return; }
+    if (m.classList.contains('is-leaving')) { resolve(); return; }
+    const panel = m.querySelector('.checkin-sheet-panel');
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      actuallyHideCheckinSheet();
+      resolve();
+    };
+    m.classList.add('is-leaving');
+    if (panel) {
+      panel.addEventListener('transitionend', (e) => {
+        if (e.propertyName === 'transform') finish();
+      }, { once: true });
+    }
+    setTimeout(finish, 420);
+  });
 }
 let checkinDurationMin = null;
 let checkinMood = null;
+let calMarkPopKey = null;
+let pendingCalMarkPop = null;
+let pendingShareMilestone = null;
+function playPendingCalMarkPop() {
+  if (!pendingCalMarkPop) return;
+  calMarkPopKey = pendingCalMarkPop;
+  pendingCalMarkPop = null;
+  renderHomeCalendar();
+  renderCheckinArchive();
+  setTimeout(() => { calMarkPopKey = null; }, 800);
+}
 function selectCheckinDuration(min) {
   checkinDurationMin = (checkinDurationMin === min) ? null : min;
   document.querySelectorAll('.checkin-duration-chip').forEach((btn) => {
@@ -2137,8 +2422,6 @@ async function submitCheckin() {
   if (submit) submit.disabled = true;
   try {
     const className = (document.getElementById('checkin-classname')?.value || '').trim();
-    const todayKey = dateKey(new Date());
-    const firstToday = !(homeRows || []).some((r) => dateKey(new Date(r.created_at)) === todayKey);
     const res = await authFetch(`${API}/api/records/checkin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2152,16 +2435,16 @@ async function submitCheckin() {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { toast(data.error || '打卡失败，请重试'); return; }
     if (className) rememberClassName(className);
-    hideCheckinSheet();
+    pendingShareMilestone = data.milestone || null;
+    pendingCalMarkPop = dateKey(new Date());
+    await dismissCheckinSheet();
     await loadHome();
-    const summary = formatSessionSummary(classSessionCounts(homeRows || [], todayKey));
-    toast(summary ? `记下了 · ${summary}` : '今天练过了');
     if (checkinSheetSource === 'history') {
       await loadHistory();
       setHistoryView('checkin');
       show('screen-history');
     }
-    if (firstToday) openCheckinShare();
+    openCheckinShare();
   } catch (e) {
     toast('打卡失败，请重试');
   } finally {
@@ -2170,8 +2453,15 @@ async function submitCheckin() {
 }
 function hideCheckinShare() {
   const m = document.getElementById('checkin-share-mask');
-  m.classList.add('hidden');
-  m.classList.remove('flex');
+  if (m) {
+    m.classList.add('hidden');
+    m.classList.remove('flex');
+  }
+  const petals = document.getElementById('checkin-share-petals');
+  if (petals) petals.innerHTML = '';
+  pendingShareMilestone = null;
+  actuallyHideCheckinSheet();
+  try { playPendingCalMarkPop(); } catch (e) {}
 }
 function checkinShareBlob() {
   return new Promise((resolve) => {
@@ -2253,12 +2543,20 @@ function drawBowKnot(ctx, cx, y, dw) {
   ctx.drawImage(calBowImg, 0, 0, sw, sh, cx - dw / 2, y, dw, dh);
   ctx.restore();
 }
-function drawShareShoes(ctx, x, y, dw) {
-  if (!shareShoeImg.complete || !shareShoeImg.naturalWidth) return;
-  const ratio = shareShoeImg.naturalHeight / shareShoeImg.naturalWidth;
+// Corner QR tile: a small rounded-square "sticker" pinned to the card's bottom-right
+// corner (x2/y2 are the card's own right/bottom edges), same idea as a wax seal.
+function drawShareQr(ctx, x2, y2) {
+  const size = 62, pad = 6, tile = size + pad * 2;
   ctx.save();
-  ctx.globalAlpha = 0.42;
-  ctx.drawImage(shareShoeImg, x, y, dw, dw * ratio);
+  roundRectPath(ctx, x2 - tile, y2 - tile, tile, tile, 16);
+  ctx.fillStyle = '#fffaf8';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(176,148,144,.25)';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+  if (shareQrImg.complete && shareQrImg.naturalWidth) {
+    ctx.drawImage(shareQrImg, x2 - tile + pad, y2 - tile + pad, size, size);
+  }
   ctx.restore();
 }
 function drawHairline(ctx, x1, y, x2, alpha) {
@@ -2354,6 +2652,7 @@ function drawCheckinCard() {
   }, 0);
   const todayLine = formatSessionSummary(classSessionCounts(homeRows || [], dateKey(now)));
   const streak = computeDailyStreak(homeRows || []);
+  const totalDays = new Set((homeRows || []).map((r) => dateKey(new Date(r.created_at)))).size;
   const cx = w / 2;
 
   ctx.textAlign = 'center';
@@ -2374,38 +2673,51 @@ function drawCheckinCard() {
   drawHairline(ctx, 108, 188, w - 108, 0.32);
 
   const cols = [
-    { label: '来过', value: `${monthDays} 天`, x: w * 0.28 },
-    { label: '时长', value: monthMin ? minutesLabel(monthMin) : '未记', x: cx },
-    { label: '连续', value: `${streak} 天`, x: w * 0.72 },
+    { label: '本月', value: `${monthDays} 天`, x: w * 0.185 },
+    { label: '时长', value: monthMin ? minutesLabel(monthMin) : '未记', x: w * 0.395 },
+    { label: '连续', value: `${streak} 天`, x: w * 0.605 },
+    { label: '累计', value: `${totalDays} 天`, x: w * 0.815 },
   ];
   cols.forEach((c) => {
     ctx.fillStyle = '#a89896';
     ctx.font = '400 11px "PingFang SC", "Hiragino Sans GB", sans-serif';
     ctx.fillText(c.label, c.x, 214);
     ctx.fillStyle = '#4a4341';
-    ctx.font = '600 24px "Cormorant Garamond", Georgia, serif';
+    ctx.font = '600 22px "Cormorant Garamond", Georgia, serif';
     ctx.fillText(c.value, c.x, 244);
   });
 
   drawHairline(ctx, 108, 264, w - 108, 0.28);
 
   drawMiniMonth(ctx, homeRows || [], 86, 278, w - 172, 430);
-  drawShareShoes(ctx, w - 172, 648, 96);
 
   drawHairline(ctx, 108, 748, w - 108, 0.28);
+  ctx.textAlign = 'left';
   ctx.fillStyle = '#8f7f7d';
   ctx.font = '400 13px "PingFang SC", "Hiragino Sans GB", sans-serif';
-  ctx.fillText(todayLine ? `今天 · ${todayLine}` : '今天记下了', cx, 778);
+  ctx.fillText(todayLine ? `今天 ${todayLine}` : '今天来过了', 108, 778);
+
+  drawShareQr(ctx, w - (inset + 12), h - (inset + 12));
 }
 function openCheckinShare() {
+  actuallyHideCheckinSheet();
   drawCheckinCard();
   if (!calBowImg.complete) calBowImg.onload = () => drawCheckinCard();
-  if (!shareShoeImg.complete) shareShoeImg.onload = () => drawCheckinCard();
+  if (!shareQrImg.complete) shareQrImg.onload = () => drawCheckinCard();
+  const mile = document.getElementById('checkin-share-milestone');
+  if (mile) {
+    const text = milestoneText(pendingShareMilestone);
+    mile.textContent = text;
+    mile.classList.toggle('hidden', !text);
+  }
   const m = document.getElementById('checkin-share-mask');
   m.classList.remove('hidden');
   m.classList.add('flex');
   const nativeBtn = document.getElementById('checkin-share-native');
   nativeBtn.classList.toggle('hidden', !(navigator.share || navigator.canShare));
+  const card = document.getElementById('checkin-share-card');
+  if (card) replayAnimation(card);
+  spawnCeremonyPetals(18, true, 'checkin-share-petals');
 }
 function shareCheckinCard() { openCheckinShare(); }
 async function downloadCheckinCard() {
@@ -2438,15 +2750,6 @@ async function nativeShareCheckinCard() {
     if (e && e.name === 'AbortError') return;
   }
   await downloadCheckinCard();
-}
-// One short, warm line under the home stat numbers -- a "highlight moment" instead of
-// bare digits. Streak takes priority (most motivating), then cumulative hours, then a
-// plain count. Never a judgement, just a fact about this account's own history.
-function homeHighlightLine(recapCount, trainedHours, streak) {
-  if (!recapCount && !streak) return '';
-  if (streak >= 2) return `连续 ${streak} 天啦`;
-  if (trainedHours) return `陪自己练习了 ${String(trainedHours).replace(/\.0$/, '')} 小时`;
-  return `这是你写下的第 ${recapCount} 篇`;
 }
 function computeDailyStreak(rows) {
   if (!rows.length) return 0;
@@ -2830,14 +3133,15 @@ async function loadHistory() {
   const res = await authFetch(`${API}/api/records`);
   historyRows = await res.json();
   document.getElementById('history-search').value = '';
-  document.getElementById('history-empty').style.display = historyRows.length === 0 ? 'block' : 'none';
+  const recaps = historyRows.filter((r) => !isCheckinOnly(r));
+  document.getElementById('history-empty').style.display = recaps.length === 0 ? 'block' : 'none';
   filterHistory();
   setHistoryView(historyViewMode);
 }
 function renderHistoryTermChips() {
   const wrap = document.getElementById('history-term-chips');
   if (!wrap) return;
-  if (historyRows.length === 0) {
+  if (historyRows.filter((r) => !isCheckinOnly(r)).length === 0) {
     wrap.innerHTML = '';
     return;
   }
@@ -2862,9 +3166,10 @@ function applyHistoryTerm(term) {
 }
 
 function filterHistory() {
+  const recaps = historyRows.filter((r) => !isCheckinOnly(r));
   const keyword = document.getElementById('history-search').value.trim();
-  const rows = keyword ? historyRows.filter((r) => recordMatchesSearch(r, keyword)) : historyRows;
-  document.getElementById('history-search-empty').classList.toggle('hidden', rows.length > 0 || historyRows.length === 0);
+  const rows = keyword ? recaps.filter((r) => recordMatchesSearch(r, keyword)) : recaps;
+  document.getElementById('history-search-empty').classList.toggle('hidden', rows.length > 0 || recaps.length === 0);
   document.getElementById('history-list').innerHTML = rows.map(r => entryCard(r)).join('');
   renderHistoryTermChips();
 }
@@ -2879,19 +3184,12 @@ function classHourStats(rows) {
   const map = new Map();
   (rows || []).forEach((r) => {
     const name = classNameOf(r);
-    const cur = map.get(name) || { name, sessions: 0, minutes: 0, moods: [] };
+    const cur = map.get(name) || { name, sessions: 0, minutes: 0 };
     cur.sessions += 1;
     if (r.training_duration_min != null) cur.minutes += Number(r.training_duration_min) || 0;
-    if (r.mood) cur.moods.push(r.mood);
     map.set(name, cur);
   });
   return [...map.values()].sort((a, b) => b.minutes - a.minutes || b.sessions - a.sessions);
-}
-function mostCommonMood(moods) {
-  if (!moods.length) return '';
-  const tally = {};
-  moods.forEach((m) => { tally[m] = (tally[m] || 0) + 1; });
-  return Object.entries(tally).sort((a, b) => b[1] - a[1])[0][0];
 }
 let selectedCheckinDate = null;
 function shiftCheckinMonth(delta) {
@@ -2954,11 +3252,9 @@ function renderCheckinArchive() {
   const shown = (classStatsShowAll || extra <= 0) ? stats : stats.slice(0, CLASS_STATS_PREVIEW);
   const head = `<div class="checkin-class-head"><span>课名</span><span>节</span><span>小时</span></div>`;
   statsEl.innerHTML = head + shown.map((s) => {
-    const mood = mostCommonMood(s.moods);
-    const moodBit = mood ? moodMark(mood, 13) : '';
     const hours = s.minutes ? minutesLabel(s.minutes).replace('小时', '') : '未记';
     return `<div class="checkin-class-row">
-      <p class="checkin-class-name">${moodBit}<span>${escapeHtml(s.name)}</span></p>
+      <p class="checkin-class-name"><span>${escapeHtml(s.name)}</span></p>
       <p class="checkin-class-count">${s.sessions}</p>
       <p class="checkin-class-hours${s.minutes ? '' : ' is-empty'}">${hours}</p>
     </div>`;
@@ -3020,7 +3316,8 @@ function calendarCellHtml(key, dayNum, byDate, selectedKey, selectFnName, runCla
   const check = (!hasFullRecord && hasCheckin)
     ? '<svg class="cal-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.6l4.4 4.6L19.2 7" fill="none" stroke="rgba(120,70,70,.28)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12.6l4.4 4.6L19.2 7" fill="none" stroke="url(#cal-check-g)" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"/></svg>'
     : '';
-  const marks = (bow || check) ? `<span class="cal-marks">${bow}${check}</span>` : '<span class="cal-marks"></span>';
+  const pop = (key === calMarkPopKey && (hasFullRecord || hasCheckin)) ? ' cal-mark-pop' : '';
+  const marks = (bow || check) ? `<span class="cal-marks${pop}">${bow}${check}</span>` : '<span class="cal-marks"></span>';
   return `<button type="button" ${action} class="${cls.join(' ')}"><span class="cal-daynum">${dayNum}</span>${marks}</button>`;
 }
 function weekRunClasses(weekCells, byDate) {
@@ -3091,13 +3388,13 @@ function paintDayList(byDate, year, month, selectedKey, emptyId, listId) {
       emptyEl.classList.add('hidden');
       const summary = formatSessionSummary(classSessionCounts(dayRows, selectedKey));
       const banner = summary
-        ? `<p class="mb-2 px-1 text-[12.5px] font-medium text-[var(--burgundy)]">当天 · ${escapeHtml(summary)}</p>`
+        ? `<p class="mb-2 px-1 text-[12.5px] font-medium text-[var(--burgundy)]">当天 ${escapeHtml(summary)}</p>`
         : '';
       listEl.innerHTML = banner + dayRows.map(r => entryCard(r)).join('');
     } else {
       listEl.innerHTML = '';
       emptyEl.classList.remove('hidden');
-      emptyEl.innerHTML = `<span class="text-[var(--ink-faint)]">这一天还没有课记</span>`;
+      emptyEl.innerHTML = `<span class="text-[var(--ink-faint)]">这一天还没有</span>`;
     }
     return;
   }
@@ -3113,7 +3410,7 @@ function paintDayList(byDate, year, month, selectedKey, emptyId, listId) {
   emptyEl.classList.remove('hidden');
   emptyEl.innerHTML = hasAnyThisMonth
     ? `<span class="text-[11px] text-[var(--ink-faint)]">请点有标记的日子</span>`
-    : `<span class="text-[var(--ink-soft)]">记下或复盘之后，格子上会出现标记。</span>`;
+    : `<span class="text-[var(--ink-soft)]">记下之后，格子上会出现标记。</span>`;
 }
 
 function setHistoryView(mode) {
@@ -3285,12 +3582,13 @@ async function openDetail(id) {
   currentDetailRecord = r;
   document.getElementById('detail-title').textContent = classNameOf(r);
   document.getElementById('detail-mood').innerHTML = moodMark(r.mood, 18);
-  const trainedNote = r.training_duration_min != null ? ` · 训练${minutesLabel(r.training_duration_min)}` : '';
+  const trainedNote = r.training_duration_min != null ? ` · ${minutesLabel(r.training_duration_min)}` : '';
   const checkin = isCheckinOnly(r);
-  const durationNote = checkin ? '' : ` · ${r.duration_sec}s语音`;
-  document.getElementById('detail-date').textContent = fmtDate(r.created_at) + durationNote + trainedNote;
-  document.getElementById('detail-transcript').textContent = checkin ? '这天只打了个卡，没有写详细内容。' : r.transcript;
+  document.getElementById('detail-date').textContent = fmtDate(r.created_at).split(' ')[0] + trainedNote;
+  document.getElementById('detail-transcript').textContent = checkin ? '这天只打了个卡，没有写详细内容。' : (r.transcript || '');
   document.getElementById('detail-fields').classList.toggle('hidden', checkin);
+  const tWrap = document.getElementById('detail-transcript-wrap');
+  if (tWrap) tWrap.classList.toggle('hidden', checkin);
   document.getElementById('detail-fill-btn').classList.toggle('hidden', !checkin);
   document.getElementById('detail-share-btn').classList.toggle('hidden', !checkin);
   if (!checkin) {
@@ -3451,12 +3749,12 @@ async function startRecording() {
   document.getElementById('rec-btn').classList.add('is-recording');
   document.getElementById('rec-state').textContent = '正在录音';
   currentSegSeconds = 0;
-  document.getElementById('rec-timer').textContent = '0s';
+  setRecTimer(0);
   mediaRecorder.start();
   updateGenerateBtn();
   timerInterval = setInterval(() => {
     currentSegSeconds++;
-    document.getElementById('rec-timer').textContent = currentSegSeconds + 's';
+    setRecTimer(currentSegSeconds);
     if (currentSegSeconds >= 60) stopRecording();
   }, 1000);
 }
@@ -3678,14 +3976,24 @@ const MOOD_LABELS = { low: '不在状态', meh: '一般', good: '还不错', gre
 function updateReviewExtrasSummary() {
   const el = document.getElementById('review-extras-summary');
   if (!el) return;
-  if (selectedMood && (document.getElementById('review-tips')?.value || '').trim()) {
-    el.textContent = `已记下 ${MOOD_LABELS[selectedMood]} · 还有小提示`;
-  } else if (selectedMood) {
+  const tipsOpen = !document.getElementById('review-tips-open')?.classList.contains('hidden');
+  if (selectedMood) {
     el.textContent = `已记下 ${MOOD_LABELS[selectedMood]}`;
-  } else if ((document.getElementById('review-tips')?.value || '').trim()) {
-    el.textContent = '已记下小提示';
   } else {
-    el.textContent = '心情、小提示，都可以以后再补';
+    el.textContent = tipsOpen ? '心情都可以先空着' : '心情、小提示，都可以以后再补';
+  }
+}
+function placeReviewTips(open) {
+  const openWrap = document.getElementById('review-tips-open');
+  const foldSlot = document.getElementById('review-tips-fold');
+  const field = document.getElementById('review-tips-field');
+  if (!openWrap || !foldSlot || !field) return;
+  if (open) {
+    openWrap.classList.remove('hidden');
+    if (field.parentElement !== openWrap) openWrap.appendChild(field);
+  } else {
+    openWrap.classList.add('hidden');
+    if (field.parentElement !== foldSlot) foldSlot.appendChild(field);
   }
 }
 function toggleReviewExtras(forceOpen) {
@@ -3739,6 +4047,7 @@ function renderReview(isFreshDraft = true) {
   document.getElementById('review-improve').value = r.improve_points || '';
   document.getElementById('review-next').value = r.next_time_reminder || '';
   document.getElementById('review-tips').value = r.session_tips || '';
+  placeReviewTips(!!(r.session_tips || '').trim());
   // Reveal in order (good -> improve -> next), reinforcing good_points as the lead field.
   [['review-good', 0], ['review-improve', 90], ['review-next', 180]].forEach(([id, delay]) => {
     const wrap = document.getElementById(id).parentElement;
@@ -3818,6 +4127,7 @@ async function confirmSave() {
   if (!res.ok) { toast(result.error || '保存失败'); return; }
   rememberClassName(body.className);
   captureSessionId = '';
+  calMarkPopKey = dateKey(new Date());
   showSaveCeremony(result.milestone);
   } catch (e) {
     toast('保存失败：' + (e.message || '请重试'));
@@ -3832,7 +4142,7 @@ async function confirmSave() {
 function milestoneText(m) {
   if (!m) return '';
   if (m.type === 'count' && m.value === 1) return '这是你的第一条课记。多记几次后，「追踪」里会出现反复提到的问题。';
-  if (m.type === 'count') return `已经记下 ${m.value} 次了。`;
+  if (m.type === 'count') return `已经写下 ${m.value} 次课记了。`;
   if (m.type === 'streak') return `已经连续 ${m.value} 周来过了。`;
   return '';
 }
@@ -3845,8 +4155,9 @@ function replayAnimation(el) {
   el.style.animation = '';
 }
 const PETAL_COLORS = ['#d4b8b8', '#e4cfc8', '#cbb79a', '#c4a4a6', '#e8d5d1', '#ddd0c4', '#b89a9c'];
-function spawnCeremonyPetals(count, withStars) {
-  const layer = document.getElementById('ceremony-petals');
+function spawnCeremonyPetals(count, withStars, layerId) {
+  const layer = document.getElementById(layerId || 'ceremony-petals');
+  if (!layer) return;
   layer.innerHTML = '';
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduce) return;
@@ -3880,6 +4191,7 @@ function dismissSaveCeremony() {
   const layer = document.getElementById('ceremony-petals');
   if (layer) layer.innerHTML = '';
   goHome();
+  setTimeout(() => { calMarkPopKey = null; }, 800);
 }
 function showSaveCeremony(milestone) {
   const overlay = document.getElementById('save-ceremony');
