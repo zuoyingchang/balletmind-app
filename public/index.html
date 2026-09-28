@@ -478,10 +478,10 @@
   .btn-ribbon {
     position: relative; overflow: hidden; color: #faf6f4;
     font-weight: 600;
-    background: linear-gradient(135deg, #cbb4ae 0%, #c2a19e 55%, #ac9694 100%);
-    box-shadow: 0 12px 24px -14px rgba(120,90,94,.32), inset 0 1px 0 rgba(255,255,255,.45);
+    background: linear-gradient(135deg, #e8c496 0%, #dd9bab 55%, #c97a94 100%);
+    box-shadow: 0 12px 24px -14px rgba(160,90,110,.32), inset 0 1px 0 rgba(255,255,255,.5);
   }
-  .btn-ribbon .pearl-sheen { opacity: .5; background: linear-gradient(115deg, transparent 26%, rgba(255,255,255,.42) 40%, transparent 54%); }
+  .btn-ribbon .pearl-sheen { opacity: .62; background: linear-gradient(115deg, transparent 24%, rgba(255,255,255,.5) 40%, transparent 56%); }
 
   .chip { background: rgba(244, 235, 233, .7); }
   .duration-chip {
@@ -542,7 +542,7 @@
   .field-next { background: rgba(240, 228, 226, .72); }
   .field-good-lift { box-shadow: 0 3px 10px -6px rgba(122, 140, 122, .45); }
   .rec-mic {
-    background: linear-gradient(135deg, #cbb4ae 0%, #c2a19e 55%, #ac9694 100%);
+    background: linear-gradient(135deg, #e8c496 0%, #dd9bab 55%, #c97a94 100%);
     color: #fdfbfa;
     box-shadow: 0 12px 24px -12px rgba(140,100,100,.36), inset 0 1px 0 rgba(255,255,255,.5);
   }
@@ -740,18 +740,22 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
   }
   .term-chip-row {
-    display: flex; flex-wrap: wrap; gap: 8px;
+    display: flex; flex-wrap: nowrap; gap: 6px;
+    overflow-x: auto;
+    margin-bottom: 12px;
+    padding-bottom: 2px;
   }
   .term-chip {
     flex: 0 0 auto;
-    height: 32px;
-    padding: 0 13px;
+    height: 24px;
+    padding: 0 10px;
     border-radius: 999px;
-    font-size: 12px;
+    font-size: 11px;
     color: var(--ink-soft);
     background: rgba(255,252,251,.92);
     border: 1px solid var(--border-soft);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
+    white-space: nowrap;
   }
   .term-chip.is-on {
     font-weight: 600;
@@ -1233,11 +1237,11 @@
         <div class="relative z-10 mt-4 home-cta-row">
         <button id="home-cta-btn" onclick="goRecord()" class="btn-ribbon flex items-center gap-3 rounded-[22px] px-4 py-3.5">
           <span class="pearl-sheen"></span>
-          <span class="relative z-10 w-10 h-10 rounded-[14px] bg-white/20 flex items-center justify-center">
-            <iconify-icon icon="solar:microphone-3-linear" class="text-[22px] text-white"></iconify-icon>
+          <span class="relative z-10 w-10 h-10 rounded-full bg-white/20 flex items-center justify-center" style="box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 0 0 1px rgba(255,255,255,.18)">
+            <iconify-icon icon="solar:microphone-3-bold" class="text-[19px] text-white"></iconify-icon>
           </span>
           <span class="relative z-10 flex-1 text-left">
-            <strong class="block text-[15.5px] font-semibold" id="home-cta-title">记录今天的课</strong>
+            <strong class="font-display block text-[17px] font-semibold tracking-[0.01em]" id="home-cta-title">记录今天的课</strong>
             <span class="block mt-0.5 text-[12px] font-medium text-white/90" id="home-cta-sub">课后口述，整理成复盘</span>
           </span>
         </button>
@@ -1571,7 +1575,7 @@
           <iconify-icon icon="solar:magnifer-linear" class="relative z-10 text-[18px] text-[var(--rose-deep)]"></iconify-icon>
           <input id="history-search" oninput="filterHistory()" placeholder="搜 plie 或蹲都可以" class="relative z-10 flex-1 bg-transparent outline-none text-[12.5px] placeholder:text-[var(--ink-faint)]">
         </div>
-        <div id="history-term-chips" class="term-chip-row mb-4" onclick="onHistoryChipClick(event)"></div>
+        <div id="history-term-chips" class="term-chip-row" onclick="onHistoryChipClick(event)"></div>
         <div id="history-empty" class="mt-8 text-center">
           <img src="/img/pack-plie.png" alt="" aria-hidden="true" class="mx-auto w-[86px] h-[86px] opacity-60 tint-rose">
           <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]">这本课记还是空的，等你写下第一页。</p>
