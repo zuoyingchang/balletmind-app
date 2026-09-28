@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BalletMind · 课记目录稿</title>
+<link rel="stylesheet" href="/css/fonts.css">
+<link rel="stylesheet" href="/css/tailwind.css">
+<script src="/js/vendor/iconify-icon.min.js"></script>
+<style>
+  :root {
+    --ivory: #faf7f6;
+    --paper: #fdfbfa;
+    --blush: #f4ebe9;
+    --rose: #c4a8a8;
+    --rose-deep: #a07d7d;
+    --burgundy: #6a5555;
+    --gold: #b89a94;
+    --ink: #1c1918;
+    --ink-soft: #2a2624;
+    --ink-faint: #4f4a48;
+    --border-soft: rgba(196, 176, 174, .55);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; padding: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #ddd6d4; color: var(--ink);
+  }
+  .note { width: 360px; text-align: center; font-size: 12px; line-height: 1.7; color: #5a524f; }
+  .phone {
+    width: 393px; height: 852px; border-radius: 36px; overflow: hidden;
+    display: flex; flex-direction: column; position: relative;
+  }
+  .label-editorial {
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-style: italic; font-weight: 500; letter-spacing: .1em; margin: 0;
+  }
+  .page-title {
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-size: 28px; font-weight: 500; letter-spacing: .01em; margin: 2px 0 0;
+  }
+  .grain { position: relative; }
+  .app-shell {
+    background:
+      radial-gradient(90% 55% at 12% -8%, rgba(255,255,255,.92), transparent 46%),
+      radial-gradient(70% 40% at 100% 8%, rgba(243,232,230,.42), transparent 48%),
+      radial-gradient(90% 28% at 50% 108%, rgba(168,130,136,.16), transparent 58%),
+      linear-gradient(168deg, #fdfbfa 0%, #f7f2f1 48%, #f1e8e7 100%);
+  }
+  .wash-dust { position: relative; }
+  .wash-dust::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(80% 50% at 8% 92%, rgba(226,214,210,.3), transparent 58%);
+  }
+  .pearl-sheen {
+    position: absolute; inset: 0; pointer-events: none; z-index: 1; border-radius: inherit;
+    background:
+      radial-gradient(120% 80% at 16% -18%, rgba(255,255,255,.88), transparent 52%),
+      linear-gradient(118deg, transparent 26%, rgba(255,255,255,0) 34%, rgba(255,255,255,.55) 40%, rgba(255,255,255,0) 44%, transparent 50%, rgba(255,255,255,.26) 56%, transparent 63%);
+    mix-blend-mode: overlay; opacity: .72;
+  }
+  .chip { background: rgba(244, 235, 233, .7); border: 0; }
+  .card-journal {
+    position: relative; overflow: hidden;
+    background: linear-gradient(158deg, #fffcfb 0%, #f8f3f2 58%, #f1e7e6 100%);
+    border: 1px solid rgba(255,255,255,.82);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.94), 0 14px 32px -18px rgba(110,80,80,.18);
+  }
+  .archive-month {
+    background:
+      radial-gradient(88% 70% at 12% -8%, rgba(255,255,255,.96), transparent 50%),
+      radial-gradient(72% 58% at 100% 108%, rgba(232,208,208,.32), transparent 54%),
+      linear-gradient(158deg, #fffcfb 0%, #f6eeed 48%, #efe4e3 100%);
+  }
+  .archive-stat {
+    text-align: center; padding: 12px 6px 11px; border-radius: 18px; position: relative; overflow: hidden;
+    background: linear-gradient(165deg, rgba(255,255,255,.94) 0%, rgba(247,238,236,.78) 52%, rgba(236,220,218,.58) 100%);
+    border: 1px solid rgba(255,255,255,.78);
+  }
+  .archive-stat-num {
+    margin-top: 6px;
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-size: 30px; font-weight: 500; font-variant-numeric: tabular-nums;
+  }
+  .archive-stat-num span { font-size: 13px; margin-left: 4px; color: var(--ink-soft); }
+  .hist-tabs {
+    background: rgba(244, 235, 233, .72);
+    border: 1px solid var(--border-soft);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+  }
+  .term-chip {
+    height: 32px; padding: 0 13px; border-radius: 999px; font-size: 12px;
+    color: var(--ink-soft); background: rgba(255,252,251,.92);
+    border: 1px solid var(--border-soft);
+  }
+  .term-chip.is-on {
+    font-weight: 600; color: #fff; border-color: transparent;
+    background: linear-gradient(135deg, var(--gold), var(--rose-deep));
+  }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 4px; }
+  .cal-cell {
+    height: 36px; border-radius: 12px; font-size: 12px; color: var(--ink-faint);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cal-cell.has-came { background: rgba(196,168,168,.28); color: var(--burgundy); }
+  .cal-cell.has-record { background: linear-gradient(160deg, #d4b8b4, #b89290); color: #fff; }
+  .cal-cell.is-today { font-weight: 600; color: var(--ink); }
+  .header-avatar {
+    width: 44px; height: 44px; border-radius: 999px;
+    background: rgba(244,235,233,.7); color: var(--rose-deep); border: 0;
+  }
+  .view { display: none; }
+  .view.is-on { display: block; }
+
+  .toc-card {
+    padding: 18px 18px 14px;
+    border-radius: 24px;
+  }
+  .toc-kicker {
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic; font-size: 14px; color: var(--rose-deep); margin: 0 0 4px;
+  }
+  .toc-month {
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-size: 22px; font-weight: 500; margin: 18px 0 8px; letter-spacing: .04em;
+  }
+  .toc-month:first-of-type { margin-top: 8px; }
+  .toc-item {
+    margin: 0 0 6px; padding: 4px 8px 6px 10px;
+    border-radius: 14px;
+  }
+  .toc-item.is-on {
+    background: rgba(255,252,251,.88);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.95);
+  }
+  .toc-row {
+    display: flex; align-items: baseline; gap: 10px;
+    width: 100%; border: 0; background: transparent; padding: 8px 0 6px;
+    text-align: left; cursor: pointer; color: inherit;
+  }
+  .toc-row .when {
+    width: 36px; flex-shrink: 0;
+    font-family: "Cormorant Garamond", serif; font-size: 20px; font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .toc-row .name {
+    flex: 0 1 auto;
+    font-size: 16px; font-weight: 600; line-height: 1.2;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .toc-row .dots {
+    flex: 1; min-width: 20px; height: 10px; border: 0;
+    background-image: radial-gradient(circle, rgba(90, 60, 58, .55) 1.15px, transparent 1.35px);
+    background-size: 7px 10px;
+    background-repeat: repeat-x;
+    background-position: 0 50%;
+  }
+  .toc-row .pg {
+    font-family: "Cormorant Garamond", serif; font-size: 17px; color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+  .toc-item.is-on .name { color: var(--burgundy); }
+  .toc-preview {
+    display: none;
+    margin: 0 0 4px 36px;
+    padding: 6px 0 4px 12px;
+    border-left: 1.5px solid var(--gold);
+    font-size: 13.5px; line-height: 1.75; color: var(--ink-soft);
+  }
+  .toc-item.is-on .toc-preview { display: block; }
+</style>
+</head>
+<body>
+  <div class="phone grain app-shell shadow-[0_24px_60px_-28px_rgba(130,100,100,.32)]">
+    <div class="wash-dust flex flex-col w-full h-full relative">
+      <header class="relative z-10 shrink-0 px-6 pt-6 pb-2">
+        <div class="flex items-center gap-3">
+          <button type="button" class="chip w-11 h-11 shrink-0 rounded-full flex items-center justify-center" aria-label="返回">
+            <iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon>
+          </button>
+          <div class="flex-1 min-w-0">
+            <p class="label-editorial text-[13px] text-[var(--rose-deep)]">你的努力和成就</p>
+            <h1 class="page-title">档案</h1>
+          </div>
+          <button type="button" class="header-avatar shrink-0 flex items-center justify-center" aria-label="我的">
+            <iconify-icon icon="solar:user-circle-linear" class="text-[20px]"></iconify-icon>
+          </button>
+        </div>
+      </header>
+
+      <main class="relative z-10 flex-1 min-h-0 overflow-y-auto px-6 pb-7">
+        <div class="hist-tabs flex items-center gap-1 mb-3 rounded-full p-1">
+          <button type="button" id="tab-checkin" class="flex-1 h-8 rounded-full text-[11.5px] font-medium text-[var(--ink-faint)]">打卡</button>
+          <button type="button" id="tab-list" class="flex-1 h-8 rounded-full text-[11.5px] font-medium bg-white shadow-sm text-[var(--burgundy)]">课记</button>
+        </div>
+
+        <div class="view is-on" id="view-list">
+          <div class="card-journal grain relative flex items-center gap-2 rounded-[18px] px-4 h-12 mb-3">
+            <div class="pearl-sheen"></div>
+            <iconify-icon icon="solar:magnifer-linear" class="relative z-10 text-[18px] text-[var(--rose-deep)]"></iconify-icon>
+            <input placeholder="搜 plie 或蹲都可以" class="relative z-10 flex-1 bg-transparent outline-none text-[12.5px]" readonly>
+          </div>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <span class="term-chip is-on inline-flex items-center">全部</span>
+            <span class="term-chip inline-flex items-center">把杆</span>
+            <span class="term-chip inline-flex items-center">中级班</span>
+          </div>
+
+          <div class="card-journal toc-card grain relative">
+            <div class="pearl-sheen"></div>
+            <div class="relative z-10">
+              <p class="toc-kicker">目录</p>
+
+              <h2 class="toc-month">九月</h2>
+              <article class="toc-item is-on">
+                <button type="button" class="toc-row">
+                  <span class="when">28</span><span class="name">把杆</span><span class="dots"></span><span class="pg">13</span>
+                </button>
+                <p class="toc-preview">结束组合重心还是偏后。下次定点多停半拍。</p>
+              </article>
+              <article class="toc-item">
+                <button type="button" class="toc-row">
+                  <span class="when">27</span><span class="name">把杆</span><span class="dots"></span><span class="pg">8</span>
+                </button>
+                <p class="toc-preview">Pirouette 视线定点比上周稳。</p>
+              </article>
+              <article class="toc-item">
+                <button type="button" class="toc-row">
+                  <span class="when">24</span><span class="name">中级班</span><span class="dots"></span><span class="pg">3</span>
+                </button>
+                <p class="toc-preview">中级班：蹲的节奏还要再匀。</p>
+              </article>
+
+              <h2 class="toc-month">八月</h2>
+              <article class="toc-item">
+                <button type="button" class="toc-row">
+                  <span class="when">30</span><span class="name">把杆</span><span class="dots"></span><span class="pg">1</span>
+                </button>
+                <p class="toc-preview">把杆结束时先找脚。</p>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div class="view" id="view-checkin">
+          <div class="card-journal archive-month grain relative overflow-hidden px-4 pt-3.5 pb-3.5 mb-3" style="border-radius:24px">
+            <div class="pearl-sheen"></div>
+            <div class="relative z-10">
+              <p class="label-editorial text-[12px] text-[var(--rose-deep)]">这个月</p>
+              <div class="mt-2.5 grid grid-cols-2 gap-2">
+                <div class="archive-stat">
+                  <p class="text-[13px] tracking-[.1em] text-[var(--ink-soft)]">来过</p>
+                  <p class="archive-stat-num">6<span>天</span></p>
+                </div>
+                <div class="archive-stat">
+                  <p class="text-[13px] tracking-[.1em] text-[var(--ink-soft)]">时长</p>
+                  <p class="archive-stat-num">4<span>小时</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-journal grain relative overflow-hidden px-3 pt-3 pb-3" style="border-radius:24px">
+            <div class="pearl-sheen"></div>
+            <p class="relative z-10 label-editorial text-center text-[14px] mb-1">二〇二六年九月</p>
+            <div class="relative z-10 cal-grid text-center text-[11px] text-[var(--ink-faint)] mb-0.5">
+              <span class="py-0.5">日</span><span class="py-0.5">一</span><span class="py-0.5">二</span><span class="py-0.5">三</span><span class="py-0.5">四</span><span class="py-0.5">五</span><span class="py-0.5">六</span>
+            </div>
+            <div class="relative z-10 cal-grid" id="cal"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <p class="note">打卡、顶栏、搜索还是现在的档案。只把「课记」从卡片堆改成目录。现网代码没动。数字是示意。</p>
+  <script>
+    const tabList = document.getElementById('tab-list');
+    const tabCheckin = document.getElementById('tab-checkin');
+    const viewList = document.getElementById('view-list');
+    const viewCheckin = document.getElementById('view-checkin');
+    function setTab(mode) {
+      const list = mode === 'list';
+      viewList.classList.toggle('is-on', list);
+      viewCheckin.classList.toggle('is-on', !list);
+      tabList.className = 'flex-1 h-8 rounded-full text-[11.5px] font-medium ' + (list ? 'bg-white shadow-sm text-[var(--burgundy)]' : 'text-[var(--ink-faint)]');
+      tabCheckin.className = 'flex-1 h-8 rounded-full text-[11.5px] font-medium ' + (!list ? 'bg-white shadow-sm text-[var(--burgundy)]' : 'text-[var(--ink-faint)]');
+    }
+    tabList.addEventListener('click', () => setTab('list'));
+    tabCheckin.addEventListener('click', () => setTab('checkin'));
+
+    document.querySelectorAll('.toc-item').forEach((item) => {
+      item.querySelector('.toc-row').addEventListener('click', () => {
+        document.querySelectorAll('.toc-item').forEach((el) => el.classList.toggle('is-on', el === item));
+      });
+    });
+
+    const cal = document.getElementById('cal');
+    const came = new Set([16, 19, 23, 26]);
+    const recap = new Set([24, 27, 28]);
+    for (let i = 0; i < 2; i++) {
+      const el = document.createElement('div');
+      el.className = 'cal-cell';
+      cal.appendChild(el);
+    }
+    for (let d = 1; d <= 30; d++) {
+      const el = document.createElement('div');
+      el.className = 'cal-cell';
+      if (recap.has(d)) el.classList.add('has-record');
+      else if (came.has(d)) el.classList.add('has-came');
+      if (d === 28) el.classList.add('is-today');
+      el.textContent = d;
+      cal.appendChild(el);
+    }
+  </script>
+</body>
+</html>

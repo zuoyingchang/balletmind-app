@@ -1,0 +1,32 @@
+---
+description: 产品文档等设计定了再改；不要在实现同一轮自动改 PM docs
+alwaysApply: true
+---
+
+# 文档和原型：等设计定了再改
+
+实现、试界面、local 演示时，**不要顺手改** `docs/pm_docs/`。用户会说设计定了，或明确说「更新文档 / 同步 PRD」，再改。
+
+## 等明确指令再改
+
+仓库 `docs/pm_docs/`：
+
+- `2.0_Project_Brief.md`
+- `2.0_PRD.md`
+- `2.0_Prompt_Design.md`（以 `server/ai/review-prompt.js` 的 `PROMPT_VERSION` 为准）
+- `2.0_补充材料.md`
+- `2.0_User_Flow.md`（Mermaid 改了就重导 png）
+
+仓库其它产品说明：`docs/Case_Study_BalletMind.md`、`docs/AI产品经理能力对照.md`、`docs/BalletMind_V2_优先级总表.md`、`docs/Metrics_Runbook.md`、`README.md`（结构/运行方式变了且用户要同步时）
+
+用户说更新文档时，原型也一起对齐（**只改文案、屏内容、注解、流程箭头上的字**；两页结构、屏旁注解这个版式保持现状）：
+
+- `/Users/zuoyingchang/Desktop/芭蕾产品/prototype/2.0_balletmind-prototype/index.html`（主路径）
+- `after.html`（保存之后）
+- 各屏 `login.html` / `home.html` / `record.html` / `processing.html` / `review.html` / `history.html` / `detail.html` / `progress.html` / `profile.html`
+
+## 不要
+
+- 不要为了「同步」重做一版墨刀式幻灯或再拆很多讲解页
+- 不要用上一级 `芭蕾产品/docs/` 的 1.0 文件描述现网（那些是归档）
+- 不要把 Eval 对照报告里的历史 Prompt 版本改成「当前」，注明当时冻结即可

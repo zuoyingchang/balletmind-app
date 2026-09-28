@@ -1,0 +1,13 @@
+---
+description: 清库时留下 Ying 的真人测试账号
+alwaysApply: true
+---
+
+清 Turso / 删测试用户时，**不要删除**这些账号（真人试用，不是脚本号）：
+
+- `1123106531@qq.com`
+- `zuoyuanjun_hfycpf1@163.com`（董珈邑）
+- `191766516@qq.com`（老左）
+- `2673672231@qq.com`（桃子君）
+
+除非用户在当次对话里点名要删其中某一个。可删的是 `@example.com`、`@test.local` 这类明显脚本号。

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BalletMind · 课记故事线稿</title>
+<link rel="stylesheet" href="/css/fonts.css">
+<link rel="stylesheet" href="/css/tailwind.css">
+<script src="/js/vendor/iconify-icon.min.js"></script>
+<style>
+  :root {
+    --ivory: #faf7f6;
+    --paper: #fdfbfa;
+    --blush: #f4ebe9;
+    --rose: #c4a8a8;
+    --rose-deep: #a07d7d;
+    --burgundy: #6a5555;
+    --gold: #b89a94;
+    --sage: #8a9a8e;
+    --ink: #1c1918;
+    --ink-soft: #2a2624;
+    --ink-faint: #4f4a48;
+    --border-soft: rgba(196, 176, 174, .55);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; padding: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #ddd6d4; color: var(--ink);
+  }
+  .note { width: 360px; text-align: center; font-size: 12px; line-height: 1.7; color: #5a524f; }
+  .phone {
+    width: 393px; height: 852px; border-radius: 36px; overflow: hidden;
+    display: flex; flex-direction: column; position: relative;
+  }
+  .label-editorial {
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-style: italic; font-weight: 500; letter-spacing: .1em; margin: 0;
+  }
+  .page-title {
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-size: 28px; font-weight: 500; letter-spacing: .01em; margin: 2px 0 0;
+  }
+  .grain { position: relative; }
+  .grain::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: .045; mix-blend-mode: multiply;
+  }
+  .app-shell {
+    background:
+      radial-gradient(90% 55% at 12% -8%, rgba(255,255,255,.92), transparent 46%),
+      radial-gradient(70% 40% at 100% 8%, rgba(243,232,230,.42), transparent 48%),
+      radial-gradient(90% 28% at 50% 108%, rgba(168,130,136,.16), transparent 58%),
+      linear-gradient(168deg, #fdfbfa 0%, #f7f2f1 48%, #f1e8e7 100%);
+  }
+  .wash-dust { position: relative; }
+  .wash-dust::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(80% 50% at 8% 92%, rgba(226,214,210,.3), transparent 58%);
+  }
+  .pearl-sheen {
+    position: absolute; inset: 0; pointer-events: none; z-index: 1; border-radius: inherit;
+    background:
+      radial-gradient(120% 80% at 16% -18%, rgba(255,255,255,.88), transparent 52%),
+      linear-gradient(118deg, transparent 26%, rgba(255,255,255,0) 34%, rgba(255,255,255,.55) 40%, rgba(255,255,255,0) 44%, transparent 50%, rgba(255,255,255,.26) 56%, transparent 63%);
+    mix-blend-mode: overlay; opacity: .72;
+  }
+  .chip { background: rgba(244, 235, 233, .7); border: 0; }
+  .card-journal {
+    position: relative; overflow: hidden;
+    background: linear-gradient(158deg, #fffcfb 0%, #f8f3f2 58%, #f1e7e6 100%);
+    border: 1px solid rgba(255,255,255,.82);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.94), 0 14px 32px -18px rgba(110,80,80,.18);
+  }
+  .archive-month {
+    background:
+      radial-gradient(88% 70% at 12% -8%, rgba(255,255,255,.96), transparent 50%),
+      radial-gradient(72% 58% at 100% 108%, rgba(232,208,208,.32), transparent 54%),
+      linear-gradient(158deg, #fffcfb 0%, #f6eeed 48%, #efe4e3 100%);
+  }
+  .archive-stat {
+    text-align: center; padding: 12px 6px 11px; border-radius: 18px; position: relative; overflow: hidden;
+    background: linear-gradient(165deg, rgba(255,255,255,.94) 0%, rgba(247,238,236,.78) 52%, rgba(236,220,218,.58) 100%);
+    border: 1px solid rgba(255,255,255,.78);
+  }
+  .archive-stat-num {
+    margin-top: 6px;
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-size: 30px; font-weight: 500; font-variant-numeric: tabular-nums;
+  }
+  .archive-stat-num span { font-size: 13px; margin-left: 4px; color: var(--ink-soft); }
+  .hist-tabs {
+    background: rgba(244, 235, 233, .72);
+    border: 1px solid var(--border-soft);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+  }
+  .term-chip {
+    height: 32px; padding: 0 13px; border-radius: 999px; font-size: 12px;
+    color: var(--ink-soft); background: rgba(255,252,251,.92);
+    border: 1px solid var(--border-soft);
+  }
+  .term-chip.is-on {
+    font-weight: 600; color: #fff; border-color: transparent;
+    background: linear-gradient(135deg, var(--gold), var(--rose-deep));
+  }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 4px; }
+  .cal-cell {
+    height: 36px; border-radius: 12px; font-size: 12px; color: var(--ink-faint);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cal-cell.has-came { background: rgba(196,168,168,.28); color: var(--burgundy); }
+  .cal-cell.has-record { background: linear-gradient(160deg, #d4b8b4, #b89290); color: #fff; }
+  .cal-cell.is-today { font-weight: 600; color: var(--ink); }
+  .header-avatar {
+    width: 44px; height: 44px; border-radius: 999px;
+    background: rgba(244,235,233,.7); color: var(--rose-deep); border: 0;
+  }
+  .view { display: none; }
+  .view.is-on { display: block; }
+
+  .field-good { background: rgba(232, 234, 226, .78); }
+  .field-improve { background: rgba(242, 232, 226, .8); }
+  .field-next { background: rgba(240, 228, 226, .72); }
+  .field-good-lift { box-shadow: 0 3px 10px -6px rgba(122, 140, 122, .45); }
+  .card-satin {
+    background: linear-gradient(155deg, #fffcfb 0%, #f7efee 40%, #f0e6e4 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.98), 0 16px 28px -16px rgba(110,80,80,.2);
+  }
+  .satin-mark {
+    position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; border-radius: 99px;
+    background: linear-gradient(180deg, #f0dddb, #cbb4b4 45%, #e8d0ce);
+    box-shadow: 0 0 8px rgba(203,180,180,.45);
+  }
+  .fr-term { font-family: "Cormorant Garamond", serif; font-style: italic; font-weight: 600; color: var(--rose-deep); }
+
+  .story { position: relative; padding: 6px 0 18px; }
+  .chapter {
+    margin: 0 0 20px 48px;
+  }
+  .chapter .fr {
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic; font-size: 13px; letter-spacing: .14em;
+    color: var(--rose-deep); margin: 0;
+  }
+  .chapter h2 {
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-size: 26px; font-weight: 500; letter-spacing: .04em;
+    margin: 2px 0 0; line-height: 1.1;
+  }
+  .beat {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    margin: 0 0 20px;
+    align-items: start;
+  }
+  .beat.is-open { margin-bottom: 24px; }
+  .rail { position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 14px; }
+  .rail::before {
+    content: '';
+    position: absolute; top: 42px; bottom: -20px; left: 50%;
+    width: 3px; margin-left: -1.5px; border-radius: 99px;
+    background: linear-gradient(180deg, #f0dddb, #cbb4b4 42%, rgba(232,208,206,.2));
+    box-shadow: 0 0 8px rgba(203,180,180,.35);
+  }
+  .beat:last-child .rail::before { display: none; }
+  .node {
+    position: relative; z-index: 1;
+    width: 40px; text-align: center;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 20px; line-height: 1;
+    font-variant-numeric: tabular-nums; color: var(--ink);
+  }
+  .node small {
+    display: block; margin-top: 3px; font-size: 10px; letter-spacing: .16em;
+    color: var(--rose-deep);
+    font-family: "Cormorant Garamond", serif; font-style: italic;
+  }
+  .dot {
+    width: 11px; height: 11px; border-radius: 50%;
+    margin: 8px auto 0;
+    background: radial-gradient(circle at 32% 28%, #fff8f5, #e4c8c4 52%, #b89290);
+    box-shadow: 0 1px 3px rgba(90,50,50,.16), inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  .beat.is-recap .dot {
+    background: radial-gradient(circle at 32% 28%, #fff6f2, #d4b0ac 48%, #8f6b69);
+  }
+  .mod {
+    overflow: visible;
+    border-radius: 26px 20px 24px 18px;
+    padding: 18px 18px 18px 20px;
+    text-align: left; width: 100%; cursor: pointer; color: inherit;
+    transform: translateY(-1px);
+    background:
+      linear-gradient(158deg, #fffcfb 0%, #f8f3f2 52%, #f1e7e6 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.98),
+      0 1px 0 #e8d6d2,
+      0 3px 0 #f3e8e5,
+      0 10px 18px -12px rgba(110,80,80,.22),
+      0 22px 36px -20px rgba(90,60,60,.28);
+    transition: transform .22s ease, box-shadow .22s ease, padding .22s ease;
+  }
+  .mod .pearl-sheen { opacity: .78; border-radius: inherit; }
+  .satin-mark {
+    top: 16px; bottom: 16px;
+  }
+  .wm {
+    display: none;
+    position: absolute; right: 10px; top: 2px;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 86px; font-weight: 500; line-height: 1;
+    color: rgba(112, 78, 74, .07); pointer-events: none;
+  }
+  .beat.is-open .wm { display: block; }
+  .beat.is-open .mod {
+    padding: 20px 20px 18px 22px;
+    transform: translateY(-3px);
+    background:
+      radial-gradient(88% 70% at 12% -8%, rgba(255,255,255,.96), transparent 50%),
+      radial-gradient(72% 58% at 100% 108%, rgba(232,208,208,.38), transparent 54%),
+      linear-gradient(158deg, #fffcfb 0%, #f6eeed 48%, #efe4e3 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.98),
+      0 1px 0 #e4d0cc,
+      0 4px 0 #f0e4e0,
+      0 14px 24px -12px rgba(110,80,80,.26),
+      0 28px 48px -22px rgba(90,55,55,.32);
+  }
+  .toc-line { display: flex; align-items: baseline; gap: 10px; position: relative; }
+  .toc-line .name {
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-size: 22px; font-weight: 500; letter-spacing: .02em;
+  }
+  .toc-line .rule {
+    flex: 1; height: 1px; min-width: 12px;
+    background: linear-gradient(90deg, rgba(184,154,148,.45), rgba(184,154,148,0));
+    transform: translateY(-4px);
+  }
+  .toc-line .kind {
+    font-family: "Cormorant Garamond", serif; font-style: italic;
+    font-size: 13px; color: var(--rose-deep); letter-spacing: .06em;
+  }
+  .beat.is-open .toc-line {
+    padding-bottom: 14px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(196, 176, 174, .28);
+  }
+  .form { display: none; margin-top: 14px; }
+  .beat.is-open .form { display: block; }
+  .lbl {
+    display: flex; align-items: center; gap: 4px;
+    margin: 0 0 8px;
+    font-size: 13px; font-weight: 600; color: var(--sage);
+  }
+  .lbl.is-improve { font-size: 11.5px; color: var(--gold); opacity: .9; margin-top: 16px; }
+  .lbl.is-next { font-size: 11.5px; color: var(--rose-deep); opacity: .9; margin-top: 16px; }
+  .box {
+    position: relative;
+    border-radius: 18px; padding: 13px 14px;
+    font-size: 12.5px; line-height: 1.75; color: var(--ink);
+    border: 1px solid rgba(255,255,255,.72);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.78),
+      inset 0 1px 3px rgba(90,70,70,.04);
+  }
+</style>
+</head>
+<body>
+  <div class="phone grain app-shell shadow-[0_24px_60px_-28px_rgba(130,100,100,.32)]">
+    <div class="wash-dust flex flex-col w-full h-full relative">
+      <header class="relative z-10 shrink-0 px-6 pt-6 pb-2">
+        <div class="flex items-center gap-3">
+          <button type="button" class="chip w-11 h-11 shrink-0 rounded-full flex items-center justify-center" aria-label="返回">
+            <iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon>
+          </button>
+          <div class="flex-1 min-w-0">
+            <p class="label-editorial text-[13px] text-[var(--rose-deep)]">你的努力和成就</p>
+            <h1 class="page-title">档案</h1>
+          </div>
+          <button type="button" class="header-avatar shrink-0 flex items-center justify-center" aria-label="我的">
+            <iconify-icon icon="solar:user-circle-linear" class="text-[20px]"></iconify-icon>
+          </button>
+        </div>
+      </header>
+
+      <main class="relative z-10 flex-1 min-h-0 overflow-y-auto px-6 pb-7">
+        <div class="hist-tabs flex items-center gap-1 mb-3 rounded-full p-1">
+          <button type="button" id="tab-checkin" class="flex-1 h-8 rounded-full text-[11.5px] font-medium text-[var(--ink-faint)]">打卡</button>
+          <button type="button" id="tab-list" class="flex-1 h-8 rounded-full text-[11.5px] font-medium bg-white shadow-sm text-[var(--burgundy)]">课记</button>
+        </div>
+
+        <div class="view is-on" id="view-list">
+          <div class="card-journal grain relative flex items-center gap-2 rounded-[18px] px-4 h-12 mb-3">
+            <div class="pearl-sheen"></div>
+            <iconify-icon icon="solar:magnifer-linear" class="relative z-10 text-[18px] text-[var(--rose-deep)]"></iconify-icon>
+            <input placeholder="搜 plie 或蹲都可以" class="relative z-10 flex-1 bg-transparent outline-none text-[12.5px]" readonly>
+          </div>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <span class="term-chip is-on inline-flex items-center">全部</span>
+            <span class="term-chip inline-flex items-center">把杆</span>
+            <span class="term-chip inline-flex items-center">中级班</span>
+          </div>
+
+          <div class="story">
+            <div class="chapter">
+              <p class="fr">Septembre</p>
+              <h2>九月</h2>
+            </div>
+
+            <article class="beat is-recap">
+              <div class="rail">
+                <div class="node">28<small>一</small></div>
+                <span class="dot"></span>
+              </div>
+              <div class="mod card-journal grain relative" role="button" tabindex="0">
+                <span class="pearl-sheen"></span>
+                <span class="wm">28</span>
+                <span class="satin-mark"></span>
+                <span class="relative z-10 block">
+                  <span class="toc-line"><span class="name">把杆</span><span class="rule"></span><span class="kind">课记</span></span>
+                  <span class="form">
+                    <p class="lbl"><iconify-icon icon="solar:star-shine-bold" class="text-[13px]"></iconify-icon>做得好的地方</p>
+                    <div class="box field-good field-good-lift"><span class="fr-term">Pirouette</span> 视线定点比上周稳。</div>
+                    <p class="lbl is-improve">待改进点</p>
+                    <div class="box field-improve">结束组合重心还是偏后。</div>
+                    <p class="lbl is-next">我自己定的下次计划</p>
+                    <div class="box field-next">定点多停半拍。结束后先找脚。</div>
+                  </span>
+                </span>
+              </div>
+            </article>
+
+            <article class="beat is-recap">
+              <div class="rail">
+                <div class="node">27<small>日</small></div>
+                <span class="dot"></span>
+              </div>
+              <div class="mod card-journal grain relative" role="button" tabindex="0">
+                <span class="pearl-sheen"></span>
+                <span class="wm">27</span>
+                <span class="satin-mark"></span>
+                <span class="relative z-10 block">
+                  <span class="toc-line"><span class="name">把杆</span><span class="rule"></span><span class="kind">课记</span></span>
+                  <span class="form">
+                    <p class="lbl"><iconify-icon icon="solar:star-shine-bold" class="text-[13px]"></iconify-icon>做得好的地方</p>
+                    <div class="box field-good field-good-lift">蹲的节奏比上次匀。</div>
+                    <p class="lbl is-improve">待改进点</p>
+                    <div class="box field-improve">举手时肩还容易耸。</div>
+                    <p class="lbl is-next">我自己定的下次计划</p>
+                    <div class="box field-next">举手先沉肩，再看指尖。</div>
+                  </span>
+                </span>
+              </div>
+            </article>
+
+            <article class="beat">
+              <div class="rail">
+                <div class="node">26<small>六</small></div>
+                <span class="dot"></span>
+              </div>
+              <div class="mod card-journal grain relative" role="button" tabindex="0">
+                <span class="pearl-sheen"></span>
+                <span class="wm">26</span>
+                <span class="satin-mark"></span>
+                <span class="relative z-10 block">
+                  <span class="toc-line"><span class="name">来过</span><span class="rule"></span><span class="kind">打卡</span></span>
+                  <span class="form">
+                    <div class="box" style="background:rgba(253,251,250,.7);border:1px dashed var(--border-soft)">晚上，心情平稳。没有写课记，只记下到过。</div>
+                  </span>
+                </span>
+              </div>
+            </article>
+
+            <article class="beat is-recap">
+              <div class="rail">
+                <div class="node">24<small>四</small></div>
+                <span class="dot"></span>
+              </div>
+              <div class="mod card-journal grain relative" role="button" tabindex="0">
+                <span class="pearl-sheen"></span>
+                <span class="wm">24</span>
+                <span class="satin-mark"></span>
+                <span class="relative z-10 block">
+                  <span class="toc-line"><span class="name">中级班</span><span class="rule"></span><span class="kind">课记</span></span>
+                  <span class="form">
+                    <p class="lbl"><iconify-icon icon="solar:star-shine-bold" class="text-[13px]"></iconify-icon>做得好的地方</p>
+                    <div class="box field-good field-good-lift"><span class="fr-term">Adagio</span> 呼吸跟上了。</div>
+                    <p class="lbl is-improve">待改进点</p>
+                    <div class="box field-improve">蹲的节奏还要再匀。</div>
+                    <p class="lbl is-next">我自己定的下次计划</p>
+                    <div class="box field-next">慢组合心里先数两拍。</div>
+                  </span>
+                </span>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="view" id="view-checkin">
+          <div class="card-journal archive-month grain relative overflow-hidden px-4 pt-3.5 pb-3.5 mb-3" style="border-radius:24px">
+            <div class="pearl-sheen"></div>
+            <div class="relative z-10">
+              <p class="label-editorial text-[12px] text-[var(--rose-deep)]">这个月</p>
+              <div class="mt-2.5 grid grid-cols-2 gap-2">
+                <div class="archive-stat">
+                  <p class="text-[13px] tracking-[.1em] text-[var(--ink-soft)]">来过</p>
+                  <p class="archive-stat-num">6<span>天</span></p>
+                </div>
+                <div class="archive-stat">
+                  <p class="text-[13px] tracking-[.1em] text-[var(--ink-soft)]">时长</p>
+                  <p class="archive-stat-num">4<span>小时</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-journal grain relative overflow-hidden px-3 pt-3 pb-3" style="border-radius:24px">
+            <div class="pearl-sheen"></div>
+            <p class="relative z-10 label-editorial text-center text-[14px] mb-1">二〇二六年九月</p>
+            <div class="relative z-10 cal-grid text-center text-[11px] text-[var(--ink-faint)] mb-0.5">
+              <span class="py-0.5">日</span><span class="py-0.5">一</span><span class="py-0.5">二</span><span class="py-0.5">三</span><span class="py-0.5">四</span><span class="py-0.5">五</span><span class="py-0.5">六</span>
+            </div>
+            <div class="relative z-10 cal-grid" id="cal"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <p class="note">搜索仍可用：课名、做得好的、待改进、下次计划都在卡片里。下面是全部收起。点开才展开表单。现网没动。</p>
+  <script>
+    const tabList = document.getElementById('tab-list');
+    const tabCheckin = document.getElementById('tab-checkin');
+    function setTab(mode) {
+      const list = mode === 'list';
+      document.getElementById('view-list').classList.toggle('is-on', list);
+      document.getElementById('view-checkin').classList.toggle('is-on', !list);
+      tabList.className = 'flex-1 h-8 rounded-full text-[11.5px] font-medium ' + (list ? 'bg-white shadow-sm text-[var(--burgundy)]' : 'text-[var(--ink-faint)]');
+      tabCheckin.className = 'flex-1 h-8 rounded-full text-[11.5px] font-medium ' + (!list ? 'bg-white shadow-sm text-[var(--burgundy)]' : 'text-[var(--ink-faint)]');
+    }
+    tabList.addEventListener('click', () => setTab('list'));
+    tabCheckin.addEventListener('click', () => setTab('checkin'));
+
+    document.querySelectorAll('.beat').forEach((beat) => {
+      const mod = beat.querySelector('.mod');
+      const open = () => {
+        document.querySelectorAll('.beat').forEach((el) => {
+          const on = el === beat;
+          el.classList.toggle('is-open', on);
+          el.querySelector('.mod').classList.toggle('card-satin', on);
+        });
+      };
+      mod.addEventListener('click', open);
+      mod.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+      });
+    });
+
+    const cal = document.getElementById('cal');
+    const came = new Set([16, 19, 23, 26]);
+    const recap = new Set([24, 27, 28]);
+    for (let i = 0; i < 2; i++) {
+      const el = document.createElement('div');
+      el.className = 'cal-cell';
+      cal.appendChild(el);
+    }
+    for (let d = 1; d <= 30; d++) {
+      const el = document.createElement('div');
+      el.className = 'cal-cell';
+      if (recap.has(d)) el.classList.add('has-record');
+      else if (came.has(d)) el.classList.add('has-came');
+      if (d === 28) el.classList.add('is-today');
+      el.textContent = d;
+      cal.appendChild(el);
+    }
+  </script>
+</body>
+</html>

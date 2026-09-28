@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BalletMind · 课记本</title>
+<link rel="stylesheet" href="/css/fonts.css">
+<style>
+  :root {
+    --ivory: #f6efe8;
+    --paper: #f3e9e0;
+    --rule: rgba(122, 88, 82, .11);
+    --rose: #c4a8a8;
+    --rose-deep: #a07d7d;
+    --burgundy: #6a5555;
+    --ink: #1c1918;
+    --ink-soft: #2a2624;
+    --ink-faint: #5c5553;
+    --cloth: #8d6f6e;
+    --gold: #b89a94;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background:
+      radial-gradient(1200px 700px at 50% 40%, #cfc4be 0%, #b7aba6 52%, #9e918c 100%);
+  }
+  .wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 20px 12px;
+  }
+  .note {
+    width: 360px; text-align: center; color: #5a524f;
+    font-size: 12px; line-height: 1.7;
+  }
+  .note p { margin: 0; }
+  .phone {
+    width: 393px; height: 852px; border-radius: 42px; overflow: hidden;
+    position: relative; display: flex; flex-direction: column;
+    background: #1f1a19;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.08),
+      0 28px 70px -24px rgba(40, 22, 20, .55);
+  }
+  .phone-inner {
+    flex: 1; display: flex; flex-direction: column; min-height: 0;
+    margin: 10px; border-radius: 32px; overflow: hidden;
+    background: linear-gradient(180deg, #f4ebe6 0%, #eadcd4 100%);
+  }
+  header {
+    padding: 18px 18px 8px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .back {
+    width: 40px; height: 40px; border: 0; border-radius: 999px;
+    background: rgba(255,255,255,.45);
+    color: var(--rose-deep); font-size: 18px;
+  }
+  .kicker {
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-style: italic; letter-spacing: .14em; font-size: 12px;
+    color: var(--rose-deep); margin: 0;
+  }
+  h1 {
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-size: 26px; font-weight: 500; margin: 0; letter-spacing: .04em;
+  }
+  .stage {
+    flex: 1; min-height: 0; padding: 4px 14px 10px;
+    display: flex; position: relative;
+  }
+  .cover {
+    flex: 1; min-height: 0; position: relative;
+    border-radius: 3px 16px 16px 4px;
+    background:
+      linear-gradient(90deg, #6e5554 0, #8a6e6c 7px, #9a7c79 11px, transparent 12px),
+      #7d6361;
+    box-shadow:
+      0 18px 28px -18px rgba(50, 28, 26, .45),
+      inset -10px 0 16px -12px rgba(0,0,0,.25);
+    padding: 7px 7px 7px 13px;
+  }
+  .book {
+    height: 100%; position: relative; overflow: hidden;
+    border-radius: 1px 10px 10px 2px;
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(90deg, rgba(90,50,45,.18) 0, rgba(90,50,45,.04) 14px, transparent 28px),
+      radial-gradient(120% 40% at 80% 0%, rgba(255,255,255,.38), transparent 52%),
+      linear-gradient(180deg, #f7efe8 0%, #efe3d8 100%);
+    box-shadow:
+      inset 20px 0 24px -22px rgba(70, 30, 28, .35),
+      3px 0 0 #efe4db,
+      5px 0 0 #e4d5ca,
+      7px 0 0 #dcc9bd;
+    perspective: 900px;
+  }
+  .book::after {
+    content: '';
+    position: absolute; inset: 0; pointer-events: none;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.72  0 0 0 0 0.64  0 0 0 0 0.58  0 0 0 .07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: .45; mix-blend-mode: multiply;
+  }
+  .margin-rule {
+    position: absolute; left: 46px; top: 18px; bottom: 18px; width: 1px;
+    background: rgba(160, 90, 90, .28); z-index: 1; pointer-events: none;
+  }
+  .ribbon {
+    position: absolute; left: 22px; top: -8px; width: 9px; height: 78px; z-index: 4;
+    background: linear-gradient(180deg, #c4a0a0, #a07d7d 70%, #8d6a6a);
+    clip-path: polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%);
+    box-shadow: 1px 4px 8px rgba(80,40,40,.2);
+  }
+  .tabs {
+    position: absolute; right: -1px; top: 168px; display: flex; flex-direction: column; gap: 10px; z-index: 5;
+  }
+  .tab {
+    border: 0; writing-mode: vertical-rl; letter-spacing: .22em;
+    padding: 16px 8px 16px 10px; font-size: 11px; color: #f6efe8;
+    font-family: "Noto Serif SC", serif;
+    background: linear-gradient(90deg, #9a7a78, #b59290);
+    border-radius: 10px 0 0 10px;
+    box-shadow: -2px 2px 6px rgba(60,30,28,.18);
+  }
+  .tab.is-on {
+    background: linear-gradient(90deg, #7a5c5b, #8f6f6d);
+    padding-left: 14px;
+  }
+  .leaf {
+    display: none; height: 100%; position: relative; z-index: 2;
+    padding: 22px 52px 36px 56px;
+    animation: turn .42s ease;
+  }
+  .leaf.is-on { display: block; }
+  @keyframes turn {
+    from { opacity: .35; transform: rotateY(-12deg); transform-origin: left center; }
+    to { opacity: 1; transform: none; }
+  }
+  .wm {
+    position: absolute; left: 52px; bottom: 36px;
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-size: 92px; font-weight: 500; line-height: .8;
+    color: rgba(112, 78, 74, .06); pointer-events: none;
+  }
+  .days {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px;
+    margin-top: 4px;
+  }
+  .date-line {
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic; font-size: 15px; color: var(--rose-deep); margin: 0 0 2px;
+  }
+  .page-title {
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-size: 34px; font-weight: 500; margin: 0 0 10px; letter-spacing: .06em;
+  }
+  .stats {
+    display: flex; gap: 22px; margin: 0 0 18px; padding-bottom: 12px;
+    border-bottom: 1px solid rgba(122, 88, 82, .16);
+  }
+  .stats b {
+    display: block;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 22px; font-weight: 500; line-height: 1;
+  }
+  .stats span { font-size: 10.5px; letter-spacing: .12em; color: var(--ink-faint); }
+  .row {
+    display: flex; align-items: baseline; gap: 6px;
+    height: 26px; font-size: 12.5px;
+    border-bottom: 1px solid rgba(122, 88, 82, .08);
+  }
+  .row time {
+    width: 28px;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 17px; font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .row .wd { width: 16px; color: var(--ink-faint); font-size: 12px; }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #c9b8b4; display: inline-block;
+  }
+  .dot.on { background: #8f6b69; box-shadow: 0 0 0 3px rgba(143,107,105,.12); }
+  .mark {
+    font-family: "Songti SC", "STSongti-SC-Regular", "Noto Serif SC", serif;
+    font-size: 13px; color: var(--burgundy);
+  }
+  .row.is-today time { color: var(--rose-deep); }
+  .row.is-link { cursor: pointer; }
+  .entry { margin: 0 0 18px; }
+  .entry h3 {
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic; font-size: 14px; font-weight: 500;
+    color: var(--rose-deep); margin: 0 0 6px; letter-spacing: .08em;
+  }
+  .entry p {
+    margin: 0;
+    font-family: "Songti SC", "STSongti-SC-Regular", "Noto Serif SC", serif;
+    font-size: 14px; line-height: 1.85; color: var(--ink-soft);
+  }
+  .side {
+    margin-top: 10px; padding: 8px 0 0 12px;
+    border-left: 1.5px solid var(--gold);
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic; font-size: 13.5px; line-height: 1.7; color: var(--burgundy);
+  }
+  .toc {
+    display: flex; align-items: baseline; gap: 8px;
+    margin: 0 0 4px; height: 30px; font-size: 13.5px;
+    font-family: "Songti SC", "STSongti-SC-Regular", "Noto Serif SC", serif;
+  }
+  .toc .dots {
+    flex: 1; border-bottom: 1px dotted rgba(122, 88, 82, .35); transform: translateY(-4px);
+  }
+  .toc span {
+    font-family: "Cormorant Garamond", serif; font-size: 14px; color: var(--ink-faint);
+  }
+  .empty {
+    margin-top: 28px;
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic; font-size: 15px; line-height: 1.7; color: var(--ink-faint);
+  }
+  .corner {
+    position: absolute; right: 0; bottom: 0; width: 64px; height: 64px; border: 0;
+    background:
+      linear-gradient(135deg, transparent 49.5%, #e8d8ce 50%, #d4c0b6 100%);
+    box-shadow: -4px -4px 10px rgba(80,50,40,.08);
+    cursor: pointer; z-index: 6;
+  }
+  .pg {
+    position: absolute; left: 0; right: 0; bottom: 14px; text-align: center;
+    font-family: "Cormorant Garamond", serif; font-size: 12px; letter-spacing: .2em;
+    color: rgba(92, 85, 83, .7);
+  }
+  .orn {
+    display: block; text-align: center; margin: 16px 0 0;
+    color: var(--gold); letter-spacing: .35em; font-size: 13px;
+  }
+  nav {
+    height: 64px; display: flex; justify-content: space-around; align-items: center;
+    background: rgba(253, 248, 245, .92);
+    font-size: 10px; color: var(--ink-faint);
+  }
+  nav b { color: var(--rose-deep); font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="phone">
+      <div class="phone-inner">
+        <header>
+          <button class="back" type="button" aria-label="返回">←</button>
+          <div>
+            <p class="kicker">Cahier</p>
+            <h1>课记本</h1>
+          </div>
+        </header>
+        <div class="stage">
+          <div class="cover">
+            <div class="ribbon" aria-hidden="true"></div>
+            <div class="book" id="book">
+              <div class="margin-rule"></div>
+              <div class="tabs">
+                <button type="button" class="tab is-on" data-go="month">打卡</button>
+                <button type="button" class="tab" data-go="toc">课记</button>
+              </div>
+
+              <section class="leaf is-on" id="month">
+                <div class="wm">IX</div>
+                <p class="date-line">Septembre</p>
+                <h2 class="page-title">九月</h2>
+                <div class="stats">
+                  <div><b>6</b><span>来过</span></div>
+                  <div><b>4</b><span>小时</span></div>
+                </div>
+                <div class="days">
+                  <div class="row"><time>15</time><span class="wd">二</span><span class="dot"></span></div>
+                  <div class="row"><time>22</time><span class="wd">二</span><span class="dot"></span></div>
+                  <div class="row"><time>16</time><span class="wd">三</span><span class="dot on"></span><span class="mark">来过</span></div>
+                  <div class="row"><time>23</time><span class="wd">三</span><span class="dot on"></span><span class="mark">来过</span></div>
+                  <div class="row"><time>17</time><span class="wd">四</span><span class="dot"></span></div>
+                  <div class="row is-link" data-go="day"><time>24</time><span class="wd">四</span><span class="dot on"></span><span class="mark">课记</span></div>
+                  <div class="row"><time>18</time><span class="wd">五</span><span class="dot"></span></div>
+                  <div class="row"><time>25</time><span class="wd">五</span><span class="dot"></span></div>
+                  <div class="row"><time>19</time><span class="wd">六</span><span class="dot on"></span><span class="mark">来过</span></div>
+                  <div class="row"><time>26</time><span class="wd">六</span><span class="dot on"></span><span class="mark">来过</span></div>
+                  <div class="row"><time>20</time><span class="wd">日</span><span class="dot"></span></div>
+                  <div class="row is-link" data-go="day"><time>27</time><span class="wd">日</span><span class="dot on"></span><span class="mark">课记</span></div>
+                  <div class="row"><time>21</time><span class="wd">一</span><span class="dot"></span></div>
+                  <div class="row is-today is-link" data-go="day"><time>28</time><span class="wd">一</span><span class="dot on"></span><span class="mark">今</span></div>
+                </div>
+                <span class="orn">· · ·</span>
+                <button class="corner" type="button" data-go="day" aria-label="下一页"></button>
+                <span class="pg">12</span>
+              </section>
+
+              <section class="leaf" id="day">
+                <p class="date-line">lundi · 二十八日</p>
+                <h2 class="page-title">把杆</h2>
+                <article class="entry">
+                  <h3>来过</h3>
+                  <p>晚上，心情平稳。没有另写一页，只记下到过。</p>
+                </article>
+                <article class="entry">
+                  <h3>课记</h3>
+                  <p>Pirouette 视线定点比上周稳。结束组合重心还是偏后。</p>
+                  <div class="side">下次：定点多停半拍。结束后先找脚。</div>
+                </article>
+                <button class="corner" type="button" data-go="month" aria-label="回到九月"></button>
+                <span class="pg">13</span>
+              </section>
+
+              <section class="leaf" id="toc">
+                <p class="date-line">Table</p>
+                <h2 class="page-title">课记</h2>
+                <p class="toc">九月二十四 · 中级班<span class="dots"></span><span>3</span></p>
+                <p class="toc">九月二十七 · 把杆<span class="dots"></span><span>8</span></p>
+                <p class="toc">九月二十八 · 把杆<span class="dots"></span><span>13</span></p>
+                <p class="empty">在页边写下要找的动作，以后会能搜。</p>
+                <span class="pg">iii</span>
+              </section>
+            </div>
+          </div>
+        </div>
+        <nav>
+          <span>首页</span><span>记录</span><b>档案</b><span>追踪</span>
+        </nav>
+      </div>
+    </div>
+    <div class="note">右下折页翻开。右侧书签切打卡 / 课记。布面、纸厚是示意，数字不是账号里的课。</div>
+  </div>
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    function show(id) {
+      document.querySelectorAll('.leaf').forEach((el) => el.classList.toggle('is-on', el.id === id));
+      tabs.forEach((t) => t.classList.toggle('is-on', t.dataset.go === id || (id === 'day' && t.dataset.go === 'month')));
+    }
+    document.getElementById('book').addEventListener('click', (e) => {
+      const go = e.target.closest('[data-go]');
+      if (go) show(go.dataset.go);
+    });
+  </script>
+</body>
+</html>
