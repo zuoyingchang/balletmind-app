@@ -200,6 +200,14 @@
     color: var(--ink-soft);
   }
   #home-stat-nums > div { text-align: center; }
+  .home-stat-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    font-size: 14px;
+  }
+  .home-stat-icon.is-count { background: rgba(184,154,154,.16); color: var(--rose-deep); }
+  .home-stat-icon.is-streak { background: rgba(196,158,96,.18); color: #b8863f; }
+  .home-stat-icon.is-hours { background: rgba(125,104,104,.14); color: var(--burgundy); }
   .archive-stat-num {
     margin-top: 6px;
     display: flex;
@@ -1076,15 +1084,18 @@
           <p id="home-empty-hint" class="home-empty-hint hidden">还没写下第一节，请先点记录生成复盘总结</p>
           <div id="home-stat-nums" class="grid grid-cols-3 gap-2">
           <div>
-            <p class="archive-stat-label">复盘</p>
+            <span class="home-stat-icon is-count"><iconify-icon icon="solar:notebook-bookmark-linear"></iconify-icon></span>
+            <p class="archive-stat-label mt-1">复盘</p>
             <p class="archive-stat-num mt-1.5" id="stat-count">0<span>次</span></p>
           </div>
           <div>
-            <p class="archive-stat-label">连续</p>
+            <span class="home-stat-icon is-streak"><iconify-icon icon="solar:fire-linear"></iconify-icon></span>
+            <p class="archive-stat-label mt-1">连续</p>
             <p class="archive-stat-num mt-1.5" id="stat-streak">0<span>天</span></p>
           </div>
           <div>
-            <p class="archive-stat-label">时长</p>
+            <span class="home-stat-icon is-hours"><iconify-icon icon="solar:clock-circle-linear"></iconify-icon></span>
+            <p class="archive-stat-label mt-1">时长</p>
             <p class="archive-stat-num is-hours mt-1.5" id="stat-duration">0<span>小时</span></p>
           </div>
           </div>
