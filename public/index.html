@@ -183,7 +183,7 @@
       linear-gradient(158deg, #fffcfb 0%, #f6eeed 48%, #efe4e3 100%);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.98), 0 16px 28px -16px rgba(110,80,80,.2);
   }
-  .archive-month .pearl-sheen { opacity: .88; }
+  .archive-month .pearl-sheen { opacity: .72; }
   .archive-stat {
     position: relative;
     overflow: hidden;
@@ -465,19 +465,19 @@
 
   .pearl-sheen { position: absolute; inset: 0; pointer-events: none; z-index: 1; border-radius: inherit;
     background:
-      radial-gradient(120% 80% at 16% -18%, rgba(255,255,255,.9), transparent 52%),
-      linear-gradient(118deg, transparent 26%, rgba(255,255,255,0) 34%, rgba(255,255,255,.62) 40%, rgba(255,255,255,0) 44%, transparent 50%, rgba(255,255,255,.28) 56%, transparent 63%);
+      radial-gradient(120% 80% at 16% -18%, rgba(255,255,255,.88), transparent 52%),
+      linear-gradient(118deg, transparent 26%, rgba(255,255,255,0) 34%, rgba(255,255,255,.55) 40%, rgba(255,255,255,0) 44%, transparent 50%, rgba(255,255,255,.26) 56%, transparent 63%);
     mix-blend-mode: overlay;
-    opacity: .85;
+    opacity: .72;
   }
 
   .btn-ribbon {
     position: relative; overflow: hidden; color: #faf6f4;
     font-weight: 600;
-    background: linear-gradient(135deg, var(--gold) 0%, var(--rose-deep) 40%, var(--mauve) 72%, var(--burgundy) 100%);
-    box-shadow: 0 12px 24px -14px rgba(120,90,94,.35), inset 0 1px 0 rgba(255,255,255,.45);
+    background: linear-gradient(135deg, var(--gold) 0%, var(--rose-deep) 55%, var(--mauve) 100%);
+    box-shadow: 0 12px 24px -14px rgba(120,90,94,.32), inset 0 1px 0 rgba(255,255,255,.45);
   }
-  .btn-ribbon .pearl-sheen { opacity: .45; background: linear-gradient(115deg, transparent 28%, rgba(255,255,255,.28) 40%, transparent 52%); }
+  .btn-ribbon .pearl-sheen { opacity: .5; background: linear-gradient(115deg, transparent 26%, rgba(255,255,255,.42) 40%, transparent 54%); }
 
   .chip { background: rgba(244, 235, 233, .7); }
   .duration-chip { background: rgba(255,252,251,.7); transition: background .15s ease, color .15s ease, border-color .15s ease; }
@@ -533,7 +533,7 @@
   .field-next { background: rgba(240, 228, 226, .72); }
   .field-good-lift { box-shadow: 0 3px 10px -6px rgba(122, 140, 122, .45); }
   .rec-mic {
-    background: linear-gradient(150deg, #d4c0bf, #c0a6a5);
+    background: linear-gradient(135deg, var(--gold) 0%, var(--rose-deep) 55%, var(--mauve) 100%);
     color: #fdfbfa;
     box-shadow: 0 12px 24px -12px rgba(140,100,100,.36), inset 0 1px 0 rgba(255,255,255,.5);
   }
@@ -875,50 +875,20 @@
   }
   .rec-stage {
     position: relative;
-    background:
-      radial-gradient(ellipse 78% 68% at 50% 46%, rgba(255,248,246,.82) 0%, rgba(232,214,212,.62) 48%, rgba(214,194,192,.5) 100%);
-    border: 1px solid rgba(255,255,255,.86);
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,.95),
-      0 22px 40px -28px rgba(90, 60, 70, .3);
+    background: linear-gradient(155deg, #fffafa 0%, #f3e6e5 50%, #eadcdd 100%);
+    border: 1px solid rgba(255,255,255,.82);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.94), 0 14px 32px -18px rgba(110,80,80,.18);
     border-radius: 40px;
     overflow: hidden;
     padding: 44px 36px 40px;
   }
-  .rec-stage .pearl-sheen {
-    opacity: 1;
-    background:
-      radial-gradient(110% 70% at 14% -10%, rgba(255,255,255,.98), transparent 46%),
-      linear-gradient(118deg,
-        transparent 18%,
-        rgba(255,255,255,0) 30%,
-        rgba(255,255,255,.78) 38%,
-        rgba(255,244,238,.2) 42%,
-        transparent 48%,
-        rgba(255,255,255,.4) 56%,
-        transparent 64%);
-  }
   #screen-record .rec-mic {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(160deg, #d4c4c2 0%, #b49a9a 48%, #947c7c 100%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 10px 18px -12px rgba(90,60,70,.4);
   }
   #screen-record .rec-mic .pearl-sheen {
-    opacity: .9;
-    background: linear-gradient(125deg, transparent 28%, rgba(255,255,255,.55) 42%, transparent 56%);
-  }
-  #screen-record.wash-rose::before {
-    background:
-      radial-gradient(90% 42% at 50% -6%, rgba(255,255,255,.38), transparent 52%),
-      radial-gradient(85% 42% at 50% 108%, rgba(106, 85, 85, .22), transparent 56%);
-  }
-  #screen-record {
-    background: linear-gradient(180deg, #f2eaea 0%, #e8dddc 48%, #dccfcd 100%);
-  }
-  #screen-record .sticky-actions {
-    background: rgba(232, 220, 218, .92);
-    border-top: 1px solid rgba(168, 141, 140, .28);
+    opacity: .5;
+    background: linear-gradient(115deg, transparent 26%, rgba(255,255,255,.42) 40%, transparent 54%);
   }
   .rec-stage-shoe {
     position: absolute; right: 10px; top: 12px;
@@ -955,53 +925,15 @@
     border: none;
     box-shadow: none;
   }
-  #screen-history {
-    background: linear-gradient(180deg, #f3eceb 0%, #e9e0de 52%, #ddd2d0 100%);
-  }
-  #screen-history.wash-dust::before {
-    background:
-      radial-gradient(80% 48% at 8% 92%, rgba(120, 96, 94, .16), transparent 58%),
-      radial-gradient(70% 40% at 100% 0%, rgba(255,255,255,.35), transparent 50%);
-  }
-  #screen-history .archive-month {
-    background:
-      radial-gradient(88% 70% at 12% -8%, rgba(255,255,255,.7), transparent 50%),
-      radial-gradient(72% 58% at 100% 108%, rgba(168, 130, 128, .28), transparent 54%),
-      linear-gradient(158deg, #f7eeed 0%, #eadcda 52%, #dcc8c6 100%);
-  }
-  #screen-history .card-journal {
-    background: linear-gradient(158deg, #faf5f4 0%, #eee3e1 58%, #e2d3d1 100%);
-  }
-  #screen-history .hist-tabs {
-    background: linear-gradient(180deg, rgba(244, 232, 230, .88), rgba(214, 196, 194, .55));
-    border-color: rgba(168, 141, 140, .35);
-  }
-  #screen-history .archive-stat {
-    background: linear-gradient(165deg, rgba(255,252,251,.72) 0%, rgba(232,214,210,.7) 52%, rgba(196,168,164,.45) 100%);
-  }
-  #screen-progress.wash-rose::before {
-    background:
-      radial-gradient(90% 42% at 50% -6%, rgba(255,255,255,.5), transparent 52%),
-      radial-gradient(80% 36% at 50% 108%, rgba(154, 118, 124, .14), transparent 58%);
-  }
   #screen-progress h2.font-display {
     font-size: 20px;
     font-weight: 500;
     letter-spacing: .02em;
   }
-  #screen-progress .hist-tabs {
-    padding: 5px;
-    background: linear-gradient(180deg, rgba(255,252,251,.92), rgba(244,232,230,.7));
-    border: 1px solid rgba(255,255,255,.82);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 10px 22px -18px rgba(110,80,80,.2);
-  }
   #screen-progress .hist-tabs button {
     height: 36px;
     font-size: 12.5px;
     letter-spacing: .04em;
-  }
-  #screen-progress .card-journal {
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 18px 36px -24px rgba(90,60,70,.22);
   }
   #issues-empty {
     border: none;
@@ -1128,7 +1060,7 @@
           <img src="/img/shoes.png" alt="" aria-hidden="true" class="deco-photo tint-rose right-3 top-3 w-[72px] h-[86px] opacity-[0.5] z-[1]">
         </div>
         <div class="relative z-10 pr-16">
-          <p id="home-empty-hint" class="home-empty-hint hidden">还没写下第一节。下课说几句就好。</p>
+          <p id="home-empty-hint" class="home-empty-hint hidden">还没写下第一节，请先点记录生成复盘总结</p>
           <div id="home-stat-nums" class="grid grid-cols-3 gap-2">
           <div>
             <p class="archive-stat-label">复盘</p>
