@@ -197,10 +197,12 @@
     font-size: 13px; letter-spacing: .1em;
     color: var(--ink-soft);
   }
+  #home-stat-nums > div { text-align: center; }
   .archive-stat-num {
     margin-top: 6px;
     display: flex;
     align-items: baseline;
+    justify-content: center;
     gap: 4px;
     font-family: "PingFang SC", "Hiragino Sans GB", -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 28px; font-weight: 500; line-height: 1.05;
@@ -214,6 +216,7 @@
     color: var(--ink-soft);
     flex-shrink: 0;
   }
+  #tip-label { display: block; width: 100%; text-align: right; }
   .archive-stat-num.is-hours { color: var(--burgundy); }
   .archive-stat-num.is-empty {
     font-size: 28px; font-weight: 500; letter-spacing: 0;
@@ -940,7 +943,7 @@
         <div class="card-journal tinted-rose grain relative overflow-hidden p-3.5" style="border-radius:18px 22px 16px 20px">
           <div class="pearl-sheen"></div>
           <p class="relative z-10 text-[13px] leading-6 text-[var(--ink-soft)]" id="tip-quote"></p>
-          <p class="relative z-10 mt-1.5 text-[11px] text-[var(--rose-deep)]" id="tip-label"></p>
+          <p class="relative z-10 mt-1.5 text-right text-[11px] text-[var(--rose-deep)]" id="tip-label"></p>
         </div>
       </section>
     </main>
@@ -1224,7 +1227,6 @@
             <span class="py-0.5">日</span><span class="py-0.5">一</span><span class="py-0.5">二</span><span class="py-0.5">三</span><span class="py-0.5">四</span><span class="py-0.5">五</span><span class="py-0.5">六</span>
           </div>
           <div class="relative z-10 cal-grid" id="checkin-cal-grid"></div>
-          <p class="relative z-10 mt-1.5 text-center text-[12px] leading-4 text-[var(--ink-faint)]">对勾是打卡，蝴蝶结是复盘。</p>
           <p id="checkin-day-empty" class="relative z-10 mt-1.5 text-center text-[12px] text-[var(--ink-soft)]"></p>
           <div id="checkin-day-list" class="relative z-10 mt-1.5 space-y-2"></div>
         </div>
