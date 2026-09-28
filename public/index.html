@@ -37,7 +37,7 @@
   body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif; background: #ddd6d4; color: var(--ink); }
   .font-display { font-family: "Cormorant Garamond", "Noto Serif SC", serif; letter-spacing: .01em; }
   .label-editorial { font-family: "Cormorant Garamond", -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", serif; font-style: italic; font-weight: 500; letter-spacing: .1em; }
-  .page-title { font-family: "Cormorant Garamond", "Noto Serif SC", serif; font-size: 24px; font-weight: 600; letter-spacing: -.01em; line-height: 1.15; }
+  .page-title { font-family: "Cormorant Garamond", "Noto Serif SC", serif; font-size: 26px; font-weight: 600; letter-spacing: -.01em; line-height: 1.15; }
   ::-webkit-scrollbar { display:none; }
   .screen { display:none; }
   .screen.active { display:flex; position: relative; z-index: 2; }
@@ -194,24 +194,24 @@
     background: linear-gradient(165deg, rgba(255,252,251,.95) 0%, rgba(244,230,226,.82) 48%, rgba(226,204,200,.62) 100%);
   }
   .archive-stat-label {
-    font-size: 11px; letter-spacing: .12em;
+    font-size: 13px; letter-spacing: .1em;
     color: var(--ink-soft);
   }
   .archive-stat-num {
-    margin-top: 5px;
+    margin-top: 6px;
     font-family: "Cormorant Garamond", "Noto Serif SC", serif;
-    font-size: 28px; font-weight: 600; line-height: 1;
+    font-size: 36px; font-weight: 600; line-height: 1;
     letter-spacing: -.03em; color: var(--ink);
   }
   .archive-stat-num span {
-    margin-left: 3px;
-    font-size: 13px; font-weight: 500; letter-spacing: 0;
-    color: var(--ink-faint);
+    margin-left: 4px;
+    font-size: 15px; font-weight: 500; letter-spacing: 0;
+    color: var(--ink-soft);
   }
   .archive-stat-num.is-hours { color: var(--burgundy); }
   .archive-stat-num.is-empty {
-    font-size: 15px; font-weight: 500; letter-spacing: 0;
-    color: var(--ink-faint);
+    font-size: 36px; font-weight: 600; letter-spacing: -.03em;
+    color: var(--ink);
   }
   #rec-timer {
     color: var(--burgundy);
@@ -314,7 +314,7 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 10px 20px -14px rgba(110,80,80,.28);
     color: var(--burgundy);
   }
-  .home-checkin-btn strong { font-size: 11px; font-weight: 650; letter-spacing: .04em; line-height: 1.1; }
+  .home-checkin-btn strong { font-size: 12.5px; font-weight: 650; letter-spacing: .04em; line-height: 1.1; }
   .home-checkin-btn .home-checkin-hint { display: none; }
   .home-checkin-mark {
     width: 22px; height: 22px; display: block;
@@ -501,7 +501,7 @@
   .cal-cell {
     aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
     padding-top: 10%; gap: 1px; margin: 0 2px;
-    border-radius: 12px; font-size: 12px; color: #7a6e6c; position: relative;
+    border-radius: 12px; font-size: 13px; color: #7a6e6c; position: relative;
   }
   .cal-cell.is-empty { pointer-events: none; }
   .cal-cell.is-future { opacity: .32; }
@@ -743,6 +743,10 @@
 </style>
 <!-- Compiled Tailwind (tools/). Placed after the page styles on purpose: the CDN version injected its CSS last, so utilities win ties the same way. -->
 <link rel="stylesheet" href="/css/tailwind.css">
+<style>
+  .nav-ballet span { font-size: 11px; }
+  .sec-title { font-size: 16px; }
+</style>
 </head>
 <body class="w-full h-screen m-0 overflow-hidden flex items-center justify-center text-[var(--ink)]">
 
@@ -842,7 +846,7 @@
             <p class="archive-stat-num is-hours mt-1.5" id="stat-duration">0<span>小时</span></p>
           </div>
           </div>
-          <p id="home-stat-empty" class="hidden mt-2 text-[11.5px] leading-5 text-[var(--ink-soft)] whitespace-nowrap">记下之后，会显示在上面。</p>
+          <p id="home-stat-empty" class="hidden mt-2 text-[12.5px] leading-5 text-[var(--ink-soft)] whitespace-nowrap">记下之后，会显示在上面。</p>
         </div>
         <div class="relative z-10 mt-4 home-cta-row">
         <button id="home-cta-btn" onclick="goRecord()" class="btn-ribbon flex items-center gap-3 rounded-[22px] px-4 py-3.5">
@@ -851,8 +855,8 @@
             <iconify-icon icon="solar:microphone-3-linear" class="text-[22px] text-white"></iconify-icon>
           </span>
           <span class="relative z-10 flex-1 text-left">
-            <strong class="block text-[14.5px] font-semibold" id="home-cta-title">复盘今天的课</strong>
-            <span class="block mt-0.5 text-[11px] font-medium text-white/90" id="home-cta-sub">说几句就好</span>
+            <strong class="block text-[15.5px] font-semibold" id="home-cta-title">复盘今天的课</strong>
+            <span class="block mt-0.5 text-[12px] font-medium text-white/90" id="home-cta-sub">说几句就好</span>
           </span>
         </button>
         <button type="button" id="home-checkin-btn" onclick="openCheckinSheet('home')" class="home-checkin-btn hidden" aria-label="打卡">
@@ -884,7 +888,7 @@
 
       <section class="mt-6" id="home-archive-block">
         <div class="flex items-center justify-between gap-2">
-          <h2 class="text-[15px] font-semibold text-[var(--ink)]">档案</h2>
+          <h2 class="sec-title font-semibold text-[var(--ink)]">档案</h2>
           <button onclick="goHistory()" class="shrink-0 text-[12px] text-[var(--rose-deep)] font-medium">全部</button>
         </div>
         <p id="checkin-status" class="mt-1 min-h-[16px] text-[11px] text-[var(--ink-faint)]"></p>
@@ -896,7 +900,7 @@
             <button type="button" onclick="shiftHomeCalendar(1)" class="w-8 h-8 shrink-0 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]" aria-label="下一周或下一月"><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[15px]"></iconify-icon></button>
             <button type="button" onclick="toggleHomeCalendarRange()" id="home-cal-range-btn" class="shrink-0 text-[12px] text-[var(--rose-deep)] font-medium">整月</button>
           </div>
-          <div class="relative z-10 cal-grid text-center text-[10px] text-[var(--ink-faint)] mb-1" style="aspect-ratio:auto">
+          <div class="relative z-10 cal-grid text-center text-[11px] text-[var(--ink-faint)] mb-1" style="aspect-ratio:auto">
             <span class="py-1">日</span><span class="py-1">一</span><span class="py-1">二</span><span class="py-1">三</span><span class="py-1">四</span><span class="py-1">五</span><span class="py-1">六</span>
           </div>
           <div class="relative z-10 cal-grid" id="home-calendar-grid"></div>
@@ -909,18 +913,18 @@
 
       <section class="mt-6" id="home-progress-block">
         <div class="flex items-center justify-between">
-          <h2 class="text-[15px] font-semibold text-[var(--ink)]">追踪</h2>
+          <h2 class="sec-title font-semibold text-[var(--ink)]">追踪</h2>
           <button type="button" onclick="goProgress()" class="text-[12px] text-[var(--rose-deep)] font-medium">打开</button>
         </div>
         <button type="button" onclick="goProgress()" class="card-journal grain relative mt-2.5 w-full text-left rounded-[20px] px-4 py-3.5">
           <div class="pearl-sheen"></div>
           <div class="relative z-10 space-y-2.5">
-            <p class="flex items-baseline gap-2 text-[12.5px] leading-5">
-              <span class="w-8 shrink-0 text-[11px] font-semibold text-[var(--mauve)]">课前</span>
+            <p class="flex items-baseline gap-2 text-[13.5px] leading-5">
+              <span class="w-8 shrink-0 text-[12px] font-semibold text-[var(--mauve)]">课前</span>
               <span id="progress-teaser-class" class="min-w-0 text-[var(--ink-soft)]">上次的提醒</span>
             </p>
-            <p class="flex items-baseline gap-2 text-[12.5px] leading-5">
-              <span class="w-8 shrink-0 text-[11px] font-semibold text-[var(--mauve)]">翻看</span>
+            <p class="flex items-baseline gap-2 text-[13.5px] leading-5">
+              <span class="w-8 shrink-0 text-[12px] font-semibold text-[var(--mauve)]">翻看</span>
               <span class="min-w-0 text-[var(--ink-soft)]">问问看，或这几天</span>
             </p>
           </div>
@@ -1198,10 +1202,10 @@
               <div class="archive-stat is-hours">
                 <span class="pearl-sheen"></span>
                 <p class="relative z-10 archive-stat-label">时长</p>
-                <p class="relative z-10 archive-stat-num is-hours" id="checkin-month-hours">—</p>
+                <p class="relative z-10 archive-stat-num is-hours" id="checkin-month-hours">0<span>小时</span></p>
               </div>
             </div>
-            <p id="checkin-month-empty" class="hidden mt-3 text-[11.5px] leading-5 text-[var(--ink-soft)]">记下之后，就会记在上面。</p>
+            <p id="checkin-month-empty" class="hidden mt-3 text-[12.5px] leading-5 text-[var(--ink-soft)]">记下之后，就会记在上面。</p>
             <div id="checkin-class-stats"></div>
           </div>
         </div>
@@ -1212,11 +1216,11 @@
             <p class="label-editorial text-[14px] text-[var(--ink)]" id="checkin-month-label"></p>
             <button type="button" onclick="shiftCheckinMonth(1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]" aria-label="下个月"><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px]"></iconify-icon></button>
           </div>
-          <div class="relative z-10 cal-grid text-center text-[10px] tracking-[0.06em] text-[var(--ink-faint)] mb-0.5">
+          <div class="relative z-10 cal-grid text-center text-[11px] tracking-[0.06em] text-[var(--ink-faint)] mb-0.5">
             <span class="py-0.5">日</span><span class="py-0.5">一</span><span class="py-0.5">二</span><span class="py-0.5">三</span><span class="py-0.5">四</span><span class="py-0.5">五</span><span class="py-0.5">六</span>
           </div>
           <div class="relative z-10 cal-grid" id="checkin-cal-grid"></div>
-          <p class="relative z-10 mt-1.5 text-center text-[10.5px] leading-4 text-[var(--ink-faint)]">对勾是打卡，蝴蝶结是复盘。</p>
+          <p class="relative z-10 mt-1.5 text-center text-[12px] leading-4 text-[var(--ink-faint)]">对勾是打卡，蝴蝶结是复盘。</p>
           <p id="checkin-day-empty" class="relative z-10 mt-1.5 text-center text-[12px] text-[var(--ink-soft)]"></p>
           <div id="checkin-day-list" class="relative z-10 mt-1.5 space-y-2"></div>
         </div>
@@ -3274,7 +3278,10 @@ function renderCheckinArchive() {
     const monthMin = monthRows.reduce((s, r) => s + (Number(r.training_duration_min) || 0), 0);
     const hoursEl = document.getElementById('checkin-month-hours');
     if (hoursEl) {
-      if (!monthMin) {
+      if (monthEmpty) {
+        hoursEl.classList.remove('is-empty');
+        hoursEl.innerHTML = '0<span>小时</span>';
+      } else if (!monthMin) {
         hoursEl.classList.add('is-empty');
         hoursEl.textContent = '未记';
       } else {
