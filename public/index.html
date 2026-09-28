@@ -474,8 +474,8 @@
   .btn-ribbon {
     position: relative; overflow: hidden; color: #faf6f4;
     font-weight: 600;
-    background: linear-gradient(160deg, #a09092 0%, #8a7678 52%, #746264 100%);
-    box-shadow: 0 12px 24px -14px rgba(90,70,74,.38), inset 0 1px 0 rgba(255,255,255,.38);
+    background: linear-gradient(135deg, var(--gold) 0%, var(--rose-deep) 40%, var(--mauve) 72%, var(--burgundy) 100%);
+    box-shadow: 0 12px 24px -14px rgba(120,90,94,.35), inset 0 1px 0 rgba(255,255,255,.45);
   }
   .btn-ribbon .pearl-sheen { opacity: .45; background: linear-gradient(115deg, transparent 28%, rgba(255,255,255,.28) 40%, transparent 52%); }
 
@@ -874,11 +874,80 @@
     color: var(--ink-soft);
   }
   .rec-stage {
-    background: radial-gradient(circle at 50% 58%, rgba(255,255,255,.55) 0%, rgba(244,232,230,.18) 42%, transparent 68%);
-    border: none;
-    box-shadow: none;
-    border-radius: 0;
-    overflow: visible;
+    position: relative;
+    background:
+      radial-gradient(ellipse 78% 68% at 50% 46%, rgba(255,248,246,.82) 0%, rgba(232,214,212,.62) 48%, rgba(214,194,192,.5) 100%);
+    border: 1px solid rgba(255,255,255,.86);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.95),
+      0 22px 40px -28px rgba(90, 60, 70, .3);
+    border-radius: 40px;
+    overflow: hidden;
+    padding: 44px 36px 40px;
+  }
+  .rec-stage .pearl-sheen {
+    opacity: 1;
+    background:
+      radial-gradient(110% 70% at 14% -10%, rgba(255,255,255,.98), transparent 46%),
+      linear-gradient(118deg,
+        transparent 18%,
+        rgba(255,255,255,0) 30%,
+        rgba(255,255,255,.78) 38%,
+        rgba(255,244,238,.2) 42%,
+        transparent 48%,
+        rgba(255,255,255,.4) 56%,
+        transparent 64%);
+  }
+  #screen-record .rec-mic {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(160deg, #d4c4c2 0%, #b49a9a 48%, #947c7c 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 10px 18px -12px rgba(90,60,70,.4);
+  }
+  #screen-record .rec-mic .pearl-sheen {
+    opacity: .9;
+    background: linear-gradient(125deg, transparent 28%, rgba(255,255,255,.55) 42%, transparent 56%);
+  }
+  #screen-record.wash-rose::before {
+    background:
+      radial-gradient(90% 42% at 50% -6%, rgba(255,255,255,.38), transparent 52%),
+      radial-gradient(85% 42% at 50% 108%, rgba(106, 85, 85, .22), transparent 56%);
+  }
+  #screen-record {
+    background: linear-gradient(180deg, #f2eaea 0%, #e8dddc 48%, #dccfcd 100%);
+  }
+  #screen-record .sticky-actions {
+    background: rgba(232, 220, 218, .92);
+    border-top: 1px solid rgba(168, 141, 140, .28);
+  }
+  .rec-stage-shoe {
+    position: absolute; right: 10px; top: 12px;
+    width: 54px; height: 66px; object-fit: contain;
+    opacity: .22; pointer-events: none;
+    filter: saturate(.85) brightness(1.05);
+  }
+  .rec-stage-rule {
+    width: 28px; height: 1px; margin: 10px auto 0;
+    background: linear-gradient(90deg, transparent, rgba(168, 138, 142, .7), transparent);
+  }
+  #screen-record .rec-mic-wrap {
+    width: 124px; height: 124px;
+    background: radial-gradient(circle, rgba(255,255,255,.7) 0%, rgba(232,208,206,.22) 58%, transparent 72%);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.75),
+      0 0 0 10px rgba(214, 190, 188, .22),
+      0 18px 32px -18px rgba(100, 70, 78, .38);
+  }
+  #screen-record #rec-state {
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-style: italic;
+    letter-spacing: .04em;
+    color: var(--ink-soft);
+  }
+  #screen-record .rec-stage-note {
+    letter-spacing: .12em;
+    font-size: 10px;
+    color: var(--ink-faint);
   }
   .home-week-ribbon {
     padding: 8px 4px 4px;
@@ -886,30 +955,84 @@
     border: none;
     box-shadow: none;
   }
-  .home-week-ribbon .pearl-sheen { display: none; }
-  .home-progress-line {
-    display: flex;
-    align-items: baseline;
-    gap: 14px;
-    padding: 2px 2px 0;
+  #screen-history {
+    background: linear-gradient(180deg, #f3eceb 0%, #e9e0de 52%, #ddd2d0 100%);
   }
-  .home-progress-line button {
-    font-size: 13.5px;
-    color: var(--ink-soft);
+  #screen-history.wash-dust::before {
+    background:
+      radial-gradient(80% 48% at 8% 92%, rgba(120, 96, 94, .16), transparent 58%),
+      radial-gradient(70% 40% at 100% 0%, rgba(255,255,255,.35), transparent 50%);
   }
-  .home-progress-line .k {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--mauve);
-    margin-right: 6px;
+  #screen-history .archive-month {
+    background:
+      radial-gradient(88% 70% at 12% -8%, rgba(255,255,255,.7), transparent 50%),
+      radial-gradient(72% 58% at 100% 108%, rgba(168, 130, 128, .28), transparent 54%),
+      linear-gradient(158deg, #f7eeed 0%, #eadcda 52%, #dcc8c6 100%);
   }
-  #home-tips-block .card-journal {
-    background: transparent;
+  #screen-history .card-journal {
+    background: linear-gradient(158deg, #faf5f4 0%, #eee3e1 58%, #e2d3d1 100%);
+  }
+  #screen-history .hist-tabs {
+    background: linear-gradient(180deg, rgba(244, 232, 230, .88), rgba(214, 196, 194, .55));
+    border-color: rgba(168, 141, 140, .35);
+  }
+  #screen-history .archive-stat {
+    background: linear-gradient(165deg, rgba(255,252,251,.72) 0%, rgba(232,214,210,.7) 52%, rgba(196,168,164,.45) 100%);
+  }
+  #screen-progress.wash-rose::before {
+    background:
+      radial-gradient(90% 42% at 50% -6%, rgba(255,255,255,.5), transparent 52%),
+      radial-gradient(80% 36% at 50% 108%, rgba(154, 118, 124, .14), transparent 58%);
+  }
+  #screen-progress h2.font-display {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: .02em;
+  }
+  #screen-progress .hist-tabs {
+    padding: 5px;
+    background: linear-gradient(180deg, rgba(255,252,251,.92), rgba(244,232,230,.7));
+    border: 1px solid rgba(255,255,255,.82);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 10px 22px -18px rgba(110,80,80,.2);
+  }
+  #screen-progress .hist-tabs button {
+    height: 36px;
+    font-size: 12.5px;
+    letter-spacing: .04em;
+  }
+  #screen-progress .card-journal {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 18px 36px -24px rgba(90,60,70,.22);
+  }
+  #issues-empty {
     border: none;
-    box-shadow: none;
-    padding: 8px 2px 0;
+    background: linear-gradient(165deg, rgba(255,252,251,.9), rgba(244,234,232,.55));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-style: italic;
+    font-size: 15px;
+    line-height: 1.65;
+    padding: 18px 20px;
+    border-radius: 22px;
   }
-  #home-tips-block .pearl-sheen { display: none; }
+  .issue-card {
+    background: linear-gradient(165deg, #fffcfb 0%, #f6eeed 100%);
+    border: 1px solid rgba(255,255,255,.8);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.92), 0 10px 20px -18px rgba(110,80,80,.18);
+    border-radius: 20px;
+  }
+  #screen-progress #ask-archive-input {
+    height: 44px;
+    border-radius: 16px;
+    background: rgba(255,252,251,.9);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  #screen-progress #review-content {
+    background: linear-gradient(165deg, #fffcfb, #f7f0ef);
+    border: 1px solid rgba(255,255,255,.8);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.92);
+    border-radius: 22px;
+    padding: 18px 16px;
+  }
 </style>
 <!-- Compiled Tailwind (tools/). Placed after the page styles on purpose: the CDN version injected its CSS last, so utilities win ties the same way. -->
 <link rel="stylesheet" href="/css/tailwind.css">
@@ -1082,22 +1205,31 @@
         <div id="home-calendar-day-list" class="mt-2.5 space-y-3"></div>
       </section>
 
-      <section class="mt-5" id="home-progress-block">
+      <section class="mt-6" id="home-progress-block">
         <div class="flex items-center justify-between">
           <h2 class="sec-title font-semibold text-[var(--ink)]">追踪</h2>
           <button type="button" onclick="goProgress()" class="text-[12px] text-[var(--rose-deep)] font-medium">查看</button>
         </div>
-        <div class="home-progress-line mt-2">
-          <button type="button" onclick="goProgress('class')">
-            <span class="k">问题</span><span id="progress-teaser-class">课前看一眼</span>
-          </button>
-          <button type="button" onclick="goProgress('look')">
-            <span class="k">回看</span><span>问问档案</span>
-          </button>
+        <div class="card-journal grain relative mt-2.5 overflow-hidden rounded-[20px]">
+          <div class="pearl-sheen"></div>
+          <div class="relative z-10 divide-y divide-[var(--border-soft)]">
+            <button type="button" onclick="goProgress('class')" class="w-full text-left px-4 py-3.5">
+              <p class="flex items-baseline gap-2 text-[13.5px] leading-5">
+                <span class="w-9 shrink-0 text-[12px] font-semibold text-[var(--mauve)]">问题</span>
+                <span id="progress-teaser-class" class="min-w-0 text-[var(--ink-soft)]">课前看一眼，还在出现的问题</span>
+              </p>
+            </button>
+            <button type="button" onclick="goProgress('look')" class="w-full text-left px-4 py-3.5">
+              <p class="flex items-baseline gap-2 text-[13.5px] leading-5">
+                <span class="w-9 shrink-0 text-[12px] font-semibold text-[var(--mauve)]">回看</span>
+                <span id="progress-teaser-look" class="min-w-0 text-[var(--ink-soft)]">问问我的档案，汇总报告</span>
+              </p>
+            </button>
+          </div>
         </div>
       </section>
 
-      <section class="mt-4" id="home-tips-block">
+      <section class="mt-6" id="home-tips-block">
         <div class="card-journal tinted-rose grain relative overflow-hidden p-3.5" style="border-radius:18px 22px 16px 20px">
           <div class="pearl-sheen"></div>
           <p class="relative z-10 text-[13px] leading-6 text-[var(--ink-soft)]" id="tip-quote"></p>
@@ -1137,24 +1269,28 @@
       </div>
       </div>
     </header>
-    <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-8">
+    <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-4">
         <p class="hidden relative z-10 mb-3 rounded-[14px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]" id="in-app-browser-tip">请点右上角「···」，选「在浏览器打开」，录音会更顺利。</p>
 
-      <section class="rec-stage relative mt-1 px-2 pt-8 pb-6 text-center">
+      <section class="rec-stage relative mt-2 text-center">
+        <div class="pearl-sheen"></div>
+        <img src="/img/pack-shoes-pink.png" alt="" class="rec-stage-shoe" aria-hidden="true">
         <p class="relative z-10" id="rec-timer"><span class="rec-timer-num">0</span><span class="rec-timer-unit">秒</span></p>
-        <p class="relative z-10 mt-2 text-[12px] text-[var(--ink-faint)]" id="rec-state">请点中间开始</p>
-        <p class="relative z-10 mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="rec-live-text"></p>
-        <div class="relative z-10 mt-6 flex justify-center">
+        <div class="relative z-10 rec-stage-rule" aria-hidden="true"></div>
+        <p class="relative z-10 mt-2 text-[13px]" id="rec-state">请点中间开始</p>
+        <p class="relative z-10 mt-1 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="rec-live-text"></p>
+        <div class="relative z-10 mt-4 flex justify-center">
           <div class="rec-mic-wrap">
-            <button id="rec-btn" onclick="toggleRecording()" class="rec-mic w-[82px] h-[82px] rounded-full flex items-center justify-center" aria-label="开始或停止录音">
-              <iconify-icon icon="solar:microphone-3-linear" id="rec-icon" class="text-[32px]"></iconify-icon>
+            <button id="rec-btn" onclick="toggleRecording()" class="rec-mic w-[88px] h-[88px] rounded-full flex items-center justify-center" aria-label="开始或停止录音">
+              <span class="pearl-sheen"></span>
+              <iconify-icon icon="solar:microphone-3-linear" id="rec-icon" class="relative z-10 text-[32px]"></iconify-icon>
             </button>
           </div>
         </div>
-        <p class="relative z-10 mt-5 text-[11px] text-[var(--ink-faint)]">每次最多三段，每段大约一分钟</p>
+        <p class="relative z-10 rec-stage-note mt-4">每次最多三段，每段大约一分钟</p>
       </section>
 
-      <details class="rec-prompts mt-6">
+      <details class="rec-prompts mt-3">
         <summary class="flex items-center gap-1.5 text-[12px] font-medium text-[var(--ink-soft)]">
           <iconify-icon icon="solar:alt-arrow-right-linear" class="rec-prompts-chevron text-[14px] text-[var(--rose-deep)] transition-transform"></iconify-icon>
           需要提示时，可以看这里
@@ -1182,7 +1318,7 @@
 
       <div id="segments-box" class="mt-4 space-y-2"></div>
       <textarea id="manual-input" placeholder="也可以打字，比如：今天 pirouette 视线定点，需要改进。"
-        class="mt-4 w-full min-h-[76px] rounded-2xl border border-[var(--border-soft)] p-3.5 text-[12.5px]"></textarea>
+        class="mt-3 w-full min-h-[76px] rounded-2xl border border-[var(--border-soft)] p-3.5 text-[12.5px]"></textarea>
     </main>
     <div class="sticky-actions shrink-0 px-6 pt-3 flex gap-3">
       <button type="button" onclick="clearSegments()" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">清空</button>
@@ -1545,7 +1681,7 @@
       <div id="progress-class-view">
       <section>
         <h2 class="font-display text-[17px] font-semibold">课前看一眼</h2>
-        <div class="card-journal tinted-rose grain relative overflow-hidden mt-3 p-4" style="border-radius:22px 16px 22px 18px">
+        <div class="card-journal tinted-rose grain relative overflow-hidden mt-3 p-5" style="border-radius:28px">
           <div class="pearl-sheen"></div>
           <div id="brief-content" class="relative z-10 text-[12.5px] leading-6 text-[var(--ink)]">正在看看你上次留下的话…</div>
         </div>
@@ -1558,7 +1694,7 @@
           </div>
           <span class="text-[11px] text-[var(--ink-faint)]">可更改状态</span>
         </div>
-        <div id="issue-donut-wrap" class="hidden card-journal tinted-rose grain relative overflow-hidden mt-3 p-3" style="border-radius:18px 24px 16px 22px">
+        <div id="issue-donut-wrap" class="hidden card-journal tinted-rose grain relative overflow-hidden mt-3 p-4" style="border-radius:28px">
           <div class="pearl-sheen"></div>
           <div class="relative z-10 flex items-center gap-4">
             <svg id="issue-donut-svg" viewBox="0 0 64 64" class="w-14 h-14 shrink-0"></svg>
@@ -1579,7 +1715,7 @@
       <div id="progress-look-view" class="hidden">
       <section>
         <h2 class="font-display text-[17px] font-semibold">问问我的档案</h2>
-        <div class="card-journal grain relative overflow-hidden mt-3 p-4" style="border-radius:18px 22px 16px 22px">
+        <div class="card-journal grain relative overflow-hidden mt-3 p-5" style="border-radius:28px">
           <div class="pearl-sheen"></div>
           <div class="relative z-10 flex gap-2">
             <input id="ask-archive-input" type="text" placeholder="比如：我最近转圈老说什么问题" class="flex-1 h-10 px-3 rounded-xl border border-[var(--border-soft)] text-[12.5px] bg-white/70" onkeydown="if(event.key==='Enter') askArchive()">
@@ -1593,7 +1729,7 @@
 
       <section class="mt-5">
         <h2 class="font-display text-[17px] font-semibold">汇总报告</h2>
-        <div class="card-journal tinted grain relative overflow-hidden mt-3 p-4" style="border-radius:22px 14px 22px 16px">
+        <div class="card-journal tinted grain relative overflow-hidden mt-3 p-5" style="border-radius:28px">
           <div class="pearl-sheen"></div>
           <div class="relative z-10 flex items-center justify-between">
             <span class="label-editorial text-[12px] text-[var(--rose-deep)]">近14天</span>
@@ -1602,8 +1738,8 @@
           <div class="relative z-10 mt-3 flex items-center justify-center gap-1.5" id="progress-strip"></div>
         </div>
         <div class="mt-3 flex gap-2">
-          <button id="review-days-btn" onclick="generateTrainingReview('days')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近7天</button>
-          <button id="review-last-btn" onclick="generateTrainingReview('last')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近5次</button>
+          <button id="review-days-btn" onclick="generateTrainingReview('days')" class="btn-pearl flex-1 h-11 rounded-full text-[12.5px] font-medium"><span class="pearl-sheen"></span><span class="relative z-10">最近7天</span></button>
+          <button id="review-last-btn" onclick="generateTrainingReview('last')" class="btn-pearl flex-1 h-11 rounded-full text-[12.5px] font-medium"><span class="pearl-sheen"></span><span class="relative z-10">最近5次</span></button>
         </div>
         <div id="review-content" class="mt-3 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-4 text-[12.5px] text-[var(--ink)]">正在翻你最近的课记…</div>
         <button id="review-export-btn" onclick="exportTrainingReview()" class="hidden mt-2 w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">复制为文本</button>
@@ -2342,7 +2478,7 @@ function isCheckinOnly(r) {
 }
 function classNameOf(r) {
   const n = ((r && r.class_name) || '').trim();
-  if (!n || n === '训练记录') return '未写课名';
+  if (!n || n === '训练记录') return '其他';
   return n;
 }
 function classSessionCounts(rows, dayKey) {
@@ -2356,14 +2492,14 @@ function classSessionCounts(rows, dayKey) {
 function formatSessionSummary(counts) {
   if (!counts.length) return '';
   // At most three classes — the home/share line cannot hold more.
-  // Unnamed sessions: just the count, not "未写课名 4节".
-  return counts.slice(0, 3).map(([n, c]) => (n === '未写课名' ? `${c}节` : `${n} ${c}节`)).join('｜');
+  // Unnamed sessions: just the count, not "其他 4节" -- no judgment on not naming it.
+  return counts.slice(0, 3).map(([n, c]) => (n === '其他' ? `${c}节` : `${n} ${c}节`)).join('｜');
 }
 function recentClassNames(rows) {
   const seen = [];
   (rows || []).forEach((r) => {
     const n = (r.class_name || '').trim();
-    if (!n || isAutoClassName(n) || n === '训练记录' || n === '未写课名') return;
+    if (!n || isAutoClassName(n) || n === '训练记录' || n === '其他') return;
     if (!seen.includes(n)) seen.push(n);
   });
   return seen.slice(0, 6);
@@ -2495,6 +2631,33 @@ async function loadHome() {
   renderHomeCalendar();
   paintTodayClassSummary(homeRows);
   renderCheckinStatus(homeRows);
+  updateProgressTeaser();
+}
+// New users see the guidance text (what this tab is for); once there's a real
+// recurring issue, show that instead -- their own data, not a menu description.
+async function updateProgressTeaser() {
+  const classEl = document.getElementById('progress-teaser-class');
+  const lookEl = document.getElementById('progress-teaser-look');
+  if (classEl) {
+    try {
+      const res = await authFetch(`${API}/api/issues`);
+      const issues = await res.json();
+      classEl.textContent = (Array.isArray(issues) && issues.length)
+        ? `${issues[0].text} · 还在出现 · ${issues[0].occurrence_count}次`
+        : '课前看一眼，还在出现的问题';
+    } catch (e) { /* network hiccup -- leave the static guidance text in place */ }
+  }
+  // "问问我的档案" is a search tool, not a count -- only 汇总报告's half of this
+  // row gets real data (a real number), the other half stays descriptive.
+  if (lookEl) {
+    try {
+      const res = await authFetch(`${API}/api/progress/review?days=7`);
+      const data = await res.json();
+      lookEl.textContent = data && data.recordCount
+        ? `问问我的档案 · 最近7天来过${data.recordCount}次`
+        : '问问我的档案，汇总报告';
+    } catch (e) { /* network hiccup -- leave the static guidance text in place */ }
+  }
 }
 // Daily streak, purely client-side from records already loaded for the home
 // calendar — no new endpoint. Counts backward from today; if today has no
@@ -3268,7 +3431,7 @@ async function askArchive() {
     let html = points.map((p) => `<p class="mb-1.5 last:mb-0">${escapeHtml(p)}</p>`).join('');
     if (data.matchedRecords && data.matchedRecords.length > 0) {
       html += `<div class="mt-2 flex flex-wrap gap-1.5">` + data.matchedRecords.map((r) =>
-        `<button type="button" onclick="openDetail(${r.id})" class="chip rounded-full px-2.5 py-1 text-[10.5px] text-[var(--rose-deep)]">${escapeHtml(fmtDate(r.createdAt).split(' ')[0])} · ${escapeHtml(r.className || '未写课名')}</button>`
+        `<button type="button" onclick="openDetail(${r.id})" class="chip rounded-full px-2.5 py-1 text-[10.5px] text-[var(--rose-deep)]">${escapeHtml(fmtDate(r.createdAt).split(' ')[0])} · ${escapeHtml(r.className || '其他')}</button>`
       ).join('') + `</div>`;
     }
     resultEl.innerHTML = html;
@@ -3329,7 +3492,7 @@ function issueCard(issue) {
   const statusLabel = { open: '仍然存在', improving: '有改善' }[issue.status] || '仍然存在';
   const dates = issue.occurrences.map(o => fmtDate(o.createdAt).split(' ')[0]).join('、');
   const isOpen = expandedIssueIds.has(issue.id);
-  let html = `<div class="rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] overflow-hidden">
+  let html = `<div class="issue-card overflow-hidden">
     <button type="button" onclick="toggleIssueExpand(${issue.id})" class="w-full flex items-center gap-2.5 px-4 py-3.5 text-left">
       <span class="shrink-0 w-2 h-2 rounded-full" style="background:${statusDot}" aria-hidden="true"></span>
       <span class="flex-1 min-w-0 text-[13px] font-medium truncate">${escapeHtml(compactPhrase(issue.text))}</span>
