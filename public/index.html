@@ -640,7 +640,7 @@
         <textarea id="review-improve" class="w-full min-h-[60px] rounded-2xl field-improve p-3 text-[12.5px]"></textarea>
       </div>
       <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[var(--rose-deep)] mb-2">下次想留意</p>
+        <p class="text-[12px] font-semibold text-[var(--rose-deep)] mb-2">我自己定的下次计划</p>
         <textarea id="review-next" class="w-full min-h-[60px] rounded-2xl field-next p-3 text-[12.5px]"></textarea>
       </div>
       <div id="review-note" class="hidden mb-4 text-[11px] text-[var(--ink-faint)] border border-dashed border-[var(--border-soft)] rounded-xl p-3"></div>
@@ -794,7 +794,7 @@
         <div class="rounded-2xl field-improve p-3 text-[12.5px] leading-6 whitespace-pre-wrap" id="detail-improve"></div>
       </div>
       <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[var(--rose-deep)] mb-2">→ 下次练习注意事项</p>
+        <p class="text-[12px] font-semibold text-[var(--rose-deep)] mb-2">→ 我自己定的下次计划</p>
         <div class="rounded-2xl field-next p-3 text-[12.5px] leading-6 whitespace-pre-wrap" id="detail-next"></div>
       </div>
       <div class="mb-4 hidden" id="detail-tips-wrap">
@@ -1123,7 +1123,7 @@
     <svg class="mx-auto mt-1 w-12 h-2.5 text-[var(--gold)] opacity-80" viewBox="0 0 120 24" fill="none" aria-hidden="true"><path d="M2 12c14-14 24-14 28-2 4 12 14 12 28-2 14-14 24-14 28-2s14 12 28 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     <p class="mt-1 text-center text-[11px] text-[var(--ink-faint)]">v0.1 · MVP 测试版</p>
     <p class="mt-4 text-[12.5px] leading-6 text-[var(--ink-soft)]">
-      BalletMind 是一款给芭蕾练习者用的语音训练复盘工具。下课后花几分钟说说今天练了什么、感受如何、老师提了什么建议，AI 会帮你整理成"做得好的地方 / 待改进点 / 下次练习注意事项"，帮你把每一次练习的收获都记录下来。
+      BalletMind 是一款给芭蕾练习者用的语音训练复盘工具。下课后花几分钟说说今天练了什么、感受如何、老师提了什么建议，AI 会帮你整理成"做得好的地方 / 待改进点 / 我自己定的下次计划"，帮你把每一次练习的收获都记录下来。
     </p>
     <p class="mt-3 text-[12.5px] leading-6 text-[var(--ink-soft)]">
       现在还是早期测试阶段，功能和界面都会持续调整。你的训练记录只属于你自己的账号，不会被其他人看到。语音会先转成文字再整理，原始音频不会长期保存在训练档案里。详见<a href="/privacy.html" class="text-[var(--rose-deep)] underline">隐私政策</a>。
@@ -2361,7 +2361,7 @@ function formatRecordText(r) {
     '【待改进点】',
     r.improve_points || '（无）',
     '',
-    '【下次练习注意事项】',
+    '【我自己定的下次计划】',
     r.next_time_reminder || '（无）',
     '',
     '【针对这次的小提示（常见练法参考，不是教练）】',
