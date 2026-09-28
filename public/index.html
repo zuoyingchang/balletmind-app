@@ -299,19 +299,40 @@
     100% { transform: translateX(60%); opacity: 0; }
   }
   @media (prefers-reduced-motion: no-preference) {
-    #home-cta-btn .pearl-sheen { animation: ctaSheenSweep 5.5s ease-in-out infinite; }
+    #home-cta-btn > .pearl-sheen.is-cta-sweep { animation: ctaSheenSweep 5.5s ease-in-out infinite; }
   }
   .home-cta-row { position: relative; display: flex; gap: 8px; align-items: stretch; overflow: visible; }
   .home-cta-row #home-cta-btn {
     flex: 1; min-width: 0;
     color: var(--burgundy);
-    background: var(--cta-pink);
-    box-shadow: 0 12px 26px -14px rgba(150, 108, 108, .3), inset 0 1px 0 rgba(255,255,255,.58);
+    background:
+      radial-gradient(90% 70% at 50% 0%, rgba(255,255,255,.32), transparent 58%),
+      linear-gradient(180deg, #e6d4d1 0%, #dcc8c5 100%);
+    box-shadow: 0 12px 26px -14px rgba(150, 108, 108, .3), inset 0 1px 0 rgba(255,255,255,.62);
+  }
+  .home-cta-row #home-cta-btn > .pearl-sheen {
+    opacity: .46;
+    background:
+      radial-gradient(86% 58% at 50% 0%, rgba(255,255,255,.58), transparent 64%),
+      radial-gradient(70% 48% at 50% 100%, rgba(255,255,255,.16), transparent 60%);
+  }
+  .home-cta-row #home-cta-btn > .pearl-sheen.is-cta-sweep {
+    opacity: 0;
+    background: linear-gradient(115deg, transparent 24%, rgba(255,255,255,.7) 40%, transparent 56%);
   }
   .home-cta-row #home-cta-btn .home-cta-mic {
-    background: rgba(255,252,251,.38);
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(70% 70% at 50% 32%, rgba(255,255,255,.56), transparent 58%),
+      linear-gradient(180deg, rgba(255,252,251,.5), rgba(255,252,251,.22));
     color: var(--burgundy);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 0 0 1px rgba(255,255,255,.22);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 0 0 1px rgba(255,255,255,.32);
+  }
+  .home-cta-row #home-cta-btn .home-cta-mic .pearl-sheen {
+    opacity: .5;
+    border-radius: inherit;
+    background: radial-gradient(72% 68% at 50% 30%, rgba(255,255,255,.62), transparent 62%);
   }
   .home-cta-row #home-cta-sub { color: rgba(106, 85, 85, .72); }
   .coach-tip {
@@ -1285,8 +1306,10 @@
         <div class="relative z-10 mt-4 home-cta-row">
         <button id="home-cta-btn" onclick="goRecord()" class="btn-ribbon flex items-center gap-3 rounded-[22px] px-4 py-3.5">
           <span class="pearl-sheen"></span>
+          <span class="pearl-sheen is-cta-sweep"></span>
           <span class="home-cta-mic relative z-10 w-10 h-10 rounded-full flex items-center justify-center">
-            <iconify-icon icon="solar:microphone-3-bold" class="text-[19px]"></iconify-icon>
+            <span class="pearl-sheen"></span>
+            <iconify-icon icon="solar:microphone-3-bold" class="relative z-10 text-[19px]"></iconify-icon>
           </span>
           <span class="relative z-10 flex-1 text-left">
             <strong class="font-display block text-[17px] font-semibold tracking-[0.01em]" id="home-cta-title">记录今天的课</strong>
