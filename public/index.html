@@ -815,7 +815,7 @@
         <div class="relative">
           <button type="button" onclick="goProfile()" class="header-avatar flex items-center justify-center" aria-label="我的"><iconify-icon icon="solar:user-circle-linear" class="text-[20px]"></iconify-icon></button>
           <div id="home-profile-tip" class="coach-tip is-below hidden">
-            账号和徽章，点这里。
+            账号和徽章在这里。
             <button type="button" class="coach-tip-ok" onclick="dismissGuide('profile')">知道了</button>
           </div>
         </div>
@@ -839,10 +839,10 @@
           </div>
           <div>
             <p class="archive-stat-label">时长</p>
-            <p class="archive-stat-num is-hours is-empty mt-1.5" id="stat-duration">未记</p>
+            <p class="archive-stat-num is-hours mt-1.5" id="stat-duration">0<span>小时</span></p>
           </div>
           </div>
-          <p id="home-stat-empty" class="hidden mt-2 text-[11.5px] leading-5 text-[var(--ink-soft)]">从今天开始记下，次数、连续和时长会一直留在这里。</p>
+          <p id="home-stat-empty" class="hidden mt-2 text-[11.5px] leading-5 text-[var(--ink-soft)] whitespace-nowrap">记下之后，会显示在上面。</p>
         </div>
         <div class="relative z-10 mt-4 home-cta-row">
         <button id="home-cta-btn" onclick="goRecord()" class="btn-ribbon flex items-center gap-3 rounded-[22px] px-4 py-3.5">
@@ -943,14 +943,14 @@
           <iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span>
         </button>
         <div id="nav-archive-tip" class="coach-tip hidden">
-          课记和日历，都在这里。
+          课记和日历在这里。
           <button type="button" class="coach-tip-ok" onclick="dismissGuide('archive')">知道了</button>
         </div>
       </div>
       <div class="relative">
         <button onclick="goProgress()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><span class="relative"><iconify-icon icon="solar:graph-up-linear" class="text-[22px]"></iconify-icon><span class="nav-progress-dot hidden absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[var(--rose-deep)] ring-2 ring-[var(--paper)]"></span></span><span class="text-[10px]">追踪</span></button>
         <div id="nav-progress-tip" class="coach-tip hidden">
-          上课前看一眼，反复的问题也在这里。
+          课前可以看这里。
           <button type="button" class="coach-tip-ok" onclick="dismissGuide('progress')">知道了</button>
         </div>
       </div>
@@ -1201,7 +1201,7 @@
                 <p class="relative z-10 archive-stat-num is-hours" id="checkin-month-hours">—</p>
               </div>
             </div>
-            <p id="checkin-month-empty" class="hidden mt-3 text-[11.5px] leading-5 text-[var(--ink-soft)]">记下之后，来过几天、练了多久会记在这里。</p>
+            <p id="checkin-month-empty" class="hidden mt-3 text-[11.5px] leading-5 text-[var(--ink-soft)]">记下之后，就会记在上面。</p>
             <div id="checkin-class-stats"></div>
           </div>
         </div>
@@ -1391,7 +1391,7 @@
           </div>
         </div>
         <div id="issues-empty" class="hidden mt-3 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-[12px] leading-6 text-[var(--ink-soft)]">
-          同一句话出现几次后，会列在这里。先去复盘一节课就好。
+          同一件事说了几次，会列在这里。先复盘一节课就好。
         </div>
         <div id="issues-list" class="relative z-10 mt-3 space-y-2.5"></div>
         <button type="button" id="issues-more-btn" onclick="toggleIssuesShowAll()" class="hidden mt-2 w-full py-2 text-center text-[12px] text-[var(--rose-deep)]"></button>
@@ -2277,7 +2277,10 @@ async function loadHome() {
   document.getElementById('stat-count').innerHTML = `${recapCount}<span>次</span>`;
   document.getElementById('stat-streak').innerHTML = `${streak}<span>天</span>`;
   const hoursEl = document.getElementById('stat-duration');
-  if (trainedHours === null) {
+  if (homeEmpty) {
+    hoursEl.classList.remove('is-empty');
+    hoursEl.innerHTML = '0<span>小时</span>';
+  } else if (trainedHours === null) {
     hoursEl.classList.add('is-empty');
     hoursEl.textContent = '未记';
   } else {
@@ -2947,7 +2950,7 @@ async function loadBrief() {
     const tip = data.lastRecord ? (data.lastRecord.nextTimeReminder || data.lastRecord.improvePoints || '').trim() : '';
     el.innerHTML = tip
       ? `<p><span class="font-semibold text-[var(--mauve)]">上次提醒</span> ${escapeHtml(compactPhrase(tip, 44))}</p>`
-      : `<p class="leading-6">记下第一条复盘后，上课前可以在这里看一眼。</p>`;
+      : `<p class="leading-6">有了复盘，上课前可以来这里看一眼。</p>`;
   } catch (e) {
     el.textContent = '加载失败，下拉重试';
   }
@@ -3133,7 +3136,7 @@ async function generateTrainingReview(mode) {
     }
     // Still-open issues aren't repeated here on purpose — they're listed
     // with status controls in 「反复出现的问题」at the top of this screen.
-    if (data.recordCount === 0) html = `<p class="text-[12.5px] leading-6 text-[var(--ink-soft)]">有几条课记之后，这里会帮你收一收这段时间。</p>`;
+    if (data.recordCount === 0) html = `<p class="text-[12.5px] leading-6 text-[var(--ink-soft)]">再记几节课，这里就会有这段时间的整理。</p>`;
     contentEl.innerHTML = html;
     contentEl.classList.remove('hidden');
     exportBtn.classList.toggle('hidden', data.recordCount === 0);
@@ -3437,7 +3440,7 @@ function paintDayList(byDate, year, month, selectedKey, emptyId, listId) {
     } else {
       listEl.innerHTML = '';
       emptyEl.classList.remove('hidden');
-      emptyEl.innerHTML = `<span class="text-[var(--ink-faint)]">这一天还没有</span>`;
+      emptyEl.innerHTML = `<span class="text-[var(--ink-faint)]">这一天还没有记录。</span>`;
     }
     return;
   }
