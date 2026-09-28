@@ -37,6 +37,7 @@
   body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif; background: #ddd6d4; color: var(--ink); }
   .font-display { font-family: "Cormorant Garamond", "Noto Serif SC", serif; letter-spacing: .01em; }
   .label-editorial { font-family: "Cormorant Garamond", -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", serif; font-style: italic; font-weight: 500; letter-spacing: .1em; }
+  .fr-term { font-family: "Cormorant Garamond", serif; font-style: italic; font-weight: 600; color: var(--rose-deep); }
   .page-title { font-family: "Cormorant Garamond", "Noto Serif SC", serif; font-size: 28px; font-weight: 500; letter-spacing: .01em; line-height: 1.12; }
   ::-webkit-scrollbar { display:none; }
   .screen { display:none; }
@@ -875,7 +876,10 @@
   }
   .rec-stage {
     position: relative;
-    background: linear-gradient(155deg, #fffafa 0%, #f3e6e5 50%, #eadcdd 100%);
+    background:
+      radial-gradient(65% 48% at 50% 36%, rgba(255,251,245,.95) 0%, rgba(255,251,245,0) 72%),
+      radial-gradient(120% 95% at 50% 50%, transparent 58%, rgba(110,80,80,.07) 100%),
+      linear-gradient(155deg, #fffafa 0%, #f3e6e5 50%, #eadcdd 100%);
     border: 1px solid rgba(255,255,255,.82);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.94), 0 14px 32px -18px rgba(110,80,80,.18);
     border-radius: 40px;
@@ -2042,6 +2046,30 @@ function followNotice(go) {
   if (go === 'progress') goProgress();
 }
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// Italicize recognized French/foreign ballet terms inline, like a handwritten
+// class note ("今天练了 plié 和 tendu") instead of the tag-chip look elsewhere.
+const FR_TERM_LIST = (() => {
+  const seen = new Set();
+  const out = [];
+  for (const group of (typeof TERM_ALIAS_GROUPS !== 'undefined' ? TERM_ALIAS_GROUPS : [])) {
+    const term = group[0];
+    if (/^[a-zà-ÿ][a-zà-ÿ '-]*$/i.test(term) && !seen.has(term.toLowerCase())) {
+      seen.add(term.toLowerCase());
+      out.push(term);
+    }
+  }
+  return out.sort((a, b) => b.length - a.length);
+})();
+const FR_TERM_RE = FR_TERM_LIST.length
+  ? new RegExp(`(${FR_TERM_LIST.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi')
+  : null;
+function emFrenchTerms(text) {
+  const s = String(text || '');
+  if (!s || !FR_TERM_RE) return escapeHtml(s);
+  return s.split(FR_TERM_RE).map((part, i) => (
+    i % 2 === 1 ? `<em class="fr-term">${escapeHtml(part)}</em>` : escapeHtml(part)
+  )).join('');
+}
 function fmtDate(ts){ const d = new Date(ts); return `${d.getMonth()+1}月${d.getDate()}日 ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`; }
 
 // ---------- auth ----------
@@ -3260,7 +3288,7 @@ function entryCard(r) {
       <p class="label-editorial text-[12px] text-[var(--rose-deep)]">${dateOnly}</p>
       ${mood ? `<span class="shrink-0">${mood}</span>` : ''}
     </div>
-    <h3 class="mt-1.5 text-[15px] font-semibold truncate">${escapeHtml(classNameOf(r))}</h3>
+    <h3 class="mt-1.5 text-[15px] font-semibold truncate">${emFrenchTerms(classNameOf(r))}</h3>
     ${preview ? `<p class="mt-1 text-[12px] leading-5 text-[var(--ink-soft)] truncate">${escapeHtml(preview)}</p>` : ''}
   </button>`;
 }
@@ -3342,8 +3370,12 @@ async function loadBrief() {
     const when = last.createdAt ? fmtDate(last.createdAt).split(' ')[0] : '';
     const klass = (last.className || '').trim();
     const meta = [klass, when].filter(Boolean).join(' · ');
+    const points = tip.split('\n').map((s) => s.trim()).filter(Boolean);
+    const pointsHtml = points.map((p) => (
+      `<p class="flex gap-1.5"><span class="text-[var(--rose-deep)]">·</span><span class="flex-1">${emFrenchTerms(p)}</span></p>`
+    )).join('');
     el.innerHTML = (meta ? `<p class="text-[11px] text-[var(--ink-faint)]">${escapeHtml(meta)}</p>` : '')
-      + `<p class="${meta ? 'mt-1.5 ' : ''}leading-6">${escapeHtml(tip)}</p>`;
+      + `<div class="${meta ? 'mt-1.5 ' : ''}space-y-1">${pointsHtml}</div>`;
   } catch (e) {
     el.textContent = '加载失败，下拉重试';
   }
@@ -4022,26 +4054,26 @@ async function openDetail(id) {
   const r = await res.json();
   detailId = id;
   currentDetailRecord = r;
-  document.getElementById('detail-title').textContent = classNameOf(r);
+  document.getElementById('detail-title').innerHTML = emFrenchTerms(classNameOf(r));
   document.getElementById('detail-mood').innerHTML = moodMark(r.mood, 18);
   const trainedNote = r.training_duration_min != null ? ` · ${minutesLabel(r.training_duration_min)}` : '';
   const checkin = isCheckinOnly(r);
   document.getElementById('detail-date').textContent = fmtDate(r.created_at).split(' ')[0] + trainedNote;
-  document.getElementById('detail-transcript').textContent = checkin ? '这天只打了个卡，没有写详细内容。' : (r.transcript || '');
+  document.getElementById('detail-transcript').innerHTML = checkin ? '这天只打了个卡，没有写详细内容。' : emFrenchTerms(r.transcript || '');
   document.getElementById('detail-fields').classList.toggle('hidden', checkin);
   const tWrap = document.getElementById('detail-transcript-wrap');
   if (tWrap) tWrap.classList.toggle('hidden', checkin);
   document.getElementById('detail-fill-btn').classList.toggle('hidden', !checkin);
   document.getElementById('detail-share-btn').classList.toggle('hidden', !checkin);
   if (!checkin) {
-    document.getElementById('detail-good').textContent = r.good_points || '（无）';
-    document.getElementById('detail-improve').textContent = r.improve_points || '（无）';
-    document.getElementById('detail-next').textContent = r.next_time_reminder || '（无）';
+    document.getElementById('detail-good').innerHTML = r.good_points ? emFrenchTerms(r.good_points) : '（无）';
+    document.getElementById('detail-improve').innerHTML = r.improve_points ? emFrenchTerms(r.improve_points) : '（无）';
+    document.getElementById('detail-next').innerHTML = r.next_time_reminder ? emFrenchTerms(r.next_time_reminder) : '（无）';
     const tipsWrap = document.getElementById('detail-tips-wrap');
     const tips = (r.session_tips || '').trim();
     if (tips) {
       tipsWrap.classList.remove('hidden');
-      document.getElementById('detail-tips').textContent = tips;
+      document.getElementById('detail-tips').innerHTML = emFrenchTerms(tips);
     } else {
       tipsWrap.classList.add('hidden');
     }
