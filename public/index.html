@@ -705,6 +705,7 @@
     font-size: 13px; font-weight: 600; color: var(--ink);
   }
   .checkin-class-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .class-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 2px rgba(255,255,255,.6); }
   .checkin-class-count {
     font-size: 13px; font-variant-numeric: tabular-nums;
     color: var(--ink-soft);
@@ -762,6 +763,135 @@
   .entry-card {
     background: linear-gradient(165deg, #fffcfb 0%, #f8f2f1 100%);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 10px 22px -18px rgba(110,80,80,.22);
+  }
+  .story { position: relative; padding: 2px 0 12px; }
+  .story-chapter { margin: 4px 0 16px 48px; }
+  .story-chapter .fr {
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic; font-size: 13px; letter-spacing: .14em;
+    color: var(--rose-deep); margin: 0;
+  }
+  .story-chapter h2 {
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-size: 26px; font-weight: 500; letter-spacing: .04em;
+    margin: 2px 0 0; line-height: 1.1;
+  }
+  .story-beat {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    margin: 0 0 20px;
+    align-items: start;
+  }
+  .story-beat.is-open { margin-bottom: 24px; }
+  .story-rail { position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 14px; }
+  .story-rail::before {
+    content: '';
+    position: absolute; top: 42px; bottom: -20px; left: 50%;
+    width: 3px; margin-left: -1.5px; border-radius: 99px;
+    background: linear-gradient(180deg, #f0dddb, #cbb4b4 42%, rgba(232,208,206,.2));
+    box-shadow: 0 0 8px rgba(203,180,180,.35);
+  }
+  .story-beat:last-child .story-rail::before,
+  .story-beat.is-month-end .story-rail::before { display: none; }
+  .story-node {
+    position: relative; z-index: 1;
+    width: 40px; text-align: center;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 20px; line-height: 1;
+    font-variant-numeric: tabular-nums; color: var(--ink);
+  }
+  .story-node small {
+    display: block; margin-top: 3px; font-size: 10px; letter-spacing: .16em;
+    color: var(--rose-deep);
+    font-family: "Cormorant Garamond", serif; font-style: italic;
+  }
+  .story-dot {
+    width: 11px; height: 11px; border-radius: 50%;
+    margin: 8px auto 0;
+    background: radial-gradient(circle at 32% 28%, #fff8f5, #e4c8c4 52%, #b89290);
+    box-shadow: 0 1px 3px rgba(90,50,50,.16), inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  .story-beat.is-recap .story-dot {
+    background: radial-gradient(circle at 32% 28%, #fff6f2, #d4b0ac 48%, #8f6b69);
+  }
+  .story-mod {
+    overflow: visible;
+    border-radius: 26px 20px 24px 18px;
+    padding: 18px 18px 18px 20px;
+    text-align: left; width: 100%; cursor: pointer; color: inherit;
+    transform: translateY(-1px);
+    background: linear-gradient(158deg, #fffcfb 0%, #f8f3f2 52%, #f1e7e6 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.98),
+      0 1px 0 #e8d6d2,
+      0 3px 0 #f3e8e5,
+      0 10px 18px -12px rgba(110,80,80,.22),
+      0 22px 36px -20px rgba(90,60,60,.28);
+    transition: transform .22s ease, box-shadow .22s ease, padding .22s ease;
+  }
+  .story-mod .pearl-sheen { opacity: .78; border-radius: inherit; }
+  .story-mod .satin-mark { top: 16px; bottom: 16px; }
+  .story-wm {
+    display: none;
+    position: absolute; right: 10px; top: 2px;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 86px; font-weight: 500; line-height: 1;
+    color: rgba(112, 78, 74, .07); pointer-events: none;
+  }
+  .story-beat.is-open .story-wm { display: block; }
+  .story-beat.is-open .story-mod {
+    padding: 20px 20px 18px 22px;
+    transform: translateY(-3px);
+    background:
+      radial-gradient(88% 70% at 12% -8%, rgba(255,255,255,.96), transparent 50%),
+      radial-gradient(72% 58% at 100% 108%, rgba(232,208,208,.38), transparent 54%),
+      linear-gradient(158deg, #fffcfb 0%, #f6eeed 48%, #efe4e3 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.98),
+      0 1px 0 #e4d0cc,
+      0 4px 0 #f0e4e0,
+      0 14px 24px -12px rgba(110,80,80,.26),
+      0 28px 48px -22px rgba(90,55,55,.32);
+  }
+  .story-toc { display: flex; align-items: baseline; gap: 10px; position: relative; }
+  .story-toc .name {
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-size: 22px; font-weight: 500; letter-spacing: .02em;
+  }
+  .story-toc .rule {
+    flex: 1; height: 1px; min-width: 12px;
+    background: linear-gradient(90deg, rgba(184,154,148,.45), rgba(184,154,148,0));
+    transform: translateY(-4px);
+  }
+  .story-toc .kind {
+    font-family: "Cormorant Garamond", serif; font-style: italic;
+    font-size: 13px; color: var(--rose-deep); letter-spacing: .06em;
+  }
+  .story-beat.is-open .story-toc {
+    padding-bottom: 14px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(196, 176, 174, .28);
+  }
+  .story-form { display: none; margin-top: 14px; }
+  .story-beat.is-open .story-form { display: block; }
+  .story-lbl {
+    display: flex; align-items: center; gap: 4px;
+    margin: 0 0 8px;
+    font-size: 13px; font-weight: 600; color: var(--sage);
+  }
+  .story-lbl.is-improve { font-size: 11.5px; color: var(--gold); opacity: .9; margin-top: 16px; }
+  .story-lbl.is-next { font-size: 11.5px; color: var(--rose-deep); opacity: .9; margin-top: 16px; }
+  .story-box {
+    position: relative;
+    border-radius: 18px; padding: 13px 14px;
+    font-size: 12.5px; line-height: 1.75; color: var(--ink);
+    white-space: pre-wrap;
+    border: 1px solid rgba(255,255,255,.72);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.78), inset 0 1px 3px rgba(90,70,70,.04);
+  }
+  .story-open-link {
+    margin-top: 14px;
+    font-size: 12px; color: var(--rose-deep); font-weight: 500;
   }
   .teaser-dot {
     width: 28px; height: 28px; border-radius: 10px;
@@ -1447,7 +1577,7 @@
           <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]">这本课记还是空的，等你写下第一页。</p>
         </div>
         <div id="history-search-empty" class="hidden mt-10 text-center text-[var(--ink-faint)] text-[12.5px]">没有找到相关的记录</div>
-        <div id="history-list" class="relative z-10 space-y-3"></div>
+        <div id="history-list" class="relative z-10 story"></div>
       </div>
 
       <div id="history-checkin-view" class="relative z-10">
@@ -1458,12 +1588,14 @@
             <div id="checkin-month-stats" class="mt-2.5 grid grid-cols-2 gap-2">
               <div class="archive-stat">
                 <span class="pearl-sheen"></span>
-                <p class="relative z-10 archive-stat-label">来过</p>
+                <span class="relative z-10 home-stat-icon is-count"><iconify-icon icon="solar:calendar-mark-linear"></iconify-icon></span>
+                <p class="relative z-10 archive-stat-label mt-1">来过</p>
                 <p class="relative z-10 archive-stat-num" id="checkin-month-days">0<span>天</span></p>
               </div>
               <div class="archive-stat is-hours">
                 <span class="pearl-sheen"></span>
-                <p class="relative z-10 archive-stat-label">时长</p>
+                <span class="relative z-10 home-stat-icon is-hours"><iconify-icon icon="solar:clock-circle-linear"></iconify-icon></span>
+                <p class="relative z-10 archive-stat-label mt-1">时长</p>
                 <p class="relative z-10 archive-stat-num is-hours" id="checkin-month-hours">0<span>小时</span></p>
               </div>
             </div>
@@ -3296,6 +3428,94 @@ function moodMark(mood, size = 16) {
   if (!svg) return '';
   return `<span class="mood-mark inline-flex text-[var(--rose-deep)]" style="width:${size}px;height:${size}px">${svg}</span>`;
 }
+function storyMonthLabel(d) {
+  const cn = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'][d.getMonth()];
+  const fr = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'][d.getMonth()];
+  return { cn, fr };
+}
+function storyBeatHtml(r, monthEnd) {
+  const d = new Date(r.created_at);
+  const day = d.getDate();
+  const wd = '日一二三四五六'[d.getDay()];
+  const checkin = isCheckinOnly(r);
+  const name = checkin ? '来过' : classNameOf(r);
+  const kind = checkin ? '打卡' : '课记';
+  const recapClass = checkin ? '' : ' is-recap';
+  const monthEndClass = monthEnd ? ' is-month-end' : '';
+  let form;
+  if (checkin) {
+    const note = (r.note || '').trim() || '当天只打了卡';
+    form = `<div class="story-box" style="background:rgba(253,251,250,.7);border:1px dashed var(--border-soft)">${escapeHtml(note)}</div>
+      <button type="button" class="story-open-link" onclick="event.stopPropagation(); openDetail(${r.id})">查看</button>`;
+  } else {
+    const good = r.good_points ? emFrenchTerms(r.good_points) : '（无）';
+    const improve = r.improve_points ? emFrenchTerms(r.improve_points) : '（无）';
+    const next = r.next_time_reminder ? emFrenchTerms(r.next_time_reminder) : '（无）';
+    form = `<p class="story-lbl"><iconify-icon icon="solar:star-shine-bold" class="text-[13px]"></iconify-icon>做得好的地方</p>
+      <div class="story-box field-good field-good-lift">${good}</div>
+      <p class="story-lbl is-improve">待改进点</p>
+      <div class="story-box field-improve">${improve}</div>
+      <p class="story-lbl is-next">我自己定的下次计划</p>
+      <div class="story-box field-next">${next}</div>
+      <button type="button" class="story-open-link" onclick="event.stopPropagation(); openDetail(${r.id})">查看</button>`;
+  }
+  return `<article class="story-beat${recapClass}${monthEndClass}" data-id="${r.id}">
+    <div class="story-rail">
+      <div class="story-node">${day}<small>${wd}</small></div>
+      <span class="story-dot"></span>
+    </div>
+    <div class="story-mod card-journal grain relative" role="button" tabindex="0" onclick="toggleStoryBeat(${r.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleStoryBeat(${r.id})}">
+      <span class="pearl-sheen"></span>
+      <span class="story-wm">${day}</span>
+      <span class="satin-mark"></span>
+      <span class="relative z-10 block">
+        <span class="story-toc"><span class="name">${checkin ? '来过' : emFrenchTerms(name)}</span><span class="rule"></span><span class="kind">${kind}</span></span>
+        <span class="story-form">${form}</span>
+      </span>
+    </div>
+  </article>`;
+}
+function renderStoryList(rows) {
+  if (!rows.length) return '';
+  const sorted = rows.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  let html = '';
+  let lastMonth = '';
+  sorted.forEach((r, i) => {
+    const d = new Date(r.created_at);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    if (key !== lastMonth) {
+      const { cn, fr } = storyMonthLabel(d);
+      html += `<div class="story-chapter"><p class="fr">${fr}</p><h2>${cn}</h2></div>`;
+      lastMonth = key;
+    }
+    const next = sorted[i + 1];
+    const nextKey = next ? `${new Date(next.created_at).getFullYear()}-${new Date(next.created_at).getMonth()}` : '';
+    html += storyBeatHtml(r, nextKey !== key);
+  });
+  return html;
+}
+function toggleStoryBeat(id) {
+  const target = document.querySelector(`#history-list .story-beat[data-id="${id}"]`);
+  const wasOpen = target && target.classList.contains('is-open');
+  document.querySelectorAll('#history-list .story-beat').forEach((el) => {
+    const on = !wasOpen && el.dataset.id === String(id);
+    el.classList.toggle('is-open', on);
+    const mod = el.querySelector('.story-mod');
+    if (mod) mod.classList.toggle('card-satin', on);
+  });
+}
+function storyRowMatches(r, keyword) {
+  if (recordMatchesSearch(r, keyword)) return true;
+  if (!isCheckinOnly(r)) return false;
+  return recordMatchesSearch({
+    class_name: `${classNameOf(r)} 来过 打卡 ${r.note || ''}`,
+    transcript: '',
+    good_points: '',
+    improve_points: '',
+    next_time_reminder: '',
+    session_tips: '',
+  }, keyword);
+}
 function entryCard(r) {
   const mood = moodMark(r.mood, 15);
   const preview = isCheckinOnly(r)
@@ -3481,7 +3701,7 @@ function issueCard(issue) {
   const isOpen = expandedIssueIds.has(issue.id);
   let html = `<div class="issue-card overflow-hidden">
     <button type="button" onclick="toggleIssueExpand(${issue.id})" class="w-full flex items-center gap-2.5 px-4 py-3.5 text-left">
-      <span class="shrink-0 w-2 h-2 rounded-full" style="background:${statusDot}" aria-hidden="true"></span>
+      <span class="shrink-0 w-2.5 h-2.5 rounded-full" style="background:${statusDot};box-shadow:0 0 0 2px rgba(255,255,255,.7),0 1px 3px -1px rgba(90,60,60,.4)" aria-hidden="true"></span>
       <span class="flex-1 min-w-0 text-[13px] font-medium truncate">${escapeHtml(compactPhrase(issue.text))}</span>
       <span class="shrink-0 text-[11px] text-[var(--ink-faint)]">${issue.occurrence_count}次</span>
       <iconify-icon icon="solar:alt-arrow-${isOpen ? 'up' : 'down'}-linear" class="shrink-0 text-[14px] text-[var(--ink-faint)]"></iconify-icon>
@@ -3624,15 +3844,14 @@ async function loadHistory() {
   const res = await authFetch(`${API}/api/records`);
   historyRows = await res.json();
   document.getElementById('history-search').value = '';
-  const recaps = historyRows.filter((r) => !isCheckinOnly(r));
-  document.getElementById('history-empty').style.display = recaps.length === 0 ? 'block' : 'none';
+  document.getElementById('history-empty').style.display = historyRows.length === 0 ? 'block' : 'none';
   filterHistory();
   setHistoryView(historyViewMode);
 }
 function renderHistoryTermChips() {
   const wrap = document.getElementById('history-term-chips');
   if (!wrap) return;
-  if (historyRows.filter((r) => !isCheckinOnly(r)).length === 0) {
+  if (historyRows.length === 0) {
     wrap.innerHTML = '';
     return;
   }
@@ -3657,11 +3876,10 @@ function applyHistoryTerm(term) {
 }
 
 function filterHistory() {
-  const recaps = historyRows.filter((r) => !isCheckinOnly(r));
   const keyword = document.getElementById('history-search').value.trim();
-  const rows = keyword ? recaps.filter((r) => recordMatchesSearch(r, keyword)) : recaps;
-  document.getElementById('history-search-empty').classList.toggle('hidden', rows.length > 0 || recaps.length === 0);
-  document.getElementById('history-list').innerHTML = rows.map(r => entryCard(r)).join('');
+  const rows = keyword ? historyRows.filter((r) => storyRowMatches(r, keyword)) : historyRows.slice();
+  document.getElementById('history-search-empty').classList.toggle('hidden', rows.length > 0 || historyRows.length === 0);
+  document.getElementById('history-list').innerHTML = renderStoryList(rows);
   renderHistoryTermChips();
 }
 
@@ -3670,6 +3888,12 @@ function minutesLabel(min) {
   const h = Number(min) / 60;
   const t = (Math.round(h * 10) / 10).toFixed(1).replace(/\.0$/, '');
   return `${t}小时`;
+}
+const CLASS_DOT_COLORS = ['#b89a9a', '#b8863f', '#9aa89c', '#a07d7d', '#8f9fb8', '#c48ea0'];
+function classDotColor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return CLASS_DOT_COLORS[hash % CLASS_DOT_COLORS.length];
 }
 function classHourStats(rows) {
   const map = new Map();
@@ -3748,7 +3972,7 @@ function renderCheckinArchive() {
   statsEl.innerHTML = head + shown.map((s) => {
     const hours = s.minutes ? minutesLabel(s.minutes).replace('小时', '') : '未记';
     return `<div class="checkin-class-row">
-      <p class="checkin-class-name"><span>${escapeHtml(s.name)}</span></p>
+      <p class="checkin-class-name"><span class="class-dot" style="background:${classDotColor(s.name)}"></span><span>${escapeHtml(s.name)}</span></p>
       <p class="checkin-class-count">${s.sessions}</p>
       <p class="checkin-class-hours${s.minutes ? '' : ' is-empty'}">${hours}</p>
     </div>`;
@@ -4052,16 +4276,21 @@ function renderIssueDonut(counts) {
   ].filter(s => s.value > 0);
   let offset = 0;
   const circles = segs.map(s => {
-    const dash = (s.value / total) * C;
-    const circle = `<circle cx="32" cy="32" r="${R}" fill="none" stroke="${s.color}" stroke-width="9" stroke-dasharray="${dash} ${C - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 32 32)"/>`;
-    offset += dash;
+    const dash = Math.max(0, (s.value / total) * C - (segs.length > 1 ? 2 : 0));
+    const circle = `<circle cx="32" cy="32" r="${R}" fill="none" stroke="${s.color}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${dash} ${C - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 32 32)" filter="url(#donut-glow)"/>`;
+    offset += (s.value / total) * C;
     return circle;
   }).join('');
-  document.getElementById('issue-donut-svg').innerHTML =
-    `<circle cx="32" cy="32" r="${R}" fill="none" stroke="var(--border-soft)" stroke-width="9"/>${circles}`;
+  document.getElementById('issue-donut-svg').innerHTML = `
+    <defs>
+      <filter id="donut-glow" x="-40%" y="-40%" width="180%" height="180%">
+        <feDropShadow dx="0" dy="1" stdDeviation="1.1" flood-color="#7d6868" flood-opacity="0.28"/>
+      </filter>
+    </defs>
+    <circle cx="32" cy="32" r="${R}" fill="none" stroke="var(--border-soft)" stroke-width="9"/>${circles}`;
   document.getElementById('issue-donut-total').textContent = total;
   document.getElementById('issue-donut-legend').innerHTML = segs.map(s =>
-    `<span class="inline-flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full" style="background:${s.color}"></span>${s.label} ${s.value}</span>`
+    `<span class="inline-flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:${s.color};box-shadow:0 0 0 2px rgba(255,255,255,.7),0 1px 3px -1px rgba(90,60,60,.4)"></span>${s.label} ${s.value}</span>`
   ).join('');
 }
 
