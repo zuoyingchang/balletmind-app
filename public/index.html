@@ -1584,6 +1584,11 @@
       </div>
 
       <div id="history-list-view" class="hidden">
+        <div class="relative z-10 flex items-center justify-between mb-3">
+          <button type="button" onclick="shiftStoryMonth(-1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]" aria-label="上个月"><iconify-icon icon="solar:alt-arrow-left-linear" class="text-[16px]"></iconify-icon></button>
+          <p class="label-editorial text-[14px] text-[var(--ink)]" id="story-month-label"></p>
+          <button type="button" id="story-month-next" onclick="shiftStoryMonth(1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]" aria-label="下个月"><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px]"></iconify-icon></button>
+        </div>
         <div class="card-journal grain relative flex items-center gap-2 rounded-[18px] px-4 h-12 mb-3">
           <div class="pearl-sheen"></div>
           <iconify-icon icon="solar:magnifer-linear" class="relative z-10 text-[18px] text-[var(--rose-deep)]"></iconify-icon>
@@ -1594,7 +1599,8 @@
           <img src="/img/pack-plie.png" alt="" aria-hidden="true" class="mx-auto w-[86px] h-[86px] opacity-60 tint-rose">
           <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]">这本课记还是空的，等你写下第一页。</p>
         </div>
-        <div id="history-search-empty" class="hidden mt-10 text-center text-[var(--ink-faint)] text-[12.5px]">没有找到相关的记录</div>
+        <div id="history-month-empty" class="hidden mt-8 text-center text-[12.5px] leading-6 text-[var(--ink-soft)]">这个月还没有课记，可以换一个月。</div>
+        <div id="history-search-empty" class="hidden mt-10 text-center text-[var(--ink-faint)] text-[12.5px]">这个月没有找到相关的记录</div>
         <div id="history-list" class="relative z-10 story"></div>
       </div>
 
@@ -3493,7 +3499,7 @@ function storyBeatHtml(r, monthEnd) {
     </div>
   </article>`;
 }
-function renderStoryList(rows) {
+function renderStoryList(rows, { chapter = false } = {}) {
   if (!rows.length) return '';
   const sorted = rows.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   let html = '';
@@ -3501,7 +3507,7 @@ function renderStoryList(rows) {
   sorted.forEach((r, i) => {
     const d = new Date(r.created_at);
     const key = `${d.getFullYear()}-${d.getMonth()}`;
-    if (key !== lastMonth) {
+    if (chapter && key !== lastMonth) {
       const { cn, fr } = storyMonthLabel(d);
       html += `<div class="story-chapter"><p class="fr">${fr}</p><h2>${cn}</h2></div>`;
       lastMonth = key;
@@ -3858,6 +3864,33 @@ async function exportTrainingReview() {
 // ---------- history ----------
 let historyRows = [];
 let historyViewMode = 'checkin';
+let storyMonthCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+function inStoryMonth(r, cursor = storyMonthCursor) {
+  const d = new Date(r.created_at);
+  return d.getFullYear() === cursor.getFullYear() && d.getMonth() === cursor.getMonth();
+}
+function shiftStoryMonth(delta) {
+  const next = new Date(storyMonthCursor.getFullYear(), storyMonthCursor.getMonth() + delta, 1);
+  const now = new Date();
+  const cap = new Date(now.getFullYear(), now.getMonth(), 1);
+  if (delta > 0 && next > cap) return;
+  storyMonthCursor = next;
+  filterHistory();
+}
+function renderStoryMonthNav() {
+  const label = document.getElementById('story-month-label');
+  if (label) {
+    const { cn, fr } = storyMonthLabel(storyMonthCursor);
+    label.innerHTML = `<span class="block text-[10px] tracking-[0.16em] text-[var(--ink-faint)]">${fr}</span>${storyMonthCursor.getFullYear()}年${cn}`;
+  }
+  const nextBtn = document.getElementById('story-month-next');
+  if (nextBtn) {
+    const now = new Date();
+    const atCap = storyMonthCursor.getFullYear() === now.getFullYear() && storyMonthCursor.getMonth() === now.getMonth();
+    nextBtn.disabled = atCap;
+    nextBtn.classList.toggle('opacity-35', atCap);
+  }
+}
 async function loadHistory() {
   const res = await authFetch(`${API}/api/records`);
   historyRows = await res.json();
@@ -3894,9 +3927,14 @@ function applyHistoryTerm(term) {
 }
 
 function filterHistory() {
+  renderStoryMonthNav();
   const keyword = document.getElementById('history-search').value.trim();
-  const rows = keyword ? historyRows.filter((r) => storyRowMatches(r, keyword)) : historyRows.slice();
-  document.getElementById('history-search-empty').classList.toggle('hidden', rows.length > 0 || historyRows.length === 0);
+  const monthRows = historyRows.filter((r) => inStoryMonth(r));
+  const rows = keyword ? monthRows.filter((r) => storyRowMatches(r, keyword)) : monthRows.slice();
+  const allEmpty = historyRows.length === 0;
+  document.getElementById('history-empty').style.display = allEmpty ? 'block' : 'none';
+  document.getElementById('history-month-empty').classList.toggle('hidden', allEmpty || keyword || rows.length > 0);
+  document.getElementById('history-search-empty').classList.toggle('hidden', allEmpty || !keyword || rows.length > 0);
   document.getElementById('history-list').innerHTML = renderStoryList(rows);
   renderHistoryTermChips();
 }
