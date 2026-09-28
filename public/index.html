@@ -199,18 +199,24 @@
   }
   .archive-stat-num {
     margin-top: 6px;
-    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
-    font-size: 36px; font-weight: 600; line-height: 1;
-    letter-spacing: -.03em; color: var(--ink);
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    font-family: "PingFang SC", "Hiragino Sans GB", -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 28px; font-weight: 500; line-height: 1.05;
+    letter-spacing: 0; color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
   .archive-stat-num span {
-    margin-left: 4px;
-    font-size: 15px; font-weight: 500; letter-spacing: 0;
+    margin-left: 0;
+    font-size: 13px; font-weight: 400; letter-spacing: 0;
     color: var(--ink-soft);
+    flex-shrink: 0;
   }
   .archive-stat-num.is-hours { color: var(--burgundy); }
   .archive-stat-num.is-empty {
-    font-size: 36px; font-weight: 600; letter-spacing: -.03em;
+    font-size: 28px; font-weight: 500; letter-spacing: 0;
     color: var(--ink);
   }
   #rec-timer {
@@ -846,7 +852,6 @@
             <p class="archive-stat-num is-hours mt-1.5" id="stat-duration">0<span>小时</span></p>
           </div>
           </div>
-          <p id="home-stat-empty" class="hidden mt-2 text-[12.5px] leading-5 text-[var(--ink-soft)] whitespace-nowrap">记下之后，会显示在上面。</p>
         </div>
         <div class="relative z-10 mt-4 home-cta-row">
         <button id="home-cta-btn" onclick="goRecord()" class="btn-ribbon flex items-center gap-3 rounded-[22px] px-4 py-3.5">
@@ -934,8 +939,8 @@
       <section class="mt-6" id="home-tips-block">
         <div class="card-journal tinted-rose grain relative overflow-hidden p-3.5" style="border-radius:18px 22px 16px 20px">
           <div class="pearl-sheen"></div>
-          <p class="relative z-10 text-[11px] text-[var(--rose-deep)]" id="tip-label"></p>
-          <p class="relative z-10 mt-1 text-[13px] leading-6 text-[var(--ink-soft)]" id="tip-quote"></p>
+          <p class="relative z-10 text-[13px] leading-6 text-[var(--ink-soft)]" id="tip-quote"></p>
+          <p class="relative z-10 mt-1.5 text-[11px] text-[var(--rose-deep)]" id="tip-label"></p>
         </div>
       </section>
     </main>
@@ -1205,7 +1210,6 @@
                 <p class="relative z-10 archive-stat-num is-hours" id="checkin-month-hours">0<span>小时</span></p>
               </div>
             </div>
-            <p id="checkin-month-empty" class="hidden mt-3 text-[12.5px] leading-5 text-[var(--ink-soft)]">记下之后，就会记在上面。</p>
             <div id="checkin-class-stats"></div>
           </div>
         </div>
@@ -1368,8 +1372,8 @@
 
       <div id="progress-class-view">
       <section>
-        <p class="label-editorial text-[12px] text-[var(--rose-deep)]">提醒</p>
-        <h2 class="mt-1 text-[16px] font-semibold">上次给自己的话</h2>
+        <p class="label-editorial text-[12px] text-[var(--rose-deep)]">课前</p>
+        <h2 class="mt-1 text-[16px] font-semibold">课前预习卡</h2>
         <div class="card-journal tinted-rose grain relative overflow-hidden mt-3 p-4" style="border-radius:22px 16px 22px 18px">
           <div class="pearl-sheen"></div>
           <div id="brief-content" class="relative z-10 text-[12.5px] leading-6 text-[var(--ink)]">加载中…</div>
@@ -1395,7 +1399,7 @@
           </div>
         </div>
         <div id="issues-empty" class="hidden mt-3 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-[12px] leading-6 text-[var(--ink-soft)]">
-          同一件事说了几次，会列在这里。先复盘一节课就好。
+          反复记下的问题，会出现在这里。请先点记录，复盘一节课。
         </div>
         <div id="issues-list" class="relative z-10 mt-3 space-y-2.5"></div>
         <button type="button" id="issues-more-btn" onclick="toggleIssuesShowAll()" class="hidden mt-2 w-full py-2 text-center text-[12px] text-[var(--rose-deep)]"></button>
@@ -2232,27 +2236,35 @@ function renderBadges(rows) {
 
 // ---------- home ----------
 const TRAINING_TIPS = [
-  { quote: '今天能来，就已经很好了。', label: '写给今天' },
-  { quote: '跳不好的那天，也算在里面。', label: '给自己' },
-  { quote: '慢一点，身体听得见。', label: '慢慢来' },
-  { quote: '别跟昨天的自己较劲。', label: '给自己' },
-  { quote: '累了就收着练，也是认真。', label: '慢慢来' },
-  { quote: '你愿意回来，比漂不漂亮要紧。', label: '写给今天' },
-  { quote: '一口气做不完美，没关系。', label: '给自己' },
-  { quote: '地板还在，你也还在。', label: '写给今天' },
-  { quote: '老师说的那句，慢慢会变成自己的。', label: '慢慢来' },
-  { quote: '不用今天就懂，过几天身体会告诉你。', label: '慢慢来' },
-  { quote: '先把呼吸放下来，日子会松一点。', label: '给自己' },
-  { quote: '别人看不见的那一下，你自己知道。', label: '写给今天' },
-  { quote: '练功最难的，常常是对自己客气一点。', label: '给自己' },
-  { quote: '错过的线条，下次再找。', label: '慢慢来' },
-  { quote: '心先落下，脚才稳。', label: '写给今天' },
-  { quote: '不必每次都有收获，来过就留下了。', label: '给自己' },
-  { quote: '站直，别把今天绷得太紧。', label: '慢慢来' },
+  { quote: '不积跬步，无以至千里。', label: '荀子《劝学》' },
+  { quote: '骐骥一跃，不能十步；驽马十驾，功在不舍。', label: '荀子《劝学》' },
+  { quote: '千里之行，始于足下。', label: '老子《道德经》' },
+  { quote: '合抱之木，生于毫末。', label: '老子《道德经》' },
+  { quote: '苟日新，日日新，又日新。', label: '《礼记·大学》' },
+  { quote: '天行健，君子以自强不息。', label: '《周易》' },
+  { quote: '人一能之，己百之；人十能之，己千之。', label: '《中庸》' },
+  { quote: '行有不得者，皆反求诸己。', label: '《孟子》' },
+  { quote: '君子求诸己。', label: '《论语》' },
+  { quote: '虽覆一篑，进，吾往也。', label: '《论语》' },
+  { quote: '人须在事上磨，方立得住。', label: '王阳明《传习录》' },
+  { quote: '回首向来萧瑟处，归去，也无风雨也无晴。', label: '苏轼《定风波》' },
+  { quote: '请对心里尚未解决的事，保持耐心。', label: '里尔克《给青年诗人的信》' },
+  { quote: '困扰人的不是事情本身，而是看待事情的方式。', label: '爱比克泰德《手册》' },
+  { quote: '在隆冬，我终于知道，自己身上有一个不可战胜的夏天。', label: '加缪《重返蒂帕萨》' },
+  { quote: '路漫漫其修远兮，吾将上下而求索。', label: '屈原《离骚》' },
+  { quote: '老骥伏枥，志在千里。', label: '曹操《龟虽寿》' },
+  { quote: '山重水复疑无路，柳暗花明又一村。', label: '陆游《游山西村》' },
+  { quote: '非淡泊无以明志，非宁静无以致远。', label: '诸葛亮《诫子书》' },
+  { quote: '士不可以不弘毅，任重而道远。', label: '《论语》' },
+  { quote: '不要再争论怎样才算一个好人，去做。', label: '马可·奥勒留《沉思录》' },
+  { quote: '不是因为事情难而不敢做，是因为不敢，事情才显得难。', label: '塞内卡' },
+  { quote: '凡是懂得为何而活的人，几乎能够忍受任何境遇。', label: '尼采' },
+  { quote: '生如夏花之绚烂，死如秋叶之静美。', label: '泰戈尔《飞鸟集》' },
+  { quote: '世上只有一种英雄主义，便是认清生活的真相之后仍然热爱它。', label: '罗曼·罗兰' },
 ];
 function renderTip() {
   const tip = TRAINING_TIPS[Math.floor(Math.random() * TRAINING_TIPS.length)];
-  document.getElementById('tip-quote').textContent = `"${tip.quote}"`;
+  document.getElementById('tip-quote').textContent = tip.quote;
   document.getElementById('tip-label').textContent = `— ${tip.label}`;
 }
 
@@ -2277,7 +2289,6 @@ async function loadHome() {
   const streak = computeDailyStreak(rows);
   const homeEmpty = !rows.length;
   document.getElementById('home-stat-nums').classList.remove('hidden');
-  document.getElementById('home-stat-empty').classList.toggle('hidden', !homeEmpty);
   document.getElementById('stat-count').innerHTML = `${recapCount}<span>次</span>`;
   document.getElementById('stat-streak').innerHTML = `${streak}<span>天</span>`;
   const hoursEl = document.getElementById('stat-duration');
@@ -2731,7 +2742,7 @@ function drawCheckinCard() {
     ctx.font = '400 11px "PingFang SC", "Hiragino Sans GB", sans-serif';
     ctx.fillText(c.label, c.x, 214);
     ctx.fillStyle = '#4a4341';
-    ctx.font = '600 22px "Cormorant Garamond", Georgia, serif';
+    ctx.font = '600 22px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif';
     ctx.fillText(c.value, c.x, 244);
   });
 
@@ -2768,16 +2779,42 @@ function openCheckinShare() {
   spawnCeremonyPetals(18, true, 'checkin-share-petals');
 }
 function shareCheckinCard() { openCheckinShare(); }
+function isAppleTouch() {
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+async function shareCheckinFile(file) {
+  if (typeof navigator.share !== 'function') return false;
+  if (navigator.canShare && !navigator.canShare({ files: [file] })) return false;
+  await navigator.share({ files: [file], title: 'BalletMind', text: '今天练过了' });
+  return true;
+}
 async function downloadCheckinCard() {
   drawCheckinCard();
   const blob = await checkinShareBlob();
   if (!blob) { toast('生成图片失败'); return; }
+  const fileName = `balletmind-checkin-${dateKey(new Date())}.png`;
+  const file = new File([blob], fileName, { type: 'image/png' });
+  if (isAppleTouch()) {
+    try {
+      if (await shareCheckinFile(file)) return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+    }
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    toast('请长按图片，储存到相册');
+    return;
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `balletmind-checkin-${dateKey(new Date())}.png`;
+  a.download = fileName;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
   toast('图片已保存，发给朋友看看也可以');
 }
 async function nativeShareCheckinCard() {
@@ -2786,14 +2823,7 @@ async function nativeShareCheckinCard() {
   if (!blob) { toast('生成图片失败'); return; }
   const file = new File([blob], 'balletmind-checkin.png', { type: 'image/png' });
   try {
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: 'BalletMind', text: '今天练过了' });
-      return;
-    }
-    if (navigator.share) {
-      await navigator.share({ title: 'BalletMind', text: '今天练过了' });
-      return;
-    }
+    if (await shareCheckinFile(file)) return;
   } catch (e) {
     if (e && e.name === 'AbortError') return;
   }
@@ -2862,8 +2892,8 @@ async function loadProgressTeaser() {
     if (expLine) { classEl.textContent = compactPhrase(expLine); return; }
     if (brief.topIssues && brief.topIssues.length > 0) { classEl.textContent = compactPhrase(brief.topIssues[0].text); return; }
     const last = brief.lastRecord || {};
-    const tip = (last.nextTimeReminder || last.improvePoints || '').trim();
-    classEl.textContent = tip ? compactPhrase(tip, 40) : '上次的提醒';
+    const tip = (last.nextTimeReminder || last.improvePoints || last.sessionTips || last.goodPoints || '').trim();
+    classEl.textContent = tip ? compactPhrase(tip, 40) : '课前看一看';
   } catch (e) {}
 }
 // Shared with openDetail() — one place to keep the mood→emoji mapping in sync.
@@ -2951,10 +2981,17 @@ async function loadBrief() {
         + expLines.map((line) => `<p>${escapeHtml(line)}</p>`).join('');
       return;
     }
-    const tip = data.lastRecord ? (data.lastRecord.nextTimeReminder || data.lastRecord.improvePoints || '').trim() : '';
-    el.innerHTML = tip
-      ? `<p><span class="font-semibold text-[var(--mauve)]">上次提醒</span> ${escapeHtml(compactPhrase(tip, 44))}</p>`
-      : `<p class="leading-6">有了复盘，上课前可以来这里看一眼。</p>`;
+    const last = data.lastRecord || {};
+    const tip = (last.nextTimeReminder || last.improvePoints || last.sessionTips || '').trim();
+    if (!tip) {
+      el.innerHTML = `<p class="leading-6">写下复盘之后，上课前可以来这里看一眼。</p>`;
+      return;
+    }
+    const when = last.createdAt ? fmtDate(last.createdAt).split(' ')[0] : '';
+    const klass = (last.className || '').trim();
+    const meta = [klass, when].filter(Boolean).join(' · ');
+    el.innerHTML = (meta ? `<p class="text-[11px] text-[var(--ink-faint)]">${escapeHtml(meta)}</p>` : '')
+      + `<p class="${meta ? 'mt-1.5 ' : ''}leading-6">${escapeHtml(tip)}</p>`;
   } catch (e) {
     el.textContent = '加载失败，下拉重试';
   }
@@ -3140,7 +3177,7 @@ async function generateTrainingReview(mode) {
     }
     // Still-open issues aren't repeated here on purpose — they're listed
     // with status controls in 「反复出现的问题」at the top of this screen.
-    if (data.recordCount === 0) html = `<p class="text-[12.5px] leading-6 text-[var(--ink-soft)]">再记几节课，这里就会有这段时间的整理。</p>`;
+    if (data.recordCount === 0) html = `<p class="text-[12.5px] leading-6 text-[var(--ink-soft)]">请点记录，再记几节课，就会生成你的复盘汇总。</p>`;
     contentEl.innerHTML = html;
     contentEl.classList.remove('hidden');
     exportBtn.classList.toggle('hidden', data.recordCount === 0);
@@ -3269,9 +3306,7 @@ function renderCheckinArchive() {
   });
   const monthEmpty = !monthRows.length;
   const statsWrap = document.getElementById('checkin-month-stats');
-  const emptyHint = document.getElementById('checkin-month-empty');
   if (statsWrap) statsWrap.classList.remove('hidden');
-  if (emptyHint) emptyHint.classList.toggle('hidden', !monthEmpty);
   {
     const daysEl = document.getElementById('checkin-month-days');
     if (daysEl) daysEl.innerHTML = `${came}<span>天</span>`;

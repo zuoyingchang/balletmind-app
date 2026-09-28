@@ -99,7 +99,10 @@ router.get('/brief', async (req, res) => {
     .slice(0, 3);
 
   const lastRecord = await db.get(
-    'SELECT class_name, next_time_reminder, improve_points, created_at FROM records WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
+    `SELECT class_name, next_time_reminder, improve_points, session_tips, good_points, created_at
+     FROM records
+     WHERE user_id = ? AND COALESCE(is_checkin_only, 0) = 0
+     ORDER BY created_at DESC LIMIT 1`,
     [req.userId]
   );
 
@@ -108,6 +111,8 @@ router.get('/brief', async (req, res) => {
         className: lastRecord.class_name,
         nextTimeReminder: lastRecord.next_time_reminder,
         improvePoints: lastRecord.improve_points,
+        sessionTips: lastRecord.session_tips,
+        goodPoints: lastRecord.good_points,
         createdAt: lastRecord.created_at,
       }
     : null;

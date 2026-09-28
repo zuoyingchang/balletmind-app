@@ -686,6 +686,21 @@ test('/api/progress/brief returns top open issues and the last record, zero AI c
   assert.equal(after, before, 'pre-class brief must not consume the AI quota');
 });
 
+test('/api/progress/brief lastRecord skips a later check-in and keeps the recap reminder', async () => {
+  const { body: { token } } = await registerUser('brief-skip-checkin@example.com');
+  await saveRecord(token, { className: '基训', improve_points: '胯不要掉', next_time_reminder: '上课先对一下 alignment' });
+  const checkin = await fetch(`${base}/api/records/checkin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ tzOffsetMin: new Date().getTimezoneOffset(), className: '基训' }),
+  });
+  assert.equal(checkin.status, 200);
+
+  const body = await (await fetch(`${base}/api/progress/brief`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  assert.equal(body.lastRecord.nextTimeReminder, '上课先对一下 alignment');
+  assert.equal(body.lastRecord.improvePoints, '胯不要掉');
+});
+
 // ---------- milestone celebration ----------
 test('count milestones fire at 1/3/5, then every 5th from the 10th record on', async () => {
   const { body: { token } } = await registerUser('milestone@example.com');
