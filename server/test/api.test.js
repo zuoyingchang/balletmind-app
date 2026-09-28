@@ -143,6 +143,46 @@ test('a user can create and list their own records', async () => {
   assert.equal(rows[0].transcript, '今天练了tendu');
 });
 
+test('check-in works without a recap, stores optional mood/duration/class, skips the capture funnel, and allows several sessions in one day', async () => {
+  const { body: { token, user } } = await registerUser('checkin-flow@example.com');
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  const tzOffsetMin = new Date().getTimezoneOffset();
+
+  const checkin = await fetch(`${base}/api/records/checkin`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ tzOffsetMin, className: '基训', trainingDurationMin: 60, mood: 'good' }),
+  });
+  assert.equal(checkin.status, 200);
+  const created = await checkin.json();
+  assert.ok(created.id);
+
+  const again = await fetch(`${base}/api/records/checkin`, {
+    method: 'POST', headers, body: JSON.stringify({ tzOffsetMin, className: '基训' }),
+  });
+  assert.equal(again.status, 200);
+
+  const barre = await fetch(`${base}/api/records/checkin`, {
+    method: 'POST', headers, body: JSON.stringify({ tzOffsetMin, className: '把杆' }),
+  });
+  assert.equal(barre.status, 200);
+
+  const list = await (await fetch(`${base}/api/records`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  const checkins = list.filter((r) => Number(r.is_checkin_only) === 1);
+  assert.equal(checkins.length, 3);
+  assert.equal(checkins.filter((r) => r.class_name === '基训').length, 2);
+  assert.equal(checkins.filter((r) => r.class_name === '把杆').length, 1);
+  const row = list.find((r) => r.id === created.id);
+  assert.equal(row.mood, 'good');
+  assert.equal(Number(row.training_duration_min), 60);
+
+  const events = await db.all('SELECT event_name FROM events WHERE user_id = ? ORDER BY id', [user.id]);
+  const names = events.map((e) => e.event_name);
+  assert.ok(names.includes('checkin_saved'));
+  assert.equal(names.filter((n) => n === 'checkin_saved').length, 3);
+  assert.equal(names.filter((n) => n === 'save_record').length, 0);
+  assert.equal(names.filter((n) => n === 'session_confirmed').length, 0);
+});
+
 test('training_duration_min is optional and distinct from the voice memo length (duration_sec)', async () => {
   const { body: { token } } = await registerUser('trainedhours@example.com');
 

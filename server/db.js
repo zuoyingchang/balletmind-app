@@ -115,6 +115,15 @@ const ready = client.batch(
   } catch (e) {
     if (!/duplicate column/i.test(e.message || '')) throw e;
   }
+  try {
+    // Lightweight check-in (no recording, no AI): "I trained today" without the
+    // effort of a full reflection. A regular row otherwise, so it shares the
+    // existing calendar/streak/count logic for free -- just this one flag to
+    // tell the two apart where it matters (detail view, calendar icon).
+    await client.execute('ALTER TABLE records ADD COLUMN is_checkin_only INTEGER DEFAULT 0');
+  } catch (e) {
+    if (!/duplicate column/i.test(e.message || '')) throw e;
+  }
 });
 
 async function get(sql, args = []) {

@@ -53,7 +53,7 @@ function knownEventNames() {
     'ask_success', 'ask_fail',
     'experiment_issue_brief_success', 'experiment_issue_brief_fail',
     'user_edit_ai_result', 'retry_ai', 'ai_regenerated',
-    'save_record', 'session_confirmed',
+    'save_record', 'session_confirmed', 'checkin_saved',
     'review_opened', 'field_edited',
     'history_open', 'history_opened', 'history_session_opened',
     'progress_open', 'progress_opened',

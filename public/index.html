@@ -37,6 +37,7 @@
   body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif; background: #ddd6d4; color: var(--ink); }
   .font-display { font-family: "Cormorant Garamond", "Noto Serif SC", serif; letter-spacing: .01em; }
   .label-editorial { font-family: "Cormorant Garamond", -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", serif; font-style: italic; font-weight: 500; letter-spacing: .1em; }
+  .page-title { font-family: "Cormorant Garamond", "Noto Serif SC", serif; font-size: 24px; font-weight: 600; letter-spacing: -.01em; line-height: 1.15; }
   ::-webkit-scrollbar { display:none; }
   .screen { display:none; }
   .screen.active { display:flex; position: relative; z-index: 2; }
@@ -45,6 +46,8 @@
   button:focus-visible, a:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
   @keyframes fadeInUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   .fade-in-up { opacity: 0; animation: fadeInUp .5s ease-out forwards; }
+  @keyframes gentleSway { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+  .deco-sway { transform-origin: top center; animation: gentleSway 4.5s ease-in-out infinite; }
   @keyframes ceremonyCardIn { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
   .ceremony-card-in { animation: ceremonyCardIn .35s cubic-bezier(.34,1.2,.64,1) forwards; }
   .deco-shoe, .deco-ribbon, .deco-dancer, .deco-sparkle, .deco-rose { pointer-events: none; display: inline-block; }
@@ -115,7 +118,15 @@
     pointer-events: none;
   }
   .ceremony-ring.delay { animation-delay: .35s; border-color: rgba(185,141,149,.4); }
+  @keyframes processing-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  .processing-shoes {
+    animation: processing-float 2.4s ease-in-out infinite;
+  }
   @media (prefers-reduced-motion: reduce) {
+    .processing-shoes { animation: none; }
     .ceremony-petal { animation: none; opacity: 0; }
     .ceremony-ribbon, .ribbon-loop-l, .ribbon-loop-r, .ribbon-tail-l, .ribbon-tail-r,
     .ceremony-dancer, .ceremony-tutu, .ceremony-ring { animation: none; }
@@ -156,6 +167,42 @@
   }
   .card-journal.tinted { background: linear-gradient(155deg, #fffcfb 0%, #f6eeed 48%, #efe4e3 100%); }
   .card-journal.tinted-rose { background: linear-gradient(155deg, #fffafa 0%, #f3e6e5 50%, #eadcdd 100%); }
+  .card-satin {
+    background: linear-gradient(155deg, #fffcfb 0%, #f7efee 40%, #f0e6e4 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.98), 0 16px 28px -16px rgba(110,80,80,.2);
+  }
+  .archive-month {
+    background: linear-gradient(155deg, #ffffff 0%, #ffffff 60%, #fffbfa 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,1), 0 16px 28px -16px rgba(110,80,80,.16), 0 0 0 1px rgba(255,255,255,.6);
+  }
+  .archive-month .pearl-sheen { opacity: .55; }
+  .archive-stat {
+    text-align: center;
+    padding: 8px 4px 7px;
+    border-radius: 16px;
+    background: linear-gradient(165deg, rgba(255,253,252,.92), rgba(255,255,255,.62));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.92), 0 3px 10px -8px rgba(110,80,80,.22);
+  }
+  .archive-stat-label {
+    font-size: 11px; letter-spacing: .12em;
+    color: var(--ink-faint);
+  }
+  .archive-stat-num {
+    margin-top: 5px;
+    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-size: 28px; font-weight: 600; line-height: 1;
+    letter-spacing: -.03em; color: var(--ink);
+  }
+  .archive-stat-num span {
+    margin-left: 3px;
+    font-size: 13px; font-weight: 500; letter-spacing: 0;
+    color: var(--ink-faint);
+  }
+  .archive-stat-num.is-hours { color: var(--burgundy); }
+  .archive-stat-num.is-empty {
+    font-size: 15px; font-weight: 500; letter-spacing: 0;
+    color: var(--ink-faint);
+  }
 
   .screen.wash-rose::before,
   .screen.wash-dust::before,
@@ -181,6 +228,46 @@
   @keyframes home-cta-pulse {
     0%, 100% { box-shadow: 0 0 0 3px rgba(196, 140, 140, 0.4), 0 12px 28px -12px rgba(130, 90, 90, 0.35); }
     50% { box-shadow: 0 0 0 7px rgba(196, 140, 140, 0.18), 0 12px 28px -12px rgba(130, 90, 90, 0.35); }
+  }
+  /* Subtle, slow idle shine on the main "再记一笔" CTA -- a brief sweep every few
+     seconds, not a constant pulse, since this button gets tapped daily by returning
+     users and shouldn't feel naggy the way the first-time pulse above does. */
+  @keyframes ctaSheenSweep {
+    0%, 65% { transform: translateX(-60%); opacity: 0; }
+    78% { opacity: .55; }
+    100% { transform: translateX(60%); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    #home-cta-btn .pearl-sheen { animation: ctaSheenSweep 5.5s ease-in-out infinite; }
+  }
+  .home-cta-row { display: flex; gap: 8px; align-items: stretch; }
+  .home-cta-row #home-cta-btn { flex: 1; min-width: 0; }
+  .home-checkin-btn {
+    flex: 0 0 58px; width: 58px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; border-radius: 20px; padding: 8px 4px;
+    border: 1px solid rgba(255,255,255,.88);
+    background: linear-gradient(160deg, rgba(255,252,251,.92), rgba(244,232,230,.78));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 10px 20px -14px rgba(110,80,80,.28);
+    color: var(--burgundy);
+  }
+  .home-checkin-btn strong { font-size: 11px; font-weight: 650; letter-spacing: .04em; line-height: 1.1; }
+  .home-checkin-btn .home-checkin-hint { display: none; }
+  .home-checkin-mark {
+    width: 22px; height: 22px; display: block;
+    filter: drop-shadow(0 1px 0 rgba(255,255,255,.95)) drop-shadow(0 2px 4px rgba(120,70,70,.32));
+  }
+  .checkin-mod-stats {
+    background: rgba(255,255,255,.9);
+    border: 1px solid rgba(214,198,196,.38);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 8px 18px -16px rgba(110,80,80,.16);
+  }
+  .btn-pearl {
+    position: relative; overflow: hidden; color: var(--burgundy);
+    font-weight: 600;
+    background: linear-gradient(160deg, #fffcfb 0%, #f6ecea 100%);
+    border: 1px solid rgba(255,255,255,.88);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 10px 22px -16px rgba(110,80,80,.28);
   }
 
   .deco-photo { position: absolute; pointer-events: none; z-index: 0; object-fit: contain; }
@@ -216,7 +303,10 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
     transition: background .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
   }
-  .mood-chip .mood-chip-emoji { color: var(--ink-faint); transition: color .18s ease; }
+  .mood-chip .mood-chip-emoji {
+    width: 24px; height: 24px; display: block;
+    color: var(--ink-faint); transition: color .18s ease;
+  }
   .mood-chip .mood-chip-label { transition: color .18s ease, font-weight .18s ease; }
   .mood-chip.is-selected {
     background: linear-gradient(160deg, rgba(232,197,155,.4), rgba(196,164,166,.4));
@@ -226,6 +316,7 @@
   }
   .mood-chip.is-selected .mood-chip-emoji { color: var(--rose-deep); }
   .mood-chip.is-selected .mood-chip-label { color: var(--burgundy); font-weight: 600; }
+  .mood-mark svg { width: 100%; height: 100%; display: block; }
   .header-avatar {
     width: 36px; height: 36px;
     border-radius: 999px;
@@ -249,6 +340,7 @@
   .field-good { background: rgba(232, 234, 226, .78); }
   .field-improve { background: rgba(242, 232, 226, .8); }
   .field-next { background: rgba(240, 228, 226, .72); }
+  .field-good-lift { box-shadow: 0 3px 10px -6px rgba(122, 140, 122, .45); }
   .rec-mic {
     background: linear-gradient(150deg, #d4c0bf, #c0a6a5);
     color: #fdfbfa;
@@ -263,6 +355,9 @@
   .progress-more summary { list-style: none; cursor: pointer; }
   .progress-more summary::-webkit-details-marker { display: none; }
   .progress-more[open] summary .progress-more-chevron { transform: rotate(180deg); }
+  .badge-locked summary { list-style: none; cursor: pointer; }
+  .badge-locked summary::-webkit-details-marker { display: none; }
+  .badge-locked[open] summary .badge-locked-chevron { transform: rotate(180deg); }
   .rec-mic-wrap {
     width: 98px; height: 98px;
     border-radius: 999px;
@@ -273,6 +368,11 @@
   .rec-mic.is-recording {
     background: linear-gradient(150deg, #c0a6a5, #a88d8c);
   }
+  @keyframes recPulseRing {
+    0% { box-shadow: 0 0 0 0 rgba(184,154,154,.45), 0 0 0 1px rgba(255,255,255,.55); }
+    100% { box-shadow: 0 0 0 16px rgba(184,154,154,0), 0 0 0 1px rgba(255,255,255,.55); }
+  }
+  .rec-mic-wrap:has(.is-recording) { animation: recPulseRing 1.6s ease-out infinite; }
   input, textarea {
     background: rgba(255,252,251,.82);
     color: var(--ink);
@@ -280,26 +380,94 @@
   }
   input::placeholder, textarea::placeholder { color: var(--ink-faint); }
 
-  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); column-gap: 0; row-gap: 4px; }
   .cal-cell {
-    aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    border-radius: 14px; font-size: 12.5px; color: #7a6e6c; position: relative;
+    aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    padding-top: 10%; gap: 1px; margin: 0 2px;
+    border-radius: 12px; font-size: 12px; color: #7a6e6c; position: relative;
   }
   .cal-cell.is-empty { pointer-events: none; }
   .cal-cell.is-future { opacity: .32; }
-  .cal-cell.is-today { box-shadow: inset 0 0 0 1px rgba(196,173,168,.7); color: var(--ink); }
+  .cal-cell.is-today { color: var(--ink); }
+  .cal-cell.is-today::after {
+    content: ''; position: absolute; inset: 2px; border-radius: 10px;
+    box-shadow: inset 0 0 0 1px rgba(184,154,154,.45); pointer-events: none;
+  }
+  .cal-cell.has-came {
+    color: var(--burgundy); font-weight: 650;
+    background: linear-gradient(165deg, rgba(243,216,211,.42), rgba(228,185,179,.32));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+  }
   .cal-cell.has-record {
-    color: var(--burgundy); font-weight: 700;
-    background: linear-gradient(160deg, rgba(216,163,110,.22), rgba(184,141,141,.22));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 4px 10px -8px rgba(140,100,100,.4);
+    font-weight: 700;
+    background: linear-gradient(165deg, rgba(236,198,190,.5), rgba(217,168,162,.38));
   }
-  .cal-cell.has-record.is-today { box-shadow: inset 0 0 0 1.5px var(--rose-deep), inset 0 1px 0 rgba(255,255,255,.6), 0 4px 10px -8px rgba(140,100,100,.4); }
-  .cal-cell.is-selected {
-    background: linear-gradient(160deg, #fffcfb, #f3eae8);
-    color: var(--burgundy); font-weight: 600;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 6px 14px -10px rgba(110,80,80,.22);
+  .cal-cell.in-run { margin-left: 0; margin-right: 0; }
+  .cal-cell.in-run.run-start { margin-left: 2px; border-radius: 12px 0 0 12px; }
+  .cal-cell.in-run.run-end { margin-right: 2px; border-radius: 0 12px 12px 0; }
+  .cal-cell.in-run.run-mid { border-radius: 0; }
+  .cal-cell.in-run.run-only { margin: 0 2px; border-radius: 12px; }
+  .cal-daynum { position: relative; z-index: 1; line-height: 1; display: block; }
+  .cal-marks {
+    position: relative; z-index: 1; display: flex; align-items: center; justify-content: center;
+    gap: 1px; min-height: 20px;
   }
-  .cal-bow { width: 20px; height: 20px; margin-top: 1px; object-fit: contain; display: block; filter: drop-shadow(0 1px 2px rgba(140,100,100,.35)); }
+  .cal-check {
+    width: 18px; height: 18px; display: block; flex-shrink: 0;
+    filter:
+      drop-shadow(0 0 1.5px rgba(255,255,255,1))
+      drop-shadow(0 -0.6px 0 rgba(255,255,255,.95))
+      drop-shadow(0 2px 3px rgba(130,70,70,.5));
+  }
+  .cal-cell.is-selected { color: var(--burgundy); font-weight: 650; }
+  .cal-cell.is-selected::after {
+    content: ''; position: absolute; inset: 1px; border-radius: 11px;
+    box-shadow: inset 0 0 0 1.5px rgba(157,120,118,.7); pointer-events: none;
+  }
+  .cal-bow {
+    width: 22px; height: 13px; object-fit: cover; object-position: 50% 8%;
+    display: block; flex-shrink: 0;
+    filter: brightness(1.03) saturate(1.04) drop-shadow(0 1px 1.5px rgba(130,80,80,.22));
+  }
+  .checkin-class-head,
+  .checkin-class-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 36px 56px;
+    align-items: center;
+    gap: 8px;
+  }
+  .checkin-class-head {
+    margin-top: 10px;
+    padding-bottom: 4px;
+    font-size: 10px;
+    letter-spacing: .1em;
+    color: var(--ink-faint);
+  }
+  .checkin-class-head span:nth-child(2),
+  .checkin-class-head span:nth-child(3),
+  .checkin-class-count,
+  .checkin-class-hours { text-align: right; }
+  .checkin-class-row {
+    padding: 7px 0;
+    border-top: 1px solid rgba(214,198,196,.28);
+  }
+  .checkin-class-name {
+    display: flex; align-items: center; gap: 6px; min-width: 0;
+    font-size: 13px; font-weight: 600; color: var(--ink);
+  }
+  .checkin-class-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .checkin-class-count {
+    font-size: 13px; font-variant-numeric: tabular-nums;
+    color: var(--ink-soft);
+  }
+  .checkin-class-hours {
+    font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;
+    color: var(--burgundy);
+  }
+  .checkin-class-hours.is-empty {
+    font-size: 11px; font-weight: 500;
+    color: var(--ink-faint);
+  }
 
   /* Recent-activity strip (成长追踪): tiny squares, one per day, colored by
      that day's record count. Deliberately not a full calendar — compact. */
@@ -351,21 +519,41 @@
   .badge-wall {
     background: linear-gradient(165deg, #fffcfb 0%, #f6eeed 100%);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.92), 0 12px 24px -18px rgba(110,80,80,.2);
+    overflow: visible;
   }
-  .badge-medal { display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .badge-medal { display: flex; flex-direction: column; align-items: center; text-align: center; overflow: visible; }
   .badge-medal .medal {
     width: 54px; height: 54px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     position: relative;
   }
   .badge-medal.is-earned .medal {
-    background: linear-gradient(150deg, #f7efe8 0%, #e8d4c8 52%, #dcc4b8 100%);
-    border: 1.5px solid rgba(196, 173, 168, .55);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 8px 16px -10px rgba(140,100,100,.38);
+    background: linear-gradient(150deg, #fff8f4 0%, #f0ddd4 48%, #e4c8bc 100%);
+    border: 1.5px solid rgba(232, 208, 196, .85);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.98),
+      0 0 0 3px rgba(255,252,248,.5),
+      0 0 12px 2px rgba(255,248,236,.38),
+      0 8px 16px -10px rgba(140,100,100,.2);
+  }
+  .badge-medal.is-earned .medal::before {
+    content: ''; position: absolute; inset: -9px; border-radius: 50%; pointer-events: none; z-index: 0;
+    background: radial-gradient(circle, transparent 42%, rgba(255,252,246,.4) 56%, rgba(255,248,236,.18) 66%, transparent 76%);
   }
   .badge-medal.is-earned .medal::after {
-    content: ''; position: absolute; inset: 5px; border-radius: 50%; pointer-events: none;
-    border: 1px solid rgba(255,255,255,.55);
+    content: ''; position: absolute; inset: 5px; border-radius: 50%; pointer-events: none; z-index: 1;
+    border: 1px solid rgba(255,255,255,.7);
+    box-shadow: inset 0 0 8px rgba(255,255,255,.35);
+  }
+  .badge-medal.is-earned .medal > * { position: relative; z-index: 2; }
+  @media (prefers-reduced-motion: no-preference) {
+    .badge-medal.is-earned .medal::before {
+      animation: badge-halo 3.4s ease-in-out infinite;
+    }
+  }
+  @keyframes badge-halo {
+    0%, 100% { opacity: .72; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.06); }
   }
   .badge-medal.is-locked .medal {
     background: rgba(253,251,250,.55);
@@ -386,26 +574,29 @@
 </head>
 <body class="w-full h-screen m-0 overflow-hidden flex items-center justify-center text-[var(--ink)]">
 
+<svg width="0" height="0" class="absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="cal-check-g" x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.28" stop-color="#fff4ee"/>
+      <stop offset="0.62" stop-color="#e4b4ac"/>
+      <stop offset="1" stop-color="#8f5550"/>
+    </linearGradient>
+  </defs>
+</svg>
 <div class="grain app-shell relative w-full h-full max-w-[393px] max-h-[852px] overflow-hidden flex flex-col rounded-[36px] shadow-[0_24px_60px_-28px_rgba(130,100,100,.32)]">
 
   <!-- ============ AUTH (LOGIN / REGISTER) ============ -->
   <div class="screen active flex-col w-full h-full wash-rose" id="screen-auth">
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pt-14 pb-8 flex flex-col">
-      <div class="absolute -right-16 -top-10 w-48 h-48 rounded-full border border-[var(--border-soft)]"></div>
-      <div class="absolute -left-14 top-24 w-24 h-24 rounded-full border border-[var(--gold)]/30"></div>
-      <div class="absolute -right-10 top-32 w-40 h-40 rounded-full bg-[var(--blush)] opacity-50 blur-[38px]"></div>
-      <div class="absolute -left-8 bottom-20 w-32 h-32 rounded-full bg-[var(--blush-deep)] opacity-45 blur-[34px]"></div>
-      <img src="/img/pack-stand.png" alt="" aria-hidden="true" class="deco-photo tint-soft left-[-28px] bottom-16 w-[120px] h-[148px] opacity-[0.22]">
-
       <div class="relative z-10 text-center">
-        <p class="label-editorial text-[13px] text-[var(--rose-deep)]">课后复盘</p>
-        <img src="/img/pack-shoes-pink.png" alt="" class="mx-auto mt-3 w-[92px] h-[110px] object-contain tint-rose">
-        <h1 class="font-display mt-1 text-[32px] font-semibold tracking-[-0.02em]">BalletMind</h1>
-        <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="auth-subtitle">每次下课说几句，整理成你的芭蕾成长笔记</p>
-        <p id="auth-in-app-tip" class="hidden mt-3 rounded-[14px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]">请用 Safari 打开；Chrome 或其他浏览器也可以。小红书、微信里录音经常被拦住。</p>
-          </div>
+        <img src="/img/pack-shoes-pink.png" alt="" class="deco-sway mx-auto mt-3 w-[68px] h-[82px] object-contain tint-rose opacity-80">
+        <h1 class="font-display mt-3 text-[34px] font-semibold tracking-[-0.02em]">BalletMind</h1>
+        <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="auth-subtitle">下课的几句话，攒起来就是你的进步。</p>
+        <p id="auth-in-app-tip" class="hidden mt-3 rounded-[14px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]">请用 Safari 打开这一页，录音会更顺利。</p>
+      </div>
 
-      <div class="card-journal grain relative z-10 mt-8 overflow-hidden rounded-[24px] px-4 py-4 space-y-3">
+      <div class="card-journal grain relative z-10 mt-6 overflow-hidden rounded-[24px] px-4 py-4 space-y-3">
         <div class="pearl-sheen"></div>
         <div id="auth-name-wrap" class="relative z-10 hidden">
           <input id="auth-name" placeholder="昵称（可选）" class="auth-field">
@@ -442,7 +633,7 @@
     <header class="shrink-0 px-6 pt-7 pb-4 flex items-center justify-between">
       <div>
         <p class="label-editorial text-[12px] text-[var(--rose-deep)]" id="home-kicker">写给今天的你</p>
-        <h1 class="font-display mt-0.5 text-[24px] leading-tight font-semibold tracking-[-0.01em]" id="home-title">你的训练档案</h1>
+        <h1 class="page-title mt-0.5" id="home-title">首页</h1>
       </div>
       <div class="flex items-center gap-2">
         <button type="button" onclick="openNotices()" class="relative w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="通知">
@@ -453,37 +644,60 @@
       </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-7">
-      <img src="/img/pack-stand.png" alt="" aria-hidden="true" class="deco-photo tint-soft right-[-20px] bottom-6 w-[150px] h-[186px] opacity-[0.36]">
       <section class="card-journal tinted grain relative overflow-hidden px-5 pt-4 pb-4" style="border-radius:26px 16px 26px 18px">
         <div class="pearl-sheen"></div>
         <img src="/img/shoes.png" alt="" aria-hidden="true" class="deco-photo tint-rose right-3 top-2 w-[64px] h-[76px] opacity-[0.55] z-[1] pointer-events-none">
-        <div class="relative z-10 flex items-end justify-between gap-3 pr-16">
+        <div class="relative z-10 pr-16">
+          <div id="home-stat-nums" class="grid grid-cols-2 gap-3">
           <div>
-            <p class="font-display text-[34px] leading-none font-semibold tracking-[-0.02em] text-[var(--ink)]" id="stat-count">0 <span class="text-[14px] font-medium text-[var(--ink-faint)]">次</span></p>
-            <p class="mt-1.5 text-[11px] text-[var(--ink-faint)]" id="stat-duration">时长待记录</p>
+            <p class="archive-stat-label">复盘</p>
+            <p class="archive-stat-num mt-1.5" id="stat-count">0<span>次</span></p>
           </div>
+          <div>
+            <p class="archive-stat-label">时长</p>
+            <p class="archive-stat-num is-hours mt-1.5" id="stat-duration">—</p>
+          </div>
+          </div>
+          <p id="home-stat-empty" class="hidden text-[12.5px] leading-6 text-[var(--ink-soft)]">次数和时长会写在这儿。说几句，或打个卡就好。</p>
+          <p id="home-highlight-line" class="hidden mt-2 text-[12px] leading-5 text-[var(--rose-deep)] font-medium"></p>
         </div>
-        <button id="home-cta-btn" onclick="goRecord()" class="btn-ribbon relative z-10 mt-4 w-full flex items-center gap-3 rounded-[22px] px-4 py-3.5">
+        <div class="relative z-10 mt-4 home-cta-row">
+        <button id="home-cta-btn" onclick="goRecord()" class="btn-ribbon flex items-center gap-3 rounded-[22px] px-4 py-3.5">
           <span class="pearl-sheen"></span>
           <span class="relative z-10 w-10 h-10 rounded-[14px] bg-white/20 flex items-center justify-center">
             <iconify-icon icon="solar:microphone-3-linear" class="text-[22px] text-white"></iconify-icon>
           </span>
           <span class="relative z-10 flex-1 text-left">
             <strong class="block text-[14.5px] font-semibold" id="home-cta-title">复盘今天</strong>
-            <span class="block mt-0.5 text-[11px] font-medium text-white/90" id="home-cta-sub">说几句，以后还能翻到</span>
+            <span class="block mt-0.5 text-[11px] font-medium text-white/90" id="home-cta-sub">说几句就好</span>
           </span>
         </button>
+        <button type="button" id="home-checkin-btn" onclick="openCheckinSheet('home')" class="home-checkin-btn hidden" aria-label="打卡">
+          <svg class="home-checkin-mark" viewBox="0 0 24 24" aria-hidden="true">
+            <defs>
+              <linearGradient id="home-check-g" x1="4" y1="6" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#fff8f4"/>
+                <stop offset="0.4" stop-color="#e8c4be"/>
+                <stop offset="1" stop-color="#a56d68"/>
+              </linearGradient>
+            </defs>
+            <path d="M5 12.6l4.4 4.6L19.2 7" fill="none" stroke="url(#home-check-g)" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <strong id="home-checkin-title">打卡</strong>
+          <span id="home-checkin-sub" class="home-checkin-hint">不写内容也行</span>
+        </button>
+        </div>
       </section>
 
-      <p id="home-in-app-tip" class="hidden mt-3 rounded-[14px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]">请用 Safari 打开；Chrome 或其他浏览器也可以。小红书、微信里录音经常被拦住。</p>
-      <p id="home-first-hint" class="hidden mt-2.5 text-[11.5px] leading-5 text-[var(--ink-faint)]">第一次就说几句：今天练了什么、老师提了什么。不是打卡，是留给以后的自己。</p>
+      <p id="home-in-app-tip" class="hidden mt-3 rounded-[14px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]">请用 Safari 打开这一页，录音会更顺利。</p>
+      <p id="home-first-hint" class="hidden mt-2.5 text-[11.5px] leading-5 text-[var(--ink-faint)]">也可以先打卡。</p>
 
       <section class="mt-6" id="home-archive-block">
         <div class="flex items-center justify-between gap-2">
           <h2 class="text-[15px] font-semibold text-[var(--ink)]">档案</h2>
-          <div class="flex-1 min-w-0 flex items-center justify-end gap-2 overflow-hidden" id="checkin-status"></div>
           <button onclick="goHistory()" class="shrink-0 text-[12px] text-[var(--rose-deep)] font-medium">全部</button>
         </div>
+        <p id="checkin-status" class="mt-1 min-h-[16px] text-[11px] text-[var(--ink-faint)]"></p>
         <div class="card-journal grain relative mt-2.5 p-3.5" style="border-radius:20px 14px 20px 16px">
           <div class="pearl-sheen"></div>
           <div class="relative z-10 flex items-center gap-2 mb-2">
@@ -496,7 +710,9 @@
             <span class="py-1">日</span><span class="py-1">一</span><span class="py-1">二</span><span class="py-1">三</span><span class="py-1">四</span><span class="py-1">五</span><span class="py-1">六</span>
           </div>
           <div class="relative z-10 cal-grid" id="home-calendar-grid"></div>
+          <p id="home-cal-came-label" class="relative z-10 mt-2 text-center text-[11px] text-[var(--ink-faint)]"></p>
         </div>
+        <p id="home-today-summary" class="hidden mt-2.5 text-[12.5px] leading-5 text-[var(--burgundy)] font-medium"></p>
         <div id="home-calendar-day-empty" class="mt-3 text-center text-[var(--ink-faint)] text-[12px]"></div>
         <div id="home-calendar-day-list" class="mt-2.5 space-y-3"></div>
       </section>
@@ -510,16 +726,12 @@
           <div class="pearl-sheen"></div>
           <div class="relative z-10 space-y-2.5">
             <p class="flex items-baseline gap-2 text-[12.5px] leading-5">
-              <span class="w-8 shrink-0 text-[11px] font-semibold text-[var(--mauve)]">反复</span>
-              <span id="progress-teaser-issue" class="min-w-0 text-[var(--ink-soft)]">记几次后出现</span>
-            </p>
-            <p class="flex items-baseline gap-2 text-[12.5px] leading-5">
               <span class="w-8 shrink-0 text-[11px] font-semibold text-[var(--mauve)]">课前</span>
-              <span id="progress-teaser-brief" class="min-w-0 text-[var(--ink-soft)]">暂无</span>
+              <span id="progress-teaser-class" class="min-w-0 text-[var(--ink-soft)]">上次的提醒</span>
             </p>
             <p class="flex items-baseline gap-2 text-[12.5px] leading-5">
-              <span class="w-8 shrink-0 text-[11px] font-semibold text-[var(--mauve)]">汇总</span>
-              <span class="text-[var(--ink-soft)]">最近 7 天或 5 次</span>
+              <span class="w-8 shrink-0 text-[11px] font-semibold text-[var(--mauve)]">翻看</span>
+              <span class="min-w-0 text-[var(--ink-soft)]">问问看，或这几天</span>
             </p>
           </div>
         </button>
@@ -545,33 +757,35 @@
   <div class="screen flex-col w-full h-full wash-rose" id="screen-record">
     <header class="shrink-0 px-6 pt-7 pb-3 flex items-center gap-4">
       <button onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
-      <div><p class="label-editorial text-[13px] text-[var(--rose-deep)]">训练记录</p><h1 class="mt-0.5 text-[20px] font-semibold">说说今天的训练</h1></div>
+      <div>
+        <p class="label-editorial text-[13px] text-[var(--rose-deep)]">说给你自己听</p>
+        <h1 class="page-title mt-0.5">说说今天</h1>
+      </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-8">
-        <p class="hidden relative z-10 mb-3 rounded-[14px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]" id="in-app-browser-tip">请用 Safari 打开；Chrome 或其他浏览器也可以。小红书、微信里录音经常被拦住，点右上角「···」选「在浏览器打开」。</p>
-        <p class="text-[12.5px] leading-6 text-[var(--ink-soft)]">点中间按钮开始说，最多 3 段、每段 60 秒。停了会转成文字，不用组织得很完美。</p>
+        <p class="hidden relative z-10 mb-3 rounded-[14px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]" id="in-app-browser-tip">请点右上角「···」，选「在浏览器打开」，录音会更顺利。</p>
 
-      <section class="card-journal tinted-rose grain relative mt-5 overflow-hidden rounded-[26px] px-5 pt-6 pb-7 text-center">
+      <section class="card-journal tinted-rose grain relative mt-2 overflow-hidden rounded-[26px] px-5 pt-8 pb-8 text-center">
         <div class="pearl-sheen"></div>
-        <img src="/img/pack-spin.png" alt="" aria-hidden="true" class="deco-photo tint-deep right-[-18px] -bottom-4 w-[108px] h-[136px] opacity-[0.38] z-[1]">
         <p class="relative z-10 text-[32px] leading-none font-medium tracking-[0.02em] text-[var(--burgundy)]" id="rec-timer" style="font-variant-numeric:tabular-nums">0s</p>
-        <p class="relative z-10 mt-2 text-[12px] text-[var(--ink-faint)]" id="rec-state">轻触开始</p>
-        <p class="relative z-10 mt-3 text-[12.5px] leading-6 text-[var(--ink-soft)] min-h-[24px]" id="rec-live-text"></p>
-        <div class="relative z-10 mt-5 flex justify-center">
+        <p class="relative z-10 mt-2 text-[12px] text-[var(--ink-faint)]" id="rec-state">请点中间开始</p>
+        <p class="relative z-10 mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="rec-live-text"></p>
+        <div class="relative z-10 mt-6 flex justify-center">
           <div class="rec-mic-wrap">
             <button id="rec-btn" onclick="toggleRecording()" class="rec-mic w-[82px] h-[82px] rounded-full flex items-center justify-center" aria-label="开始或停止录音">
               <iconify-icon icon="solar:microphone-3-linear" id="rec-icon" class="text-[32px]"></iconify-icon>
             </button>
           </div>
         </div>
+        <p class="relative z-10 mt-5 text-[11px] text-[var(--ink-faint)]">每次最多三段，每段大约一分钟</p>
       </section>
 
       <details class="rec-prompts mt-6">
         <summary class="flex items-center gap-1.5 text-[12px] font-medium text-[var(--ink-soft)]">
           <iconify-icon icon="solar:alt-arrow-right-linear" class="rec-prompts-chevron text-[14px] text-[var(--rose-deep)] transition-transform"></iconify-icon>
-          想不出说什么时点这里
+          需要提示时，可以看这里
         </summary>
-        <p class="mt-1.5 text-[11px] text-[var(--ink-faint)]">点一条写进下方，只会插入提纲，不会开始录音</p>
+        <p class="mt-1.5 text-[11px] text-[var(--ink-faint)]">点一下，会写到下面。</p>
         <div class="mt-3 grid grid-cols-2 gap-2">
           <button type="button" onclick="insertPrompt('今天身体：哪里紧、哪里轻松。')" class="text-left rounded-[18px] bg-[var(--paper)] border border-[var(--border-soft)] px-3.5 py-3">
             <span class="block text-[12.5px] font-medium">身体状态</span>
@@ -593,7 +807,7 @@
       </details>
 
       <div id="segments-box" class="mt-4 space-y-2"></div>
-      <textarea id="manual-input" placeholder="也可以打字。例如：今天 pirouette 掉了，spotting 没看住。"
+      <textarea id="manual-input" placeholder="也可以打字，比如：今天 pirouette 掉了。"
         class="mt-4 w-full min-h-[76px] rounded-2xl border border-[var(--border-soft)] p-3.5 text-[12.5px]"></textarea>
     </main>
     <div class="sticky-actions shrink-0 px-6 pt-3 flex gap-3">
@@ -601,7 +815,7 @@
       <button id="generate-btn" onclick="generateReview()" disabled
         class="btn-ribbon flex-1 h-11 rounded-full text-[12.5px] font-semibold disabled:opacity-40">
         <span class="pearl-sheen"></span>
-        <span class="relative z-10">完成并生成复盘</span>
+        <span class="relative z-10">完成</span>
         </button>
       </div>
   </div>
@@ -609,39 +823,64 @@
   <!-- ============ PROCESSING ============ -->
   <div class="screen flex-col w-full h-full wash-rose" id="screen-processing">
     <header class="shrink-0 px-6 pt-7 pb-3 flex items-center gap-4">
-      <div><p class="label-editorial text-[13px] text-[var(--rose-deep)]">BalletMind AI</p><h1 class="mt-0.5 text-[20px] font-semibold">正在整理你说过的话</h1></div>
+      <div>
+        <p class="label-editorial text-[13px] text-[var(--rose-deep)]">请稍等一会儿</p>
+        <h1 class="page-title mt-0.5">正在整理</h1>
+      </div>
     </header>
     <main class="flex-1 min-h-0 flex flex-col items-center justify-center px-6">
-      <div class="relative w-36 h-36 flex items-center justify-center">
-        <img src="/img/pack-jump.png" alt="" class="w-[120px] h-[140px] object-contain tint-rose opacity-60">
+      <div class="rec-mic-wrap" style="width:132px;height:132px">
+        <img src="/img/pack-shoes-pink.png" alt="" class="processing-shoes w-[78px] h-[94px] object-contain tint-rose">
       </div>
-      <p class="mt-8 text-[12px] leading-5 text-[var(--ink-faint)] text-center">通常需要几秒到十几秒</p>
+      <p class="mt-8 text-[12px] leading-5 text-[var(--ink-faint)] text-center">马上就好</p>
       <button type="button" onclick="cancelGenerate()" class="mt-8 text-[13px] text-[var(--rose-deep)]">返回修改</button>
     </main>
   </div>
 
   <!-- ============ REVIEW & EDIT ============ -->
   <div class="screen flex-col w-full h-full wash-dust" id="screen-review">
-    <header class="shrink-0 px-6 pt-7 pb-3 flex items-center justify-between">
+    <header class="shrink-0 px-6 pt-7 pb-3 flex items-center gap-4">
       <button onclick="goBackFromReview()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回修改"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
-      <h1 class="text-[17px] font-semibold">复盘草稿</h1>
-      <div class="w-9"></div>
+      <div>
+        <p class="label-editorial text-[13px] text-[var(--rose-deep)]">成长中，再接再厉</p>
+        <h1 class="page-title mt-0.5">复盘</h1>
+      </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-8">
-      <img src="/img/pack-arms.png" alt="" aria-hidden="true" class="deco-photo tint-soft right-[-14px] bottom-2 w-[128px] h-[160px] opacity-[0.34]">
+      <img src="/img/pack-arms.png" alt="" aria-hidden="true" class="deco-photo tint-soft right-[-14px] bottom-2 w-[128px] h-[160px] opacity-[0.22]">
       <div id="review-error-wrap"></div>
 
-      <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[var(--sage)] mb-2">做得好的地方</p>
-        <textarea id="review-good" class="w-full min-h-[60px] rounded-2xl field-good p-3 text-[12.5px]"></textarea>
+      <div class="card-journal card-satin grain relative overflow-hidden mb-4 px-4 pt-4 pb-2" style="border-radius:24px">
+        <div class="pearl-sheen"></div>
+      <div class="relative z-10 mb-4">
+        <p class="flex items-center gap-1 text-[13px] font-semibold text-[var(--sage)] mb-2"><iconify-icon icon="solar:star-shine-bold" class="text-[13px]"></iconify-icon>做得好的地方</p>
+        <textarea id="review-good" class="field-good-lift w-full min-h-[60px] rounded-2xl field-good p-3 text-[12.5px]"></textarea>
       </div>
-      <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[var(--gold)] mb-2">待改进点</p>
+      <div class="relative z-10 mb-4">
+        <p class="text-[11.5px] font-semibold text-[var(--gold)] mb-2 opacity-90">待改进点</p>
         <textarea id="review-improve" class="w-full min-h-[60px] rounded-2xl field-improve p-3 text-[12.5px]"></textarea>
       </div>
-      <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[var(--rose-deep)] mb-2">我自己定的下次计划</p>
+      <div class="relative z-10 mb-2">
+        <p class="text-[11.5px] font-semibold text-[var(--rose-deep)] mb-2 opacity-90">我自己定的下次计划</p>
         <textarea id="review-next" class="w-full min-h-[60px] rounded-2xl field-next p-3 text-[12.5px]"></textarea>
+      </div>
+      </div>
+
+      <div class="card-journal grain relative overflow-hidden mb-4 px-4 py-3.5" style="border-radius:22px">
+        <div class="pearl-sheen"></div>
+        <div class="relative z-10">
+          <p class="text-[11px] leading-5 text-[var(--ink-faint)]">课名和时长都可以先空着</p>
+          <p class="mt-3 text-[11.5px] text-[var(--ink-faint)] mb-2">课名</p>
+          <input id="review-classname" placeholder="如：基训、把杆、足尖" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] text-[12.5px]">
+          <div id="review-class-chips" class="mt-2 flex gap-2 flex-wrap"></div>
+          <p class="mt-3 text-[11.5px] text-[var(--ink-faint)] mb-2">时长</p>
+          <div class="flex gap-2 flex-wrap" id="duration-chips">
+            <button type="button" onclick="selectDuration(30)" data-min="30" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">0.5小时</button>
+            <button type="button" onclick="selectDuration(60)" data-min="60" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1小时</button>
+            <button type="button" onclick="selectDuration(90)" data-min="90" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1.5小时</button>
+            <button type="button" onclick="selectDuration(120)" data-min="120" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">2小时+</button>
+          </div>
+        </div>
       </div>
       <div id="review-note" class="hidden mb-4 text-[11px] text-[var(--ink-faint)] border border-dashed border-[var(--border-soft)] rounded-xl p-3"></div>
 
@@ -649,47 +888,35 @@
         <button type="button" onclick="toggleReviewExtras()" class="w-full flex items-center justify-between text-left gap-2">
           <span class="min-w-0">
             <span class="block text-[12.5px] font-medium text-[var(--ink)]">还可以记下</span>
-            <span class="block mt-0.5 text-[11px] leading-4 text-[var(--ink-faint)]" id="review-extras-summary">课名、时长、心情、这次的小提示，不填也能保存</span>
+            <span class="block mt-0.5 text-[11px] leading-4 text-[var(--ink-faint)]" id="review-extras-summary">心情、小提示，都可以以后再补</span>
           </span>
           <iconify-icon icon="solar:alt-arrow-down-linear" id="review-extras-icon" class="shrink-0 text-[16px] text-[var(--ink-faint)]"></iconify-icon>
         </button>
         <div id="review-extras-body" class="hidden mt-3 space-y-4">
-          <input id="review-classname" placeholder="课程名称（如：芭蕾基训 · 足尖课）" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] text-[12.5px]" oninput="updateReviewExtrasSummary()">
-
           <div>
-            <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">这次练了多久？（可选）</p>
-            <div class="flex gap-2 flex-wrap" id="duration-chips">
-              <button type="button" onclick="selectDuration(30)" data-min="30" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">30分钟</button>
-              <button type="button" onclick="selectDuration(60)" data-min="60" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1小时</button>
-              <button type="button" onclick="selectDuration(90)" data-min="90" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1.5小时</button>
-              <button type="button" onclick="selectDuration(120)" data-min="120" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">2小时+</button>
-            </div>
-          </div>
-          <div>
-            <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">今天感觉怎么样？（可选）</p>
+            <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">心情</p>
             <div class="flex gap-2.5" id="mood-chips">
               <button type="button" onclick="selectMood('low')" data-mood="low" aria-label="不在状态" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
-                <iconify-icon icon="solar:sad-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
+                <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7.2 15.2a4.2 4.2 0 0 1 .1-8.3 5.6 5.6 0 0 1 10.6 1.7A3.6 3.6 0 0 1 17.8 15.2Z"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M9.2 17.4v1.8M12 17.8v2.1M14.8 17.4v1.8"/></svg>
                 <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">不在状态</span>
               </button>
               <button type="button" onclick="selectMood('meh')" data-mood="meh" aria-label="一般" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
-                <iconify-icon icon="solar:confounded-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
+                <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7 16a4.4 4.4 0 0 1 .2-8.7 5.8 5.8 0 0 1 11 1.8A3.7 3.7 0 0 1 18.2 16Z"/></svg>
                 <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">一般</span>
               </button>
               <button type="button" onclick="selectMood('good')" data-mood="good" aria-label="还不错" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
-                <iconify-icon icon="solar:smile-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
+                <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M12 4.2v1.5M12 18.3v1.5M4.2 12h1.5M18.3 12h1.5M6.4 6.4l1.1 1.1M16.5 16.5l1.1 1.1M6.4 17.6l1.1-1.1M16.5 7.5l1.1-1.1"/></svg>
                 <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">还不错</span>
               </button>
               <button type="button" onclick="selectMood('great')" data-mood="great" aria-label="状态很好" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
-                <iconify-icon icon="solar:emoji-funny-circle-linear" class="mood-chip-emoji text-[24px]"></iconify-icon>
+                <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M12 4.2l1.7 4.6 4.9.3-3.8 3.2 1.3 4.7L12 14.6 7.9 17l1.3-4.7-3.8-3.2 4.9-.3Z"/></svg>
                 <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">很好</span>
               </button>
             </div>
           </div>
 
           <div>
-            <p class="text-[12px] font-semibold text-[var(--mauve)] mb-1">针对这次的小提示</p>
-            <p class="text-[11px] leading-4 text-[var(--ink-faint)] mb-2">常见练法参考（不是教练）</p>
+            <p class="text-[12px] font-semibold text-[var(--mauve)] mb-2">给这次的小提示</p>
             <textarea id="review-tips" class="w-full min-h-[60px] rounded-2xl border border-dashed border-[var(--border-soft)] p-3 text-[12.5px]" oninput="updateReviewExtrasSummary()"></textarea>
           </div>
 
@@ -700,12 +927,12 @@
 
           <div class="rounded-2xl bg-[var(--ivory)] border border-dashed border-[var(--rose)]/40 p-3">
         <button type="button" onclick="toggleTermCorrection()" class="w-full flex items-center justify-between text-left">
-          <span class="text-[11.5px] text-[var(--mauve)]">发现某个动作名称被识别错了？点这里纠正</span>
+          <span class="text-[11.5px] text-[var(--mauve)]">动作名称听错了，可以在这里改</span>
           <iconify-icon icon="solar:alt-arrow-down-linear" id="term-toggle-icon" class="text-[14px] text-[var(--ink-faint)]"></iconify-icon>
         </button>
         <div id="term-correction-form" class="hidden mt-3 space-y-2">
-          <input id="term-wrong" placeholder="AI 识别成了什么（如：拍赛）" class="w-full px-3 py-2 rounded-xl border border-[var(--border-soft)] text-[12px]">
-          <input id="term-correct" placeholder="正确写法是什么（如：passé）" class="w-full px-3 py-2 rounded-xl border border-[var(--border-soft)] text-[12px]">
+          <input id="term-wrong" placeholder="刚才听成了什么，比如「拍赛」" class="w-full px-3 py-2 rounded-xl border border-[var(--border-soft)] text-[12px]">
+          <input id="term-correct" placeholder="正确的写法，比如 passé" class="w-full px-3 py-2 rounded-xl border border-[var(--border-soft)] text-[12px]">
           <button type="button" onclick="submitTermCorrection()" class="btn-ribbon w-full h-9 rounded-full text-[11.5px] font-medium">
             <span class="pearl-sheen"></span><span class="relative z-10">记住这个纠正</span>
           </button>
@@ -722,87 +949,111 @@
 
   <!-- ============ HISTORY ============ -->
   <div class="screen flex-col w-full h-full wash-dust" id="screen-history">
-    <header class="shrink-0 px-6 pt-7 pb-4">
+    <header class="shrink-0 px-6 pt-6 pb-2">
       <div class="flex items-center gap-3">
         <button onclick="goHome()" class="w-11 h-11 shrink-0 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
         <div class="flex-1 min-w-0">
-          <p class="label-editorial text-[13px] text-[var(--rose-deep)]">档案</p>
-          <h1 class="font-display mt-1 text-[28px] font-semibold tracking-[-0.01em]">每一次记下的课</h1>
+          <p class="label-editorial text-[13px] text-[var(--rose-deep)]">你的努力和成就</p>
+          <h1 class="page-title mt-0.5">档案</h1>
         </div>
         <button type="button" onclick="goProfile()" class="header-avatar shrink-0 flex items-center justify-center" aria-label="我的"><iconify-icon icon="solar:user-circle-linear" class="text-[20px]"></iconify-icon></button>
       </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-7">
-      <img src="/img/pack-arabesque.png" alt="" aria-hidden="true" class="deco-photo tint-rose right-[-12px] bottom-[-6px] w-[148px] h-[186px] opacity-[0.28]">
-      <div class="hist-tabs flex items-center gap-1 mb-4 rounded-full p-1">
-        <button type="button" id="history-tab-list" onclick="setHistoryView('list')" class="flex-1 h-8 rounded-full text-[12px] font-medium">列表</button>
-        <button type="button" id="history-tab-calendar" onclick="setHistoryView('calendar')" class="flex-1 h-8 rounded-full text-[12px] font-medium">日历</button>
+      <div class="hist-tabs flex items-center gap-1 mb-3 rounded-full p-1">
+        <button type="button" id="history-tab-checkin" onclick="setHistoryView('checkin')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium">打卡</button>
+        <button type="button" id="history-tab-list" onclick="setHistoryView('list')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium">列表</button>
       </div>
 
-      <div id="history-list-view">
+      <div id="history-list-view" class="hidden">
         <div class="card-journal grain relative flex items-center gap-2 rounded-[18px] px-4 h-12 mb-3">
           <div class="pearl-sheen"></div>
           <iconify-icon icon="solar:magnifer-linear" class="relative z-10 text-[18px] text-[var(--rose-deep)]"></iconify-icon>
-          <input id="history-search" oninput="filterHistory()" placeholder="搜 plie、蹲，都能找到 plié" class="relative z-10 flex-1 bg-transparent outline-none text-[12.5px] placeholder:text-[var(--ink-faint)]">
+          <input id="history-search" oninput="filterHistory()" placeholder="搜 plie 或蹲都可以" class="relative z-10 flex-1 bg-transparent outline-none text-[12.5px] placeholder:text-[var(--ink-faint)]">
         </div>
         <div id="history-term-chips" class="term-chip-row mb-4" onclick="onHistoryChipClick(event)"></div>
-        <div id="history-empty" class="mt-10 text-center text-[var(--ink-faint)] text-[12.5px]">还没有记录，去录第一段吧</div>
-        <div id="history-search-empty" class="hidden mt-10 text-center text-[var(--ink-faint)] text-[12.5px]">没有找到匹配的记录</div>
+        <div id="history-empty" class="mt-10 text-center text-[12.5px] leading-6 text-[var(--ink-soft)]">复盘保存后，会出现在这里。</div>
+        <div id="history-search-empty" class="hidden mt-10 text-center text-[var(--ink-faint)] text-[12.5px]">没有找到相关的记录</div>
         <div id="history-list" class="relative z-10 space-y-3"></div>
       </div>
 
-      <div id="history-calendar-view" class="hidden">
-        <div class="card-journal grain relative p-4" style="border-radius:22px 14px 22px 16px">
+      <div id="history-checkin-view" class="relative z-10">
+        <div class="card-journal archive-month grain relative overflow-hidden px-4 pt-3.5 pb-3.5 mb-3" style="border-radius:24px">
           <div class="pearl-sheen"></div>
-          <div class="relative z-10 flex items-center justify-between mb-3">
-            <button type="button" onclick="shiftCalendarMonth(-1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]"><iconify-icon icon="solar:alt-arrow-left-linear" class="text-[16px]"></iconify-icon></button>
-            <p class="label-editorial text-[15px] text-[var(--ink)]" id="calendar-month-label"></p>
-            <button type="button" onclick="shiftCalendarMonth(1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]"><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px]"></iconify-icon></button>
+          <div class="relative z-10">
+            <p class="label-editorial text-[12px] text-[var(--rose-deep)]">这个月</p>
+            <div id="checkin-month-stats" class="mt-2.5 grid grid-cols-2 gap-2">
+              <div class="archive-stat">
+                <p class="archive-stat-label">来过</p>
+                <p class="archive-stat-num" id="checkin-month-days">0<span>天</span></p>
+              </div>
+              <div class="archive-stat">
+                <p class="archive-stat-label">时长</p>
+                <p class="archive-stat-num is-hours" id="checkin-month-hours">—</p>
+              </div>
+            </div>
+            <p id="checkin-month-empty" class="hidden mt-3 text-[12.5px] leading-6 text-[var(--ink-soft)]">来过几天、练了多久，都会写在这儿。先从今天开始就好。</p>
+            <div id="checkin-class-stats"></div>
           </div>
-          <div class="relative z-10 cal-grid text-center text-[10px] text-[var(--ink-faint)] mb-1">
-            <span class="py-1">日</span><span class="py-1">一</span><span class="py-1">二</span><span class="py-1">三</span><span class="py-1">四</span><span class="py-1">五</span><span class="py-1">六</span>
-          </div>
-          <div class="relative z-10 cal-grid" id="calendar-grid"></div>
         </div>
-        <div id="calendar-day-empty" class="mt-5 text-center text-[var(--ink-faint)] text-[12px]"></div>
-        <div id="calendar-day-list" class="mt-4 space-y-3"></div>
+        <div class="card-journal card-satin grain relative overflow-hidden px-3 pt-3 pb-3 mb-3" style="border-radius:24px">
+          <div class="pearl-sheen"></div>
+          <div class="relative z-10 flex items-center justify-between mb-1">
+            <button type="button" onclick="shiftCheckinMonth(-1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]" aria-label="上个月"><iconify-icon icon="solar:alt-arrow-left-linear" class="text-[16px]"></iconify-icon></button>
+            <p class="label-editorial text-[14px] text-[var(--ink)]" id="checkin-month-label"></p>
+            <button type="button" onclick="shiftCheckinMonth(1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]" aria-label="下个月"><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px]"></iconify-icon></button>
+          </div>
+          <div class="relative z-10 cal-grid text-center text-[10px] tracking-[0.06em] text-[var(--ink-faint)] mb-0.5">
+            <span class="py-0.5">日</span><span class="py-0.5">一</span><span class="py-0.5">二</span><span class="py-0.5">三</span><span class="py-0.5">四</span><span class="py-0.5">五</span><span class="py-0.5">六</span>
+          </div>
+          <div class="relative z-10 cal-grid" id="checkin-cal-grid"></div>
+          <p class="relative z-10 mt-1.5 text-center text-[10px] tracking-[0.04em] text-[var(--ink-faint)]">对勾 · 打卡　　蝴蝶结 · 复盘</p>
+          <p id="checkin-day-empty" class="relative z-10 mt-1.5 text-center text-[12px] text-[var(--ink-soft)]"></p>
+          <div id="checkin-day-list" class="relative z-10 mt-1.5 space-y-2"></div>
+        </div>
+        <button type="button" onclick="openCheckinSheet('history')" class="btn-pearl relative w-full h-11 rounded-full text-[13px]"><span class="pearl-sheen"></span><span class="relative z-10">记下这节课</span></button>
       </div>
     </main>
   </div>
 
   <!-- ============ DETAIL ============ -->
   <div class="screen flex-col w-full h-full wash-cream" id="screen-detail">
-    <header class="shrink-0 px-6 pt-7 pb-4 flex items-center gap-4 border-b border-[var(--border-soft)]">
+    <header class="shrink-0 px-6 pt-7 pb-4 flex items-center gap-4">
       <button onclick="goHistory()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
-      <div class="flex-1">
+      <div class="flex-1 min-w-0">
         <p class="label-editorial text-[13px] text-[var(--rose-deep)]" id="detail-date"></p>
-        <h1 class="mt-0.5 text-[20px] font-semibold flex items-center gap-1.5"><span id="detail-title"></span><span id="detail-mood" class="text-[16px]"></span></h1>
+        <h1 class="page-title mt-0.5 flex items-center gap-1.5"><span id="detail-title"></span><span id="detail-mood" class="inline-flex"></span></h1>
       </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 py-5 pb-8">
-      <img src="/img/pack-stretch.png" alt="" aria-hidden="true" class="deco-photo tint-soft right-[-12px] bottom-2 w-[130px] h-[160px] opacity-[0.32]">
-      <section class="rounded-[22px] bg-[var(--paper)] border border-[var(--border-soft)] p-4 mb-4">
-        <div class="flex items-center gap-2 mb-2"><span class="w-7 h-7 rounded-full chip flex items-center justify-center"><iconify-icon icon="solar:microphone-3-linear" class="text-[15px] text-[var(--rose-deep)]"></iconify-icon></span><span class="text-[12px] font-semibold">语音转写</span></div>
-        <p class="text-[12.5px] leading-6 text-[var(--ink-soft)]" id="detail-transcript"></p>
+      <img src="/img/pack-stretch.png" alt="" aria-hidden="true" class="deco-photo tint-soft right-[-12px] bottom-2 w-[130px] h-[160px] opacity-[0.22]">
+      <section class="card-journal grain relative overflow-hidden rounded-[22px] p-4 mb-4">
+        <div class="pearl-sheen"></div>
+        <div class="relative z-10 flex items-center gap-2 mb-2"><span class="w-7 h-7 rounded-full chip flex items-center justify-center"><iconify-icon icon="solar:microphone-3-linear" class="text-[15px] text-[var(--rose-deep)]"></iconify-icon></span><span class="text-[12px] font-semibold">语音转写</span></div>
+        <p class="relative z-10 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="detail-transcript"></p>
       </section>
-      <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[var(--sage)] mb-2">✓ 做得好的地方</p>
-        <div class="rounded-2xl field-good p-3 text-[12.5px] leading-6 whitespace-pre-wrap" id="detail-good"></div>
+      <div id="detail-fields" class="card-journal card-satin grain relative overflow-hidden mb-4 px-4 pt-4 pb-2" style="border-radius:24px">
+      <div class="pearl-sheen"></div>
+      <div class="relative z-10 mb-4">
+        <p class="flex items-center gap-1 text-[13px] font-semibold text-[var(--sage)] mb-2"><iconify-icon icon="solar:star-shine-bold" class="text-[13px]"></iconify-icon>做得好的地方</p>
+        <div class="field-good-lift rounded-2xl field-good p-3 text-[12.5px] leading-6 whitespace-pre-wrap" id="detail-good"></div>
       </div>
-      <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[var(--gold)] mb-2">△ 待改进点</p>
+      <div class="relative z-10 mb-4">
+        <p class="text-[11.5px] font-semibold text-[var(--gold)] mb-2 opacity-90">待改进点</p>
         <div class="rounded-2xl field-improve p-3 text-[12.5px] leading-6 whitespace-pre-wrap" id="detail-improve"></div>
       </div>
-      <div class="mb-4">
-        <p class="text-[12px] font-semibold text-[var(--rose-deep)] mb-2">→ 我自己定的下次计划</p>
+      <div class="relative z-10 mb-4">
+        <p class="text-[11.5px] font-semibold text-[var(--rose-deep)] mb-2 opacity-90">我自己定的下次计划</p>
         <div class="rounded-2xl field-next p-3 text-[12.5px] leading-6 whitespace-pre-wrap" id="detail-next"></div>
       </div>
-      <div class="mb-4 hidden" id="detail-tips-wrap">
-        <p class="text-[12px] font-semibold text-[var(--mauve)] mb-1">针对这次的小提示</p>
-        <p class="text-[11px] text-[var(--ink-faint)] mb-2">常见练法参考，不是诊断，也不替代老师</p>
+      <div class="relative z-10 mb-2 hidden" id="detail-tips-wrap">
+        <p class="text-[12px] font-semibold text-[var(--mauve)] mb-2">给这次的小提示</p>
         <div class="rounded-2xl border border-dashed border-[var(--border-soft)] p-3 text-[12.5px] leading-6 whitespace-pre-wrap" id="detail-tips"></div>
       </div>
-      <button onclick="exportEntry()" class="w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium mb-3">导出为纯文本</button>
+      </div>
+      <button id="detail-fill-btn" type="button" onclick="goRecord()" class="btn-ribbon hidden relative w-full h-11 rounded-full text-[13px] font-medium mb-3"><span class="pearl-sheen"></span><span class="relative z-10">补上今天的复盘</span></button>
+      <button id="detail-share-btn" type="button" onclick="shareCheckinCard()" class="btn-pearl hidden relative w-full h-11 rounded-full text-[12.5px] mb-3"><span class="pearl-sheen"></span><span class="relative z-10">分享卡片</span></button>
+      <button onclick="exportEntry()" class="w-full h-11 rounded-full border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium mb-3">导出为纯文本</button>
       <button onclick="deleteEntry()" class="w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[var(--rose-deep)] text-[12.5px] font-medium">删除这条记录</button>
     </main>
   </div>
@@ -812,8 +1063,8 @@
     <header class="shrink-0 px-6 pt-7 pb-4 flex items-center gap-4">
       <button onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
       <div>
-        <p class="label-editorial text-[13px] text-[var(--rose-deep)]">只属于你</p>
-        <h1 class="font-display mt-1 text-[28px] font-semibold tracking-[-0.01em]">我的</h1>
+        <p class="label-editorial text-[13px] text-[var(--rose-deep)]">与你相关</p>
+        <h1 class="page-title mt-0.5">我的</h1>
       </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-7">
@@ -833,29 +1084,11 @@
         </div>
       </section>
 
-      <section class="card-journal grain relative mt-4 overflow-hidden rounded-[22px] px-2 py-4">
-        <div class="pearl-sheen"></div>
-        <div class="relative z-10 grid grid-cols-3">
-          <div class="text-center px-1">
-            <p class="font-display text-[24px] leading-none font-semibold text-[var(--ink)]" id="profile-count">0</p>
-            <span class="mt-1.5 block text-[10px] text-[var(--ink-faint)]">训练次数</span>
-        </div>
-          <div class="text-center px-1 border-x border-[var(--border-soft)]">
-            <p class="font-display text-[24px] leading-none font-semibold text-[var(--ink)]" id="profile-hours">0</p>
-            <span class="mt-1.5 block text-[10px] text-[var(--ink-faint)]">训练小时</span>
-        </div>
-          <div class="text-center px-1">
-            <p class="font-display text-[24px] leading-none font-semibold text-[var(--ink)]" id="profile-month">0</p>
-            <span class="mt-1.5 block text-[10px] text-[var(--ink-faint)]">本月次数</span>
-          </div>
-        </div>
-      </section>
-
       <section class="mt-7">
         <div class="flex items-end justify-between gap-3">
           <div>
             <h2 class="font-display text-[21px] font-semibold tracking-[-0.01em]">徽章墙</h2>
-            <p class="mt-1 text-[11px] leading-4 text-[var(--ink-faint)]">记下了、连续记下了。不是能力评级。</p>
+            <p class="mt-1 text-[11px] leading-4 text-[var(--ink-faint)]">亮起来的，才摆在这里。</p>
         </div>
           <span class="shrink-0 label-editorial text-[12px] text-[var(--rose-deep)]" id="badge-earned-count"></span>
         </div>
@@ -899,15 +1132,6 @@
         </div>
         <button type="button" onclick="showDeleteAccount()" class="mt-3 w-full py-2 text-center text-[11px] text-[var(--ink-faint)]">注销并删除账号</button>
       </section>
-
-      <section class="card-journal tinted-rose grain relative overflow-hidden mt-7 p-4" style="border-radius:20px 26px 18px 24px">
-        <div class="pearl-sheen"></div>
-        <div class="relative z-10 flex items-center gap-2">
-          <iconify-icon icon="solar:quote-up-linear" class="text-[16px] text-[var(--gold)]"></iconify-icon>
-          <span class="label-editorial text-[12px] text-[var(--rose-deep)]">写给自己的话</span>
-        </div>
-        <p class="relative z-10 mt-2 text-[13px] leading-6 text-[var(--ink-soft)]" id="profile-self-tip">-</p>
-      </section>
     </main>
     <nav class="shrink-0 h-[76px] nav-ballet flex items-center justify-around px-5">
       <button onclick="goHome()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:home-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">首页</span></button>
@@ -919,18 +1143,36 @@
 
   <!-- ============ PROGRESS (Recurring Issues / Training Review / Pre-Class Brief) ============ -->
   <div class="screen flex-col w-full h-full wash-rose" id="screen-progress">
-    <header class="shrink-0 px-6 pt-7 pb-4 flex items-center gap-4">
+    <header class="shrink-0 px-6 pt-7 pb-3 flex items-center gap-4">
       <button onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
       <div>
-        <p class="label-editorial text-[13px] text-[var(--rose-deep)]">你确认过的记录</p>
-        <h1 class="mt-0.5 text-[20px] font-semibold">成长追踪</h1>
+        <p class="label-editorial text-[13px] text-[var(--rose-deep)]">给下次留个心</p>
+        <h1 class="page-title mt-0.5">追踪</h1>
       </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-8">
+      <div class="hist-tabs flex items-center gap-1 mb-4 rounded-full p-1">
+        <button type="button" id="progress-tab-class" onclick="setProgressView('class')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium bg-white shadow-sm text-[var(--burgundy)]">课前</button>
+        <button type="button" id="progress-tab-look" onclick="setProgressView('look')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium text-[var(--ink-faint)]">翻看</button>
+      </div>
+
+      <div id="progress-class-view">
       <section>
+        <p class="label-editorial text-[12px] text-[var(--rose-deep)]">提醒</p>
+        <h2 class="mt-1 text-[16px] font-semibold">上次给自己的话</h2>
+        <div class="card-journal tinted-rose grain relative overflow-hidden mt-3 p-4" style="border-radius:22px 16px 22px 18px">
+          <div class="pearl-sheen"></div>
+          <div id="brief-content" class="relative z-10 text-[12.5px] leading-6 text-[var(--ink)]">加载中…</div>
+        </div>
+      </section>
+
+      <section class="mt-5">
         <div class="flex items-end justify-between gap-3">
-          <h2 class="text-[17px] font-semibold">反复出现的问题</h2>
-          <span class="text-[11px] text-[var(--ink-faint)]">状态自己定</span>
+          <div>
+            <p class="label-editorial text-[12px] text-[var(--rose-deep)]">反复</p>
+            <h2 class="mt-1 text-[16px] font-semibold">还在出现的问题</h2>
+          </div>
+          <span class="text-[11px] text-[var(--ink-faint)]">可更改状态</span>
         </div>
         <div id="issue-donut-wrap" class="hidden card-journal tinted-rose grain relative overflow-hidden mt-3 p-3" style="border-radius:18px 24px 16px 22px">
           <div class="pearl-sheen"></div>
@@ -942,65 +1184,49 @@
             </div>
           </div>
         </div>
-        <div id="issues-empty" class="hidden mt-3 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-[12px] leading-5 text-[var(--ink-faint)]">
-          同一个问题在复盘里反复出现时，会列在这里。
+        <div id="issues-empty" class="hidden mt-3 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-[12px] leading-6 text-[var(--ink-soft)]">
+          同一句话出现几次后，会列在这里。先去复盘一节课就好。
         </div>
         <div id="issues-list" class="relative z-10 mt-3 space-y-2.5"></div>
+        <button type="button" id="issues-more-btn" onclick="toggleIssuesShowAll()" class="hidden mt-2 w-full py-2 text-center text-[12px] text-[var(--rose-deep)]"></button>
+      </section>
+      </div>
+
+      <div id="progress-look-view" class="hidden">
+      <section>
+        <p class="label-editorial text-[12px] text-[var(--rose-deep)]">问档案</p>
+        <h2 class="mt-1 text-[16px] font-semibold">问问看</h2>
+        <div class="card-journal grain relative overflow-hidden mt-3 p-4" style="border-radius:18px 22px 16px 22px">
+          <div class="pearl-sheen"></div>
+          <div class="relative z-10 flex gap-2">
+            <input id="ask-archive-input" type="text" placeholder="比如：我最近转圈老说什么问题" class="flex-1 h-10 px-3 rounded-xl border border-[var(--border-soft)] text-[12.5px] bg-white/70" onkeydown="if(event.key==='Enter') askArchive()">
+            <button type="button" onclick="askArchive()" id="ask-archive-btn" class="btn-ribbon shrink-0 h-10 px-4 rounded-full text-[12.5px] font-medium">
+              <span class="pearl-sheen"></span><span class="relative z-10">问</span>
+            </button>
+          </div>
+          <div id="ask-archive-result" class="relative z-10 mt-3 hidden text-[12.5px] leading-6 text-[var(--ink)]"></div>
+        </div>
       </section>
 
-      <section class="card-journal tinted-rose grain relative overflow-hidden mt-5 p-3.5" style="border-radius:22px 16px 22px 18px">
-        <div class="pearl-sheen"></div>
-        <div class="relative z-10 flex items-center gap-2"><iconify-icon icon="solar:flag-2-linear" class="text-[16px] text-[var(--gold)]"></iconify-icon><span class="label-editorial text-[13px] text-[var(--rose-deep)]">课前看一眼</span></div>
-        <div id="brief-content" class="relative z-10 mt-2 text-[12.5px] leading-6 text-[var(--ink)]">加载中…</div>
+      <section class="mt-5">
+        <p class="label-editorial text-[12px] text-[var(--rose-deep)]">汇总</p>
+        <h2 class="mt-1 text-[16px] font-semibold">这段时间</h2>
+        <div class="card-journal tinted grain relative overflow-hidden mt-3 p-4" style="border-radius:22px 14px 22px 16px">
+          <div class="pearl-sheen"></div>
+          <div class="relative z-10 flex items-center justify-between">
+            <span class="label-editorial text-[12px] text-[var(--rose-deep)]">近14天</span>
+            <span class="text-[10.5px] text-[var(--ink-faint)]">颜色越深，练得越多</span>
+          </div>
+          <div class="relative z-10 mt-3 flex items-center justify-center gap-1.5" id="progress-strip"></div>
+        </div>
+        <div class="mt-3 flex gap-2">
+          <button id="review-days-btn" onclick="generateTrainingReview('days')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近7天</button>
+          <button id="review-last-btn" onclick="generateTrainingReview('last')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近5次</button>
+        </div>
+        <div id="review-content" class="mt-3 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-4 text-[12.5px] text-[var(--ink)]">加载中…</div>
+        <button id="review-export-btn" onclick="exportTrainingReview()" class="hidden mt-2 w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">复制为文本</button>
       </section>
-
-      <!-- Ask-your-archive: retrieval is pure keyword overlap over the
-           user's own confirmed records (zero AI); Claude only runs when a
-           match was actually found, and only ever sees those matched
-           records — same "no unverified claims" boundary as the rest of
-           the app, just answering from what you already said instead of
-           judging progress across it. -->
-      <section class="card-journal grain relative overflow-hidden mt-5 p-3.5" style="border-radius:18px 22px 16px 22px">
-        <div class="pearl-sheen"></div>
-        <div class="relative z-10 flex items-center gap-2 mb-2">
-          <iconify-icon icon="solar:magnifer-linear" class="text-[16px] text-[var(--gold)]"></iconify-icon>
-          <span class="label-editorial text-[13px] text-[var(--rose-deep)]">问问你的档案</span>
-        </div>
-        <p class="relative z-10 text-[11px] text-[var(--ink-faint)] mb-2">只根据你自己确认过的记录回答。用词对不上时会再按意思找，查不到就说没有</p>
-        <div class="relative z-10 flex gap-2">
-          <input id="ask-archive-input" type="text" placeholder="比如：我最近转圈老说什么问题" class="flex-1 h-10 px-3 rounded-xl border border-[var(--border-soft)] text-[12.5px] bg-white/70" onkeydown="if(event.key==='Enter') askArchive()">
-          <button type="button" onclick="askArchive()" id="ask-archive-btn" class="btn-ribbon shrink-0 h-10 px-4 rounded-xl text-[12.5px] font-medium">
-            <span class="pearl-sheen"></span><span class="relative z-10">问</span>
-          </button>
-        </div>
-        <div id="ask-archive-result" class="relative z-10 mt-3 hidden text-[12.5px] leading-6 text-[var(--ink)]"></div>
-      </section>
-
-      <details class="progress-more mt-5">
-        <summary class="flex items-center justify-between gap-2 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] px-3.5 py-3">
-          <span class="min-w-0">
-            <span class="block text-[13px] font-medium text-[var(--ink)]">最近状态</span>
-            <span class="block mt-0.5 text-[11px] leading-4 text-[var(--ink-faint)]">近14天练习，还有 7 天或 5 次汇总</span>
-          </span>
-          <iconify-icon icon="solar:alt-arrow-down-linear" class="progress-more-chevron shrink-0 text-[16px] text-[var(--ink-faint)] transition-transform"></iconify-icon>
-        </summary>
-        <div class="mt-3">
-          <div class="card-journal tinted grain relative overflow-hidden p-4" style="border-radius:22px 14px 22px 16px">
-            <div class="pearl-sheen"></div>
-            <div class="relative z-10 flex items-center justify-between">
-              <div class="flex items-center gap-2"><iconify-icon icon="solar:fire-linear" class="text-[16px] text-[var(--gold)]"></iconify-icon><span class="label-editorial text-[12px] text-[var(--rose-deep)]">近14天</span></div>
-              <span class="text-[10.5px] text-[var(--ink-faint)]">颜色越深，练得越多</span>
-        </div>
-            <div class="relative z-10 mt-3 flex items-center justify-center gap-1.5" id="progress-strip"></div>
-        </div>
-          <div class="mt-3 flex gap-2">
-            <button id="review-days-btn" onclick="generateTrainingReview('days')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近7天</button>
-            <button id="review-last-btn" onclick="generateTrainingReview('last')" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">最近5次</button>
-        </div>
-          <div id="review-content" class="mt-3 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] p-4 text-[12.5px] text-[var(--ink)]">加载中…</div>
-          <button id="review-export-btn" onclick="exportTrainingReview()" class="hidden mt-2 w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">复制为文本</button>
-        </div>
-      </details>
+      </div>
 
     </main>
     <nav class="shrink-0 h-[76px] nav-ballet flex items-center justify-around px-5">
@@ -1014,10 +1240,11 @@
 <!-- Save-moment ceremony (V0.2 #16) + milestone celebration (V0.2 #11) -->
 <div id="save-ceremony" class="hidden absolute inset-0 z-[70] items-center justify-center bg-black/40 px-8 overflow-hidden" role="status" aria-live="polite" onclick="dismissSaveCeremony()">
   <div id="ceremony-petals" class="pointer-events-none absolute inset-0 overflow-hidden z-20" aria-hidden="true"></div>
-  <div class="card-journal grain ceremony-card-in relative z-10 w-full max-w-[300px] p-6 text-center" style="border-radius:28px 18px 28px 18px" onclick="event.stopPropagation()">
+  <div class="card-journal card-satin grain ceremony-card-in relative z-10 w-full max-w-[300px] px-6 pt-6 pb-6 text-center" style="border-radius:28px" onclick="event.stopPropagation()">
     <div class="pearl-sheen"></div>
+    <p class="relative z-10 label-editorial text-[12px] text-[var(--rose-deep)]">BalletMind</p>
 
-    <div class="relative z-10 mx-auto h-[104px] flex items-center justify-center">
+    <div class="relative z-10 mx-auto mt-2 h-[104px] flex items-center justify-center">
       <!-- Ordinary save: a satin bow cinches itself closed -->
       <div id="ceremony-ribbon" class="ceremony-ribbon" aria-hidden="true">
         <svg viewBox="0 0 120 86" class="w-[96px] h-[68px]" fill="none">
@@ -1056,8 +1283,9 @@
       </div>
     </div>
 
-    <p class="fade-in-up relative z-10 mt-1 text-[16px] font-semibold text-[var(--ink)]" style="animation-delay:.25s">已保存到训练档案</p>
-    <svg class="fade-in-up mx-auto mt-1.5 w-10 h-2.5 text-[var(--gold)] opacity-80" style="animation-delay:.35s" viewBox="0 0 120 24" fill="none" aria-hidden="true"><path d="M2 12c14-14 24-14 28-2 4 12 14 12 28-2 14-14 24-14 28-2s14 12 28 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <p class="fade-in-up relative z-10 font-display text-[22px] font-semibold tracking-[-0.01em] text-[var(--ink)]" style="animation-delay:.25s">记下了</p>
+    <p class="fade-in-up relative z-10 mt-1.5 text-[12px] leading-5 text-[var(--ink-soft)]" style="animation-delay:.32s">这一节，收进档案了</p>
+    <svg class="fade-in-up mx-auto mt-2 w-10 h-2.5 text-[var(--gold)] opacity-80" style="animation-delay:.4s" viewBox="0 0 120 24" fill="none" aria-hidden="true"><path d="M2 12c14-14 24-14 28-2 4 12 14 12 28-2 14-14 24-14 28-2s14 12 28 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
 
     <div id="milestone-content" class="fade-in-up relative z-10 hidden mt-3 pt-3 border-t border-[var(--border-soft)]" style="animation-delay:.55s">
       <div class="flex items-center justify-center gap-1.5">
@@ -1090,10 +1318,10 @@
   <div class="relative w-full max-w-[340px] rounded-[26px] bg-[var(--paper)] p-6">
     <button onclick="hideFeedback()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></button>
     <h2 class="font-display text-[19px] font-semibold">意见反馈</h2>
-    <p class="mt-1 text-[12px] leading-5 text-[var(--ink-soft)]">遇到问题、想要的功能、哪里不顺手，都可以写在这里，我会看。</p>
+    <p class="mt-1 text-[12px] leading-5 text-[var(--ink-soft)]">有不顺手的地方，或想要的功能，写在这里就好。</p>
     <textarea id="feedback-text" maxlength="1000" rows="5" placeholder="想说点什么…" class="mt-3 w-full rounded-[16px] border border-[var(--border-soft)] bg-white/70 p-3 text-[13px] outline-none"></textarea>
     <input id="feedback-contact" maxlength="100" placeholder="联系方式（选填，方便我回复你）" class="mt-2 w-full rounded-[14px] border border-[var(--border-soft)] bg-white/70 px-3 py-2.5 text-[13px] outline-none">
-    <p class="mt-2 text-[10.5px] leading-4 text-[var(--ink-faint)]">会同时发送你的设备/浏览器信息，方便排查问题；不会附带你的训练记录内容。</p>
+    <p class="mt-2 text-[10.5px] leading-4 text-[var(--ink-faint)]">发送时会带上设备和浏览器信息，不会附上课记。</p>
     <button id="feedback-send" onclick="submitFeedback()" class="mt-3 w-full rounded-[16px] bg-[var(--rose-deep)] py-3 text-[13px] text-white">发送</button>
   </div>
 </div>
@@ -1102,7 +1330,7 @@
   <div class="relative w-full max-w-[340px] rounded-[26px] bg-[var(--paper)] p-6" onclick="event.stopPropagation()">
     <button type="button" onclick="hideDeleteAccount()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></button>
     <h2 class="font-display pr-8 text-[21px] font-semibold">注销并删除账号</h2>
-    <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]">删除后无法恢复课记、追踪和问答记录。建议先「导出我的数据」。请输入密码确认。</p>
+    <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]">删除后，课记和追踪都无法恢复。如需备份，请先导出，再输入密码确认。</p>
     <input id="delete-account-password" type="password" autocomplete="current-password" placeholder="当前密码" class="mt-3 w-full rounded-[14px] border border-[var(--border-soft)] bg-white/70 px-3 py-2.5 text-[13px] outline-none">
     <p id="delete-account-err" class="hidden mt-2 text-[12px] text-[var(--rose-deep)]"></p>
     <button id="delete-account-confirm" type="button" onclick="submitDeleteAccount()" class="mt-4 w-full rounded-[16px] bg-[var(--rose-deep)] py-3 text-[13px] text-white">确认删除</button>
@@ -1110,7 +1338,7 @@
 </div>
 
 <div id="about-modal" class="hidden fixed inset-0 z-[60] items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideAbout()">
-  <div class="relative w-full max-w-[340px] rounded-[26px] bg-[var(--paper)] p-6">
+  <div id="about-modal-card" class="relative w-full max-w-[340px] rounded-[26px] bg-[var(--paper)] p-6">
     <button onclick="hideAbout()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></button>
     <div class="relative mx-auto w-14 h-14">
       <div class="absolute -inset-1.5 opacity-70 blur-[5px]" style="border-radius:20px 12px 20px 12px; background:linear-gradient(135deg,var(--blush),var(--gold))"></div>
@@ -1123,24 +1351,82 @@
     <svg class="mx-auto mt-1 w-12 h-2.5 text-[var(--gold)] opacity-80" viewBox="0 0 120 24" fill="none" aria-hidden="true"><path d="M2 12c14-14 24-14 28-2 4 12 14 12 28-2 14-14 24-14 28-2s14 12 28 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     <p class="mt-1 text-center text-[11px] text-[var(--ink-faint)]">v0.1 · MVP 测试版</p>
     <p class="mt-4 text-[12.5px] leading-6 text-[var(--ink-soft)]">
-      BalletMind 是一款给芭蕾练习者用的语音训练复盘工具。下课后花几分钟说说今天练了什么、感受如何、老师提了什么建议，AI 会帮你整理成"做得好的地方 / 待改进点 / 我自己定的下次计划"，帮你把每一次练习的收获都记录下来。
+      下课后说几句即可。今天练了什么、老师说了什么、自己的感受都可以，我会帮你整理成课记。
     </p>
     <p class="mt-3 text-[12.5px] leading-6 text-[var(--ink-soft)]">
-      现在还是早期测试阶段，功能和界面都会持续调整。你的训练记录只属于你自己的账号，不会被其他人看到。语音会先转成文字再整理，原始音频不会长期保存在训练档案里。详见<a href="/privacy.html" class="text-[var(--rose-deep)] underline">隐私政策</a>。
+      课记只属于你的账号。语音会先变成文字，原始录音不会长期留着。请见<a href="/privacy.html" class="text-[var(--rose-deep)] underline">隐私政策</a>。
     </p>
-    <p class="mt-4 text-center text-[10px] text-[var(--ink-faint)]">装饰插画</p>
   </div>
 </div>
 
 <div id="glossary-modal" class="hidden fixed inset-0 z-[60] items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideGlossary()">
-  <div class="relative w-full max-w-[340px] max-h-[80vh] flex flex-col rounded-[26px] bg-[var(--paper)] p-5" onclick="event.stopPropagation()">
+  <div id="glossary-modal-card" class="relative w-full max-w-[340px] max-h-[80vh] flex flex-col rounded-[26px] bg-[var(--paper)] p-5" onclick="event.stopPropagation()">
     <button type="button" onclick="hideGlossary()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></button>
     <h2 class="font-display pr-8 text-[21px] font-semibold">芭蕾术语</h2>
-    <p class="mt-1 text-[11px] text-[var(--ink-faint)]">法语 · 英文 · 中文。搜档案时打 plie 或「蹲」都能找到 plié。</p>
+    <p class="mt-1 text-[11px] text-[var(--ink-faint)]">搜档案时，plie 和「蹲」都能找到。</p>
     <div class="mt-3 grid grid-cols-3 gap-2 text-[10px] text-[var(--ink-faint)] px-1">
       <span>法语</span><span>英文</span><span>中文</span>
     </div>
     <div id="glossary-list" class="mt-1 min-h-0 flex-1 overflow-y-auto pr-1"></div>
+  </div>
+</div>
+
+<div id="checkin-sheet-mask" class="hidden fixed inset-0 z-[70] items-end justify-center bg-black/40" onclick="if(event.target===this) hideCheckinSheet()">
+  <div class="w-full max-w-[393px] rounded-t-[26px] bg-[var(--paper)] px-5 pt-4 pb-7" onclick="event.stopPropagation()">
+    <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--border-soft)]"></div>
+    <p class="label-editorial text-[12px] text-[var(--rose-deep)]">今天练过了</p>
+    <h2 class="font-display mt-0.5 text-[20px] font-semibold">打个卡</h2>
+        <p class="mt-1 text-[11.5px] leading-5 text-[var(--ink-faint)]">都可以先空着。</p>
+    <p id="checkin-today-summary" class="hidden mt-2 text-[12px] leading-5 text-[var(--burgundy)] font-medium"></p>
+    <div class="mt-4">
+      <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">课名</p>
+      <input id="checkin-classname" maxlength="40" placeholder="如：基训、把杆、足尖" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] text-[12.5px]">
+      <div id="checkin-class-chips" class="mt-2 flex gap-2 flex-wrap"></div>
+    </div>
+    <div class="mt-4">
+      <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">时长</p>
+      <div class="flex gap-2 flex-wrap">
+        <button type="button" onclick="selectCheckinDuration(30)" data-min="30" class="checkin-duration-chip duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">0.5小时</button>
+        <button type="button" onclick="selectCheckinDuration(60)" data-min="60" class="checkin-duration-chip duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1小时</button>
+        <button type="button" onclick="selectCheckinDuration(90)" data-min="90" class="checkin-duration-chip duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1.5小时</button>
+        <button type="button" onclick="selectCheckinDuration(120)" data-min="120" class="checkin-duration-chip duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">2小时+</button>
+      </div>
+    </div>
+    <div class="mt-4">
+      <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">心情</p>
+      <div class="flex gap-2.5">
+        <button type="button" onclick="selectCheckinMood('low')" data-mood="low" aria-label="不在状态" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7.2 15.2a4.2 4.2 0 0 1 .1-8.3 5.6 5.6 0 0 1 10.6 1.7A3.6 3.6 0 0 1 17.8 15.2Z"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M9.2 17.4v1.8M12 17.8v2.1M14.8 17.4v1.8"/></svg>
+          <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">不在状态</span>
+        </button>
+        <button type="button" onclick="selectCheckinMood('meh')" data-mood="meh" aria-label="一般" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7 16a4.4 4.4 0 0 1 .2-8.7 5.8 5.8 0 0 1 11 1.8A3.7 3.7 0 0 1 18.2 16Z"/></svg>
+          <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">一般</span>
+        </button>
+        <button type="button" onclick="selectCheckinMood('good')" data-mood="good" aria-label="还不错" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M12 4.2v1.5M12 18.3v1.5M4.2 12h1.5M18.3 12h1.5M6.4 6.4l1.1 1.1M16.5 16.5l1.1 1.1M6.4 17.6l1.1-1.1M16.5 7.5l1.1-1.1"/></svg>
+          <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">还不错</span>
+        </button>
+        <button type="button" onclick="selectCheckinMood('great')" data-mood="great" aria-label="状态很好" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M12 4.2l1.7 4.6 4.9.3-3.8 3.2 1.3 4.7L12 14.6 7.9 17l1.3-4.7-3.8-3.2 4.9-.3Z"/></svg>
+          <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">很好</span>
+        </button>
+      </div>
+    </div>
+    <button type="button" id="checkin-submit-btn" onclick="submitCheckin()" class="btn-pearl relative mt-5 w-full h-11 rounded-full text-[13px]"><span class="pearl-sheen"></span><span class="relative z-10">记下</span></button>
+    <button type="button" onclick="hideCheckinSheet()" class="mt-2 w-full h-10 text-[12px] text-[var(--ink-faint)]">先不了</button>
+  </div>
+</div>
+
+<div id="checkin-share-mask" class="hidden fixed inset-0 z-[70] items-center justify-center bg-black/45 px-6" onclick="if(event.target===this) hideCheckinShare()">
+  <div class="relative w-full max-w-[340px] rounded-[26px] bg-[var(--paper)] p-4" onclick="event.stopPropagation()">
+    <button type="button" onclick="hideCheckinShare()" class="absolute right-3 top-3 w-8 h-8 rounded-full bg-[var(--blush)]/60 flex items-center justify-center z-10"><iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></button>
+    <p class="label-editorial text-[12px] text-[var(--rose-deep)]">今天练过了</p>
+    <h2 class="font-display mt-0.5 text-[20px] font-semibold">打卡卡片</h2>
+    <p class="mt-1 text-[11px] leading-5 text-[var(--ink-faint)]">保存后，可以发到朋友圈或小红书。</p>
+    <canvas id="checkin-share-canvas" class="mt-3 w-full rounded-[18px] border border-[var(--border-soft)]" width="621" height="828"></canvas>
+    <button type="button" onclick="downloadCheckinCard()" class="mt-3 w-full h-11 rounded-2xl bg-[var(--rose-deep)] text-white text-[13px] font-medium">保存图片</button>
+    <button type="button" id="checkin-share-native" onclick="nativeShareCheckinCard()" class="mt-2 w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">系统分享</button>
   </div>
 </div>
 
@@ -1149,10 +1435,25 @@
 <script src="/js/ballet-terms.js"></script>
 <script>
 const API = ''; // same-origin; server serves this file too
+const calBowImg = new Image();
+calBowImg.src = '/img/bow.png';
+const shareShoeImg = new Image();
+shareShoeImg.src = '/img/pack-shoes-pink.png';
 
 function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-function toast(msg, ms = 2200) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), ms); }
-function showAbout() { const m = document.getElementById('about-modal'); m.classList.remove('hidden'); m.classList.add('flex'); }
+function toast(msg, ms = 2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  t.classList.remove('fade-in-up'); void t.offsetWidth; t.classList.add('fade-in-up');
+  setTimeout(() => t.classList.add('hidden'), ms);
+}
+function showAbout() {
+  const m = document.getElementById('about-modal');
+  m.classList.remove('hidden'); m.classList.add('flex');
+  const card = document.getElementById('about-modal-card');
+  card.classList.remove('ceremony-card-in'); void card.offsetWidth; card.classList.add('ceremony-card-in');
+}
 function hideAbout() { const m = document.getElementById('about-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
 function showGlossary() {
   const list = document.getElementById('glossary-list');
@@ -1171,6 +1472,8 @@ function showGlossary() {
   const m = document.getElementById('glossary-modal');
   m.classList.remove('hidden');
   m.classList.add('flex');
+  const card = document.getElementById('glossary-modal-card');
+  card.classList.remove('ceremony-card-in'); void card.offsetWidth; card.classList.add('ceremony-card-in');
 }
 function hideGlossary() {
   const m = document.getElementById('glossary-modal');
@@ -1336,8 +1639,8 @@ function setAuthMode(mode) {
   document.getElementById('auth-privacy-wrap').classList.toggle('hidden', !isRegister);
   document.getElementById('auth-forgot-btn').classList.toggle('hidden', isForgot);
   document.getElementById('auth-subtitle').innerHTML = isLogin
-    ? '每次下课说几句，整理成你的芭蕾成长笔记'
-    : isRegister ? '用邮箱建一个只属于你的训练本' : '输入注册邮箱，我们会给你重置链接';
+    ? '下课的几句话，攒起来就是你的进步。'
+    : isRegister ? '用邮箱建一本只属于你的课记。' : '请输入注册邮箱，我们会寄重置链接。';
   document.getElementById('auth-submit-label').textContent = isLogin ? '登录' : isRegister ? '注册' : '发送重置链接';
   document.getElementById('auth-toggle-btn').textContent = isLogin ? '还没有账号？去注册' : '已经有账号？去登录';
   document.getElementById('auth-error').classList.add('hidden');
@@ -1504,7 +1807,7 @@ function resetRecordScreen() {
   document.getElementById('rec-timer').textContent='0s';
   document.getElementById('rec-btn').disabled = false;
   document.getElementById('rec-btn').classList.remove('opacity-40', 'hidden');
-  document.getElementById('rec-state').textContent = recorderSupported ? '轻触开始' : '此浏览器不能录音，请在下方手动输入';
+  document.getElementById('rec-state').textContent = recorderSupported ? '请点中间开始' : '这台设备暂时不能录音，请在下面打字';
   if (inAppBrowser) {
     const tip = document.getElementById('in-app-browser-tip');
     if (tip) tip.classList.remove('hidden');
@@ -1523,17 +1826,6 @@ function goBackFromReview() {
   show('screen-record');
 }
 function goHistory() { ensureBrowseSession(); logEvent('history_opened', {}, 'browse'); loadHistory(); show('screen-history'); }
-const SELF_TIPS = [
-  '每一次练习，都是在更靠近未来的自己。',
-  '不用和别人比，只要今天比昨天更清楚一点。',
-  '慢慢来，身体会记住你付出的每一次专注。',
-  '允许自己练不好，这也是练习的一部分。',
-  '坚持记录，就是在给未来的自己留线索。',
-];
-function renderSelfTip() {
-  document.getElementById('profile-self-tip').textContent =
-    SELF_TIPS[Math.floor(Math.random() * SELF_TIPS.length)];
-}
 
 function headerInitial() {
   const user = getUser();
@@ -1545,7 +1837,6 @@ async function goProfile() {
   document.getElementById('profile-name').textContent = user?.displayName || '-';
   document.getElementById('profile-email').textContent = user?.email || '-';
   document.getElementById('profile-avatar').textContent = headerInitial();
-  renderSelfTip();
   refreshProgressDot();
 
   try {
@@ -1558,14 +1849,6 @@ async function goProfile() {
   try {
     const res = await authFetch(`${API}/api/records`);
     const rows = await res.json();
-    const now = new Date();
-    const thisMonthCount = rows.filter(r => {
-      const d = new Date(r.created_at);
-      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    }).length;
-    document.getElementById('profile-count').textContent = rows.length;
-    document.getElementById('profile-hours').textContent = formatTrainingHours(rows) ?? '--';
-    document.getElementById('profile-month').textContent = thisMonthCount;
     renderBadges(rows);
   } catch (e) {}
 
@@ -1615,13 +1898,67 @@ function computeBestWeekStreak(rows) {
   }
   return best;
 }
+function isCheckinOnly(r) {
+  return Number(r && r.is_checkin_only) === 1;
+}
+function classNameOf(r) {
+  const n = ((r && r.class_name) || '').trim();
+  if (!n || n === '训练记录') return '未写课名';
+  return n;
+}
+function classSessionCounts(rows, dayKey) {
+  const map = new Map();
+  (rows || []).filter((r) => dateKey(new Date(r.created_at)) === dayKey).forEach((r) => {
+    const name = classNameOf(r);
+    map.set(name, (map.get(name) || 0) + 1);
+  });
+  return [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh'));
+}
+function formatSessionSummary(counts) {
+  if (!counts.length) return '';
+  return counts.map(([n, c]) => `${n} ${c}节`).join(' · ');
+}
+function recentClassNames(rows) {
+  const seen = [];
+  (rows || []).forEach((r) => {
+    const n = (r.class_name || '').trim();
+    if (!n || isAutoClassName(n) || n === '训练记录' || n === '未写课名') return;
+    if (!seen.includes(n)) seen.push(n);
+  });
+  return seen.slice(0, 6);
+}
+function fillClassNameChips(containerId, inputId, rows) {
+  const chips = document.getElementById(containerId);
+  const nameInput = document.getElementById(inputId);
+  if (!chips) return;
+  const names = recentClassNames(rows);
+  chips.innerHTML = names.map((n) =>
+    `<button type="button" data-class="${escapeHtml(n)}" class="px-3 py-1 rounded-full border border-[var(--border-soft)] text-[11px] text-[var(--burgundy)] bg-white/70">${escapeHtml(n)}</button>`
+  ).join('');
+  chips.onclick = (e) => {
+    const b = e.target.closest('button[data-class]');
+    if (b && nameInput) {
+      nameInput.value = b.getAttribute('data-class') || '';
+      if (typeof updateReviewExtrasSummary === 'function') updateReviewExtrasSummary();
+    }
+  };
+}
+function paintTodayClassSummary(rows) {
+  const el = document.getElementById('home-today-summary');
+  if (!el) return;
+  const text = formatSessionSummary(classSessionCounts(rows, dateKey(new Date())));
+  el.classList.toggle('hidden', !text);
+  el.textContent = text ? `今天 · ${text}` : '';
+}
 function renderBadges(rows) {
   const grid = document.getElementById('badge-grid');
   if (!grid) return;
-  const count = rows.length;
+  const count = (rows || []).filter((r) => !isCheckinOnly(r)).length;
   const bestStreak = computeBestWeekStreak(rows);
   const badges = BADGES.map(b => ({ ...b, earned: b.kind === 'count' ? count >= b.value : bestStreak >= b.value }));
-  document.getElementById('badge-earned-count').textContent = `${badges.filter(b => b.earned).length} / ${badges.length}`;
+  const earned = badges.filter((b) => b.earned);
+  const locked = badges.filter((b) => !b.earned);
+  document.getElementById('badge-earned-count').textContent = `${earned.length} / ${badges.length}`;
   const cell = (b) => `
     <div class="badge-medal ${b.earned ? 'is-earned' : 'is-locked'}">
       <div class="medal">
@@ -1629,34 +1966,40 @@ function renderBadges(rows) {
       </div>
       <p class="mt-1.5 text-[10px] leading-tight ${b.earned ? 'text-[var(--ink)] font-medium' : 'text-[var(--ink-faint)]'}">${escapeHtml(b.label)}</p>
     </div>`;
-  const counts = badges.filter(b => b.kind === 'count');
-  const streaks = badges.filter(b => b.kind === 'streak');
-  grid.innerHTML = `
-    <p class="label-editorial text-[12px] text-[var(--rose-deep)] mb-2.5">记下了</p>
-    <div class="grid grid-cols-4 gap-x-2 gap-y-3">${counts.map(cell).join('')}</div>
-    <p class="label-editorial text-[12px] text-[var(--rose-deep)] mt-4 mb-2.5">连续记下</p>
-    <div class="grid grid-cols-4 gap-x-2 gap-y-3">${streaks.map(cell).join('')}</div>`;
+  const earnedBlock = earned.length
+    ? `<div class="grid grid-cols-4 gap-x-2 gap-y-4 pt-2">${earned.map(cell).join('')}</div>`
+    : `<p class="text-[12.5px] leading-6 text-[var(--ink-soft)]">复盘几次后，第一枚会亮在这儿。</p>`;
+  const lockedBlock = locked.length
+    ? `<details class="badge-locked mt-4">
+        <summary class="flex items-center justify-between gap-2 py-1">
+          <span class="text-[12px] text-[var(--ink-faint)]">还没拿到的 ${locked.length} 枚</span>
+          <iconify-icon icon="solar:alt-arrow-down-linear" class="badge-locked-chevron text-[15px] text-[var(--ink-faint)] transition-transform"></iconify-icon>
+        </summary>
+        <div class="grid grid-cols-4 gap-x-2 gap-y-3 mt-3">${locked.map(cell).join('')}</div>
+      </details>`
+    : '';
+  grid.innerHTML = earnedBlock + lockedBlock;
 }
 
 // ---------- home ----------
 const TRAINING_TIPS = [
-  { quote: '把注意力放回脚底，找到地板的支撑。', label: '今日身体觉察' },
-  { quote: '呼吸不用憋着，动作会跟着松一点。', label: '今日身体觉察' },
-  { quote: '慢下来的那一秒，往往是身体在纠正自己。', label: '今日训练心态' },
-  { quote: '肩膀放松，脖子才有伸展的空间。', label: '今日身体觉察' },
-  { quote: '与其追求幅度，不如先感受对不对。', label: '今日动作质感' },
-  { quote: '练习不是为了今天完美，是为了明天更熟悉。', label: '今日训练心态' },
-  { quote: '重心稳了，动作才有余地做细节。', label: '今日身体觉察' },
-  { quote: '疲惫的时候，质量比数量更重要。', label: '今日训练心态' },
-  { quote: '眼神也是身体的一部分，别忘了带上它。', label: '今日动作质感' },
-  { quote: '把老师的一句话记下来，比记住整堂课更有用。', label: '今日复盘提醒' },
-  { quote: '进步很少是直线的，today也算数。', label: '今日训练心态' },
-  { quote: '髋部先归位，腿才有干净的线条。', label: '今日身体觉察' },
-  { quote: '别急着做下一个动作，先感受这一个的结束。', label: '今日动作质感' },
-  { quote: '紧张的肌肉不会更有力，只会更僵硬。', label: '今日身体觉察' },
-  { quote: '今天没做好的地方，写下来就是明天的目标。', label: '今日复盘提醒' },
-  { quote: '核心先启动，四肢才有可以依靠的中心。', label: '今日身体觉察' },
-  { quote: '慢练是为了让身体记住，而不是让自己焦虑。', label: '今日训练心态' },
+  { quote: '今天能来，就已经很好了。', label: '写给今天' },
+  { quote: '跳不好的那天，也算在里面。', label: '给自己' },
+  { quote: '慢一点，身体听得见。', label: '慢慢来' },
+  { quote: '别跟昨天的自己较劲。', label: '给自己' },
+  { quote: '累了就收着练，也是认真。', label: '慢慢来' },
+  { quote: '你愿意回来，比漂不漂亮要紧。', label: '写给今天' },
+  { quote: '一口气做不完美，没关系。', label: '给自己' },
+  { quote: '地板还在，你也还在。', label: '写给今天' },
+  { quote: '老师说的那句，慢慢会变成自己的。', label: '慢慢来' },
+  { quote: '不用今天就懂，过几天身体会告诉你。', label: '慢慢来' },
+  { quote: '先把呼吸放下来，日子会松一点。', label: '给自己' },
+  { quote: '别人看不见的那一下，你自己知道。', label: '写给今天' },
+  { quote: '练功最难的，常常是对自己客气一点。', label: '给自己' },
+  { quote: '错过的线条，下次再找。', label: '慢慢来' },
+  { quote: '心先落下，脚才稳。', label: '写给今天' },
+  { quote: '不必每次都有收获，来过就留下了。', label: '给自己' },
+  { quote: '站直，别把今天绷得太紧。', label: '慢慢来' },
 ];
 function renderTip() {
   const tip = TRAINING_TIPS[Math.floor(Math.random() * TRAINING_TIPS.length)];
@@ -1680,16 +2023,37 @@ async function loadHome() {
   refreshNoticeDot();
   const res = await authFetch(`${API}/api/records`);
   const rows = await res.json();
-  document.getElementById('stat-count').innerHTML = rows.length + ' <span class="text-[14px] font-medium text-[var(--ink-faint)]">次</span>';
+  const recapCount = rows.filter((r) => !isCheckinOnly(r)).length;
   const trainedHours = formatTrainingHours(rows);
-  document.getElementById('stat-duration').textContent = trainedHours === null ? '时长待记录' : `${trainedHours}小时 累计`;
+  const homeEmpty = recapCount === 0 && trainedHours === null;
+  document.getElementById('home-stat-nums').classList.toggle('hidden', homeEmpty);
+  document.getElementById('home-stat-empty').classList.toggle('hidden', !homeEmpty);
+  if (!homeEmpty) {
+    document.getElementById('stat-count').innerHTML = `${recapCount}<span>次</span>`;
+    const hoursEl = document.getElementById('stat-duration');
+    if (trainedHours === null) {
+      hoursEl.classList.add('is-empty');
+      hoursEl.textContent = '未记';
+    } else {
+      hoursEl.classList.remove('is-empty');
+      hoursEl.innerHTML = `${String(trainedHours).replace(/\.0$/, '')}<span>小时</span>`;
+    }
+  }
+  const highlightEl = document.getElementById('home-highlight-line');
+  if (highlightEl) {
+    const streak = computeDailyStreak(rows);
+    const line = homeEmpty ? '' : homeHighlightLine(recapCount, trainedHours, streak);
+    highlightEl.textContent = line;
+    highlightEl.classList.toggle('hidden', !line);
+  }
   homeRows = Array.isArray(rows) ? rows : [];
   rememberClassNameFromRecords(homeRows);
   homeCalendarExpanded = false;
   homeCalendarCursor = new Date();
   paintHomeCta(homeRows);
-  document.getElementById('home-first-hint').classList.toggle('hidden', homeRows.length !== 0);
+  document.getElementById('home-first-hint').classList.toggle('hidden', recapCount !== 0);
   renderHomeCalendar();
+  paintTodayClassSummary(homeRows);
   renderCheckinStatus(homeRows);
   loadProgressTeaser();
 }
@@ -1698,19 +2062,391 @@ async function loadHome() {
 // record yet, starts from yesterday so an active streak doesn't read as
 // broken mid-day (today isn't over yet).
 function paintHomeCta(rows) {
+  const today = dateKey(new Date());
+  const fullToday = rows.some((r) => !isCheckinOnly(r) && dateKey(new Date(r.created_at)) === today);
+  const checkinToday = rows.some((r) => isCheckinOnly(r) && dateKey(new Date(r.created_at)) === today);
   const isNew = !rows.length;
-  const recappedToday = rows.some((r) => dateKey(new Date(r.created_at)) === dateKey(new Date()));
   document.getElementById('home-cta-btn').classList.toggle('home-cta-first', isNew);
   const title = document.getElementById('home-cta-title');
   const sub = document.getElementById('home-cta-sub');
+  const checkinBtn = document.getElementById('home-checkin-btn');
+  const row = document.querySelector('.home-cta-row');
+  if (row) row.classList.add('has-checkin');
+  if (checkinBtn) {
+    checkinBtn.classList.remove('hidden');
+    checkinBtn.disabled = false;
+    const ct = document.getElementById('home-checkin-title');
+    if (ct) ct.textContent = '打卡';
+  }
   if (!title || !sub) return;
-  if (recappedToday) {
+  if (fullToday) {
     title.textContent = '再记一笔';
-    sub.textContent = '今天已经写过，还可以再留一句';
+    sub.textContent = '还可以再写一句';
+  } else if (checkinToday) {
+    title.textContent = '补上今天的复盘';
+    sub.textContent = '打过卡了，有空再说';
   } else {
     title.textContent = '复盘今天';
-    sub.textContent = '说几句，以后还能翻到';
+    sub.textContent = '说几句就好';
   }
+}
+let checkinSheetSource = 'home';
+async function openCheckinSheet(source) {
+  checkinSheetSource = source === 'history' ? 'history' : 'home';
+  checkinDurationMin = null;
+  checkinMood = null;
+  document.querySelectorAll('.checkin-duration-chip').forEach((el) => el.classList.remove('is-selected'));
+  document.querySelectorAll('.checkin-mood-chip').forEach((el) => {
+    el.classList.remove('is-selected');
+  });
+  const rowsForSheet = (homeRows && homeRows.length) ? homeRows : (historyRows || []);
+  const nameInput = document.getElementById('checkin-classname');
+  if (nameInput) nameInput.value = '';
+  const sum = document.getElementById('checkin-today-summary');
+  const todayText = formatSessionSummary(classSessionCounts(rowsForSheet, dateKey(new Date())));
+  if (sum) {
+    sum.classList.toggle('hidden', !todayText);
+    sum.textContent = todayText ? `今天已经 ${todayText}` : '';
+  }
+  fillClassNameChips('checkin-class-chips', 'checkin-classname', rowsForSheet);
+  const m = document.getElementById('checkin-sheet-mask');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+}
+function hideCheckinSheet() {
+  const m = document.getElementById('checkin-sheet-mask');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+let checkinDurationMin = null;
+let checkinMood = null;
+function selectCheckinDuration(min) {
+  checkinDurationMin = (checkinDurationMin === min) ? null : min;
+  document.querySelectorAll('.checkin-duration-chip').forEach((btn) => {
+    btn.classList.toggle('is-selected', Number(btn.dataset.min) === checkinDurationMin);
+  });
+}
+function selectCheckinMood(mood) {
+  checkinMood = (checkinMood === mood) ? null : mood;
+  document.querySelectorAll('.checkin-mood-chip').forEach((btn) => {
+    btn.classList.toggle('is-selected', btn.dataset.mood === checkinMood);
+  });
+}
+async function submitCheckin() {
+  const submit = document.getElementById('checkin-submit-btn');
+  if (submit) submit.disabled = true;
+  try {
+    const className = (document.getElementById('checkin-classname')?.value || '').trim();
+    const todayKey = dateKey(new Date());
+    const firstToday = !(homeRows || []).some((r) => dateKey(new Date(r.created_at)) === todayKey);
+    const res = await authFetch(`${API}/api/records/checkin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        className,
+        tzOffsetMin: new Date().getTimezoneOffset(),
+        trainingDurationMin: checkinDurationMin,
+        mood: checkinMood,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { toast(data.error || '打卡失败，请重试'); return; }
+    if (className) rememberClassName(className);
+    hideCheckinSheet();
+    await loadHome();
+    const summary = formatSessionSummary(classSessionCounts(homeRows || [], todayKey));
+    toast(summary ? `记下了 · ${summary}` : '今天练过了');
+    if (checkinSheetSource === 'history') {
+      await loadHistory();
+      setHistoryView('checkin');
+      show('screen-history');
+    }
+    if (firstToday) openCheckinShare();
+  } catch (e) {
+    toast('打卡失败，请重试');
+  } finally {
+    if (submit) submit.disabled = false;
+  }
+}
+function hideCheckinShare() {
+  const m = document.getElementById('checkin-share-mask');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+function checkinShareBlob() {
+  return new Promise((resolve) => {
+    const canvas = document.getElementById('checkin-share-canvas');
+    canvas.toBlob((blob) => resolve(blob), 'image/png');
+  });
+}
+function monthCameDays(rows, year, month) {
+  return new Set((rows || [])
+    .filter((r) => {
+      const d = new Date(r.created_at);
+      return d.getFullYear() === year && d.getMonth() === month;
+    })
+    .map((r) => dateKey(new Date(r.created_at)))).size;
+}
+function drawGlossCheck(ctx, cx, cy, size) {
+  ctx.save();
+  ctx.translate(cx - size / 2, cy - size / 2);
+  ctx.scale(size / 24, size / 24);
+  const g = ctx.createLinearGradient(4, 6, 20, 20);
+  g.addColorStop(0, '#fff8f4');
+  g.addColorStop(0.4, '#e8c4be');
+  g.addColorStop(1, '#a56d68');
+  ctx.strokeStyle = g;
+  ctx.lineWidth = 2.8;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(5, 12.6);
+  ctx.lineTo(9.4, 17.2);
+  ctx.lineTo(19.2, 7);
+  ctx.stroke();
+  ctx.restore();
+}
+function roundRectPath(ctx, x, y, w, h, r) {
+  const rad = Math.max(0, r);
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') ctx.roundRect(x, y, w, h, rad);
+  else ctx.rect(x, y, w, h);
+}
+function paintPearl(ctx, x, y, w, h, r) {
+  ctx.save();
+  roundRectPath(ctx, x, y, w, h, r);
+  ctx.clip();
+  const g = ctx.createLinearGradient(x, y, x + w * 0.15, y + h);
+  g.addColorStop(0, '#fffcfb');
+  g.addColorStop(0.38, '#f6ebe8');
+  g.addColorStop(1, '#e8d4d0');
+  ctx.fillStyle = g;
+  ctx.fillRect(x, y, w, h);
+  const glow = ctx.createRadialGradient(x + w * 0.22, y + 8, 8, x + w * 0.28, y + h * 0.18, w * 0.75);
+  glow.addColorStop(0, 'rgba(255,255,255,.9)');
+  glow.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(x, y, w, h);
+  const slash = ctx.createLinearGradient(x, y, x + w, y + h * 0.55);
+  slash.addColorStop(0.18, 'rgba(255,255,255,0)');
+  slash.addColorStop(0.32, 'rgba(255,255,255,.08)');
+  slash.addColorStop(0.38, 'rgba(255,255,255,.62)');
+  slash.addColorStop(0.44, 'rgba(255,255,255,.08)');
+  slash.addColorStop(0.58, 'rgba(255,255,255,0)');
+  slash.addColorStop(0.66, 'rgba(255,255,255,.28)');
+  slash.addColorStop(0.72, 'rgba(255,255,255,0)');
+  ctx.fillStyle = slash;
+  ctx.fillRect(x, y, w, h);
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(255,255,255,.8)';
+  ctx.lineWidth = 1.4;
+  roundRectPath(ctx, x + 0.8, y + 0.8, w - 1.6, h - 1.6, Math.max(0, r - 1));
+  ctx.stroke();
+}
+function drawBowKnot(ctx, cx, y, dw) {
+  if (!calBowImg.complete || !calBowImg.naturalWidth) return;
+  const sw = calBowImg.naturalWidth;
+  const sh = calBowImg.naturalHeight * 0.42;
+  const dh = dw * 0.58;
+  ctx.save();
+  ctx.filter = 'brightness(1.04) saturate(1.05)';
+  ctx.drawImage(calBowImg, 0, 0, sw, sh, cx - dw / 2, y, dw, dh);
+  ctx.restore();
+}
+function drawShareShoes(ctx, x, y, dw) {
+  if (!shareShoeImg.complete || !shareShoeImg.naturalWidth) return;
+  const ratio = shareShoeImg.naturalHeight / shareShoeImg.naturalWidth;
+  ctx.save();
+  ctx.globalAlpha = 0.42;
+  ctx.drawImage(shareShoeImg, x, y, dw, dw * ratio);
+  ctx.restore();
+}
+function drawHairline(ctx, x1, y, x2, alpha) {
+  ctx.strokeStyle = `rgba(168,136,132,${alpha})`;
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(x1, y);
+  ctx.lineTo(x2, y);
+  ctx.stroke();
+}
+function drawMiniMonth(ctx, rows, left, top, boxW, boxH) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const byDate = groupRecordsByDate(rows || []);
+  const startWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cols = 7;
+  const headH = 32;
+  const rowsN = Math.ceil((startWeekday + daysInMonth) / 7);
+  const cellW = boxW / cols;
+  const cellH = (boxH - headH) / rowsN;
+  const week = ['日', '一', '二', '三', '四', '五', '六'];
+  ctx.fillStyle = '#b09a98';
+  ctx.font = '400 12px "PingFang SC", "Hiragino Sans GB", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  week.forEach((d, i) => ctx.fillText(d, left + i * cellW + cellW / 2, top + 14));
+  for (let day = 1; day <= daysInMonth; day++) {
+    const idx = startWeekday + day - 1;
+    const col = idx % 7;
+    const row = Math.floor(idx / 7);
+    const cx = left + col * cellW + cellW / 2;
+    const cy = top + headH + row * cellH + cellH / 2;
+    const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const recs = byDate[key] || [];
+    const hasFull = recs.some((r) => !isCheckinOnly(r));
+    const hasAny = recs.length > 0;
+    if (hasAny) {
+      const r = Math.min(cellW, cellH) * 0.32;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.clip();
+      const cg = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+      if (hasFull) {
+        cg.addColorStop(0, '#f6e6e2');
+        cg.addColorStop(0.45, '#e0c2be');
+        cg.addColorStop(1, '#c4a09c');
+      } else {
+        cg.addColorStop(0, '#fff8f6');
+        cg.addColorStop(0.5, '#edd6d2');
+        cg.addColorStop(1, '#d8beba');
+      }
+      ctx.fillStyle = cg;
+      ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+      ctx.fillStyle = 'rgba(255,255,255,.55)';
+      ctx.beginPath();
+      ctx.ellipse(cx - r * 0.2, cy - r * 0.35, r * 0.55, r * 0.28, -0.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle = hasAny ? '#4a4341' : '#cfc4c1';
+    ctx.font = `${hasAny ? '500' : '400'} 15px "PingFang SC", "Hiragino Sans GB", sans-serif`;
+    ctx.fillText(String(day), cx, cy);
+  }
+}
+function drawCheckinCard() {
+  const canvas = document.getElementById('checkin-share-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const bg = ctx.createLinearGradient(0, 0, w, h);
+  bg.addColorStop(0, '#efe4e1');
+  bg.addColorStop(1, '#dccfcb');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  const inset = 36;
+  paintPearl(ctx, inset, inset, w - inset * 2, h - inset * 2, 28);
+  ctx.strokeStyle = 'rgba(176,148,144,.28)';
+  ctx.lineWidth = 0.8;
+  roundRectPath(ctx, inset + 12, inset + 12, w - (inset + 12) * 2, h - (inset + 12) * 2, 20);
+  ctx.stroke();
+
+  const now = new Date();
+  const dateLabel = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
+  const monthDays = monthCameDays(homeRows || [], now.getFullYear(), now.getMonth());
+  const monthMin = (homeRows || []).reduce((s, r) => {
+    const d = new Date(r.created_at);
+    if (d.getFullYear() !== now.getFullYear() || d.getMonth() !== now.getMonth()) return s;
+    return s + (Number(r.training_duration_min) || 0);
+  }, 0);
+  const todayLine = formatSessionSummary(classSessionCounts(homeRows || [], dateKey(now)));
+  const streak = computeDailyStreak(homeRows || []);
+  const cx = w / 2;
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  drawBowKnot(ctx, cx, 62, 54);
+
+  ctx.fillStyle = '#b89a9a';
+  ctx.font = 'italic 500 16px "Cormorant Garamond", Georgia, serif';
+  ctx.fillText('BalletMind', cx, 118);
+
+  ctx.fillStyle = '#4a4341';
+  ctx.font = '600 26px "Cormorant Garamond", "Songti SC", serif';
+  ctx.fillText('今天练过了', cx, 150);
+  ctx.fillStyle = '#a89896';
+  ctx.font = '400 12px "PingFang SC", "Hiragino Sans GB", sans-serif';
+  ctx.fillText(dateLabel, cx, 170);
+
+  drawHairline(ctx, 108, 188, w - 108, 0.32);
+
+  const cols = [
+    { label: '来过', value: `${monthDays} 天`, x: w * 0.28 },
+    { label: '时长', value: monthMin ? minutesLabel(monthMin) : '未记', x: cx },
+    { label: '连续', value: `${streak} 天`, x: w * 0.72 },
+  ];
+  cols.forEach((c) => {
+    ctx.fillStyle = '#a89896';
+    ctx.font = '400 11px "PingFang SC", "Hiragino Sans GB", sans-serif';
+    ctx.fillText(c.label, c.x, 214);
+    ctx.fillStyle = '#4a4341';
+    ctx.font = '600 24px "Cormorant Garamond", Georgia, serif';
+    ctx.fillText(c.value, c.x, 244);
+  });
+
+  drawHairline(ctx, 108, 264, w - 108, 0.28);
+
+  drawMiniMonth(ctx, homeRows || [], 86, 278, w - 172, 430);
+  drawShareShoes(ctx, w - 172, 648, 96);
+
+  drawHairline(ctx, 108, 748, w - 108, 0.28);
+  ctx.fillStyle = '#8f7f7d';
+  ctx.font = '400 13px "PingFang SC", "Hiragino Sans GB", sans-serif';
+  ctx.fillText(todayLine ? `今天 · ${todayLine}` : '今天记下了', cx, 778);
+}
+function openCheckinShare() {
+  drawCheckinCard();
+  if (!calBowImg.complete) calBowImg.onload = () => drawCheckinCard();
+  if (!shareShoeImg.complete) shareShoeImg.onload = () => drawCheckinCard();
+  const m = document.getElementById('checkin-share-mask');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+  const nativeBtn = document.getElementById('checkin-share-native');
+  nativeBtn.classList.toggle('hidden', !(navigator.share || navigator.canShare));
+}
+function shareCheckinCard() { openCheckinShare(); }
+async function downloadCheckinCard() {
+  drawCheckinCard();
+  const blob = await checkinShareBlob();
+  if (!blob) { toast('生成图片失败'); return; }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `balletmind-checkin-${dateKey(new Date())}.png`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('图片已保存，发给朋友看看也可以');
+}
+async function nativeShareCheckinCard() {
+  drawCheckinCard();
+  const blob = await checkinShareBlob();
+  if (!blob) { toast('生成图片失败'); return; }
+  const file = new File([blob], 'balletmind-checkin.png', { type: 'image/png' });
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'BalletMind', text: '今天练过了' });
+      return;
+    }
+    if (navigator.share) {
+      await navigator.share({ title: 'BalletMind', text: '今天练过了' });
+      return;
+    }
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+  }
+  await downloadCheckinCard();
+}
+// One short, warm line under the home stat numbers -- a "highlight moment" instead of
+// bare digits. Streak takes priority (most motivating), then cumulative hours, then a
+// plain count. Never a judgement, just a fact about this account's own history.
+function homeHighlightLine(recapCount, trainedHours, streak) {
+  if (!recapCount && !streak) return '';
+  if (streak >= 2) return `连续 ${streak} 天啦`;
+  if (trainedHours) return `陪自己练习了 ${String(trainedHours).replace(/\.0$/, '')} 小时`;
+  return `这是你写下的第 ${recapCount} 篇`;
 }
 function computeDailyStreak(rows) {
   if (!rows.length) return 0;
@@ -1729,35 +2465,35 @@ function computeDailyStreak(rows) {
 function renderCheckinStatus(rows) {
   const el = document.getElementById('checkin-status');
   if (!el) return;
-  if (!rows.length) {
-    el.innerHTML = `<span class="truncate text-[11px] text-[var(--ink-faint)]">还没有复盘</span>`;
+  const recaps = (rows || []).filter((r) => !isCheckinOnly(r));
+  const todayKey = dateKey(new Date());
+  const fullToday = recaps.some((r) => dateKey(new Date(r.created_at)) === todayKey);
+  const checkinToday = (rows || []).some((r) => isCheckinOnly(r) && dateKey(new Date(r.created_at)) === todayKey);
+  const badge = '';
+  if (!recaps.length) {
+    el.innerHTML = `${badge}${checkinToday ? '' : `<span class="truncate text-[11px] text-[var(--ink-faint)]">还没有复盘</span>`}`;
+    el.classList.toggle('hidden', !el.textContent.trim());
     return;
   }
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const lastTs = Math.max(...rows.map(r => r.created_at));
+  const lastTs = Math.max(...recaps.map((r) => r.created_at));
   const lastDay = new Date(lastTs);
   lastDay.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const daysSince = Math.round((today - lastDay) / 86400000);
-  const streak = computeDailyStreak(rows);
-
-  const badge = streak >= 2
-    ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-white" style="background:linear-gradient(135deg,var(--gold),var(--rose-deep))">
-        <iconify-icon icon="solar:star-shine-bold" class="text-[12px]"></iconify-icon>连续记下 ${streak} 天
-      </span>`
-    : '';
 
   let text;
-  if (daysSince <= 0) text = '今天已复盘';
+  if (fullToday) text = '今天已复盘';
+  else if (checkinToday) text = '';
   else if (daysSince === 1) text = '昨天留下过';
   else text = `${daysSince} 天没写下`;
 
-  el.innerHTML = `${badge}<span class="truncate text-[11px] text-[var(--ink-faint)]">${text}</span>`;
+  el.innerHTML = `${badge}${text ? `<span class="truncate text-[11px] text-[var(--ink-faint)]">${text}</span>` : ''}`;
+  el.classList.toggle('hidden', !el.textContent.trim());
 }
 async function loadProgressTeaser() {
-  const briefEl = document.getElementById('progress-teaser-brief');
-  const issueEl = document.getElementById('progress-teaser-issue');
-  if (!briefEl || !issueEl) return;
+  const classEl = document.getElementById('progress-teaser-class');
+  if (!classEl) return;
   try {
     const [issuesRes, briefRes] = await Promise.all([
       authFetch(`${API}/api/issues`),
@@ -1766,46 +2502,74 @@ async function loadProgressTeaser() {
     const issues = await issuesRes.json();
     const brief = await briefRes.json();
     const open = issues.filter(i => i.status !== 'resolved');
-    if (open.length === 0) {
-      issueEl.textContent = '记几次后出现';
-    } else {
+    if (open.length) {
       const top = open.slice().sort((a, b) => b.occurrence_count - a.occurrence_count)[0];
-      issueEl.textContent = `${compactPhrase(top.text)} · ${top.occurrence_count}次`;
+      classEl.textContent = `${compactPhrase(top.text)} · ${top.occurrence_count}次`;
+      return;
     }
     const expLine = brief.experimentBrief && brief.experimentBrief.lines && brief.experimentBrief.lines[0];
-    if (expLine) {
-      briefEl.textContent = compactPhrase(expLine);
-    } else if (brief.topIssues && brief.topIssues.length > 0) {
-      briefEl.textContent = compactPhrase(brief.topIssues[0].text);
-    } else {
-      const last = brief.lastRecord || {};
-      const tip = (last.nextTimeReminder || last.improvePoints || '').trim();
-      briefEl.textContent = tip ? compactPhrase(tip, 40) : '暂无';
-    }
+    if (expLine) { classEl.textContent = compactPhrase(expLine); return; }
+    if (brief.topIssues && brief.topIssues.length > 0) { classEl.textContent = compactPhrase(brief.topIssues[0].text); return; }
+    const last = brief.lastRecord || {};
+    const tip = (last.nextTimeReminder || last.improvePoints || '').trim();
+    classEl.textContent = tip ? compactPhrase(tip, 40) : '上次的提醒';
   } catch (e) {}
 }
 // Shared with openDetail() — one place to keep the mood→emoji mapping in sync.
-const MOOD_EMOJI = { low: '😔', meh: '😐', good: '🙂', great: '😄' };
+const MOOD_SVG = {
+  low: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7.2 15.2a4.2 4.2 0 0 1 .1-8.3 5.6 5.6 0 0 1 10.6 1.7A3.6 3.6 0 0 1 17.8 15.2Z"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M9.2 17.4v1.8M12 17.8v2.1M14.8 17.4v1.8"/></svg>',
+  meh: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7 16a4.4 4.4 0 0 1 .2-8.7 5.8 5.8 0 0 1 11 1.8A3.7 3.7 0 0 1 18.2 16Z"/></svg>',
+  good: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M12 4.2v1.5M12 18.3v1.5M4.2 12h1.5M18.3 12h1.5M6.4 6.4l1.1 1.1M16.5 16.5l1.1 1.1M6.4 17.6l1.1-1.1M16.5 7.5l1.1-1.1"/></svg>',
+  great: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M12 4.2l1.7 4.6 4.9.3-3.8 3.2 1.3 4.7L12 14.6 7.9 17l1.3-4.7-3.8-3.2 4.9-.3Z"/></svg>',
+};
+function moodMark(mood, size = 16) {
+  const svg = MOOD_SVG[mood];
+  if (!svg) return '';
+  return `<span class="mood-mark inline-flex text-[var(--rose-deep)]" style="width:${size}px;height:${size}px">${svg}</span>`;
+}
 function entryCard(r) {
-  const mood = MOOD_EMOJI[r.mood] || '';
-  const preview = compactPhrase(r.improve_points || r.good_points || r.next_time_reminder || '', 40);
-  return `<button onclick="openDetail(${r.id})" class="entry-card relative z-10 w-full text-left rounded-[22px] p-4 pl-5 overflow-hidden">
+  const mood = moodMark(r.mood, 15);
+  const preview = isCheckinOnly(r)
+    ? '当天只打了卡'
+    : compactPhrase(r.improve_points || r.good_points || r.next_time_reminder || '', 40);
+  const dateOnly = fmtDate(r.created_at).split(' ')[0];
+  return `<button onclick="openDetail(${r.id})" class="entry-card relative z-10 w-full text-left rounded-[22px] px-4 py-3.5 pl-5 overflow-hidden">
     <span class="satin-mark absolute left-0 top-3 bottom-3"></span>
-    <div class="flex items-start justify-between gap-3">
-      <div class="min-w-0">
-        <p class="label-editorial text-[12px] text-[var(--rose-deep)]">${fmtDate(r.created_at)}</p>
-        <h3 class="mt-1 text-[15px] font-semibold truncate">${escapeHtml(r.class_name)}${mood ? ` <span class="font-normal">${mood}</span>` : ''}</h3>
-      </div>
-      <span class="shrink-0 w-9 h-9 rounded-[12px] chip flex items-center justify-center"><iconify-icon icon="solar:notes-minimalistic-linear" class="text-[17px] text-[var(--rose-deep)]"></iconify-icon></span>
+    <div class="flex items-center justify-between gap-3">
+      <p class="label-editorial text-[12px] text-[var(--rose-deep)]">${dateOnly}</p>
+      ${mood ? `<span class="shrink-0">${mood}</span>` : ''}
     </div>
-    ${preview ? `<p class="mt-2 text-[12px] leading-5 text-[var(--ink-soft)]">${escapeHtml(preview)}</p>` : ''}
+    <h3 class="mt-1.5 text-[15px] font-semibold truncate">${escapeHtml(classNameOf(r))}</h3>
+    ${preview ? `<p class="mt-1 text-[12px] leading-5 text-[var(--ink-soft)] truncate">${escapeHtml(preview)}</p>` : ''}
   </button>`;
 }
 
 // ---------- progress (recurring issues / training review / pre-class brief) ----------
-async function goProgress() {
+let progressViewMode = 'class';
+function setProgressView(mode) {
+  progressViewMode = mode === 'look' ? 'look' : 'class';
+  const tabs = [
+    ['progress-tab-class', 'class'],
+    ['progress-tab-look', 'look'],
+  ];
+  tabs.forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const on = progressViewMode === key;
+    el.classList.toggle('bg-white', on);
+    el.classList.toggle('shadow-sm', on);
+    el.classList.toggle('text-[var(--burgundy)]', on);
+    el.classList.toggle('text-[var(--ink-faint)]', !on);
+  });
+  const classView = document.getElementById('progress-class-view');
+  const lookView = document.getElementById('progress-look-view');
+  if (classView) classView.classList.toggle('hidden', progressViewMode !== 'class');
+  if (lookView) lookView.classList.toggle('hidden', progressViewMode !== 'look');
+}
+async function goProgress(tab) {
   logEvent('progress_opened', {}, 'browse');
   markProgressVisited();
+  setProgressView(tab || progressViewMode || 'class');
   show('screen-progress');
   lastTrainingReview = null;
   await Promise.all([loadBrief(), loadIssues(), generateTrainingReview('days'), loadProgressStrip()]);
@@ -1830,14 +2594,14 @@ async function loadBrief() {
     const data = await res.json();
     const expLines = data.experimentBrief && !data.experimentBrief.usedFallback ? (data.experimentBrief.lines || []) : [];
     if (expLines.length) {
-      el.innerHTML = `<p class="text-[10px] text-[var(--ink-faint)]">实验版课前提醒</p>`
+      el.innerHTML = `<p class="text-[10px] text-[var(--ink-faint)]">课前</p>`
         + expLines.map((line) => `<p>${escapeHtml(line)}</p>`).join('');
       return;
     }
     const tip = data.lastRecord ? (data.lastRecord.nextTimeReminder || data.lastRecord.improvePoints || '').trim() : '';
     el.innerHTML = tip
       ? `<p><span class="font-semibold text-[var(--mauve)]">上次提醒</span> ${escapeHtml(compactPhrase(tip, 44))}</p>`
-      : `<p>还没有记录——保存第一条之后，这里会显示你上次给自己的提醒</p>`;
+      : `<p class="leading-6">记下第一条复盘后，上课前可以在这里看一眼。</p>`;
   } catch (e) {
     el.textContent = '加载失败，下拉重试';
   }
@@ -1851,7 +2615,7 @@ async function askArchive() {
   if (!question) { toast('先输入一个问题'); return; }
   btn.disabled = true;
   resultEl.classList.remove('hidden');
-  resultEl.innerHTML = '<p class="text-[var(--ink-faint)]">正在查你的档案…</p>';
+  resultEl.innerHTML = '<p class="text-[var(--ink-faint)]">正在翻你的课记…</p>';
   try {
     const res = await authFetch(`${API}/api/progress/ask?q=${encodeURIComponent(question)}`);
     const data = await res.json();
@@ -1860,7 +2624,7 @@ async function askArchive() {
     let html = points.map((p) => `<p class="mb-1.5 last:mb-0">${escapeHtml(p)}</p>`).join('');
     if (data.matchedRecords && data.matchedRecords.length > 0) {
       html += `<div class="mt-2 flex flex-wrap gap-1.5">` + data.matchedRecords.map((r) =>
-        `<button type="button" onclick="openDetail(${r.id})" class="chip rounded-full px-2.5 py-1 text-[10.5px] text-[var(--rose-deep)]">${escapeHtml(fmtDate(r.createdAt).split(' ')[0])} · ${escapeHtml(r.className || '训练记录')}</button>`
+        `<button type="button" onclick="openDetail(${r.id})" class="chip rounded-full px-2.5 py-1 text-[10.5px] text-[var(--rose-deep)]">${escapeHtml(fmtDate(r.createdAt).split(' ')[0])} · ${escapeHtml(r.className || '未写课名')}</button>`
       ).join('') + `</div>`;
     }
     resultEl.innerHTML = html;
@@ -1872,18 +2636,40 @@ async function askArchive() {
 }
 
 let currentIssues = [];
+let issuesShowAll = false;
+const ISSUE_PREVIEW_COUNT = 3;
 async function loadIssues() {
   const res = await authFetch(`${API}/api/issues`);
   currentIssues = await res.json();
   renderIssues();
 }
+function toggleIssuesShowAll() {
+  issuesShowAll = !issuesShowAll;
+  renderIssues();
+}
 function renderIssues() {
   const listEl = document.getElementById('issues-list');
   const emptyEl = document.getElementById('issues-empty');
+  const moreBtn = document.getElementById('issues-more-btn');
   const active = currentIssues.filter((issue) => issue.status !== 'resolved');
-  if (active.length === 0) { emptyEl.classList.remove('hidden'); listEl.innerHTML = ''; return; }
+  if (active.length === 0) {
+    emptyEl.classList.remove('hidden');
+    listEl.innerHTML = '';
+    if (moreBtn) moreBtn.classList.add('hidden');
+    return;
+  }
   emptyEl.classList.add('hidden');
-  listEl.innerHTML = active.map(issueCard).join('');
+  const extra = active.length - ISSUE_PREVIEW_COUNT;
+  const shown = (issuesShowAll || extra <= 0) ? active : active.slice(0, ISSUE_PREVIEW_COUNT);
+  listEl.innerHTML = shown.map(issueCard).join('');
+  if (moreBtn) {
+    if (extra > 0) {
+      moreBtn.classList.remove('hidden');
+      moreBtn.textContent = issuesShowAll ? '收起' : `还有 ${extra} 个`;
+    } else {
+      moreBtn.classList.add('hidden');
+    }
+  }
 }
 // Rows collapse to a single glanceable line (status dot + text + count) —
 // the status-change buttons only appear once you tap a row open. With
@@ -1960,7 +2746,7 @@ function formatTrainingReviewText(data) {
   if (data.openIssues && data.openIssues.length) {
     lines.push('', '【还在关注的问题】', ...data.openIssues.map((i) => `· ${i.text}（${i.occurrence_count}次）`));
   }
-  if (data.recordCount === 0) lines.push('', '这段时间还没有新的训练记录');
+  if (data.recordCount === 0) lines.push('', '这段时间还没有新的课记');
   return lines.join('\n');
 }
 
@@ -2001,7 +2787,7 @@ async function generateTrainingReview(mode) {
     }
     // Still-open issues aren't repeated here on purpose — they're listed
     // with status controls in 「反复出现的问题」at the top of this screen.
-    if (data.recordCount === 0) html = `<p class="text-[12px] text-[var(--ink-faint)]">这段时间还没有新的训练记录</p>`;
+    if (data.recordCount === 0) html = `<p class="text-[12.5px] leading-6 text-[var(--ink-soft)]">有几条课记之后，这里会帮你收一收这段时间。</p>`;
     contentEl.innerHTML = html;
     contentEl.classList.remove('hidden');
     exportBtn.classList.toggle('hidden', data.recordCount === 0);
@@ -2039,7 +2825,7 @@ async function exportTrainingReview() {
 
 // ---------- history ----------
 let historyRows = [];
-let historyViewMode = 'list';
+let historyViewMode = 'checkin';
 async function loadHistory() {
   const res = await authFetch(`${API}/api/records`);
   historyRows = await res.json();
@@ -2083,6 +2869,110 @@ function filterHistory() {
   renderHistoryTermChips();
 }
 
+function minutesLabel(min) {
+  if (min == null || !Number.isFinite(Number(min)) || Number(min) <= 0) return '时长未记';
+  const h = Number(min) / 60;
+  const t = (Math.round(h * 10) / 10).toFixed(1).replace(/\.0$/, '');
+  return `${t}小时`;
+}
+function classHourStats(rows) {
+  const map = new Map();
+  (rows || []).forEach((r) => {
+    const name = classNameOf(r);
+    const cur = map.get(name) || { name, sessions: 0, minutes: 0, moods: [] };
+    cur.sessions += 1;
+    if (r.training_duration_min != null) cur.minutes += Number(r.training_duration_min) || 0;
+    if (r.mood) cur.moods.push(r.mood);
+    map.set(name, cur);
+  });
+  return [...map.values()].sort((a, b) => b.minutes - a.minutes || b.sessions - a.sessions);
+}
+function mostCommonMood(moods) {
+  if (!moods.length) return '';
+  const tally = {};
+  moods.forEach((m) => { tally[m] = (tally[m] || 0) + 1; });
+  return Object.entries(tally).sort((a, b) => b[1] - a[1])[0][0];
+}
+let selectedCheckinDate = null;
+function shiftCheckinMonth(delta) {
+  calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1);
+  selectedCheckinDate = null;
+  classStatsShowAll = false;
+  renderCheckinArchive();
+}
+function selectCheckinDate(key) {
+  selectedCheckinDate = selectedCheckinDate === key ? null : key;
+  renderCheckinArchive();
+}
+function renderCheckinArchive() {
+  const statsEl = document.getElementById('checkin-class-stats');
+  const grid = document.getElementById('checkin-cal-grid');
+  if (!statsEl || !grid) return;
+  const year = calendarCursor.getFullYear();
+  const month = calendarCursor.getMonth();
+  const monthLabel = document.getElementById('checkin-month-label');
+  if (monthLabel) monthLabel.textContent = `${year}年${month + 1}月`;
+  const painted = paintMonthGrid(calendarCursor, historyRows, selectedCheckinDate, 'selectCheckinDate');
+  grid.innerHTML = painted.html;
+  const came = monthCameDays(historyRows, year, month);
+  const monthRows = (historyRows || []).filter((r) => {
+    const d = new Date(r.created_at);
+    return d.getFullYear() === year && d.getMonth() === month;
+  });
+  const monthEmpty = !monthRows.length;
+  const statsWrap = document.getElementById('checkin-month-stats');
+  const emptyHint = document.getElementById('checkin-month-empty');
+  if (statsWrap) statsWrap.classList.toggle('hidden', monthEmpty);
+  if (emptyHint) emptyHint.classList.toggle('hidden', !monthEmpty);
+  if (!monthEmpty) {
+    const daysEl = document.getElementById('checkin-month-days');
+    if (daysEl) daysEl.innerHTML = `${came}<span>天</span>`;
+    const monthMin = monthRows.reduce((s, r) => s + (Number(r.training_duration_min) || 0), 0);
+    const hoursEl = document.getElementById('checkin-month-hours');
+    if (hoursEl) {
+      if (!monthMin) {
+        hoursEl.classList.add('is-empty');
+        hoursEl.textContent = '未记';
+      } else {
+        hoursEl.classList.remove('is-empty');
+        const n = minutesLabel(monthMin).replace('小时', '');
+        hoursEl.innerHTML = `${n}<span>小时</span>`;
+      }
+    }
+  }
+  paintDayList(painted.byDate, painted.year, painted.month, selectedCheckinDate, 'checkin-day-empty', 'checkin-day-list');
+  if (monthEmpty) {
+    const dayEmpty = document.getElementById('checkin-day-empty');
+    if (dayEmpty) dayEmpty.classList.add('hidden');
+  }
+  const stats = classHourStats(monthRows);
+  if (!stats.length) {
+    statsEl.innerHTML = '';
+    return;
+  }
+  const extra = stats.length - CLASS_STATS_PREVIEW;
+  const shown = (classStatsShowAll || extra <= 0) ? stats : stats.slice(0, CLASS_STATS_PREVIEW);
+  const head = `<div class="checkin-class-head"><span>课名</span><span>节</span><span>小时</span></div>`;
+  statsEl.innerHTML = head + shown.map((s) => {
+    const mood = mostCommonMood(s.moods);
+    const moodBit = mood ? moodMark(mood, 13) : '';
+    const hours = s.minutes ? minutesLabel(s.minutes).replace('小时', '') : '未记';
+    return `<div class="checkin-class-row">
+      <p class="checkin-class-name">${moodBit}<span>${escapeHtml(s.name)}</span></p>
+      <p class="checkin-class-count">${s.sessions}</p>
+      <p class="checkin-class-hours${s.minutes ? '' : ' is-empty'}">${hours}</p>
+    </div>`;
+  }).join('') + (extra > 0
+    ? `<button type="button" onclick="toggleClassStatsShowAll()" class="mt-1 w-full py-1 text-center text-[12px] text-[var(--rose-deep)]">${classStatsShowAll ? '收起' : `还有 ${extra} 门`}</button>`
+    : '');
+}
+let classStatsShowAll = false;
+const CLASS_STATS_PREVIEW = 3;
+function toggleClassStatsShowAll() {
+  classStatsShowAll = !classStatsShowAll;
+  renderCheckinArchive();
+}
+
 // ---------- history: calendar view ----------
 // Groups the same historyRows the list view uses by local calendar date —
 // no separate API call, just a different lens on the same data.
@@ -2109,56 +2999,105 @@ function startOfWeekSunday(d) {
 function formatMd(d) {
   return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
-function calendarCellHtml(key, dayNum, byDate, selectedKey, selectFnName) {
+function calendarCellHtml(key, dayNum, byDate, selectedKey, selectFnName, runClass) {
   const todayKey = dateKey(new Date());
   const records = byDate[key] || [];
   const has = records.length > 0;
+  const hasFullRecord = records.some((r) => !isCheckinOnly(r));
+  const hasCheckin = records.some(isCheckinOnly);
   const isFuture = key > todayKey;
   const isToday = key === todayKey;
   const isSelected = key === selectedKey;
   const cls = ['cal-cell'];
   if (isToday) cls.push('is-today');
   if (isSelected) cls.push('is-selected');
-  if (has) cls.push('has-record');
+  if (has) cls.push('has-came');
+  if (hasFullRecord) cls.push('has-record');
+  if (runClass) cls.push(runClass);
   if (isFuture) cls.push('is-future');
   const action = isFuture ? 'disabled' : `onclick="${selectFnName}('${key}')"`;
-  return `<button type="button" ${action} class="${cls.join(' ')}"><span>${dayNum}</span>${has ? '<img src="/img/pack-ribbon.png" class="cal-bow" alt="" aria-hidden="true">' : ''}</button>`;
+  const bow = hasFullRecord ? '<img src="/img/bow.png" class="cal-bow" alt="" aria-hidden="true">' : '';
+  const check = (!hasFullRecord && hasCheckin)
+    ? '<svg class="cal-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.6l4.4 4.6L19.2 7" fill="none" stroke="rgba(120,70,70,.28)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12.6l4.4 4.6L19.2 7" fill="none" stroke="url(#cal-check-g)" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    : '';
+  const marks = (bow || check) ? `<span class="cal-marks">${bow}${check}</span>` : '<span class="cal-marks"></span>';
+  return `<button type="button" ${action} class="${cls.join(' ')}"><span class="cal-daynum">${dayNum}</span>${marks}</button>`;
+}
+function weekRunClasses(weekCells, byDate) {
+  const present = weekCells.map((c) => !!(c && byDate[c.key] && byDate[c.key].length));
+  const out = weekCells.map(() => '');
+  let i = 0;
+  while (i < weekCells.length) {
+    if (!present[i]) { i += 1; continue; }
+    let j = i;
+    while (j + 1 < weekCells.length && present[j + 1]) j += 1;
+    if (j === i) out[i] = 'in-run run-only';
+    else {
+      for (let k = i; k <= j; k += 1) {
+        if (k === i) out[k] = 'in-run run-start';
+        else if (k === j) out[k] = 'in-run run-end';
+        else out[k] = 'in-run run-mid';
+      }
+    }
+    i = j + 1;
+  }
+  return out;
 }
 function paintMonthGrid(cursor, rows, selectedKey, selectFnName) {
   const year = cursor.getFullYear(), month = cursor.getMonth();
   const byDate = groupRecordsByDate(rows);
   const startWeekday = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  let html = '';
-  for (let i = 0; i < startWeekday; i++) html += `<div class="cal-cell is-empty"></div>`;
+  const cells = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(null);
   for (let day = 1; day <= daysInMonth; day++) {
     const key = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    html += calendarCellHtml(key, day, byDate, selectedKey, selectFnName);
+    cells.push({ key, day });
+  }
+  let html = '';
+  for (let i = 0; i < cells.length; i += 7) {
+    const week = cells.slice(i, i + 7);
+    while (week.length < 7) week.push(null);
+    const ribbon = weekRunClasses(week, byDate);
+    week.forEach((cell, idx) => {
+      if (!cell) html += `<div class="cal-cell is-empty"></div>`;
+      else html += calendarCellHtml(cell.key, cell.day, byDate, selectedKey, selectFnName, ribbon[idx]);
+    });
   }
   return { html, byDate, year, month };
 }
 function paintWeekGrid(focus, rows, selectedKey, selectFnName) {
   const start = startOfWeekSunday(focus);
   const byDate = groupRecordsByDate(rows);
-  let html = '';
+  const week = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
-    html += calendarCellHtml(dateKey(d), d.getDate(), byDate, selectedKey, selectFnName);
+    week.push({ key: dateKey(d), day: d.getDate() });
   }
+  const ribbon = weekRunClasses(week, byDate);
+  let html = '';
+  week.forEach((cell, idx) => {
+    html += calendarCellHtml(cell.key, cell.day, byDate, selectedKey, selectFnName, ribbon[idx]);
+  });
   return { html, byDate, start };
 }
 function paintDayList(byDate, year, month, selectedKey, emptyId, listId) {
   const emptyEl = document.getElementById(emptyId);
   const listEl = document.getElementById(listId);
+  if (!emptyEl || !listEl) return;
   if (selectedKey) {
     const dayRows = byDate[selectedKey] || [];
     if (dayRows.length) {
       emptyEl.classList.add('hidden');
-      listEl.innerHTML = dayRows.map(r => entryCard(r)).join('');
+      const summary = formatSessionSummary(classSessionCounts(dayRows, selectedKey));
+      const banner = summary
+        ? `<p class="mb-2 px-1 text-[12.5px] font-medium text-[var(--burgundy)]">当天 · ${escapeHtml(summary)}</p>`
+        : '';
+      listEl.innerHTML = banner + dayRows.map(r => entryCard(r)).join('');
     } else {
       listEl.innerHTML = '';
       emptyEl.classList.remove('hidden');
-      emptyEl.innerHTML = `<span class="text-[var(--ink-faint)]">这一天还没有训练记录</span>`;
+      emptyEl.innerHTML = `<span class="text-[var(--ink-faint)]">这一天还没有课记</span>`;
     }
     return;
   }
@@ -2173,27 +3112,29 @@ function paintDayList(byDate, year, month, selectedKey, emptyId, listId) {
   // feedback showed this interaction wasn't obvious.
   emptyEl.classList.remove('hidden');
   emptyEl.innerHTML = hasAnyThisMonth
-    ? `<span class="inline-flex items-center gap-1.5 text-[var(--rose-deep)] font-medium"><iconify-icon icon="solar:cursor-linear" class="text-[15px]"></iconify-icon>点有标记的日子，翻翻那天写了什么</span>`
-    : `<span class="text-[var(--ink-faint)]">这个月还没有训练记录</span>`;
+    ? `<span class="text-[11px] text-[var(--ink-faint)]">请点有标记的日子</span>`
+    : `<span class="text-[var(--ink-soft)]">记下或复盘之后，格子上会出现标记。</span>`;
 }
 
 function setHistoryView(mode) {
+  if (mode === 'calendar') mode = 'checkin';
   historyViewMode = mode;
-  const listTab = document.getElementById('history-tab-list');
-  const calTab = document.getElementById('history-tab-calendar');
-  if (listTab && calTab) {
-  listTab.classList.toggle('bg-white', mode === 'list');
-  listTab.classList.toggle('shadow-sm', mode === 'list');
-  listTab.classList.toggle('text-[var(--burgundy)]', mode === 'list');
-  listTab.classList.toggle('text-[var(--ink-faint)]', mode !== 'list');
-  calTab.classList.toggle('bg-white', mode === 'calendar');
-  calTab.classList.toggle('shadow-sm', mode === 'calendar');
-  calTab.classList.toggle('text-[var(--burgundy)]', mode === 'calendar');
-  calTab.classList.toggle('text-[var(--ink-faint)]', mode !== 'calendar');
-  }
+  const tabs = [
+    ['history-tab-list', 'list'],
+    ['history-tab-checkin', 'checkin'],
+  ];
+  tabs.forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const on = mode === key;
+    el.classList.toggle('bg-white', on);
+    el.classList.toggle('shadow-sm', on);
+    el.classList.toggle('text-[var(--burgundy)]', on);
+    el.classList.toggle('text-[var(--ink-faint)]', !on);
+  });
   document.getElementById('history-list-view').classList.toggle('hidden', mode !== 'list');
-  document.getElementById('history-calendar-view').classList.toggle('hidden', mode !== 'calendar');
-  if (mode === 'calendar') renderCalendar();
+  document.getElementById('history-checkin-view').classList.toggle('hidden', mode !== 'checkin');
+  if (mode === 'checkin') renderCheckinArchive();
 }
 function shiftCalendarMonth(delta) {
   calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1);
@@ -2201,10 +3142,18 @@ function shiftCalendarMonth(delta) {
   renderCalendar();
 }
 function renderCalendar() {
+  const grid = document.getElementById('calendar-grid');
+  const label = document.getElementById('calendar-month-label');
+  if (!grid || !label) return;
   const year = calendarCursor.getFullYear(), month = calendarCursor.getMonth();
-  document.getElementById('calendar-month-label').textContent = `${year}年${month+1}月`;
+  label.textContent = `${year}年${month+1}月`;
   const painted = paintMonthGrid(calendarCursor, historyRows, selectedCalendarDate, 'selectCalendarDate');
-  document.getElementById('calendar-grid').innerHTML = painted.html;
+  grid.innerHTML = painted.html;
+  const came = document.getElementById('history-cal-came-label');
+  if (came) {
+    const n = monthCameDays(historyRows, year, month);
+    came.textContent = n ? `这个月来过 ${n} 天` : '';
+  }
   paintDayList(painted.byDate, painted.year, painted.month, selectedCalendarDate, 'calendar-day-empty', 'calendar-day-list');
 }
 function selectCalendarDate(key) {
@@ -2245,6 +3194,11 @@ function renderHomeCalendar() {
     document.getElementById('home-calendar-month-label').textContent = `${year}年${month + 1}月`;
     const painted = paintMonthGrid(homeCalendarCursor, homeRows, homeSelectedDate, 'selectHomeCalendarDate');
     document.getElementById('home-calendar-grid').innerHTML = painted.html;
+    const came = document.getElementById('home-cal-came-label');
+    if (came) {
+      const n = monthCameDays(homeRows, year, month);
+      came.textContent = n ? `这个月来过 ${n} 天` : '';
+    }
     paintDayList(painted.byDate, painted.year, painted.month, homeSelectedDate, 'home-calendar-day-empty', 'home-calendar-day-list');
     return;
   }
@@ -2252,6 +3206,8 @@ function renderHomeCalendar() {
   const weekEnd = new Date(painted.start.getFullYear(), painted.start.getMonth(), painted.start.getDate() + 6);
   document.getElementById('home-calendar-month-label').textContent = `${formatMd(painted.start)} – ${formatMd(weekEnd)}`;
   document.getElementById('home-calendar-grid').innerHTML = painted.html;
+  const cameWeek = document.getElementById('home-cal-came-label');
+  if (cameWeek) cameWeek.textContent = '';
   if (homeSelectedDate) {
     paintDayList(painted.byDate, painted.start.getFullYear(), painted.start.getMonth(), homeSelectedDate, 'home-calendar-day-empty', 'home-calendar-day-list');
   } else {
@@ -2327,21 +3283,28 @@ async function openDetail(id) {
   const r = await res.json();
   detailId = id;
   currentDetailRecord = r;
-  document.getElementById('detail-title').textContent = r.class_name;
-  document.getElementById('detail-mood').textContent = MOOD_EMOJI[r.mood] || '';
-  const trainedNote = r.training_duration_min != null ? ` · 训练${r.training_duration_min >= 60 ? (r.training_duration_min/60).toFixed(1)+'小时' : r.training_duration_min+'分钟'}` : '';
-  document.getElementById('detail-date').textContent = fmtDate(r.created_at) + ` · ${r.duration_sec}s语音` + trainedNote;
-  document.getElementById('detail-transcript').textContent = r.transcript;
-  document.getElementById('detail-good').textContent = r.good_points || '（无）';
-  document.getElementById('detail-improve').textContent = r.improve_points || '（无）';
-  document.getElementById('detail-next').textContent = r.next_time_reminder || '（无）';
-  const tipsWrap = document.getElementById('detail-tips-wrap');
-  const tips = (r.session_tips || '').trim();
-  if (tips) {
-    tipsWrap.classList.remove('hidden');
-    document.getElementById('detail-tips').textContent = tips;
-  } else {
-    tipsWrap.classList.add('hidden');
+  document.getElementById('detail-title').textContent = classNameOf(r);
+  document.getElementById('detail-mood').innerHTML = moodMark(r.mood, 18);
+  const trainedNote = r.training_duration_min != null ? ` · 训练${minutesLabel(r.training_duration_min)}` : '';
+  const checkin = isCheckinOnly(r);
+  const durationNote = checkin ? '' : ` · ${r.duration_sec}s语音`;
+  document.getElementById('detail-date').textContent = fmtDate(r.created_at) + durationNote + trainedNote;
+  document.getElementById('detail-transcript').textContent = checkin ? '这天只打了个卡，没有写详细内容。' : r.transcript;
+  document.getElementById('detail-fields').classList.toggle('hidden', checkin);
+  document.getElementById('detail-fill-btn').classList.toggle('hidden', !checkin);
+  document.getElementById('detail-share-btn').classList.toggle('hidden', !checkin);
+  if (!checkin) {
+    document.getElementById('detail-good').textContent = r.good_points || '（无）';
+    document.getElementById('detail-improve').textContent = r.improve_points || '（无）';
+    document.getElementById('detail-next').textContent = r.next_time_reminder || '（无）';
+    const tipsWrap = document.getElementById('detail-tips-wrap');
+    const tips = (r.session_tips || '').trim();
+    if (tips) {
+      tipsWrap.classList.remove('hidden');
+      document.getElementById('detail-tips').textContent = tips;
+    } else {
+      tipsWrap.classList.add('hidden');
+    }
   }
   show('screen-detail');
   if (!browseSessionId) ensureBrowseSession();
@@ -2349,7 +3312,7 @@ async function openDetail(id) {
 }
 function formatRecordText(r) {
   return [
-    r.class_name || '训练记录',
+    classNameOf(r),
     fmtDate(r.created_at),
     '',
     '【语音转写】',
@@ -2364,7 +3327,7 @@ function formatRecordText(r) {
     '【我自己定的下次计划】',
     r.next_time_reminder || '（无）',
     '',
-    '【针对这次的小提示（常见练法参考，不是教练）】',
+    '【给这次的小提示】',
     r.session_tips || '（无）',
   ].join('\n');
 }
@@ -2404,7 +3367,7 @@ let timerInterval = null;
 let currentSegSeconds = 0;
 // Xiaohongshu / WeChat in-app browsers often block the microphone; nudge people to a real browser.
 const inAppBrowser = /MicroMessenger|xhsdiscover|xiaohongshu|\bdiscover\/\d/i.test(navigator.userAgent);
-const IN_APP_MIC_TIP = '请用 Safari 打开（Chrome 或其他浏览器也可以）。点右上角「···」选「在浏览器打开」，或改用手动输入';
+const IN_APP_MIC_TIP = '请点右上角「···」，选「在浏览器打开」。也可以先打字。';
 let recorderSupported = typeof MediaRecorder !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
 
 let aiUnavailable = false;
@@ -2416,7 +3379,7 @@ function updateGenerateBtn() {
 function enableAiEntry() {
   aiUnavailable = false;
   const btn = document.getElementById('generate-btn');
-  btn.textContent = '完成并生成复盘';
+  btn.innerHTML = '<span class="pearl-sheen"></span><span class="relative z-10">完成</span>';
   const retryBtn = document.querySelector('#screen-review button[onclick="retryGenerate()"]');
   if (retryBtn) retryBtn.disabled = false;
   updateGenerateBtn();
@@ -2425,7 +3388,7 @@ function disableAiEntry(message) {
   aiUnavailable = true;
   const btn = document.getElementById('generate-btn');
   btn.disabled = true;
-  btn.textContent = 'AI暂时不可用，先手动记录';
+  btn.innerHTML = '<span class="relative z-10">整理暂时不可用，请先打字</span>';
   const retryBtn = document.querySelector('#screen-review button[onclick="retryGenerate()"]');
   if (retryBtn) retryBtn.disabled = true;
   toast(message);
@@ -2451,7 +3414,7 @@ function initSpeech() {
   }
   if (!recorderSupported) {
     document.getElementById('rec-btn').classList.add('hidden');
-    document.getElementById('rec-state').textContent = '此浏览器不能录音，请在下方手动输入内容';
+    document.getElementById('rec-state').textContent = '这台设备暂时不能录音，请在下面打字';
   }
 }
 
@@ -2470,7 +3433,7 @@ async function startRecording() {
   } catch (e) {
     logEvent('asr_fail', { error: 'not-allowed' });
     if (inAppBrowser) toast(IN_APP_MIC_TIP, 5000);
-    else toast('无法使用麦克风，请允许权限或改用手动输入');
+    else toast('请允许使用麦克风，或在下面打字');
     return;
   }
   const mime = pickRecorderMime();
@@ -2478,15 +3441,15 @@ async function startRecording() {
     mediaRecorder = mime ? new MediaRecorder(mediaStream, { mimeType: mime }) : new MediaRecorder(mediaStream);
   } catch (e) {
     mediaStream.getTracks().forEach((t) => t.stop());
-    toast('这台设备无法录音，请手动输入');
+    toast('这台设备无法录音，请在下面打字');
     return;
   }
   mediaRecorder.ondataavailable = (ev) => { if (ev.data && ev.data.size) recordedChunks.push(ev.data); };
   recognizing = true;
-  document.getElementById('rec-live-text').textContent = '正在录音…停止后会识别芭蕾术语';
+  document.getElementById('rec-live-text').textContent = '点一下即可停止';
   document.getElementById('rec-icon').setAttribute('icon','solar:stop-circle-bold');
   document.getElementById('rec-btn').classList.add('is-recording');
-  document.getElementById('rec-state').textContent = '正在录音 · 点击停止';
+  document.getElementById('rec-state').textContent = '正在录音';
   currentSegSeconds = 0;
   document.getElementById('rec-timer').textContent = '0s';
   mediaRecorder.start();
@@ -2518,8 +3481,8 @@ function stopRecording() {
     const blob = new Blob(recordedChunks, { type: recorder.mimeType || 'audio/webm' });
     recordedChunks = [];
     if (blob.size < 200) {
-      toast('这段太短了，请再说一次或手动输入');
-  document.getElementById('rec-state').textContent = '已暂停 · 可以继续或完成';
+      toast('这段太短了，请再说一次');
+  document.getElementById('rec-state').textContent = '已暂停';
       updateGenerateBtn();
       return;
     }
@@ -2533,8 +3496,8 @@ function stopRecording() {
 
 async function transcribeSegment(blob, duration) {
   transcribing = true;
-  document.getElementById('rec-state').textContent = '正在识别芭蕾术语…';
-  document.getElementById('rec-live-text').textContent = '语音识别中，请稍候';
+  document.getElementById('rec-state').textContent = '请稍候';
+  document.getElementById('rec-live-text').textContent = '';
   document.getElementById('rec-btn').disabled = true;
   updateGenerateBtn();
   try {
@@ -2559,20 +3522,20 @@ async function transcribeSegment(blob, duration) {
       logEvent('record_voice_complete', { durationSec: duration, asr: true });
       document.getElementById('rec-live-text').textContent = text;
     } else {
-      toast('没有听清内容，请再说一次或手动输入');
+      toast('没有听清，请再说一次');
     }
   renderSegments();
   } catch (e) {
     if (e.status === 429) disableAiEntry(e.message);
     else {
       logEvent('asr_fail', { error: asrFailCode(e) });
-      toast((e.message || '识别失败') + '。可以重试或手动输入');
+      toast((e.message || '识别失败') + '。可以重试，或在下面打字');
     }
   } finally {
     transcribing = false;
     document.getElementById('rec-btn').disabled = segments.length >= 3;
     if (segments.length >= 3) document.getElementById('rec-btn').classList.add('opacity-40');
-    document.getElementById('rec-state').textContent = '已暂停 · 可以继续或完成';
+    document.getElementById('rec-state').textContent = '已暂停';
   updateGenerateBtn();
 }
 }
@@ -2710,25 +3673,19 @@ async function retryGenerate() {
 // 「还可以记下」starts collapsed so the first confirm screen is three
 // recap fields + save. The summary names class / duration / mood / tips
 // so extras aren't a mystery, and it relabels once the user fills them.
-const DURATION_LABELS = { 30: '30分钟', 60: '1小时', 90: '1.5小时', 120: '2小时+' };
+const DURATION_LABELS = { 30: '0.5小时', 60: '1小时', 90: '1.5小时', 120: '2小时+' };
 const MOOD_LABELS = { low: '不在状态', meh: '一般', good: '还不错', great: '很好' };
 function updateReviewExtrasSummary() {
   const el = document.getElementById('review-extras-summary');
   if (!el) return;
-  const parts = [];
-  const name = (document.getElementById('review-classname')?.value || '').trim();
-  if (name) parts.push(name);
-  if (selectedDurationMin) parts.push(DURATION_LABELS[selectedDurationMin]);
-  if (selectedMood) parts.push(MOOD_LABELS[selectedMood]);
-  const tips = (document.getElementById('review-tips')?.value || '').trim();
-  if (parts.length) {
-    el.textContent = tips
-      ? `已记下 ${parts.join(' · ')} · 还有小提示`
-      : `已记下 ${parts.join(' · ')}`;
+  if (selectedMood && (document.getElementById('review-tips')?.value || '').trim()) {
+    el.textContent = `已记下 ${MOOD_LABELS[selectedMood]} · 还有小提示`;
+  } else if (selectedMood) {
+    el.textContent = `已记下 ${MOOD_LABELS[selectedMood]}`;
+  } else if ((document.getElementById('review-tips')?.value || '').trim()) {
+    el.textContent = '已记下小提示';
   } else {
-    el.textContent = tips
-      ? '课名、时长、心情也可记；点开可看这次的小提示'
-      : '课名、时长、心情、这次的小提示，不填也能保存';
+    el.textContent = '心情、小提示，都可以以后再补';
   }
 }
 function toggleReviewExtras(forceOpen) {
@@ -2741,7 +3698,7 @@ function toggleReviewExtras(forceOpen) {
 let selectedDurationMin = null;
 function selectDuration(min) {
   selectedDurationMin = (selectedDurationMin === min) ? null : min;
-  document.querySelectorAll('.duration-chip').forEach(btn => {
+  document.querySelectorAll('#duration-chips .duration-chip').forEach(btn => {
     btn.classList.toggle('is-selected', Number(btn.dataset.min) === selectedDurationMin);
   });
   updateReviewExtrasSummary();
@@ -2749,20 +3706,10 @@ function selectDuration(min) {
 // Self-reported only — the user picks this, the app never infers it from
 // voice/text. Purely descriptive, no AI judgement anywhere near it.
 let selectedMood = null;
-const MOOD_ICONS = {
-  low: { linear: 'solar:sad-circle-linear', bold: 'solar:sad-circle-bold' },
-  meh: { linear: 'solar:confounded-circle-linear', bold: 'solar:confounded-circle-bold' },
-  good: { linear: 'solar:smile-circle-linear', bold: 'solar:smile-circle-bold' },
-  great: { linear: 'solar:emoji-funny-circle-linear', bold: 'solar:emoji-funny-circle-bold' },
-};
 function selectMood(mood) {
   selectedMood = (selectedMood === mood) ? null : mood;
-  document.querySelectorAll('.mood-chip').forEach(btn => {
-    const isSel = btn.dataset.mood === selectedMood;
-    btn.classList.toggle('is-selected', isSel);
-    const iconEl = btn.querySelector('.mood-chip-emoji');
-    const icons = MOOD_ICONS[btn.dataset.mood];
-    if (iconEl && icons) iconEl.setAttribute('icon', isSel ? icons.bold : icons.linear);
+  document.querySelectorAll('#mood-chips .mood-chip').forEach(btn => {
+    btn.classList.toggle('is-selected', btn.dataset.mood === selectedMood);
   });
   updateReviewExtrasSummary();
 }
@@ -2775,17 +3722,15 @@ function renderReview(isFreshDraft = true) {
   if (errWrap) errWrap.innerHTML = '';
   if (isFreshDraft) {
     selectedDurationMin = null;
-    document.querySelectorAll('.duration-chip').forEach(btn => btn.classList.remove('is-selected'));
+    document.querySelectorAll('#duration-chips .duration-chip').forEach(btn => btn.classList.remove('is-selected'));
     selectedMood = null;
-    document.querySelectorAll('.mood-chip').forEach(btn => {
+    document.querySelectorAll('#mood-chips .mood-chip').forEach(btn => {
       btn.classList.remove('is-selected');
-      const iconEl = btn.querySelector('.mood-chip-emoji');
-      const icons = MOOD_ICONS[btn.dataset.mood];
-      if (iconEl && icons) iconEl.setAttribute('icon', icons.linear);
     });
-    document.getElementById('review-classname').value = lastKnownClassName();
+    document.getElementById('review-classname').value = '';
+    fillClassNameChips('review-class-chips', 'review-classname', homeRows.length ? homeRows : historyRows);
     toggleReviewExtras(false);
-  } else if (selectedDurationMin || selectedMood || (document.getElementById('review-classname')?.value || '').trim()) {
+  } else if (selectedMood) {
     toggleReviewExtras(true);
   }
   document.getElementById('review-transcript').textContent = lastDraft.transcript;
@@ -2794,6 +3739,14 @@ function renderReview(isFreshDraft = true) {
   document.getElementById('review-improve').value = r.improve_points || '';
   document.getElementById('review-next').value = r.next_time_reminder || '';
   document.getElementById('review-tips').value = r.session_tips || '';
+  // Reveal in order (good -> improve -> next), reinforcing good_points as the lead field.
+  [['review-good', 0], ['review-improve', 90], ['review-next', 180]].forEach(([id, delay]) => {
+    const wrap = document.getElementById(id).parentElement;
+    wrap.classList.remove('fade-in-up');
+    void wrap.offsetWidth;
+    wrap.style.animationDelay = delay + 'ms';
+    wrap.classList.add('fade-in-up');
+  });
   updateReviewExtrasSummary();
   const noteEl = document.getElementById('review-note');
   if (r.note) { noteEl.classList.remove('hidden'); noteEl.textContent = r.note; }
@@ -2820,7 +3773,7 @@ async function submitTermCorrection() {
     document.getElementById('term-wrong').value = '';
     document.getElementById('term-correct').value = '';
     toggleTermCorrection();
-    toast('记住了，以后会优先用这个写法');
+    toast('记住了，下次会按这个写法来');
   } catch (e) {
     toast('保存失败：' + e.message);
   }
@@ -2878,9 +3831,9 @@ async function confirmSave() {
 // counting, never a capability judgement). Same trigger point, one overlay.
 function milestoneText(m) {
   if (!m) return '';
-  if (m.type === 'count' && m.value === 1) return '这是你的第一次训练记录，成长追踪从这里开始——多记录几次后，反复出现的问题会自动出现在"追踪"里。';
-  if (m.type === 'count') return `已经完成 ${m.value} 次训练记录了。`;
-  if (m.type === 'streak') return `已经连续 ${m.value} 周坚持训练了。`;
+  if (m.type === 'count' && m.value === 1) return '这是你的第一条课记。多记几次后，「追踪」里会出现反复提到的问题。';
+  if (m.type === 'count') return `已经记下 ${m.value} 次了。`;
+  if (m.type === 'streak') return `已经连续 ${m.value} 周来过了。`;
   return '';
 }
 // Re-triggers a CSS animation on an element that already has the class from

@@ -31,7 +31,10 @@ async function computeWeekStreak(userId) {
 // (count takes priority over streak so a user never sees two banners at once)
 // or null if this save didn't cross a milestone.
 async function checkMilestone(userId) {
-  const { c: totalCount } = await db.get('SELECT COUNT(*) AS c FROM records WHERE user_id = ?', [userId]);
+  const { c: totalCount } = await db.get(
+    'SELECT COUNT(*) AS c FROM records WHERE user_id = ? AND COALESCE(is_checkin_only, 0) = 0',
+    [userId]
+  );
 
   if (COUNT_MILESTONES.has(totalCount) || (totalCount >= 10 && totalCount % 5 === 0)) {
     return { type: 'count', value: totalCount };

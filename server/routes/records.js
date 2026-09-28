@@ -36,8 +36,8 @@ router.post('/', async (req, res) => {
     : (Number(durationSec) > 0 ? 'voice' : 'typed');
   const info = await db.run(
     `INSERT INTO records
-      (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, session_tips, confidence_level, note, duration_sec, created_at, training_duration_min, mood)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, session_tips, confidence_level, note, duration_sec, created_at, training_duration_min, mood, is_checkin_only)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
     [
       req.userId, className || '训练记录', transcript || '', good_points || '', improve_points || '',
       next_time_reminder || '', session_tips || '', confidence_level || '', note || '', durationSec || 0, Date.now(), trainingMin, moodValue,
@@ -62,6 +62,29 @@ router.post('/', async (req, res) => {
     await logEvent(req.userId, 'field_edited', withSession({ field_name }, sessionId));
   }
   await processRecordForIssues(req.userId, info.lastInsertRowid, improve_points);
+  const milestone = await checkMilestone(req.userId);
+  res.json({ id: info.lastInsertRowid, milestone });
+});
+
+// Lightweight check-in: trained today, no recording, no AI, no Layer 3 completion.
+// Multiple sessions per local day are allowed (different classes, or the same class twice).
+router.post('/checkin', async (req, res) => {
+  const { className, trainingDurationMin, mood } = req.body || {};
+  const trainingMin = Number.isFinite(trainingDurationMin) && trainingDurationMin > 0
+    ? Math.round(trainingDurationMin)
+    : null;
+  const MOOD_VALUES = new Set(['low', 'meh', 'good', 'great']);
+  const moodValue = MOOD_VALUES.has(mood) ? mood : null;
+  const name = String(className || '').trim().slice(0, 40) || '训练记录';
+  const info = await db.run(
+    `INSERT INTO records
+      (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, session_tips, confidence_level, note, duration_sec, created_at, training_duration_min, mood, is_checkin_only)
+    VALUES (?, ?, '', '', '', '', '', '', '', 0, ?, ?, ?, 1)`,
+    [req.userId, name, Date.now(), trainingMin, moodValue]
+  );
+  await logEvent(req.userId, 'checkin_saved', withSession({
+    recordId: info.lastInsertRowid, from: 'checkin', slotsFilled: 0,
+  }, sessionIdFromReq(req)));
   const milestone = await checkMilestone(req.userId);
   res.json({ id: info.lastInsertRowid, milestone });
 });
