@@ -22,17 +22,17 @@
     --paper: #fdfbfa;
     --blush: #f4ebe9;
     --blush-deep: #eadfdd;
-    --rose: #cbb4b4;
-    --rose-deep: #b89a9a;
-    --mauve: #9d8888;
-    --burgundy: #7d6868;
+    --rose: #c4a8a8;
+    --rose-deep: #a07d7d;
+    --mauve: #8f7575;
+    --burgundy: #6a5555;
     --beige: #e8dfdc;
-    --gold: #c4ada8;
-    --sage: #9aa89c;
-    --ink: #4a4341;
-    --ink-soft: #6f6563;
-    --ink-faint: #948a88;
-    --border-soft: rgba(214, 198, 196, .5);
+    --gold: #b89a94;
+    --sage: #8a9a8e;
+    --ink: #1c1918;
+    --ink-soft: #2a2624;
+    --ink-faint: #4f4a48;
+    --border-soft: rgba(196, 176, 174, .55);
   }
   body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif; background: #ddd6d4; color: var(--ink); }
   .font-display { font-family: "Cormorant Garamond", "Noto Serif SC", serif; letter-spacing: .01em; }
@@ -195,7 +195,7 @@
   }
   .archive-stat-label {
     font-size: 11px; letter-spacing: .12em;
-    color: var(--ink-faint);
+    color: var(--ink-soft);
   }
   .archive-stat-num {
     margin-top: 5px;
@@ -255,7 +255,7 @@
     0%, 100% { box-shadow: 0 0 0 3px rgba(196, 140, 140, 0.4), 0 12px 28px -12px rgba(130, 90, 90, 0.35); }
     50% { box-shadow: 0 0 0 7px rgba(196, 140, 140, 0.18), 0 12px 28px -12px rgba(130, 90, 90, 0.35); }
   }
-  /* Subtle, slow idle shine on the main "再记一笔" CTA -- a brief sweep every few
+  /* Subtle, slow idle shine on the main "再记一节" CTA -- a brief sweep every few
      seconds, not a constant pulse, since this button gets tapped daily by returning
      users and shouldn't feel naggy the way the first-time pulse above does. */
   @keyframes ctaSheenSweep {
@@ -268,27 +268,43 @@
   }
   .home-cta-row { position: relative; display: flex; gap: 8px; align-items: stretch; }
   .home-cta-row #home-cta-btn { flex: 1; min-width: 0; }
+  .home-cta-row.has-open-tip { margin-bottom: 96px; }
   .coach-tip {
-    position: absolute; z-index: 20;
-    width: 176px; padding: 10px 12px; border-radius: 14px;
-    background: var(--burgundy); color: #fdf6f4;
+    --coach: #eadcd8;
+    --coach-ink: #5e4c4a;
+    position: absolute; z-index: 30;
+    width: 188px; padding: 10px 12px 8px; border-radius: 14px;
+    background: var(--coach); color: var(--coach-ink);
     font-size: 12px; line-height: 1.55; text-align: left;
-    box-shadow: 0 10px 22px -10px rgba(90,60,60,.45);
+    box-shadow: 0 10px 22px -12px rgba(110,80,80,.28);
+    border: 1px solid rgba(255,255,255,.7);
   }
   .coach-tip::after {
     content: ''; position: absolute; top: 100%;
-    border: 6px solid transparent; border-top-color: var(--burgundy);
+    border: 6px solid transparent; border-top-color: var(--coach);
+  }
+  .coach-tip.is-below::after {
+    top: auto; bottom: 100%;
+    border-top-color: transparent; border-bottom-color: var(--coach);
+  }
+  .coach-tip-ok {
+    display: block; margin-top: 8px; padding: 0; border: 0;
+    background: none; cursor: pointer;
+    font-size: 12px; font-weight: 650; letter-spacing: .08em;
+    color: #9a6d68; text-decoration: underline; text-underline-offset: 3px;
   }
   .coach-tip.hidden { display: none !important; }
-  #home-recap-tip { left: 0; bottom: calc(100% + 10px); }
+  #home-recap-tip { left: 0; top: calc(100% + 10px); }
   #home-recap-tip::after { left: 36px; }
-  #home-checkin-tip { right: 0; bottom: calc(100% + 10px); }
+  #home-checkin-tip { right: 0; top: calc(100% + 10px); }
   #home-checkin-tip::after { right: 22px; }
-  #nav-archive-tip {
-    left: 50%; bottom: calc(100% + 10px); width: 148px;
+  #nav-archive-tip, #nav-progress-tip {
+    left: 50%; bottom: calc(100% + 10px); width: 156px;
     transform: translateX(-50%);
   }
-  #nav-archive-tip::after { left: 50%; margin-left: -6px; }
+  #nav-archive-tip::after, #nav-progress-tip::after { left: 50%; margin-left: -6px; }
+  #home-profile-tip { right: 0; top: calc(100% + 10px); width: 156px; }
+  #home-profile-tip::after { right: 12px; }
   .home-checkin-btn {
     flex: 0 0 58px; width: 58px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -426,6 +442,7 @@
   }
   .nav-ballet {
     position: relative;
+    z-index: 25;
     overflow: visible;
     background: rgba(253,251,250,.78);
     backdrop-filter: blur(18px);
@@ -785,7 +802,7 @@
 
   <!-- ============ HOME ============ -->
   <div class="screen flex-col w-full h-full wash-cream" id="screen-home">
-    <header class="shrink-0 px-6 pt-7 pb-4 flex items-center justify-between">
+    <header class="relative z-20 shrink-0 px-6 pt-7 pb-4 flex items-center justify-between">
       <div>
         <p class="label-editorial text-[12px] text-[var(--rose-deep)]" id="home-kicker">写给今天的你</p>
         <h1 class="page-title mt-0.5" id="home-title">首页</h1>
@@ -795,13 +812,21 @@
         <iconify-icon icon="solar:bell-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon>
           <span id="notice-dot" class="hidden absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[var(--rose-deep)] ring-2 ring-[var(--paper)]"></span>
         </button>
-        <button type="button" onclick="goProfile()" class="header-avatar flex items-center justify-center" aria-label="我的"><iconify-icon icon="solar:user-circle-linear" class="text-[20px]"></iconify-icon></button>
+        <div class="relative">
+          <button type="button" onclick="goProfile()" class="header-avatar flex items-center justify-center" aria-label="我的"><iconify-icon icon="solar:user-circle-linear" class="text-[20px]"></iconify-icon></button>
+          <div id="home-profile-tip" class="coach-tip is-below hidden">
+            账号和徽章，点这里。
+            <button type="button" class="coach-tip-ok" onclick="dismissGuide('profile')">知道了</button>
+          </div>
+        </div>
       </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-7">
-      <section class="card-journal tinted grain relative overflow-hidden px-5 pt-4 pb-4" style="border-radius:26px 16px 26px 18px">
-        <div class="pearl-sheen"></div>
-        <img src="/img/shoes.png" alt="" aria-hidden="true" class="deco-photo tint-rose right-3 top-2 w-[64px] h-[76px] opacity-[0.55] z-[1] pointer-events-none">
+      <section class="card-journal tinted grain relative overflow-visible px-5 pt-4 pb-4" style="border-radius:26px 16px 26px 18px">
+        <div class="pointer-events-none absolute inset-0 overflow-hidden" style="border-radius:26px 16px 26px 18px">
+          <div class="pearl-sheen"></div>
+          <img src="/img/shoes.png" alt="" aria-hidden="true" class="deco-photo tint-rose right-3 top-2 w-[64px] h-[76px] opacity-[0.55] z-[1]">
+        </div>
         <div class="relative z-10 pr-16">
           <div id="home-stat-nums" class="grid grid-cols-3 gap-2">
           <div>
@@ -814,10 +839,10 @@
           </div>
           <div>
             <p class="archive-stat-label">时长</p>
-            <p class="archive-stat-num is-hours mt-1.5" id="stat-duration">—</p>
+            <p class="archive-stat-num is-hours is-empty mt-1.5" id="stat-duration">未记</p>
           </div>
           </div>
-          <p id="home-stat-empty" class="hidden text-[12.5px] leading-6 text-[var(--ink-soft)]">从今天开始就好。</p>
+          <p id="home-stat-empty" class="hidden mt-2 text-[11.5px] leading-5 text-[var(--ink-soft)]">从今天开始记下，次数、连续和时长会一直留在这里。</p>
         </div>
         <div class="relative z-10 mt-4 home-cta-row">
         <button id="home-cta-btn" onclick="goRecord()" class="btn-ribbon flex items-center gap-3 rounded-[22px] px-4 py-3.5">
@@ -826,7 +851,7 @@
             <iconify-icon icon="solar:microphone-3-linear" class="text-[22px] text-white"></iconify-icon>
           </span>
           <span class="relative z-10 flex-1 text-left">
-            <strong class="block text-[14.5px] font-semibold" id="home-cta-title">复盘今天</strong>
+            <strong class="block text-[14.5px] font-semibold" id="home-cta-title">复盘今天的课</strong>
             <span class="block mt-0.5 text-[11px] font-medium text-white/90" id="home-cta-sub">说几句就好</span>
           </span>
         </button>
@@ -844,13 +869,13 @@
           <strong id="home-checkin-title">打卡</strong>
           <span id="home-checkin-sub" class="home-checkin-hint">不写内容也行</span>
         </button>
-        <div id="home-recap-tip" class="coach-tip hidden">
+        <div id="home-recap-tip" class="coach-tip is-below hidden">
           下课说几句，会整理成课记。
-          <button type="button" onclick="dismissGuide('recap')">知道了</button>
+          <button type="button" class="coach-tip-ok" onclick="dismissGuide('recap')">知道了</button>
         </div>
-        <div id="home-checkin-tip" class="coach-tip hidden">
+        <div id="home-checkin-tip" class="coach-tip is-below hidden">
           左边是复盘，说几句就好。这边只打个卡。
-          <button type="button" onclick="dismissGuide('checkin')">知道了</button>
+          <button type="button" class="coach-tip-ok" onclick="dismissGuide('checkin')">知道了</button>
         </div>
         </div>
       </section>
@@ -919,10 +944,16 @@
         </button>
         <div id="nav-archive-tip" class="coach-tip hidden">
           课记和日历，都在这里。
-          <button type="button" onclick="dismissGuide('archive')">知道了</button>
+          <button type="button" class="coach-tip-ok" onclick="dismissGuide('archive')">知道了</button>
         </div>
       </div>
-      <button onclick="goProgress()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><span class="relative"><iconify-icon icon="solar:graph-up-linear" class="text-[22px]"></iconify-icon><span class="nav-progress-dot hidden absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[var(--rose-deep)] ring-2 ring-[var(--paper)]"></span></span><span class="text-[10px]">追踪</span></button>
+      <div class="relative">
+        <button onclick="goProgress()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><span class="relative"><iconify-icon icon="solar:graph-up-linear" class="text-[22px]"></iconify-icon><span class="nav-progress-dot hidden absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[var(--rose-deep)] ring-2 ring-[var(--paper)]"></span></span><span class="text-[10px]">追踪</span></button>
+        <div id="nav-progress-tip" class="coach-tip hidden">
+          上课前看一眼，反复的问题也在这里。
+          <button type="button" class="coach-tip-ok" onclick="dismissGuide('progress')">知道了</button>
+        </div>
+      </div>
     </nav>
   </div>
 
@@ -1137,8 +1168,8 @@
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-7">
       <div class="hist-tabs flex items-center gap-1 mb-3 rounded-full p-1">
-        <button type="button" id="history-tab-checkin" onclick="setHistoryView('checkin')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium">打卡</button>
-        <button type="button" id="history-tab-list" onclick="setHistoryView('list')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium">列表</button>
+        <button type="button" id="history-tab-checkin" onclick="setHistoryView('checkin')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium bg-white shadow-sm text-[var(--burgundy)]">打卡</button>
+        <button type="button" id="history-tab-list" onclick="setHistoryView('list')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium text-[var(--ink-faint)]">列表</button>
       </div>
 
       <div id="history-list-view" class="hidden">
@@ -1170,7 +1201,7 @@
                 <p class="relative z-10 archive-stat-num is-hours" id="checkin-month-hours">—</p>
               </div>
             </div>
-            <p id="checkin-month-empty" class="hidden mt-3 text-[12.5px] leading-6 text-[var(--ink-soft)]">从今天开始就好。</p>
+            <p id="checkin-month-empty" class="hidden mt-3 text-[11.5px] leading-5 text-[var(--ink-soft)]">记下之后，来过几天、练了多久会记在这里。</p>
             <div id="checkin-class-stats"></div>
           </div>
         </div>
@@ -2028,6 +2059,7 @@ function goHistory() {
   if (archiveEl && !archiveEl.classList.contains('hidden')) markGuideSeen('archive');
   ensureBrowseSession();
   logEvent('history_opened', {}, 'browse');
+  historyViewMode = 'checkin';
   loadHistory();
   show('screen-history');
 }
@@ -2038,6 +2070,8 @@ function headerInitial() {
 }
 
 async function goProfile() {
+  const profileEl = document.getElementById('home-profile-tip');
+  if (profileEl && !profileEl.classList.contains('hidden')) markGuideSeen('profile');
   const user = getUser();
   document.getElementById('profile-name').textContent = user?.displayName || '-';
   document.getElementById('profile-email').textContent = user?.email || '-';
@@ -2238,19 +2272,17 @@ async function loadHome() {
   const trainedHours = formatTrainingHours(rows);
   const streak = computeDailyStreak(rows);
   const homeEmpty = !rows.length;
-  document.getElementById('home-stat-nums').classList.toggle('hidden', homeEmpty);
+  document.getElementById('home-stat-nums').classList.remove('hidden');
   document.getElementById('home-stat-empty').classList.toggle('hidden', !homeEmpty);
-  if (!homeEmpty) {
-    document.getElementById('stat-count').innerHTML = `${recapCount}<span>次</span>`;
-    document.getElementById('stat-streak').innerHTML = `${streak}<span>天</span>`;
-    const hoursEl = document.getElementById('stat-duration');
-    if (trainedHours === null) {
-      hoursEl.classList.add('is-empty');
-      hoursEl.textContent = '未记';
-    } else {
-      hoursEl.classList.remove('is-empty');
-      hoursEl.innerHTML = `${String(trainedHours).replace(/\.0$/, '')}<span>小时</span>`;
-    }
+  document.getElementById('stat-count').innerHTML = `${recapCount}<span>次</span>`;
+  document.getElementById('stat-streak').innerHTML = `${streak}<span>天</span>`;
+  const hoursEl = document.getElementById('stat-duration');
+  if (trainedHours === null) {
+    hoursEl.classList.add('is-empty');
+    hoursEl.textContent = '未记';
+  } else {
+    hoursEl.classList.remove('is-empty');
+    hoursEl.innerHTML = `${String(trainedHours).replace(/\.0$/, '')}<span>小时</span>`;
   }
   homeRows = Array.isArray(rows) ? rows : [];
   rememberClassNameFromRecords(homeRows);
@@ -2286,13 +2318,13 @@ function paintHomeCta(rows) {
   paintHomeGuides();
   if (!title || !sub) return;
   if (fullToday) {
-    title.textContent = '再记一笔';
+    title.textContent = '再记一节';
     sub.textContent = '还可以再写一句';
   } else if (checkinToday) {
     title.textContent = '补上今天的复盘';
     sub.textContent = '打过卡了，有空再说';
   } else {
-    title.textContent = '复盘今天';
+    title.textContent = '复盘今天的课';
     sub.textContent = '说几句就好';
   }
 }
@@ -2300,14 +2332,23 @@ const GUIDE_KEYS = {
   recap: 'bm_guide_recap',
   checkin: 'bm_checkin_tip_seen',
   archive: 'bm_guide_archive',
+  progress: 'bm_guide_progress',
+  profile: 'bm_guide_profile',
 };
+const GUIDE_IDS = {
+  recap: 'home-recap-tip',
+  checkin: 'home-checkin-tip',
+  archive: 'nav-archive-tip',
+  progress: 'nav-progress-tip',
+  profile: 'home-profile-tip',
+};
+const GUIDE_ORDER = ['recap', 'checkin', 'archive', 'progress', 'profile'];
 function guideSeen(name) {
   try { return !!localStorage.getItem(GUIDE_KEYS[name]); } catch (e) { return true; }
 }
 function markGuideSeen(name) {
   try { localStorage.setItem(GUIDE_KEYS[name], '1'); } catch (e) {}
-  const ids = { recap: 'home-recap-tip', checkin: 'home-checkin-tip', archive: 'nav-archive-tip' };
-  const el = document.getElementById(ids[name]);
+  const el = document.getElementById(GUIDE_IDS[name]);
   if (el) el.classList.add('hidden');
 }
 function dismissGuide(name) {
@@ -2316,21 +2357,21 @@ function dismissGuide(name) {
   paintHomeGuides();
 }
 function paintHomeGuides() {
-  const recapEl = document.getElementById('home-recap-tip');
-  const checkinEl = document.getElementById('home-checkin-tip');
-  const archiveEl = document.getElementById('nav-archive-tip');
-  [recapEl, checkinEl, archiveEl].forEach((el) => { if (el) el.classList.add('hidden'); });
+  const row = document.querySelector('.home-cta-row');
+  Object.values(GUIDE_IDS).forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+  if (row) row.classList.remove('has-open-tip');
   const empty = !(homeRows && homeRows.length);
-  if (!guideSeen('recap') && empty) {
-    if (recapEl) recapEl.classList.remove('hidden');
+  const veteran = !empty && !guideSeen('recap');
+  if (veteran) return;
+  for (const name of GUIDE_ORDER) {
+    if (guideSeen(name)) continue;
+    const el = document.getElementById(GUIDE_IDS[name]);
+    if (el) el.classList.remove('hidden');
+    if (row && (name === 'recap' || name === 'checkin')) row.classList.add('has-open-tip');
     return;
-  }
-  if (!guideSeen('checkin') && (empty || guideSeen('recap'))) {
-    if (checkinEl) checkinEl.classList.remove('hidden');
-    return;
-  }
-  if (!guideSeen('archive') && empty && guideSeen('recap') && guideSeen('checkin')) {
-    if (archiveEl) archiveEl.classList.remove('hidden');
   }
 }
 function dismissCheckinTip() { dismissGuide('checkin'); }
@@ -2870,9 +2911,11 @@ function setProgressView(mode) {
   if (lookView) lookView.classList.toggle('hidden', progressViewMode !== 'look');
 }
 async function goProgress(tab) {
+  const progressEl = document.getElementById('nav-progress-tip');
+  if (progressEl && !progressEl.classList.contains('hidden')) markGuideSeen('progress');
   logEvent('progress_opened', {}, 'browse');
   markProgressVisited();
-  setProgressView(tab || progressViewMode || 'class');
+  setProgressView(tab || 'class');
   show('screen-progress');
   lastTrainingReview = null;
   await Promise.all([loadBrief(), loadIssues(), generateTrainingReview('days'), loadProgressStrip()]);
@@ -3220,9 +3263,9 @@ function renderCheckinArchive() {
   const monthEmpty = !monthRows.length;
   const statsWrap = document.getElementById('checkin-month-stats');
   const emptyHint = document.getElementById('checkin-month-empty');
-  if (statsWrap) statsWrap.classList.toggle('hidden', monthEmpty);
+  if (statsWrap) statsWrap.classList.remove('hidden');
   if (emptyHint) emptyHint.classList.toggle('hidden', !monthEmpty);
-  if (!monthEmpty) {
+  {
     const daysEl = document.getElementById('checkin-month-days');
     if (daysEl) daysEl.innerHTML = `${came}<span>天</span>`;
     const monthMin = monthRows.reduce((s, r) => s + (Number(r.training_duration_min) || 0), 0);
