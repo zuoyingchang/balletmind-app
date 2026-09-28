@@ -933,7 +933,7 @@
             </p>
             <p class="flex items-baseline gap-2 text-[13.5px] leading-5">
               <span class="w-8 shrink-0 text-[12px] font-semibold text-[var(--mauve)]">翻看</span>
-              <span class="min-w-0 text-[var(--ink-soft)]">问问看，或这几天</span>
+              <span class="min-w-0 text-[var(--ink-soft)]">问问我的档案，生成汇总报告</span>
             </p>
           </div>
         </button>
@@ -1213,6 +1213,7 @@
                 <p class="relative z-10 archive-stat-num is-hours" id="checkin-month-hours">0<span>小时</span></p>
               </div>
             </div>
+            <p id="checkin-month-empty" class="hidden mt-3 text-[12.5px] leading-6 text-[var(--ink-soft)]">请先点记录，复盘或打卡。课时统计会出现在这里。</p>
             <div id="checkin-class-stats"></div>
           </div>
         </div>
@@ -1401,7 +1402,7 @@
           </div>
         </div>
         <div id="issues-empty" class="hidden mt-3 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-[12px] leading-6 text-[var(--ink-soft)]">
-          反复记下的问题，会出现在这里。请先点记录，复盘一节课。
+          请先点记录，生成复盘。反复记下的问题会出现在这里。
         </div>
         <div id="issues-list" class="relative z-10 mt-3 space-y-2.5"></div>
         <button type="button" id="issues-more-btn" onclick="toggleIssuesShowAll()" class="hidden mt-2 w-full py-2 text-center text-[12px] text-[var(--rose-deep)]"></button>
@@ -2363,11 +2364,16 @@ const GUIDE_IDS = {
   profile: 'home-profile-tip',
 };
 const GUIDE_ORDER = ['recap', 'checkin', 'archive', 'progress', 'profile'];
+function guideStorageKey(name) {
+  const user = getUser();
+  const uid = user && user.id != null ? String(user.id) : 'anon';
+  return `${GUIDE_KEYS[name]}:${uid}`;
+}
 function guideSeen(name) {
-  try { return !!localStorage.getItem(GUIDE_KEYS[name]); } catch (e) { return true; }
+  try { return !!localStorage.getItem(guideStorageKey(name)); } catch (e) { return false; }
 }
 function markGuideSeen(name) {
-  try { localStorage.setItem(GUIDE_KEYS[name], '1'); } catch (e) {}
+  try { localStorage.setItem(guideStorageKey(name), '1'); } catch (e) {}
   const el = document.getElementById(GUIDE_IDS[name]);
   if (el) el.classList.add('hidden');
 }
@@ -2983,10 +2989,14 @@ async function loadBrief() {
         + expLines.map((line) => `<p>${escapeHtml(line)}</p>`).join('');
       return;
     }
+    if (!data.lastRecord) {
+      el.innerHTML = `<p class="leading-6">请先点记录，生成复盘。上课前可以来这里看一眼。</p>`;
+      return;
+    }
     const last = data.lastRecord || {};
     const tip = (last.nextTimeReminder || last.improvePoints || last.sessionTips || '').trim();
     if (!tip) {
-      el.innerHTML = `<p class="leading-6">写下复盘之后，上课前可以来这里看一眼。</p>`;
+      el.innerHTML = `<p class="leading-6">请先点记录，生成复盘。上课前可以来这里看一眼。</p>`;
       return;
     }
     const when = last.createdAt ? fmtDate(last.createdAt).split(' ')[0] : '';
@@ -3179,7 +3189,7 @@ async function generateTrainingReview(mode) {
     }
     // Still-open issues aren't repeated here on purpose — they're listed
     // with status controls in 「反复出现的问题」at the top of this screen.
-    if (data.recordCount === 0) html = `<p class="text-[12.5px] leading-6 text-[var(--ink-soft)]">请点记录，再记几节课，就会生成你的复盘汇总。</p>`;
+    if (data.recordCount === 0) html = `<p class="text-[12.5px] leading-6 text-[var(--ink-soft)]">请先点记录，生成复盘。你的复盘汇总会出现在这里。</p>`;
     contentEl.innerHTML = html;
     contentEl.classList.remove('hidden');
     exportBtn.classList.toggle('hidden', data.recordCount === 0);
@@ -3308,7 +3318,9 @@ function renderCheckinArchive() {
   });
   const monthEmpty = !monthRows.length;
   const statsWrap = document.getElementById('checkin-month-stats');
+  const emptyHint = document.getElementById('checkin-month-empty');
   if (statsWrap) statsWrap.classList.remove('hidden');
+  if (emptyHint) emptyHint.classList.toggle('hidden', !monthEmpty);
   {
     const daysEl = document.getElementById('checkin-month-days');
     if (daysEl) daysEl.innerHTML = `${came}<span>天</span>`;
