@@ -476,10 +476,15 @@
   .btn-ribbon .pearl-sheen { opacity: .5; background: linear-gradient(115deg, transparent 26%, rgba(255,255,255,.42) 40%, transparent 54%); }
 
   .chip { background: rgba(244, 235, 233, .7); }
-  .duration-chip { background: rgba(255,252,251,.7); transition: background .15s ease, color .15s ease, border-color .15s ease; }
+  .duration-chip {
+    background: rgba(255,252,251,.7);
+    transition: background .15s ease, color .15s ease, border-color .15s ease, transform .18s ease, box-shadow .18s ease;
+  }
   .duration-chip.is-selected {
     background: linear-gradient(135deg, var(--gold), var(--rose-deep));
     border-color: transparent; color: #fff; font-weight: 600;
+    box-shadow: 0 8px 16px -10px rgba(140,100,100,.5), inset 0 1px 0 rgba(255,255,255,.5);
+    transform: translateY(-2px);
   }
   .mood-chip {
     background: rgba(255,252,251,.7); border: 1px solid var(--border-soft);
@@ -794,6 +799,15 @@
   @keyframes badge-halo {
     0%, 100% { opacity: .78; transform: scale(1); }
     50% { opacity: 1; transform: scale(1.05); }
+  }
+  .nav-icon-glow { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+  .nav-icon-glow::before {
+    content: ''; position: absolute; inset: -9px; border-radius: 50%; z-index: 0; pointer-events: none;
+    background: radial-gradient(circle, rgba(184,154,154,.4) 0%, rgba(184,154,154,.14) 55%, transparent 75%);
+  }
+  .nav-icon-glow iconify-icon { position: relative; z-index: 1; }
+  @media (prefers-reduced-motion: no-preference) {
+    .nav-icon-glow::before { animation: badge-halo 3.2s ease-in-out infinite; }
   }
   .badge-medal.is-locked .medal {
     background: rgba(253,251,250,.55);
@@ -1169,7 +1183,7 @@
       </section>
     </main>
     <nav class="shrink-0 h-[76px] nav-ballet flex items-center justify-around px-5">
-      <button class="flex flex-col items-center gap-1 text-[var(--rose-deep)]"><iconify-icon icon="solar:home-2-bold" class="text-[22px]"></iconify-icon><span class="text-[10px] font-semibold">首页</span></button>
+      <button class="flex flex-col items-center gap-1 text-[var(--rose-deep)]"><span class="nav-icon-glow"><iconify-icon icon="solar:home-2-bold" class="text-[22px]"></iconify-icon></span><span class="text-[10px] font-semibold">首页</span></button>
       <button onclick="goRecord()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:microphone-3-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">记录</span></button>
       <div class="relative">
         <button id="nav-archive-btn" onclick="goHistory()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]">
@@ -1585,7 +1599,7 @@
     <nav class="shrink-0 h-[76px] nav-ballet flex items-center justify-around px-5">
       <button onclick="goHome()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:home-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">首页</span></button>
       <button onclick="goRecord()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:microphone-3-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">记录</span></button>
-      <button onclick="goHistory()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span></button>
+      <button class="flex flex-col items-center gap-1 text-[var(--rose-deep)]"><span class="nav-icon-glow"><iconify-icon icon="solar:book-2-bold" class="text-[22px]"></iconify-icon></span><span class="text-[10px] font-semibold">档案</span></button>
       <button onclick="goProgress()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><span class="relative"><iconify-icon icon="solar:graph-up-linear" class="text-[22px]"></iconify-icon><span class="nav-progress-dot hidden absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[var(--rose-deep)] ring-2 ring-[var(--paper)]"></span></span><span class="text-[10px]">追踪</span></button>
     </nav>
   </div>
@@ -1685,7 +1699,7 @@
       <button onclick="goHome()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:home-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">首页</span></button>
       <button onclick="goRecord()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:microphone-3-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">记录</span></button>
       <button onclick="goHistory()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span></button>
-      <button class="flex flex-col items-center gap-1 text-[var(--rose-deep)]"><iconify-icon icon="solar:graph-up-bold" class="text-[22px]"></iconify-icon><span class="text-[10px] font-semibold">追踪</span></button>
+      <button class="flex flex-col items-center gap-1 text-[var(--rose-deep)]"><span class="nav-icon-glow"><iconify-icon icon="solar:graph-up-bold" class="text-[22px]"></iconify-icon></span><span class="text-[10px] font-semibold">追踪</span></button>
     </nav>
   </div>
 
