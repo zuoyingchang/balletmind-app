@@ -593,6 +593,17 @@ test('two lines naming the same ballet term merge even when the rest of the sent
   assert.equal(issues[0].occurrence_count, 2);
 });
 
+test('an accented term and its unaccented spelling merge (plié vs plie)', async () => {
+  const { body: { token } } = await registerUser('issue_accent@example.com');
+  await saveRecord(token, { className: '基训1', improve_points: 'plié 膝盖没蹲够' });
+  await saveRecord(token, { className: '基训2', improve_points: 'plie 膝盖没蹲够' });
+
+  const res = await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${token}` } });
+  const issues = await res.json();
+  assert.equal(issues.length, 1, 'accented and unaccented spellings of the same term should merge');
+  assert.equal(issues[0].occurrence_count, 2);
+});
+
 test('two specific, different complaints about the same term stay as separate issues', async () => {
   const { body: { token } } = await registerUser('issue_term_diff@example.com');
   await saveRecord(token, { className: '基训1', improve_points: 'grand battement 高度不够' });

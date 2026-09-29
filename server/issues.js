@@ -8,8 +8,13 @@ const { BALLET_TERMS } = require('./ballet-glossary');
 // a pattern that isn't really there, and status only ever changes when the
 // user clicks a button. "AI不替用户下结论" — literally true here: there's no AI.
 
+// Also folds accents (plié/plie, développé/developpe) — same technique as
+// foldBalletText in public/js/ballet-terms.js — so ASR/typed spellings that
+// drop the accent still match the canonical BALLET_TERMS spelling.
 function normalize(s) {
-  return (s || '').trim().toLowerCase().replace(/[，。！？,.!?\s]/g, '');
+  return (s || '').trim().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[，。！？,.!?\s]/g, '');
 }
 
 // Longest terms first so "grand battement" wins over a shorter term it
