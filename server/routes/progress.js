@@ -3,9 +3,9 @@ const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { listIssuesWithOccurrences } = require('../issues');
 const { splitLines, sessionIdFromReq, withSession } = require('../lib/text');
-const { logEvent, countSecondaryAiCallsToday } = require('../events');
+const { logEvent, countAiCallsToday, countSecondaryAiCallsToday } = require('../events');
 const { aiConfigured, missingConfigHint } = require('../ai/provider');
-const { dailySecondaryAiLimitFor } = require('../config');
+const { dailyAiLimitFor, dailySecondaryAiLimitFor } = require('../config');
 const { callAskRound1WithRetry, callAskRound2WithRetry, findToolUse, answerFromToolInput } = require('../ai/anthropic');
 const { llmUsageMeta } = require('../lib/llm-event-meta');
 const { retrieveAskRecords, KEYWORD_SPARSE_MAX } = require('../ai/ask-retrieve');
@@ -315,6 +315,22 @@ router.get('/ask', async (req, res) => {
     console.error('[ask] exception', e);
     res.status(500).json({ error: '服务器错误，请稍后重试' });
   }
+});
+
+// GET /api/progress/quota -- today's AI usage, shown near the record/ask
+// entry points so a user sees "还能用 X 次" before hitting the limit,
+// not only after a 429.
+router.get('/quota', async (req, res) => {
+  const [core, secondary] = await Promise.all([
+    countAiCallsToday(req.userId),
+    countSecondaryAiCallsToday(req.userId),
+  ]);
+  const coreLimit = dailyAiLimitFor(req.userId);
+  const secondaryLimit = dailySecondaryAiLimitFor(req.userId);
+  res.json({
+    core: { used: core, limit: coreLimit, remaining: Math.max(0, coreLimit - core) },
+    secondary: { used: secondary, limit: secondaryLimit, remaining: Math.max(0, secondaryLimit - secondary) },
+  });
 });
 
 module.exports = router;

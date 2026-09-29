@@ -1457,6 +1457,7 @@
           </div>
         </div>
         <p class="relative z-10 rec-stage-note mt-4">每次最多三段，每段大约一分钟</p>
+        <p class="relative z-10 mt-1 text-[11px] text-[var(--ink-faint)]" id="rec-quota-note"></p>
       </section>
 
       <details class="rec-prompts mt-3">
@@ -2600,6 +2601,18 @@ function goRecord() {
   enableAiEntry();
   resetRecordScreen();
   show('screen-record');
+  loadRecordQuota();
+}
+async function loadRecordQuota() {
+  const el = document.getElementById('rec-quota-note');
+  if (!el) return;
+  try {
+    const res = await authFetch(`${API}/api/progress/quota`);
+    if (!res.ok) { el.textContent = ''; return; }
+    const data = await res.json();
+    const remaining = data.core.remaining;
+    el.textContent = remaining > 0 ? `今天还能记录 ${remaining} 次` : '今天的记录次数用完了，明天再来吧';
+  } catch (e) { el.textContent = ''; }
 }
 function goBackFromReview() {
   show('screen-record');
@@ -2661,12 +2674,17 @@ const BADGES = [
   { id: 'count-30', kind: 'count', value: 30, icon: 'solar:medal-star-linear', label: '记录 30 次' },
   { id: 'count-50', kind: 'count', value: 50, icon: 'solar:cup-star-linear', label: '记录 50 次' },
   { id: 'count-100', kind: 'count', value: 100, icon: 'solar:cup-star-bold', label: '记录 100 次' },
+  { id: 'count-150', kind: 'count', value: 150, icon: 'solar:cup-star-bold', label: '记录 150 次' },
+  { id: 'count-200', kind: 'count', value: 200, icon: 'solar:cup-star-bold', label: '记录 200 次' },
+  { id: 'count-300', kind: 'count', value: 300, icon: 'solar:cup-star-bold', label: '记录 300 次' },
   { id: 'streak-2', kind: 'streak', value: 2, icon: 'solar:fire-linear', label: '来过 2 周' },
   { id: 'streak-4', kind: 'streak', value: 4, icon: 'solar:fire-linear', label: '来过 4 周' },
   { id: 'streak-8', kind: 'streak', value: 8, icon: 'solar:fire-linear', label: '来过 8 周' },
   { id: 'streak-12', kind: 'streak', value: 12, icon: 'solar:fire-bold', label: '来过 12 周' },
   { id: 'streak-26', kind: 'streak', value: 26, icon: 'solar:fire-bold', label: '来过 26 周' },
   { id: 'streak-52', kind: 'streak', value: 52, icon: 'solar:fire-bold', label: '来过 52 周' },
+  { id: 'streak-78', kind: 'streak', value: 78, icon: 'solar:fire-bold', label: '来过 78 周' },
+  { id: 'streak-104', kind: 'streak', value: 104, icon: 'solar:fire-bold', label: '来过 104 周' },
 ];
 function mondayKeyMs(ts) {
   const d = new Date(ts);
