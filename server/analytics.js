@@ -57,6 +57,7 @@ function knownEventNames() {
     'review_opened', 'field_edited',
     'history_open', 'history_opened', 'history_session_opened',
     'progress_open', 'progress_opened',
+    'share_card_downloaded',
   ]);
 }
 

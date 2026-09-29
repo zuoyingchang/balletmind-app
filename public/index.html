@@ -524,10 +524,17 @@
   .btn-ribbon {
     position: relative; overflow: hidden; color: var(--burgundy);
     font-weight: 600;
-    background: var(--cta-pink);
-    box-shadow: 0 12px 24px -14px rgba(160,110,120,.28), inset 0 1px 0 rgba(255,255,255,.6);
+    background:
+      radial-gradient(90% 70% at 50% 0%, rgba(255,255,255,.32), transparent 58%),
+      var(--cta-pink);
+    box-shadow: 0 12px 24px -14px rgba(160,110,120,.28), inset 0 1px 0 rgba(255,255,255,.62);
   }
-  .btn-ribbon .pearl-sheen { opacity: .55; background: linear-gradient(115deg, transparent 24%, rgba(255,255,255,.6) 40%, transparent 56%); }
+  .btn-ribbon > .pearl-sheen {
+    opacity: .46;
+    background:
+      radial-gradient(86% 58% at 50% 0%, rgba(255,255,255,.58), transparent 64%),
+      radial-gradient(70% 48% at 50% 100%, rgba(255,255,255,.16), transparent 60%);
+  }
 
   .chip { background: rgba(244, 235, 233, .7); }
   .duration-chip {
@@ -595,9 +602,19 @@
   .field-next { background: rgba(240, 228, 226, .72); }
   .field-good-lift { box-shadow: 0 3px 10px -6px rgba(122, 140, 122, .45); }
   .rec-mic {
-    background: var(--cta-pink);
-    color: #fdfbfa;
-    box-shadow: 0 12px 24px -12px rgba(180,110,110,.32), inset 0 1px 0 rgba(255,255,255,.5);
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(90% 70% at 50% 0%, rgba(255,255,255,.32), transparent 58%),
+      var(--cta-pink);
+    color: var(--burgundy);
+    box-shadow: 0 12px 24px -12px rgba(180,110,110,.32), inset 0 1px 0 rgba(255,255,255,.62);
+  }
+  .rec-mic .pearl-sheen {
+    opacity: .46;
+    background:
+      radial-gradient(86% 58% at 50% 0%, rgba(255,255,255,.58), transparent 64%),
+      radial-gradient(70% 48% at 50% 100%, rgba(255,255,255,.16), transparent 60%);
   }
   .rec-prompts summary {
     list-style: none;
@@ -1134,8 +1151,9 @@
     overflow: hidden;
   }
   #screen-record .rec-mic .pearl-sheen {
-    opacity: .5;
-    background: linear-gradient(115deg, transparent 26%, rgba(255,255,255,.42) 40%, transparent 54%);
+    opacity: .46;
+    background:
+      radial-gradient(72% 68% at 50% 30%, rgba(255,255,255,.62), transparent 62%);
   }
   .rec-stage-shoe {
     position: absolute; right: 10px; top: 12px;
@@ -1685,7 +1703,7 @@
           <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]">这本课记还是空的，等你写下第一页。</p>
         </div>
         <div id="history-month-empty" class="hidden mt-8 text-center text-[12.5px] leading-6 text-[var(--ink-soft)]">这个月还没有课记。左右换月，或点中间选年月。</div>
-        <div id="history-search-empty" class="hidden mt-10 text-center text-[var(--ink-faint)] text-[12.5px]">这个月没有找到相关的记录</div>
+        <div id="history-search-empty" class="hidden mt-10 text-center text-[var(--ink-faint)] text-[12.5px]">全部课记里没有找到相关的记录</div>
         <div id="history-list" class="relative z-10 story"></div>
       </div>
 
@@ -2667,9 +2685,13 @@ async function goProfile() {
   } catch (e) {}
 
   try {
-    const res = await authFetch(`${API}/api/records`);
-    const rows = await res.json();
-    renderBadges(rows);
+    const [recordsRes, shareRes] = await Promise.all([
+      authFetch(`${API}/api/records`),
+      authFetch(`${API}/api/progress/share-badge`),
+    ]);
+    const rows = await recordsRes.json();
+    const shareBadge = await shareRes.json();
+    renderBadges(rows, shareBadge.earned);
   } catch (e) {}
 
   show('screen-profile');
@@ -2701,6 +2723,7 @@ const BADGES = [
   { id: 'streak-52', kind: 'streak', value: 52, icon: 'solar:fire-bold', label: '来过 52 周' },
   { id: 'streak-78', kind: 'streak', value: 78, icon: 'solar:fire-bold', label: '来过 78 周' },
   { id: 'streak-104', kind: 'streak', value: 104, icon: 'solar:fire-bold', label: '来过 104 周' },
+  { id: 'share-1', kind: 'share', icon: 'solar:share-bold', label: '分享过打卡卡片' },
 ];
 function mondayKeyMs(ts) {
   const d = new Date(ts);
@@ -2785,12 +2808,15 @@ function paintTodayClassSummary(rows) {
   el.classList.toggle('hidden', !text);
   el.textContent = text ? `今天 ${text}` : '';
 }
-function renderBadges(rows) {
+function renderBadges(rows, shareEarned) {
   const grid = document.getElementById('badge-grid');
   if (!grid) return;
   const count = (rows || []).filter((r) => !isCheckinOnly(r)).length;
   const bestStreak = computeBestWeekStreak(rows);
-  const badges = BADGES.map(b => ({ ...b, earned: b.kind === 'count' ? count >= b.value : bestStreak >= b.value }));
+  const badges = BADGES.map(b => ({
+    ...b,
+    earned: b.kind === 'count' ? count >= b.value : b.kind === 'streak' ? bestStreak >= b.value : !!shareEarned,
+  }));
   const earned = badges.filter((b) => b.earned);
   const locked = badges.filter((b) => !b.earned);
   document.getElementById('badge-earned-count').textContent = `${earned.length} / ${badges.length}`;
@@ -3476,6 +3502,7 @@ async function downloadCheckinCard() {
   drawCheckinCard();
   const blob = await checkinShareBlob();
   if (!blob) { toast('生成图片失败'); return; }
+  logEvent('share_card_downloaded', {}, 'none');
   const fileName = `balletmind-checkin-${dateKey(new Date())}.png`;
   const file = new File([blob], fileName, { type: 'image/png' });
   if (isAppleTouch()) {
@@ -4091,13 +4118,14 @@ function applyHistoryTerm(term) {
 function filterHistory() {
   renderStoryMonthNav();
   const keyword = document.getElementById('history-search').value.trim();
-  const monthRows = historyRows.filter((r) => inStoryMonth(r));
-  const rows = keyword ? monthRows.filter((r) => storyRowMatches(r, keyword)) : monthRows.slice();
+  const rows = keyword
+    ? historyRows.filter((r) => storyRowMatches(r, keyword))
+    : historyRows.filter((r) => inStoryMonth(r));
   const allEmpty = historyRows.length === 0;
   document.getElementById('history-empty').style.display = allEmpty ? 'block' : 'none';
   document.getElementById('history-month-empty').classList.toggle('hidden', allEmpty || keyword || rows.length > 0);
   document.getElementById('history-search-empty').classList.toggle('hidden', allEmpty || !keyword || rows.length > 0);
-  document.getElementById('history-list').innerHTML = renderStoryList(rows);
+  document.getElementById('history-list').innerHTML = renderStoryList(rows, { chapter: !!keyword });
   renderHistoryTermChips();
 }
 

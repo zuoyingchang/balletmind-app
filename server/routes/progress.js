@@ -333,4 +333,16 @@ router.get('/quota', async (req, res) => {
   });
 });
 
+// GET /api/progress/share-badge -- has this user ever downloaded/shared a
+// check-in card? Backs the one-off "分享过" badge (V0.1 of a share-reward
+// loop -- see product discussion: try the cheapest version first and see if
+// sharing even happens before building a real referral-code system).
+router.get('/share-badge', async (req, res) => {
+  const row = await db.get(
+    "SELECT 1 AS ok FROM events WHERE user_id = ? AND event_name = 'share_card_downloaded' LIMIT 1",
+    [req.userId]
+  );
+  res.json({ earned: !!row });
+});
+
 module.exports = router;
