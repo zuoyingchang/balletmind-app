@@ -593,6 +593,16 @@ test('two lines naming the same ballet term merge even when the rest of the sent
   assert.equal(issues[0].occurrence_count, 2);
 });
 
+test('two specific, different complaints about the same term stay as separate issues', async () => {
+  const { body: { token } } = await registerUser('issue_term_diff@example.com');
+  await saveRecord(token, { className: '基训1', improve_points: 'grand battement 高度不够' });
+  await saveRecord(token, { className: '基训2', improve_points: 'grand battement 落地太重' });
+
+  const res = await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${token}` } });
+  const issues = await res.json();
+  assert.equal(issues.length, 2, 'same term but two distinct, specific complaints should not be merged');
+});
+
 test('an unrelated improve_points line creates a separate issue', async () => {
   const { body: { token } } = await registerUser('issue_separate@example.com');
   await saveRecord(token, { className: '基训1', improve_points: '重心不稳' });

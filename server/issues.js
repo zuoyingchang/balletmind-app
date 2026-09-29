@@ -29,17 +29,59 @@ function extractTerm(s) {
   return TERMS_BY_LENGTH.find((t) => norm.includes(t)) || null;
 }
 
-function isSimilar(a, b) {
-  const na = normalize(a);
-  const nb = normalize(b);
+// Generic evaluative filler with no actual content — "一般般" and "需要改进"
+// both just mean "not good enough" without saying what's wrong. Stripped out
+// before comparing what's left of a line, same idea as ASK_STOPWORDS in
+// ballet-terms.js for the ask-archive tokenizer.
+const GENERIC_FILLER = [
+  '一般般', '一般', '还行', '还可以', '不错', '不够好', '不够', '不太好', '不太行',
+  '需要改进', '需要加强', '需要注意', '还需努力', '还要努力', '有待提高', '待提高',
+  '继续加油', '继续努力', '继续保持', '加油', '多加练习', '多练习', '多练', '可以更好', '要注意',
+].map(normalize).sort((a, b) => b.length - a.length);
+
+function stripFiller(s) {
+  let out = s;
+  for (const f of GENERIC_FILLER) out = out.split(f).join('');
+  return out;
+}
+
+// Cheap, deterministic "do these two leftover snippets share any real
+// content" check — sliding 2-character window, works for CJK and Latin
+// alike without needing word segmentation.
+function hasOverlap(a, b) {
+  if (a.length < 2 || b.length < 2) return a === b;
+  const grams = new Set();
+  for (let i = 0; i < a.length - 1; i++) grams.add(a.slice(i, i + 2));
+  for (let i = 0; i < b.length - 1; i++) if (grams.has(b.slice(i, i + 2))) return true;
+  return false;
+}
+
+// NOT symmetric on purpose: `existingText` is an already-stored issue's
+// text, `newLine` is the incoming improve_points line being matched against
+// it (see the one call site below — always isSimilar(issue.text, line)).
+// The direction matters for the same-term branch: a vague new line ("一般般")
+// safely buckets into whatever existing issue already covers that term, but
+// a SPECIFIC new line must not get silently absorbed by an existing issue
+// that turned out to be vague itself — otherwise the first vague mention of
+// a term becomes a black hole that swallows every later, unrelated specific
+// complaint about the same move.
+function isSimilar(existingText, newLine) {
+  const na = normalize(existingText);
+  const nb = normalize(newLine);
   if (!na || !nb) return false;
   if (na === nb) return true;
   // loose containment match — catches "重心不稳" vs "重心还是不太稳" without NLP
   if (na.length >= 4 && nb.length >= 4 && (na.includes(nb) || nb.includes(na))) return true;
-  // same named ballet term, different trailing description
-  const ta = extractTerm(a);
-  const tb = extractTerm(b);
-  return !!ta && ta === tb;
+  // same named ballet term, then look at what's left after stripping it and
+  // generic filler like "一般般"/"需要改进".
+  const ta = extractTerm(existingText);
+  const tb = extractTerm(newLine);
+  if (!ta || ta !== tb) return false;
+  const rNew = stripFiller(nb.split(tb).join(''));
+  if (!rNew) return true; // new line says nothing specific -- safe to bucket here
+  const rExisting = stripFiller(na.split(ta).join(''));
+  if (!rExisting) return false; // existing issue has no specific content either -- don't let it absorb a real complaint
+  return hasOverlap(rExisting, rNew);
 }
 
 // Called after a record is saved. Matches each line of improve_points against
