@@ -582,6 +582,17 @@ test('a similar improve_points line on a later record bumps the existing issue i
   assert.equal(issues[0].occurrences.length, 2);
 });
 
+test('two lines naming the same ballet term merge even when the rest of the sentence and casing differ', async () => {
+  const { body: { token } } = await registerUser('issue_term_match@example.com');
+  await saveRecord(token, { className: '基训1', improve_points: 'grand battement 一般般' });
+  await saveRecord(token, { className: '基训2', improve_points: 'Grand battement 需要改进' });
+
+  const res = await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${token}` } });
+  const issues = await res.json();
+  assert.equal(issues.length, 1, 'same named term, different trailing phrasing, should still be one issue');
+  assert.equal(issues[0].occurrence_count, 2);
+});
+
 test('an unrelated improve_points line creates a separate issue', async () => {
   const { body: { token } } = await registerUser('issue_separate@example.com');
   await saveRecord(token, { className: '基训1', improve_points: '重心不稳' });

@@ -1,5 +1,6 @@
 const db = require('./db');
 const { splitLines } = require('./lib/text');
+const { BALLET_TERMS } = require('./ballet-glossary');
 
 // Recurring Issue Tracking (V0.2 PRD #1) — deliberately NOT AI-based. Matching
 // a new "improve_points" line against existing open issues is plain text
@@ -11,13 +12,34 @@ function normalize(s) {
   return (s || '').trim().toLowerCase().replace(/[，。！？,.!?\s]/g, '');
 }
 
+// Longest terms first so "grand battement" wins over a shorter term it
+// happens to contain. Terms under 3 normalized characters are skipped —
+// too common on their own to be a useful signal (e.g. two-character
+// position names).
+const TERMS_BY_LENGTH = [...BALLET_TERMS]
+  .map(normalize)
+  .filter((t) => t.length >= 3)
+  .sort((a, b) => b.length - a.length);
+
+// The one named move/term a line is about, e.g. "grand battement 一般般"
+// and "Grand battement 需要改进" both extract "grandbattement" even though
+// the rest of the sentence differs.
+function extractTerm(s) {
+  const norm = normalize(s);
+  return TERMS_BY_LENGTH.find((t) => norm.includes(t)) || null;
+}
+
 function isSimilar(a, b) {
   const na = normalize(a);
   const nb = normalize(b);
   if (!na || !nb) return false;
   if (na === nb) return true;
   // loose containment match — catches "重心不稳" vs "重心还是不太稳" without NLP
-  return na.length >= 4 && nb.length >= 4 && (na.includes(nb) || nb.includes(na));
+  if (na.length >= 4 && nb.length >= 4 && (na.includes(nb) || nb.includes(na))) return true;
+  // same named ballet term, different trailing description
+  const ta = extractTerm(a);
+  const tb = extractTerm(b);
+  return !!ta && ta === tb;
 }
 
 // Called after a record is saved. Matches each line of improve_points against
