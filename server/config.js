@@ -10,7 +10,7 @@ const ADMIN_KEY = process.env.ADMIN_KEY; // optional — gates the /stats.html m
 // CORE_QUOTA_EVENTS. Kept separate from DAILY_SECONDARY_AI_LIMIT so an optional feature
 // (ask-your-archive, the gated pre-class experiment) can never crowd out the quota a user
 // needs to actually record and save a real class.
-const DAILY_AI_LIMIT = Number(process.env.DAILY_AI_LIMIT) || 16; // per user, per calendar day
+const DAILY_AI_LIMIT = Number(process.env.DAILY_AI_LIMIT) || 12; // per user, per calendar day; ~4 recaps if 2 ASR + 1 generate
 const DAILY_SECONDARY_AI_LIMIT = Number(process.env.DAILY_SECONDARY_AI_LIMIT) || 5; // ask + issue-brief experiment
 const MAX_TRANSCRIPT_LENGTH = Number(process.env.MAX_TRANSCRIPT_LENGTH) || 4000; // characters
 

@@ -29,6 +29,37 @@ test('compactPhrase keeps the action and drops spoken filler', () => {
   assert.equal(compactPhrase('转的时候骨盆晃，重心不稳，需要多加练习'), '骨盆晃、重心不稳');
   assert.equal(compactPhrase('重心不稳'), '重心不稳');
   assert.equal(compactPhrase('pirouette 重心不稳、核心不够'), 'pirouette 重心不稳、核心不够');
+  assert.equal(compactPhrase('tendu 做得还不错'), 'tendu');
+  assert.equal(compactPhrase('plié 需要改进'), 'plié');
+});
+
+test('specific how/where is kept after dropping praise tails', () => {
+  const { stripEvalTails } = require('../../public/js/ballet-terms');
+  const { compactReviewField, uniqueCompactGoodPoints } = require('../lib/text');
+  assert.equal(stripEvalTails('tendu 膝盖打开得好'), 'tendu 膝盖打开');
+  assert.equal(stripEvalTails('tendu，膝盖打开得好'), 'tendu，膝盖打开');
+  assert.equal(stripEvalTails('tendu 做得不错'), 'tendu');
+  assert.match(stripEvalTails('这次课我们整个人往上拎，整个的身子腿都往上拎了'), /往上拎/);
+  assert.match(stripEvalTails('这次课我们整个人往上拎，整个的身子腿都往上拎了'), /身子腿/);
+  assert.equal(stripEvalTails('grand battement 胯动了'), 'grand battement 胯动');
+  assert.equal(stripEvalTails('spotting 不够'), 'spotting 不够');
+  assert.equal(stripEvalTails('往上拎需要再注意'), '往上拎');
+  assert.equal(
+    compactReviewField(['tendu 膝盖打开得好', 'tendu 做得不错', 'tendu']),
+    'tendu 膝盖打开'
+  );
+  const lift = uniqueCompactGoodPoints(['这次课我们整个人往上拎，整个的身子腿都往上拎了']);
+  assert.equal(lift.length, 1);
+  assert.match(lift[0], /往上拎/);
+  assert.doesNotMatch(lift[0], /这次课我们/);
+});
+
+test('compactReviewField strips praise tails and duplicate lines', () => {
+  const { compactReviewField } = require('../lib/text');
+  assert.equal(
+    compactReviewField(['tendu 做得不错', 'tendu', 'plié 需要改进']),
+    'tendu\nplié'
+  );
 });
 
 test('expandSearchNeedles for 蹲 includes ascii plie', () => {

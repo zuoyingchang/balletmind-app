@@ -1,3 +1,5 @@
+const { foldBalletText, stripEvalTails } = require('../../public/js/ballet-terms');
+
 function splitLines(text) {
   return (text || '')
     .split('\n')
@@ -5,8 +7,42 @@ function splitLines(text) {
     .filter(Boolean);
 }
 
+function compactGoodPoint(text) {
+  return stripEvalTails(text);
+}
+
+function foldLabelKey(text) {
+  return foldBalletText(text).replace(/[\s,，、]+/g, ' ').trim();
+}
+
+function uniqueCompactGoodPoints(lines) {
+  const items = [];
+  const seen = new Set();
+  for (const line of lines || []) {
+    const label = compactGoodPoint(line);
+    if (!label) continue;
+    const key = foldLabelKey(label);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    items.push({ label, key });
+  }
+  return items
+    .filter((item, i) => {
+      if (item.key.length < 2) return true;
+      return !items.some((other, j) => (
+        j !== i && other.key.length > item.key.length && other.key.includes(item.key)
+      ));
+    })
+    .map((item) => item.label);
+}
+
 function joinLines(value) {
   return Array.isArray(value) ? value.filter(Boolean).join('\n') : (value || '');
+}
+
+function compactReviewField(value) {
+  const lines = Array.isArray(value) ? value : splitLines(value);
+  return joinLines(uniqueCompactGoodPoints(lines));
 }
 
 function parseJson(text, fallback = {}) {
@@ -53,6 +89,7 @@ function withSession(metadata, sessionId) {
 }
 
 module.exports = {
-  splitLines, joinLines, parseJson, averageInt, percentile, latencyStats,
+  splitLines, joinLines, compactGoodPoint, uniqueCompactGoodPoints, foldLabelKey, compactReviewField,
+  parseJson, averageInt, percentile, latencyStats,
   sessionIdFromReq, withSession,
 };

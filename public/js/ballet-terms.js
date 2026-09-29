@@ -175,11 +175,24 @@ function searchRecordsByQuestion(records, question, limit = 3) {
   return scored.slice(0, limit).map((x) => x.record);
 }
 
+function stripEvalTails(text) {
+  let t = String(text || '').trim().replace(/^[·•\-]\s*/, '');
+  const tail = /(?:\s|，|,|、|。)*((做得?|做的)\s*(很|挺|比较|还)?(不错|好|棒)|得(很|挺|比较|还)?(不错|好|棒)|还可以|还不错|挺好|很好|不错|可以|尚可|挺不错|还凑合|凑合|需要再注意|需要改进|需要加强|需要注意|待改进|还行|一般般)\s*[了啊呢吧。！.]*$/u;
+  for (let i = 0; i < 6; i += 1) {
+    const next = t.replace(tail, '').trim();
+    if (next === t) break;
+    t = next;
+  }
+  t = t.replace(/^(这次课|这节课|今天这节课|今天课)(上)?(我们)?/, '').trim();
+  t = t.replace(/[了啊呢吧]+$/u, '').trim();
+  return t;
+}
+
 function compactPhrase(s, maxLen = 28) {
-  let t = String(s || '').replace(/\s+/g, ' ').trim();
-  if (t.length <= maxLen && !/需要多加练习|需要加强|的时候/.test(t)) return t;
+  let t = stripEvalTails(s).replace(/\s+/g, ' ').trim();
+  if (t.length <= maxLen && !/需要多加练习|的时候/.test(t)) return t;
   t = t.replace(/^(我觉得|我感觉|老师说)/, '');
-  t = t.replace(/需要多加练习|需要加强|不太好|不够好/g, '');
+  t = t.replace(/需要多加练习|不太好|不够好/g, '');
   t = t.replace(/[^，。；;、\n]{0,8}的时候/g, '');
   t = t.replace(/[，。；;]+/g, '、').replace(/、+/g, '、').replace(/^、|、$/g, '');
   if (t.length > maxLen) t = `${t.slice(0, maxLen - 1)}…`;
@@ -196,6 +209,7 @@ const api = {
   questionTokens,
   searchRecordsByQuestion,
   compactPhrase,
+  stripEvalTails,
 };
 
 if (typeof module !== 'undefined' && module.exports) {

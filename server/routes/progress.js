@@ -2,7 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { listIssuesWithOccurrences } = require('../issues');
-const { splitLines, sessionIdFromReq, withSession } = require('../lib/text');
+const { splitLines, sessionIdFromReq, withSession, uniqueCompactGoodPoints } = require('../lib/text');
 const { logEvent, countAiCallsToday, countSecondaryAiCallsToday } = require('../events');
 const { aiConfigured, missingConfigHint } = require('../ai/provider');
 const { dailyAiLimitFor, dailySecondaryAiLimitFor } = require('../config');
@@ -75,7 +75,7 @@ router.get('/review', async (req, res) => {
   const openIssues = issues.filter((i) => i.status !== 'resolved');
   const resolvedInPeriod = issues.filter((i) => i.status === 'resolved' && i.updated_at >= since);
 
-  const goodPointsRecap = [...new Set(records.flatMap((r) => splitLines(r.good_points)))];
+  const goodPointsRecap = uniqueCompactGoodPoints(records.flatMap((r) => splitLines(r.good_points)));
 
   res.json({
     mode: useLast ? 'last' : 'days',
@@ -98,30 +98,39 @@ router.get('/brief', async (req, res) => {
     .sort((a, b) => b.occurrence_count - a.occurrence_count)
     .slice(0, 3);
 
-  const lastRecord = await db.get(
+  const recaps = await db.all(
     `SELECT class_name, next_time_reminder, improve_points, session_tips, good_points, created_at
      FROM records
      WHERE user_id = ? AND COALESCE(is_checkin_only, 0) = 0
-     ORDER BY created_at DESC LIMIT 1`,
+     ORDER BY created_at DESC LIMIT 12`,
     [req.userId]
   );
+  const latestRecap = recaps[0] || null;
+  let glance = null;
+  for (const row of recaps) {
+    const improveLines = uniqueCompactGoodPoints(splitLines(row.improve_points));
+    if (!improveLines.length) continue;
+    glance = { row, improveLines };
+    break;
+  }
 
-  const lastRecordPayload = lastRecord
+  const lastRecordPayload = glance
     ? {
-        className: lastRecord.class_name,
-        nextTimeReminder: lastRecord.next_time_reminder,
-        improvePoints: lastRecord.improve_points,
-        sessionTips: lastRecord.session_tips,
-        goodPoints: lastRecord.good_points,
-        createdAt: lastRecord.created_at,
+        className: glance.row.class_name,
+        nextTimeReminder: glance.row.next_time_reminder,
+        improvePoints: glance.improveLines.join('\n'),
+        sessionTips: glance.row.session_tips,
+        goodPoints: glance.row.good_points,
+        createdAt: glance.row.created_at,
+        isLatestRecap: latestRecap ? glance.row.created_at === latestRecap.created_at : true,
       }
     : null;
 
   const payload = {
     topIssues,
-    // improvePoints rides along so the frontend can always show *something*
-    // useful even when there's no repeat issue yet — falls back to the
-    // user's own last "could improve" note. Default path is still zero LLM.
+    hasRecap: Boolean(latestRecap),
+    // Glance is the newest recap that still has improve_points. If the
+    // latest class only had 做得好, we skip back rather than show an empty note.
     lastRecord: lastRecordPayload,
   };
 
@@ -139,7 +148,7 @@ router.get('/brief', async (req, res) => {
           latencyMs: Date.now() - startedAt,
         });
         if (!usedFallback) {
-          payload.experimentBrief = { lines: result.lines, usedFallback: false };
+          payload.experimentBrief = { lines: uniqueCompactGoodPoints(result.lines), usedFallback: false };
         }
       } catch (e) {
         await logEvent(req.userId, 'experiment_issue_brief_fail', {

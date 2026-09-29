@@ -2,7 +2,7 @@ const { AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS, AI_TEMPERATURE } = requir
 const { fetchWithTimeout, isAbortError } = require('../lib/fetch-timeout');
 const { providerName, fallbackProviderName, fallbackModel, isFallbackEligible, recordFallback } = require('./provider');
 const { callOpenAICompatible } = require('./openai-compat');
-const { joinLines } = require('../lib/text');
+const { joinLines, compactReviewField, uniqueCompactGoodPoints } = require('../lib/text');
 const { SYSTEM_PROMPT, REVIEW_TOOL } = require('./review-prompt');
 const {
   SYSTEM_PROMPT_ASK, SEARCH_RECORDS_TOOL, ASK_TOOL, userAskMessage, recordsBlock,
@@ -150,9 +150,9 @@ function findToolUse(data, name) {
 function reviewFromToolInput(input = {}) {
   const tips = Array.isArray(input.session_tips) ? input.session_tips.slice(0, 3) : input.session_tips;
   return {
-    good_points: joinLines(input.good_points),
-    improve_points: joinLines(input.improve_points),
-    next_time_reminder: joinLines(input.next_time_reminder),
+    good_points: compactReviewField(input.good_points),
+    improve_points: compactReviewField(input.improve_points),
+    next_time_reminder: compactReviewField(input.next_time_reminder),
     session_tips: joinLines(tips),
     confidence_level: input.confidence_level || '',
     note: input.note || '',
@@ -163,7 +163,7 @@ function answerFromToolInput(input = {}) {
   return {
     answered: !!input.answered,
     answerPoints: Array.isArray(input.answer_points)
-      ? input.answer_points.map((s) => String(s).trim()).filter(Boolean)
+      ? uniqueCompactGoodPoints(input.answer_points.map((s) => String(s).trim()).filter(Boolean))
       : [],
     citedRecordIds: Array.isArray(input.cited_record_ids) ? input.cited_record_ids.filter((n) => Number.isInteger(n)) : [],
   };

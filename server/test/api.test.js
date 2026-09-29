@@ -604,6 +604,17 @@ test('an accented term and its unaccented spelling merge (plié vs plie)', async
   assert.equal(issues[0].occurrence_count, 2);
 });
 
+test('turnout and 外开 merge as the same issue', async () => {
+  const { body: { token } } = await registerUser('issue_turnout@example.com');
+  await saveRecord(token, { className: '基训1', improve_points: 'turnout 骨盆前倾' });
+  await saveRecord(token, { className: '基训2', improve_points: '外开 骨盆前倾' });
+
+  const res = await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${token}` } });
+  const issues = await res.json();
+  assert.equal(issues.length, 1, 'English and Chinese names of the same term should merge');
+  assert.equal(issues[0].occurrence_count, 2);
+});
+
 test('two specific, different complaints about the same term stay as separate issues', async () => {
   const { body: { token } } = await registerUser('issue_term_diff@example.com');
   await saveRecord(token, { className: '基训1', improve_points: 'grand battement 高度不够' });
@@ -622,6 +633,39 @@ test('an unrelated improve_points line creates a separate issue', async () => {
   const res = await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${token}` } });
   const issues = await res.json();
   assert.equal(issues.length, 2);
+});
+
+test('one record with duplicate improve lines opens a single issue', async () => {
+  const { body: { token } } = await registerUser('issue_same_record_dup@example.com');
+  await saveRecord(token, { className: '基训', improve_points: 'jeté 需要改进\njeté\nJeté 还不错' });
+  const issues = await (await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].occurrence_count, 1);
+  assert.match(issues[0].text, /jet/i);
+});
+
+test('GET /api/issues collapses leftover duplicate cards for the same term', async () => {
+  const { body: { token, user } } = await registerUser('issue_dup_cards@example.com');
+  const now = Date.now();
+  await db.run(
+    `INSERT INTO issues (user_id, text, status, occurrence_count, created_at, updated_at) VALUES (?, ?, 'open', 1, ?, ?)`,
+    [user.id, 'jeté 需要改进', now, now]
+  );
+  await db.run(
+    `INSERT INTO issues (user_id, text, status, occurrence_count, created_at, updated_at) VALUES (?, ?, 'open', 2, ?, ?)`,
+    [user.id, 'jeté', now, now]
+  );
+  const issues = await (await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].occurrence_count, 3);
+
+  await fetch(`${base}/api/issues/${issues[0].id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ status: 'resolved' }),
+  });
+  const leftover = await db.all('SELECT status FROM issues WHERE user_id = ?', [user.id]);
+  assert.equal(leftover.every((row) => row.status === 'resolved'), true);
 });
 
 test('PATCH /api/issues/:id updates status and only the owner can update it', async () => {
@@ -681,6 +725,38 @@ test('/api/progress/review aggregates records and open issues with zero AI calls
   assert.equal(after, before, 'training review must not consume the AI quota');
 });
 
+test('/api/progress/review goodPointsRecap drops empty praise tails', async () => {
+  const { body: { token } } = await registerUser('review_good_short@example.com');
+  await saveRecord(token, { className: '基训', good_points: 'tendu 做得不错\nplié 还可以\n一位手、二位手挺好' });
+  const body = await (await fetch(`${base}/api/progress/review`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  assert.deepEqual(body.goodPointsRecap, ['tendu', 'plié', '一位手、二位手']);
+});
+
+test('/api/progress/review goodPointsRecap merges accented duplicates and contained terms', async () => {
+  const { body: { token } } = await registerUser('review_good_merge@example.com');
+  await saveRecord(token, {
+    className: '基训',
+    good_points: 'Jeté 需要改进\njeté\npiqué pas de chat\npiqué\nPas de chat',
+  });
+  const body = await (await fetch(`${base}/api/progress/review`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  assert.deepEqual(body.goodPointsRecap, ['Jeté', 'piqué pas de chat']);
+});
+
+test('/api/progress/review keeps where/how specifics and drops praise-only tails', async () => {
+  const { body: { token } } = await registerUser('review_keep_specific@example.com');
+  await saveRecord(token, {
+    className: '基训',
+    good_points: 'tendu 膝盖打开得好\ntendu 做得不错\n这次课我们整个人往上拎，整个的身子腿都往上拎了',
+  });
+  const body = await (await fetch(`${base}/api/progress/review`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  assert.ok(body.goodPointsRecap.includes('tendu 膝盖打开'));
+  assert.equal(body.goodPointsRecap.includes('tendu'), false);
+  const lift = body.goodPointsRecap.find((line) => /往上拎/.test(line));
+  assert.ok(lift);
+  assert.match(lift, /身子腿/);
+  assert.doesNotMatch(lift, /这次课我们/);
+});
+
 test('/api/progress/review?last=5 returns the most recent N records, not a calendar window', async () => {
   const { body: { token, user } } = await registerUser('review_last@example.com');
   for (let i = 1; i <= 6; i++) {
@@ -731,6 +807,41 @@ test('/api/progress/brief lastRecord skips a later check-in and keeps the recap 
   const body = await (await fetch(`${base}/api/progress/brief`, { headers: { Authorization: `Bearer ${token}` } })).json();
   assert.equal(body.lastRecord.nextTimeReminder, '上课先对一下 alignment');
   assert.equal(body.lastRecord.improvePoints, '胯不要掉');
+});
+
+test('/api/progress/brief skips a later recap with no improve_points', async () => {
+  const { body: { token } } = await registerUser('brief-skip-empty-improve@example.com');
+  await saveRecord(token, { className: '基训1', improve_points: '胯不要掉' });
+  await saveRecord(token, { className: '基训2', good_points: 'tendu 更稳' });
+
+  const body = await (await fetch(`${base}/api/progress/brief`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  assert.equal(body.hasRecap, true);
+  assert.equal(body.lastRecord.improvePoints, '胯不要掉');
+  assert.equal(body.lastRecord.isLatestRecap, false);
+  assert.equal(body.lastRecord.className, '基训1');
+});
+
+test('/api/progress/brief keeps a specific lift reminder after dropping spoken lead-in', async () => {
+  const { body: { token } } = await registerUser('brief-keep-lift@example.com');
+  await saveRecord(token, {
+    className: '基训',
+    improve_points: '这次课我们整个人往上拎，整个的身子腿都往上拎了\nplié 需要改进',
+  });
+  const body = await (await fetch(`${base}/api/progress/brief`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  assert.match(body.lastRecord.improvePoints, /往上拎/);
+  assert.match(body.lastRecord.improvePoints, /身子腿/);
+  assert.match(body.lastRecord.improvePoints, /plié/);
+  assert.doesNotMatch(body.lastRecord.improvePoints, /这次课我们/);
+  assert.doesNotMatch(body.lastRecord.improvePoints, /需要改进/);
+});
+
+test('issue text keeps a specific leftover like 胯动, not only the step name', async () => {
+  const { body: { token } } = await registerUser('issue_keep_hip@example.com');
+  await saveRecord(token, { className: '基训', improve_points: 'grand battement 胯动了' });
+  const issues = await (await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  assert.equal(issues.length, 1);
+  assert.match(issues[0].text, /grand battement/i);
+  assert.match(issues[0].text, /胯动/);
 });
 
 // ---------- milestone celebration ----------
