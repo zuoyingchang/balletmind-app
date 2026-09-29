@@ -1366,11 +1366,11 @@
       <p id="home-in-app-tip" class="hidden mt-3 rounded-[12px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]">请用 Safari 打开这一页，录音会更顺利。</p>
 
       <section class="mt-5" id="home-archive-block">
-        <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center justify-between gap-2 cursor-pointer" onclick="goHistory()" role="button">
           <h2 class="sec-title font-semibold text-[var(--ink)]">档案</h2>
           <button onclick="goHistory()" class="shrink-0 text-[12px] text-[var(--rose-deep)] font-medium">查看</button>
         </div>
-        <p id="checkin-status" class="mt-1 min-h-[16px] text-[11px] text-[var(--ink-faint)]"></p>
+        <p id="checkin-status" class="mt-1 min-h-[16px] text-[11px] text-[var(--ink-faint)] cursor-pointer" onclick="goHistory()"></p>
         <div class="home-week-ribbon relative mt-1">
           <div class="pearl-sheen"></div>
           <div class="relative z-10 flex items-center gap-2 mb-2">
