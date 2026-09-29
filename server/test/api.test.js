@@ -615,6 +615,17 @@ test('turnout and 外开 merge as the same issue', async () => {
   assert.equal(issues[0].occurrence_count, 2);
 });
 
+test('an English term and its Chinese synonym merge (turnout vs 外开)', async () => {
+  const { body: { token } } = await registerUser('issue_synonym@example.com');
+  await saveRecord(token, { className: '基训1', improve_points: 'turnout 不够' });
+  await saveRecord(token, { className: '基训2', improve_points: '外开不够' });
+
+  const res = await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${token}` } });
+  const issues = await res.json();
+  assert.equal(issues.length, 1, 'turnout and 外开 name the same concept and should merge');
+  assert.equal(issues[0].occurrence_count, 2);
+});
+
 test('two specific, different complaints about the same term stay as separate issues', async () => {
   const { body: { token } } = await registerUser('issue_term_diff@example.com');
   await saveRecord(token, { className: '基训1', improve_points: 'grand battement 高度不够' });

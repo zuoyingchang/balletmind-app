@@ -120,19 +120,29 @@ function isSimilar(existingText, newLine) {
   const nb = normalize(newLine);
   if (!na || !nb) return false;
   if (na === nb) return true;
-  // loose containment match — catches "重心不稳" vs "重心还是不太稳" without NLP
-  if (na.length >= 4 && nb.length >= 4 && (na.includes(nb) || nb.includes(na))) return true;
-  // same named ballet term, then look at what's left after stripping it and
-  // generic filler like "一般般"/"需要改进".
+
+  // Named-term branch takes priority over loose containment whenever BOTH
+  // sides actually name a move. This must run first: once compactGoodPoint
+  // (lib/text.js) reduces a vague line like "grand battement 一般般" down
+  // to the bare term "grand battement", that bare string becomes a literal
+  // prefix of every other line naming the same move, so the containment
+  // check below would fire on its own and silently merge unrelated specific
+  // complaints — exactly the black-hole bug this branch exists to prevent.
   const ta = extractTerm(existingText);
   const tb = extractTerm(newLine);
-  if (!ta || !tb || ta.canonical !== tb.canonical) return false;
-  const rNew = stripFiller(stripNamedMove(nb, tb.canonical));
-  const rExisting = stripFiller(stripNamedMove(na, ta.canonical));
-  if (!rNew && !rExisting) return true;
-  if (!rNew) return true; // new line says nothing specific -- safe to bucket here
-  if (!rExisting) return false; // existing issue has no specific content -- don't swallow a real complaint
-  return hasOverlap(rExisting, rNew);
+  if (ta && tb) {
+    if (ta.canonical !== tb.canonical) return false; // different named moves -- containment doesn't apply either
+    const rNew = stripFiller(stripNamedMove(nb, tb.canonical));
+    const rExisting = stripFiller(stripNamedMove(na, ta.canonical));
+    if (!rNew && !rExisting) return true;
+    if (!rNew) return true; // new line says nothing specific -- safe to bucket here
+    if (!rExisting) return false; // existing issue has no specific content -- don't swallow a real complaint
+    return hasOverlap(rExisting, rNew);
+  }
+
+  // Neither side names a recognized move — fall back to loose whole-string
+  // containment, catching e.g. "重心不稳" vs "重心还是不太稳" without NLP.
+  return na.length >= 4 && nb.length >= 4 && (na.includes(nb) || nb.includes(na));
 }
 
 // Called after a record is saved. Matches each line of improve_points against
@@ -150,7 +160,13 @@ async function processRecordForIssues(userId, recordId, improvePointsText) {
 
   for (const line of lines) {
     const stored = compactGoodPoint(line) || line;
-    const match = openIssues.find((issue) => isSimilar(issue.text, stored) || isSimilar(stored, issue.text));
+    // One-directional only (issue.text = existing, stored = incoming) --
+    // see isSimilar's own comment. Checking both directions with OR
+    // reintroduces the exact bug that comment warns about: a vague existing
+    // issue ("一般般") would match the reversed direction (a vague *line*
+    // safely buckets into anything) and silently absorb unrelated specific
+    // complaints again.
+    const match = openIssues.find((issue) => isSimilar(issue.text, stored));
     const now = Date.now();
     if (match) {
       await db.run(
@@ -237,11 +253,18 @@ async function listIssuesWithOccurrences(userId) {
   return collapseSimilarIssueRows(withOcc);
 }
 
+// One-directional, same reason as the call site in processRecordForIssues:
+// `a` is the cluster's own representative text (existing), `b` is the
+// candidate issue being tested against it. Checking isSimilar(b, a) too
+// would let a vague cluster ("一般般") silently absorb an unrelated specific
+// issue via the reversed direction's "new line says nothing specific"
+// shortcut -- same black-hole bug, just at display-time clustering instead
+// of at creation time.
 function issuesMatch(a, b) {
   const ka = foldLabelKey(compactGoodPoint(a) || a);
   const kb = foldLabelKey(compactGoodPoint(b) || b);
   if (ka && kb && ka === kb) return true;
-  return isSimilar(a, b) || isSimilar(b, a);
+  return isSimilar(a, b);
 }
 
 function mergeOccurrenceRows(left, right) {

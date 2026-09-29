@@ -1752,10 +1752,18 @@
     border-radius: 18px;
   }
   .issue-card-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     white-space: normal;
     overflow-wrap: anywhere;
     word-break: break-word;
     line-height: 1.45;
+  }
+  .issue-card-line + .issue-card-line {
+    padding-top: 1px;
+    border-top: 1px dashed rgba(214,198,196,.4);
+    margin-top: 1px;
   }
   #issues-list {
     display: flex;
@@ -4924,10 +4932,17 @@ function issueCard(issue) {
   const statusLabel = { open: '仍然存在', improving: '有改善' }[issue.status] || '仍然存在';
   const days = uniqueDayLabels(issue.occurrences);
   const isOpen = expandedIssueIds.has(issue.id);
+  const cleaned = stripEvalTails(issue.text) || issue.text;
+  // Same action's multiple details are deliberately kept on one 顿号-joined
+  // line at generation time (not split into separate issues), so a single
+  // issue's text can be a long run-on string. Split it back apart just for
+  // display so it reads as short scannable lines instead of a dense block.
+  const parts = cleaned.split(/、/).map((p) => p.trim()).filter(Boolean);
+  const textHtml = (parts.length ? parts : [cleaned]).map((p) => `<span class="issue-card-line">${escapeHtml(p)}</span>`).join('');
   let html = `<div class="issue-card${isOpen ? ' is-open' : ''}">
     <button type="button" onclick="toggleIssueExpand(${issue.id})" class="w-full flex items-start gap-2 px-3.5 py-2.5 text-left">
       <span class="shrink-0 mt-[6px] w-2 h-2 rounded-full" style="background:${statusDot};box-shadow:0 0 0 2px rgba(255,255,255,.7)" aria-hidden="true"></span>
-      <span class="issue-card-text flex-1 min-w-0 text-[13px] font-medium">${escapeHtml(stripEvalTails(issue.text) || issue.text)}</span>
+      <span class="issue-card-text flex-1 min-w-0 text-[13px] font-medium">${textHtml}</span>
       <span class="issue-count shrink-0 mt-[2px]">${issue.occurrence_count}<small>次</small></span>
       ${days.length ? `<span class="issue-days mt-[3px]">${escapeHtml(days.join(' · '))}</span>` : ''}
       <iconify-icon icon="solar:alt-arrow-${isOpen ? 'up' : 'down'}-linear" class="shrink-0 mt-[4px] text-[13px] text-[var(--ink-faint)]"></iconify-icon>
