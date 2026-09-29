@@ -3,9 +3,9 @@ const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { listIssuesWithOccurrences } = require('../issues');
 const { splitLines, sessionIdFromReq, withSession, uniqueCompactGoodPoints } = require('../lib/text');
-const { logEvent, countAiCallsToday, countSecondaryAiCallsToday } = require('../events');
+const { logEvent, countAiCallsToday, countSecondaryAiCallsToday, countAiRecapsThisWeek } = require('../events');
 const { aiConfigured, missingConfigHint } = require('../ai/provider');
-const { dailyAiLimitFor, dailySecondaryAiLimitFor } = require('../config');
+const { dailyAiLimitFor, dailySecondaryAiLimitFor, weeklyAiLimitFor } = require('../config');
 const { callAskRound1WithRetry, callAskRound2WithRetry, findToolUse, answerFromToolInput } = require('../ai/anthropic');
 const { llmUsageMeta } = require('../lib/llm-event-meta');
 const { retrieveAskRecords, KEYWORD_SPARSE_MAX } = require('../ai/ask-retrieve');
@@ -53,27 +53,39 @@ router.get('/review', async (req, res) => {
   const useLast = req.query.last !== undefined && req.query.last !== '';
   const lastCount = useLast ? Math.min(20, Math.max(1, Number(req.query.last) || 5)) : null;
   const days = useLast ? null : Math.max(1, Number(req.query.days) || 7);
+  // Optional 课程/组合 scope -- when set, "近5次" means the last 5 sessions
+  // OF THAT COURSE (filtered in SQL before the LIMIT), not the last 5
+  // sessions overall with a near-empty result after filtering.
+  const classFilter = String(req.query.class || '').trim().slice(0, 40);
 
   let records;
   let since;
   if (useLast) {
-    records = await db.all(
-      'SELECT id, class_name, good_points, created_at FROM records WHERE user_id = ? ORDER BY created_at DESC LIMIT ?',
-      [req.userId, lastCount]
-    );
+    const params = [req.userId];
+    let sql = 'SELECT id, class_name, good_points, created_at FROM records WHERE user_id = ?';
+    if (classFilter) { sql += ' AND TRIM(class_name) = ?'; params.push(classFilter); }
+    sql += ' ORDER BY created_at DESC LIMIT ?';
+    params.push(lastCount);
+    records = await db.all(sql, params);
     records.reverse();
     since = records.length ? records[0].created_at : Date.now();
   } else {
     since = Date.now() - days * DAY_MS;
-    records = await db.all(
-      'SELECT id, class_name, good_points, created_at FROM records WHERE user_id = ? AND created_at >= ? ORDER BY created_at ASC',
-      [req.userId, since]
-    );
+    const params = [req.userId, since];
+    let sql = 'SELECT id, class_name, good_points, created_at FROM records WHERE user_id = ? AND created_at >= ?';
+    if (classFilter) { sql += ' AND TRIM(class_name) = ?'; params.push(classFilter); }
+    sql += ' ORDER BY created_at ASC';
+    records = await db.all(sql, params);
   }
 
   const issues = await listIssuesWithOccurrences(req.userId);
   const openIssues = issues.filter((i) => i.status !== 'resolved');
-  const resolvedInPeriod = issues.filter((i) => i.status === 'resolved' && i.updated_at >= since);
+  let resolvedInPeriod = issues.filter((i) => i.status === 'resolved' && i.updated_at >= since);
+  if (classFilter) {
+    resolvedInPeriod = resolvedInPeriod.filter((i) => (
+      (i.occurrences || []).some((o) => (o.className || '').trim() === classFilter)
+    ));
+  }
 
   // Newest class first, so a just-saved 做得好 shows at the top instead of
   // being buried after older unique lines (the UI only shows the first few).
@@ -87,6 +99,7 @@ router.get('/review', async (req, res) => {
     mode: useLast ? 'last' : 'days',
     periodDays: days,
     lastCount,
+    classFilter,
     recordCount: records.length,
     records: records.map((r) => ({ id: r.id, className: r.class_name, createdAt: r.created_at })),
     openIssues,
@@ -338,15 +351,18 @@ router.get('/ask', async (req, res) => {
 // entry points so a user sees "还能用 X 次" before hitting the limit,
 // not only after a 429.
 router.get('/quota', async (req, res) => {
-  const [core, secondary] = await Promise.all([
+  const [core, secondary, weekly] = await Promise.all([
     countAiCallsToday(req.userId),
     countSecondaryAiCallsToday(req.userId),
+    countAiRecapsThisWeek(req.userId),
   ]);
   const coreLimit = dailyAiLimitFor(req.userId);
   const secondaryLimit = dailySecondaryAiLimitFor(req.userId);
+  const weeklyLimit = weeklyAiLimitFor(req.userId);
   res.json({
     core: { used: core, limit: coreLimit, remaining: Math.max(0, coreLimit - core) },
     secondary: { used: secondary, limit: secondaryLimit, remaining: Math.max(0, secondaryLimit - secondary) },
+    weekly: { used: weekly, limit: weeklyLimit, remaining: Math.max(0, weeklyLimit - weekly) },
   });
 });
 

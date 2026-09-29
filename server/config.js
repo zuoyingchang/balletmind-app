@@ -11,8 +11,18 @@ const ADMIN_KEY = process.env.ADMIN_KEY; // optional — gates the /stats.html m
 // (ask-your-archive, the gated pre-class experiment) can never crowd out the quota a user
 // needs to actually record and save a real class.
 const DAILY_AI_LIMIT = Number(process.env.DAILY_AI_LIMIT) || 12; // per user, per calendar day; ~4 recaps if 2 ASR + 1 generate
-const DAILY_SECONDARY_AI_LIMIT = Number(process.env.DAILY_SECONDARY_AI_LIMIT) || 5; // ask + issue-brief experiment
+// Free-tier business quota for 问问档案 (ask-your-archive) + the issue-brief
+// experiment -- unlike DAILY_AI_LIMIT this is a monetization lever, not just
+// an anti-abuse cap, so it's set well under the abuse ceiling on purpose.
+const DAILY_SECONDARY_AI_LIMIT = Number(process.env.DAILY_SECONDARY_AI_LIMIT) || 3;
 const MAX_TRANSCRIPT_LENGTH = Number(process.env.MAX_TRANSCRIPT_LENGTH) || 4000; // characters
+
+// The actual free-tier business quota (unlike DAILY_AI_LIMIT above, which is
+// just an anti-abuse safety cap, not a monetization lever). Gates
+// /api/generate over a rolling 7-day window -- see events.js countAiRecapsThisWeek.
+// Once a user hits this, the client routes them to 手动记 (skip AI, type
+// good/improve points directly) instead of a dead end.
+const WEEKLY_AI_LIMIT = Number(process.env.WEEKLY_AI_LIMIT) || 2;
 
 // Same allowlist shape as experiments/issue-brief-gate.js: a higher limit for a short list of
 // user IDs (e.g. the builder's own account doing real-device testing), everyone else unaffected.
@@ -30,6 +40,9 @@ function dailyAiLimitFor(userId) {
 }
 function dailySecondaryAiLimitFor(userId) {
   return isDailyAiLimitOverridden(userId) ? DAILY_AI_LIMIT_OVERRIDE : DAILY_SECONDARY_AI_LIMIT;
+}
+function weeklyAiLimitFor(userId) {
+  return isDailyAiLimitOverridden(userId) ? DAILY_AI_LIMIT_OVERRIDE : WEEKLY_AI_LIMIT;
 }
 
 // Model is env-configurable so swapping tiers (e.g. to A/B a cheaper/faster
@@ -99,7 +112,8 @@ if (!JWT_SECRET) {
 
 module.exports = {
   PORT, JWT_SECRET, ADMIN_KEY, DAILY_AI_LIMIT, dailyAiLimitFor,
-  DAILY_SECONDARY_AI_LIMIT, dailySecondaryAiLimitFor, MAX_TRANSCRIPT_LENGTH,
+  DAILY_SECONDARY_AI_LIMIT, dailySecondaryAiLimitFor,
+  WEEKLY_AI_LIMIT, weeklyAiLimitFor, MAX_TRANSCRIPT_LENGTH,
   AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS, AI_TEMPERATURE,
   OPENAI_API_KEY, ASR_MODEL, ASR_TIMEOUT_MS, MAX_AUDIO_BYTES,
   RESEND_API_KEY, EMAIL_FROM, APP_PUBLIC_URL, RESET_TOKEN_TTL_MS,

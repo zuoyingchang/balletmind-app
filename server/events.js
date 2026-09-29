@@ -17,6 +17,13 @@ const SECONDARY_QUOTA_EVENTS = [
 
 const QUOTA_EVENTS = [...CORE_QUOTA_EVENTS, ...SECONDARY_QUOTA_EVENTS];
 
+// The weekly free-tier business quota (as opposed to DAILY_AI_LIMIT, which is
+// just an anti-abuse safety cap) counts actual 复盘 units, not every ASR
+// call a multi-segment recording makes -- one voice recap that took 2
+// segments to record still only costs one generate() call.
+const WEEKLY_QUOTA_EVENTS = ['ai_process_success', 'ai_process_fail'];
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
 function startOfLocalDayMs() {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
@@ -33,22 +40,52 @@ async function logEvent(userId, eventName, metadata) {
   return true;
 }
 
-async function countEventsToday(userId, eventNames) {
+async function countEventsSince(userId, eventNames, sinceMs) {
   const placeholders = eventNames.map(() => '?').join(', ');
   const row = await db.get(
     `SELECT COUNT(*) AS c FROM events
      WHERE user_id = ? AND event_name IN (${placeholders}) AND created_at >= ?`,
-    [userId, ...eventNames, startOfLocalDayMs()]
+    [userId, ...eventNames, sinceMs]
   );
   return row.c;
 }
 
 function countAiCallsToday(userId) {
-  return countEventsToday(userId, CORE_QUOTA_EVENTS);
+  return countEventsSince(userId, CORE_QUOTA_EVENTS, startOfLocalDayMs());
 }
 
 function countSecondaryAiCallsToday(userId) {
-  return countEventsToday(userId, SECONDARY_QUOTA_EVENTS);
+  return countEventsSince(userId, SECONDARY_QUOTA_EVENTS, startOfLocalDayMs());
 }
 
-module.exports = { logEvent, KNOWN_EVENTS, countAiCallsToday, countSecondaryAiCallsToday };
+// Rolling 7-day window, not calendar-week -- matches how "近7天" already
+// works elsewhere in the app, and avoids a quota that resets to full every
+// Monday regardless of when in the week it was used.
+//
+// Counts distinct 复盘 attempts (by sessionId), not raw generate() calls --
+// tapping "重新生成" to fix a mis-heard word calls /api/generate again for
+// the SAME recap, and that shouldn't burn a second weekly slot. Raw AI call
+// volume (for cost tracking) is a separate concern -- every call is still
+// logged with its own event and token/cost metadata regardless of this
+// count; this function only answers "how many recaps has the user done".
+async function countAiRecapsThisWeek(userId) {
+  const placeholders = WEEKLY_QUOTA_EVENTS.map(() => '?').join(', ');
+  const rows = await db.all(
+    `SELECT id, metadata FROM events
+     WHERE user_id = ? AND event_name IN (${placeholders}) AND created_at >= ?`,
+    [userId, ...WEEKLY_QUOTA_EVENTS, Date.now() - WEEK_MS]
+  );
+  const units = new Set();
+  for (const row of rows) {
+    let sessionId = '';
+    try { sessionId = JSON.parse(row.metadata || '{}').sessionId || ''; } catch (e) {}
+    // No sessionId (shouldn't normally happen) -- fall back to counting it
+    // as its own unit rather than silently merging unrelated attempts.
+    units.add(sessionId ? `s:${sessionId}` : `e:${row.id}`);
+  }
+  return units.size;
+}
+
+module.exports = {
+  logEvent, KNOWN_EVENTS, countAiCallsToday, countSecondaryAiCallsToday, countAiRecapsThisWeek,
+};

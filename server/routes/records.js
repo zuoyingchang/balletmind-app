@@ -31,7 +31,10 @@ router.post('/', async (req, res) => {
   const slotsFilled = [good_points, improve_points, next_time_reminder, session_tips]
     .filter((s) => String(s || '').trim()).length;
   const fromClient = req.body && req.body.from;
-  const from = (fromClient === 'voice' || fromClient === 'typed' || fromClient === 'mixed')
+  // 'manual' = 手动记: typed straight into structured good/improve fields,
+  // no AI call at all -- distinct from 'typed' (typed into the free-text box
+  // that still gets AI-structured via /api/generate).
+  const from = (fromClient === 'voice' || fromClient === 'typed' || fromClient === 'mixed' || fromClient === 'manual')
     ? fromClient
     : (Number(durationSec) > 0 ? 'voice' : 'typed');
   const info = await db.run(

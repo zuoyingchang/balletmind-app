@@ -9,6 +9,7 @@ const { requireAuth, signToken } = require('../middleware/auth');
 const { logAuth } = require('../lib/log');
 const { loginLimiter, registerLimiter, forgotLimiter, resetLimiter, deleteAccountLimiter } = require('../middleware/rate-limit');
 const { normalizeEmail, isValidEmail } = require('../lib/email-format');
+const { passwordRuleError } = require('../lib/password-format');
 
 const router = express.Router();
 
@@ -62,7 +63,8 @@ router.post('/register', registerLimiter, async (req, res) => {
   const { email, password, displayName, privacyAccepted } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: '请填写邮箱和密码' });
   if (!isValidEmail(email)) return res.status(400).json({ error: '邮箱格式不对' });
-  if (password.length < 6) return res.status(400).json({ error: '密码至少6位' });
+  const registerPwErr = passwordRuleError(password);
+  if (registerPwErr) return res.status(400).json({ error: registerPwErr });
   if (!privacyAccepted) return res.status(400).json({ error: '请先阅读并同意隐私政策' });
   const normalized = normalizeEmail(email);
   const existing = await db.get('SELECT id FROM users WHERE email = ?', [normalized]);
@@ -142,7 +144,8 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
 router.post('/reset-password', resetLimiter, async (req, res) => {
   const { token, password } = req.body || {};
   if (!token || !password) return res.status(400).json({ error: '缺少重置信息' });
-  if (password.length < 6) return res.status(400).json({ error: '密码至少6位' });
+  const resetPwErr = passwordRuleError(password);
+  if (resetPwErr) return res.status(400).json({ error: resetPwErr });
 
   const row = await db.get(
     'SELECT * FROM password_reset_tokens WHERE token_hash = ?',

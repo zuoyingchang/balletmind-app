@@ -5,6 +5,7 @@ process.env.JWT_SECRET = 'test-secret-do-not-use-in-prod';
 process.env.TURSO_DATABASE_URL = 'file::memory:';
 process.env.ADMIN_KEY = 'test-admin-key';
 process.env.DAILY_AI_LIMIT = '5';
+process.env.WEEKLY_AI_LIMIT = '6'; // above DAILY_AI_LIMIT so the two quota tests can isolate each path
 process.env.RATE_LIMIT_DISABLED = '1'; // this suite registers many users from one IP; limiter has its own test file
 process.env.AI_TIMEOUT_MS = '200'; // short, so the timeout test doesn't take 25s
 process.env.ANTHROPIC_API_KEY = 'test-key-unused-fetch-is-mocked'; // real calls are always mocked in this file
@@ -68,6 +69,14 @@ test('register rejects a short password', async () => {
   assert.equal(status, 400);
 });
 
+test('register rejects a password without both letters and digits', async () => {
+  const letters = await registerUser('lettersonly@example.com', 'abcdef');
+  assert.equal(letters.status, 400);
+  assert.match(letters.body.error, /字母和数字/);
+  const digits = await registerUser('digitsonly@example.com', '123456');
+  assert.equal(digits.status, 400);
+});
+
 test('register and login reject a malformed email', async () => {
   const bad = await fetch(`${base}/api/auth/register`, {
     method: 'POST',
@@ -95,12 +104,12 @@ test('register rejects missing privacy acceptance', async () => {
 });
 
 test('login succeeds with correct credentials and fails with wrong password', async () => {
-  await registerUser('bob@example.com', 'correcthorse');
+  await registerUser('bob@example.com', 'correcthorse1');
 
   const ok = await fetch(`${base}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'bob@example.com', password: 'correcthorse' }),
+    body: JSON.stringify({ email: 'bob@example.com', password: 'correcthorse1' }),
   });
   assert.equal(ok.status, 200);
 
@@ -371,6 +380,42 @@ test('/api/generate enforces the daily per-user quota', async () => {
   assert.match(body.error, /今天的AI/);
 });
 
+// Weekly quota is the actual free-tier business gate (unlike DAILY_AI_LIMIT,
+// an anti-abuse safety cap) -- checked first, so it wins even when a count
+// would also trip the daily cap. The manual-entry ("手动记") fallback this
+// unlocks is a client-side UI path with no dedicated endpoint of its own.
+test('/api/generate enforces the weekly free-tier quota, and it is checked before the daily cap', async () => {
+  const { body: { token, user } } = await registerUser('weekly_quota@example.com');
+  const { logEvent } = require('../events');
+  for (let i = 0; i < 6; i++) await logEvent(user.id, 'ai_process_success', {});
+
+  const res = await fetch(`${base}/api/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ transcript: '今天练了tendu' }),
+  });
+  assert.equal(res.status, 429);
+  const body = await res.json();
+  assert.match(body.error, /这周的AI/);
+  assert.equal(body.code, 'weekly_quota');
+});
+
+test('/api/progress/quota reports weekly AI usage alongside daily', async () => {
+  const { body: { token, user } } = await registerUser('quota_weekly_report@example.com');
+  const { logEvent } = require('../events');
+  await logEvent(user.id, 'ai_process_success', {});
+  await logEvent(user.id, 'ai_process_fail', {});
+
+  const res = await fetch(`${base}/api/progress/quota`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.weekly.used, 2);
+  assert.equal(body.weekly.limit, 6);
+  assert.equal(body.weekly.remaining, 4);
+});
+
 // ---------- events ----------
 test('/api/events requires auth', async () => {
   const res = await fetch(`${base}/api/events`, {
@@ -568,6 +613,27 @@ test('saving a record with improve_points opens a new issue', async () => {
   assert.equal(issues[0].occurrence_count, 1);
   assert.equal(issues[0].status, 'open');
   assert.equal(issues[0].occurrences.length, 1);
+});
+
+test('手动记 (from: "manual", no AI call) still opens an issue and gets recorded with that from value', async () => {
+  const { body: { token, user } } = await registerUser('issue_manual@example.com');
+  const saved = await saveRecord(token, {
+    className: '基训', good_points: '手位不错', improve_points: '腿没绷直',
+    durationSec: 0, from: 'manual',
+  });
+  assert.ok(saved.id);
+
+  const res = await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${token}` } });
+  const issues = await res.json();
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].text, '腿没绷直');
+
+  const db = require('../db');
+  const row = await db.get(
+    "SELECT metadata FROM events WHERE user_id = ? AND event_name = 'save_record'",
+    [user.id]
+  );
+  assert.match(row.metadata, /"from":"manual"/);
 });
 
 test('a similar improve_points line on a later record bumps the existing issue instead of creating a new one', async () => {
@@ -1231,7 +1297,7 @@ test('forgot-password does not leak whether an email is registered', async () =>
   const missingBody = await missing.json();
   assert.equal(missingBody.resetUrl, undefined);
 
-  await registerUser('resetme@example.com', 'oldpassword');
+  await registerUser('resetme@example.com', 'oldpassword1');
   const found = await fetch(`${base}/api/auth/forgot-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1246,28 +1312,28 @@ test('forgot-password does not leak whether an email is registered', async () =>
   const reset = await fetch(`${base}/api/auth/reset-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, password: 'newpassword' }),
+    body: JSON.stringify({ token, password: 'newpassword1' }),
   });
   assert.equal(reset.status, 200);
 
   const oldPw = await fetch(`${base}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'resetme@example.com', password: 'oldpassword' }),
+    body: JSON.stringify({ email: 'resetme@example.com', password: 'oldpassword1' }),
   });
   assert.equal(oldPw.status, 401);
 
   const newPw = await fetch(`${base}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'resetme@example.com', password: 'newpassword' }),
+    body: JSON.stringify({ email: 'resetme@example.com', password: 'newpassword1' }),
   });
   assert.equal(newPw.status, 200);
 
   const reused = await fetch(`${base}/api/auth/reset-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, password: 'anotherpassword' }),
+    body: JSON.stringify({ token, password: 'anotherpassword1' }),
   });
   assert.equal(reused.status, 400);
 });

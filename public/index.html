@@ -776,11 +776,15 @@
     box-shadow: 0 0 0 1px rgba(255,255,255,.55);
   }
   .rec-mic.is-recording {
-    background: linear-gradient(180deg, #cbb4b2, #c0aaa8);
+    background:
+      radial-gradient(90% 70% at 50% 0%, rgba(255,255,255,.42), transparent 58%),
+      linear-gradient(135deg, #f6d8d8 0%, #e8b6ba 52%, #d4a0a6 100%);
+    color: #fff8f6;
+    box-shadow: 0 12px 24px -12px rgba(176, 88, 100, .38), inset 0 1px 0 rgba(255,255,255,.7);
   }
   @keyframes recPulseRing {
-    0% { box-shadow: 0 0 0 0 rgba(184,154,154,.45), 0 0 0 1px rgba(255,255,255,.55); }
-    100% { box-shadow: 0 0 0 16px rgba(184,154,154,0), 0 0 0 1px rgba(255,255,255,.55); }
+    0% { box-shadow: 0 0 0 0 rgba(212, 160, 166, .5), 0 0 0 1px rgba(255,255,255,.55); }
+    100% { box-shadow: 0 0 0 16px rgba(212, 160, 166, 0), 0 0 0 1px rgba(255,255,255,.55); }
   }
   .rec-mic-wrap:has(.is-recording) { animation: recPulseRing 1.6s ease-out infinite; }
   input, textarea {
@@ -1556,10 +1560,32 @@
     padding: 0 16px;
     border-radius: 12px;
     font-size: 13px;
-    background: rgba(255,252,251,.92);
-    border: 1px solid var(--border-soft);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
+    background: rgba(255,252,251,.96);
+    border: 1px solid rgba(176, 148, 148, .55);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
   }
+  .auth-field:focus {
+    border-color: rgba(160, 125, 125, .85);
+    outline: none;
+  }
+  .auth-pw-wrap { position: relative; }
+  .auth-pw-wrap .auth-field { padding-right: 44px; }
+  .auth-pw-toggle {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--rose-deep);
+    background: none;
+    border: 0;
+    border-radius: 10px;
+  }
+  .auth-pw-toggle iconify-icon { font-size: 20px; }
   #screen-auth h1.font-display {
     letter-spacing: .06em;
     font-weight: 500;
@@ -1653,6 +1679,10 @@
     overflow: hidden;
     color: #8a6d7a;
     box-shadow: 0 14px 28px -12px rgba(150,80,100,.42), inset 0 2px 0 rgba(255,255,255,.78);
+  }
+  #screen-record .rec-mic.is-recording {
+    color: #fff8f6;
+    box-shadow: 0 14px 28px -12px rgba(176, 80, 96, .42), inset 0 2px 0 rgba(255,255,255,.78);
   }
   #screen-record .rec-mic .pearl-sheen {
     opacity: .56;
@@ -1936,6 +1966,26 @@
   .note-block.is-improve { border-left-color: rgba(184, 148, 86, .5); }
   .note-block.is-next { border-left-color: rgba(168, 96, 96, .45); }
   .note-block.is-tip { border-left-color: rgba(150, 120, 140, .4); }
+  .note-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 0 0 8px;
+  }
+  .note-head .note-kicker { margin: 0; }
+  .note-line-hint {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: .02em;
+    color: var(--ink-faint);
+  }
+  .field-optional {
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--ink-faint);
+  }
   .note-area {
     min-height: 72px;
     padding: 12px 14px;
@@ -2154,22 +2204,32 @@
   <div class="screen active flex-col w-full h-full wash-rose auth-reveal" id="screen-auth">
     <div id="curtain-veil" aria-hidden="true"></div>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pt-8 pb-8 flex flex-col">
-      <div class="auth-hero relative z-10">
+      <div class="auth-hero relative z-10 shrink-0">
         <img src="/img/pack-shoes-pink.png" alt="" class="deco-sway mx-auto">
         <h1 class="font-display mt-2">BalletMind</h1>
         <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="auth-subtitle">下课后说几句，AI 帮你复盘，回来查收问题和进步。</p>
         <p id="auth-in-app-tip" class="hidden mt-3 rounded-[12px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]">请用 Safari 打开这一页，录音会更顺利。</p>
       </div>
 
-      <div class="relative z-10 mt-5 space-y-3">
+      <div class="relative z-10 mt-5 space-y-3 shrink-0">
         <div id="auth-name-wrap" class="relative z-10 hidden">
           <input id="auth-name" placeholder="昵称（可选）" class="auth-field">
         </div>
         <input id="auth-email" type="email" placeholder="邮箱（如 name@example.com）" class="relative z-10 auth-field">
-        <input id="auth-password" type="password" placeholder="密码（至少6位）" onkeydown="if(event.key==='Enter') submitAuth()" class="relative z-10 auth-field">
+        <div id="auth-password-wrap" class="relative z-10 auth-pw-wrap">
+          <input id="auth-password" type="password" placeholder="密码（至少6位）" autocomplete="current-password" onkeydown="if(event.key==='Enter') submitAuth()" class="auth-field">
+          <button type="button" class="auth-pw-toggle" onclick="toggleAuthPassword('auth-password', this)" aria-label="显示密码">
+            <iconify-icon icon="solar:eye-linear"></iconify-icon>
+          </button>
+        </div>
         <div id="auth-confirm-wrap" class="relative z-10 hidden">
-          <input id="auth-confirm-password" type="password" placeholder="再输一次密码" onkeydown="if(event.key==='Enter') submitAuth()" class="auth-field">
-      </div>
+          <div class="auth-pw-wrap">
+            <input id="auth-confirm-password" type="password" placeholder="再输一次密码" autocomplete="new-password" onkeydown="if(event.key==='Enter') submitAuth()" class="auth-field">
+            <button type="button" class="auth-pw-toggle" onclick="toggleAuthPassword('auth-confirm-password', this)" aria-label="显示密码">
+              <iconify-icon icon="solar:eye-linear"></iconify-icon>
+            </button>
+          </div>
+        </div>
         <div id="auth-privacy-wrap" class="relative z-10 hidden">
           <label class="flex items-start gap-2 text-[11.5px] text-[var(--ink-soft)] leading-5 px-0.5">
             <input id="auth-privacy" type="checkbox" class="mt-0.5">
@@ -2180,14 +2240,14 @@
 
       <div id="auth-error" class="hidden relative z-10 mt-3 text-[11.5px] text-[var(--rose-deep)] chip border border-[var(--border-soft)] rounded-xl p-3"></div>
 
-      <button id="auth-submit-btn" onclick="submitAuth()" class="relative z-10 btn-ribbon mt-5 h-12 rounded-full text-[13.5px] font-semibold">
+      <button id="auth-submit-btn" type="button" onclick="submitAuth()" class="relative z-10 shrink-0 w-full btn-ribbon mt-5 h-12 rounded-full text-[13.5px] font-semibold">
         <span class="pearl-sheen"></span>
         <span class="relative z-10" id="auth-submit-label">登录</span>
       </button>
-      <button onclick="showForgotPassword()" class="relative z-10 mt-3 text-[12px] text-[var(--ink-faint)]" id="auth-forgot-btn">忘记密码？</button>
+      <button type="button" onclick="showForgotPassword()" class="relative z-10 shrink-0 mt-3 text-[12px] text-[var(--ink-faint)]" id="auth-forgot-btn">忘记密码？</button>
 
-      <div class="relative z-10 mt-auto pt-8 text-center">
-        <button onclick="toggleAuthMode()" class="text-[13.5px] font-medium text-[var(--rose-deep)]" id="auth-toggle-btn">还没有账号？去注册</button>
+      <div class="relative z-10 shrink-0 mt-auto pt-4 text-center">
+        <button type="button" onclick="toggleAuthMode()" class="text-[13.5px] font-medium text-[var(--rose-deep)]" id="auth-toggle-btn">还没有账号？去注册</button>
       </div>
     </main>
   </div>
@@ -2428,6 +2488,7 @@
         </button>
       </div>
       <p id="rec-quota-note" class="text-center mt-2">每天大约可以复盘 4 到 6 次</p>
+      <button type="button" onclick="startManualEntry()" class="block w-full text-center mt-1.5 text-[11.5px] text-[var(--rose-deep)]">不用AI，直接手动记</button>
       </div>
   </div>
 
@@ -2456,8 +2517,8 @@
     <header class="shrink-0 px-6 pt-7 pb-3 flex items-center gap-4">
       <button onclick="goBackFromReview()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回修改"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
       <div>
-        <p class="label-editorial text-[13px] text-[var(--rose-deep)]">成长中，再接再厉</p>
-        <h1 class="page-title mt-0.5">复盘</h1>
+        <p class="label-editorial text-[13px] text-[var(--rose-deep)]" id="review-header-kicker">成长中，再接再厉</p>
+        <h1 class="page-title mt-0.5" id="review-header-title">复盘</h1>
       </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-8">
@@ -2467,11 +2528,17 @@
       <div class="card-journal card-satin grain relative overflow-hidden mb-4 px-4 pt-4 pb-2" style="border-radius:24px">
         <div class="pearl-sheen"></div>
       <div class="relative z-10 mb-5 note-block is-good">
-        <p class="note-kicker is-good">做得好的地方</p>
+        <div class="note-head">
+          <p class="note-kicker is-good">做得好的地方</p>
+          <p id="review-good-hint" class="note-line-hint hidden">一行一条</p>
+        </div>
         <textarea id="review-good" class="field-good-lift note-area w-full rounded-2xl field-good" oninput="fitNoteArea(this)"></textarea>
       </div>
       <div class="relative z-10 mb-5 note-block is-improve">
-        <p class="note-kicker is-improve">还要改的</p>
+        <div class="note-head">
+          <p class="note-kicker is-improve">还要改的</p>
+          <p id="review-improve-hint" class="note-line-hint hidden">一行一条</p>
+        </div>
         <textarea id="review-improve" class="note-area w-full rounded-2xl field-improve" oninput="fitNoteArea(this)"></textarea>
       </div>
       <textarea id="review-next" class="hidden" tabindex="-1" aria-hidden="true"></textarea>
@@ -2481,11 +2548,11 @@
       <div class="card-journal grain relative overflow-hidden mb-4 px-4 py-3.5" style="border-radius:18px">
         <div class="pearl-sheen"></div>
         <div class="relative z-10">
-          <p class="text-[11px] leading-5 text-[var(--ink-faint)]">课名和时长都可以先空着</p>
-          <p class="mt-3 text-[11.5px] text-[var(--ink-faint)] mb-2">课名</p>
-          <input id="review-classname" placeholder="如：基训、把杆、足尖" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] text-[12.5px]">
+          <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">课程/组合<span class="field-optional">（可选）</span></p>
+          <input id="review-classname" oninput="updateClassNameHint('review-classname','review-classname-hint')" placeholder="如：基训、软开拉伸、跳跃组合" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] text-[12.5px]">
+          <p id="review-classname-hint" class="mt-1.5 text-[10.5px] text-[var(--ink-faint)]">填一下的话，以后能按课程/组合筛选</p>
           <div id="review-class-chips" class="mt-2 flex gap-2 flex-wrap"></div>
-          <p class="mt-3 text-[11.5px] text-[var(--ink-faint)] mb-2">时长</p>
+          <p class="mt-3 text-[11.5px] text-[var(--ink-faint)] mb-2">时长<span class="field-optional">（可选）</span></p>
           <div class="flex gap-2 flex-wrap" id="duration-chips">
             <button type="button" onclick="selectDuration(30)" data-min="30" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">0.5小时</button>
             <button type="button" onclick="selectDuration(60)" data-min="60" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1小时</button>
@@ -2499,7 +2566,7 @@
       <div class="mb-4 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] px-3.5 py-3">
         <button type="button" onclick="toggleReviewExtras()" class="w-full flex items-center justify-between text-left gap-2">
           <span class="min-w-0">
-            <span class="block text-[12.5px] font-medium text-[var(--ink)]">还可以记下</span>
+            <span class="block text-[12.5px] font-medium text-[var(--ink)]">还可以记下<span class="field-optional font-normal">（可选）</span></span>
             <span class="block mt-0.5 text-[11px] leading-4 text-[var(--ink-faint)]" id="review-extras-summary">心情、小提示，都可以以后再补</span>
           </span>
           <iconify-icon icon="solar:alt-arrow-down-linear" id="review-extras-icon" class="shrink-0 text-[16px] text-[var(--ink-faint)]"></iconify-icon>
@@ -2534,12 +2601,12 @@
             </div>
           </div>
 
-          <section class="rounded-[18px] bg-[var(--ivory)] border border-[var(--border-soft)] p-3">
+          <section class="rounded-[18px] bg-[var(--ivory)] border border-[var(--border-soft)] p-3" id="review-transcript-sec">
             <p class="text-[11.5px] font-medium text-[var(--ink-soft)] mb-1">语音转写</p>
             <p class="text-[12px] leading-6 text-[var(--ink-soft)]" id="review-transcript"></p>
           </section>
 
-          <div class="rounded-2xl bg-[var(--ivory)] border border-dashed border-[var(--rose)]/40 p-3">
+          <div class="rounded-2xl bg-[var(--ivory)] border border-dashed border-[var(--rose)]/40 p-3" id="review-term-correction-sec">
         <button type="button" onclick="toggleTermCorrection()" class="w-full flex items-center justify-between text-left">
           <span class="text-[11.5px] text-[var(--mauve)]">动作名称听错了，可以在这里改</span>
           <iconify-icon icon="solar:alt-arrow-down-linear" id="term-toggle-icon" class="text-[14px] text-[var(--ink-faint)]"></iconify-icon>
@@ -2556,7 +2623,7 @@
       </div>
     </main>
     <div class="sticky-actions shrink-0 px-6 pt-3 flex gap-3">
-      <button type="button" onclick="retryGenerate()" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">重新生成</button>
+      <button type="button" id="review-retry-btn" onclick="retryGenerate()" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">重新生成</button>
       <button type="button" id="review-save-btn" onclick="confirmSave()" class="btn-ribbon flex-1 h-11 rounded-full text-[12.5px] font-semibold"><span class="pearl-sheen"></span><span class="relative z-10">确认保存</span></button>
     </div>
     <div id="review-save-tip" class="coach-tip hidden">看过就可以点「确认保存」。</div>
@@ -2832,6 +2899,7 @@
           </div>
           <span class="text-[11px] text-[var(--ink-faint)]">可更改状态</span>
         </div>
+        <div id="issue-class-filter" class="hidden mt-2 flex flex-wrap gap-1.5"></div>
         <div id="issue-donut-wrap" class="issue-legend hidden">
           <svg id="issue-donut-svg" viewBox="0 0 64 64" class="w-9 h-9 shrink-0"></svg>
           <div class="flex-1 min-w-0">
@@ -2850,16 +2918,16 @@
       <div id="progress-look-view" class="hidden">
       <section id="progress-ask-sec">
         <h2 class="sec-head font-display text-[17px] font-semibold"><span class="home-track-icon is-ask"><iconify-icon icon="solar:chat-round-linear"></iconify-icon></span>问问我的档案</h2>
-        <p class="mt-1 text-[11.5px] leading-5 text-[var(--ink-faint)]">点名一个动作，看看课记里怎么写的。</p>
+        <p class="mt-1 text-[11.5px] leading-5 text-[var(--ink-faint)]">问一个动作，或者问一节课/组合，都可以。</p>
         <div class="ask-sheet card-journal grain relative overflow-hidden mt-3 p-4">
           <div class="pearl-sheen"></div>
           <div class="relative z-10 flex gap-2">
-            <input id="ask-archive-input" type="text" placeholder="比如：tendu 最近怎么样" class="flex-1 h-10 px-3 rounded-xl border border-[var(--border-soft)] text-[12.5px] bg-white/70" onkeydown="if(event.key==='Enter') askArchive()">
+            <input id="ask-archive-input" type="text" placeholder="比如：基训课最近有什么问题" class="flex-1 h-10 px-3 rounded-xl border border-[var(--border-soft)] text-[12.5px] bg-white/70" onkeydown="if(event.key==='Enter') askArchive()">
             <button type="button" onclick="askArchive()" id="ask-archive-btn" class="btn-ribbon shrink-0 h-10 px-4 rounded-full text-[12.5px] font-medium">
               <span class="pearl-sheen"></span><span class="relative z-10">问</span>
             </button>
           </div>
-          <p id="ask-quota-note" class="relative z-10 mt-2">每天可以问 5 次</p>
+          <p id="ask-quota-note" class="relative z-10 mt-2">每天限量，问问看</p>
           <div id="ask-archive-result" class="relative z-10 mt-3 hidden text-[12.5px] leading-6 text-[var(--ink)]"></div>
         </div>
       </section>
@@ -2872,6 +2940,7 @@
             <button type="button" id="review-last-btn" onclick="generateTrainingReview('last')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium text-[var(--ink-faint)]">近5次</button>
           </div>
         </div>
+        <div id="review-class-filter" class="hidden mt-2 flex flex-wrap gap-1.5"></div>
         <div id="review-content" class="mt-3">正在翻你最近的课记…</div>
         <button id="review-export-btn" onclick="exportTrainingReview()" class="hidden mt-2 w-full py-2 text-center text-[12px] text-[var(--rose-deep)] tracking-wide">复制文本</button>
       </section>
@@ -3051,8 +3120,9 @@
     </div>
     <div class="checkin-sheet-fields">
     <div class="checkin-sheet-field">
-      <p class="checkin-sheet-k">课名</p>
-      <input id="checkin-classname" maxlength="40" placeholder="如：基训、把杆、足尖" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] bg-white/70 text-[12.5px]">
+      <p class="checkin-sheet-k">课程/组合</p>
+      <input id="checkin-classname" maxlength="40" oninput="updateClassNameHint('checkin-classname','checkin-classname-hint')" placeholder="如：基训、软开拉伸、跳跃组合" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] bg-white/70 text-[12.5px]">
+      <p id="checkin-classname-hint" class="mt-1.5 text-[10.5px] text-[var(--ink-faint)]">填一下的话，以后能按课程/组合筛选</p>
       <div id="checkin-class-chips" class="mt-2 flex gap-2 flex-wrap"></div>
     </div>
     <div class="checkin-sheet-field">
@@ -3439,13 +3509,33 @@ function ensureBrowseSession() {
 }
 
 let authMode = 'login';
+function toggleAuthPassword(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const icon = btn.querySelector('iconify-icon');
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  if (icon) icon.setAttribute('icon', show ? 'solar:eye-closed-linear' : 'solar:eye-linear');
+  btn.setAttribute('aria-label', show ? '隐藏密码' : '显示密码');
+}
+function resetAuthPasswordVisibility() {
+  ['auth-password', 'auth-confirm-password'].forEach((id) => {
+    const input = document.getElementById(id);
+    if (!input) return;
+    input.type = 'password';
+    const btn = input.parentElement && input.parentElement.querySelector('.auth-pw-toggle');
+    if (!btn) return;
+    const icon = btn.querySelector('iconify-icon');
+    if (icon) icon.setAttribute('icon', 'solar:eye-linear');
+    btn.setAttribute('aria-label', '显示密码');
+  });
+}
 function setAuthMode(mode) {
   authMode = mode;
   const isLogin = mode === 'login';
   const isRegister = mode === 'register';
   const isForgot = mode === 'forgot';
   document.getElementById('auth-name-wrap').classList.toggle('hidden', !isRegister);
-  document.getElementById('auth-password').classList.toggle('hidden', isForgot);
+  document.getElementById('auth-password-wrap').classList.toggle('hidden', isForgot);
   document.getElementById('auth-confirm-wrap').classList.toggle('hidden', !isRegister);
   document.getElementById('auth-privacy-wrap').classList.toggle('hidden', !isRegister);
   document.getElementById('auth-forgot-btn').classList.toggle('hidden', isForgot);
@@ -3454,7 +3544,11 @@ function setAuthMode(mode) {
     : isRegister ? '用邮箱注册。课记会留在你的档案里。' : '请输入注册邮箱，我们会寄重置链接。';
   document.getElementById('auth-submit-label').textContent = isLogin ? '登录' : isRegister ? '注册' : '发送重置链接';
   document.getElementById('auth-toggle-btn').textContent = isLogin ? '还没有账号？去注册' : '已经有账号？去登录';
+  document.getElementById('auth-password').placeholder = isRegister
+    ? '密码（至少6位，含字母和数字）'
+    : '密码（至少6位）';
   document.getElementById('auth-error').classList.add('hidden');
+  resetAuthPasswordVisibility();
 }
 function toggleAuthMode() {
   setAuthMode(authMode === 'login' ? 'register' : 'login');
@@ -3462,6 +3556,10 @@ function toggleAuthMode() {
 function showForgotPassword() { setAuthMode('forgot'); }
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+}
+function isValidNewPassword(password) {
+  const value = String(password || '');
+  return value.length >= 6 && /[A-Za-z]/.test(value) && /\d/.test(value);
 }
 async function submitAuth() {
   const email = document.getElementById('auth-email').value.trim();
@@ -3472,8 +3570,8 @@ async function submitAuth() {
   if (!email) { errEl.textContent = '请填写邮箱'; errEl.classList.remove('hidden'); return; }
   if (!isValidEmail(email)) { errEl.textContent = '邮箱格式不对，请写成 名字@域名 的形式'; errEl.classList.remove('hidden'); return; }
   if (authMode !== 'forgot' && !password) { errEl.textContent = '请填写邮箱和密码'; errEl.classList.remove('hidden'); return; }
-  if (authMode === 'register' && password.length < 6) {
-    errEl.textContent = '密码至少6位'; errEl.classList.remove('hidden'); return;
+  if (authMode === 'register' && !isValidNewPassword(password)) {
+    errEl.textContent = '密码至少6位，且要同时有字母和数字'; errEl.classList.remove('hidden'); return;
   }
   if (authMode === 'register' && password !== document.getElementById('auth-confirm-password').value) {
     errEl.textContent = '两次输入的密码不一样，请再检查一下'; errEl.classList.remove('hidden'); return;
@@ -3661,18 +3759,35 @@ function goRecord() {
   show('screen-record');
   loadRecordQuota();
 }
-async function loadAskQuota() {
-  const el = document.getElementById('ask-quota-note');
-  if (!el) return;
-  el.textContent = '每天可以问 5 次';
+// Shows the weekly AI-recap quota near the "完成" button, and -- if it's
+// used up -- repurposes that button to route straight into 手动记 (see
+// disableAiEntry) instead of letting the user tap it and hit a 429 cold.
+async function loadRecordQuota() {
+  const note = document.getElementById('rec-quota-note');
   try {
     const res = await authFetch(`${API}/api/progress/quota`);
     if (!res.ok) return;
     const data = await res.json();
-    const remaining = data.secondary && data.secondary.remaining;
-    if (Number(remaining) <= 0) {
-      el.textContent = '今天问过了，明天再问吧';
+    const remaining = data.weekly ? Number(data.weekly.remaining) : NaN;
+    if (!Number.isFinite(remaining)) return;
+    if (remaining <= 0) {
+      if (note) note.textContent = '这周的AI复盘额度用完了，可以直接手动记';
+      disableAiEntry();
+    } else if (note) {
+      note.textContent = `这周还能AI复盘 ${remaining} 次`;
     }
+  } catch (e) {}
+}
+async function loadAskQuota() {
+  const el = document.getElementById('ask-quota-note');
+  if (!el) return;
+  try {
+    const res = await authFetch(`${API}/api/progress/quota`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const remaining = data.secondary && Number(data.secondary.remaining);
+    if (!Number.isFinite(remaining)) return;
+    el.textContent = remaining <= 0 ? '今天问过了，明天再问吧' : `今天还能问 ${remaining} 次`;
   } catch (e) {}
 }
 function goBackFromReview() {
@@ -3835,12 +3950,23 @@ function fillClassNameChips(containerId, inputId, rows) {
     if (b && nameInput) {
       nameInput.value = b.getAttribute('data-class') || '';
       chips.querySelectorAll('.class-tag-chip').forEach((c) => c.classList.toggle('is-selected', c === b));
+      updateClassNameHint(inputId, `${inputId}-hint`);
       if (typeof updateReviewExtrasSummary === 'function') updateReviewExtrasSummary();
     }
   };
   nameInput?.addEventListener('input', () => {
     chips.querySelectorAll('.class-tag-chip').forEach((c) => c.classList.toggle('is-selected', c.getAttribute('data-class') === nameInput.value));
   });
+  updateClassNameHint(inputId, `${inputId}-hint`);
+}
+// Gentle, non-blocking nudge: 课程/组合 stays optional (an empty one just
+// becomes "其他"), but filling it in is what makes the 追踪 filter chips and
+// ask-archive course-scoping actually useful, so say so -- only while empty.
+function updateClassNameHint(inputId, hintId) {
+  const input = document.getElementById(inputId);
+  const hint = document.getElementById(hintId);
+  if (!input || !hint) return;
+  hint.classList.toggle('hidden', !!input.value.trim());
 }
 function paintTodayClassSummary(rows) {
   const el = document.getElementById('home-today-summary');
@@ -4786,9 +4912,12 @@ async function loadBrief() {
         : '请先点记录，做成课记。课前看一眼会出现在这里。'}</p>`;
       return;
     }
-    const kicker = last.isLatestRecap === false
-      ? `最近记下的还要改的 · ${fmtDay(last.createdAt)}`
-      : '上次课还要改的';
+    const courseName = classNameOf({ class_name: last.className });
+    const kicker = courseName === '其他'
+      ? (last.isLatestRecap === false ? `最近记下的还要改的 · ${fmtDay(last.createdAt)}` : '上次课还要改的')
+      : (last.isLatestRecap === false
+          ? `最近${courseName} · ${fmtDay(last.createdAt)} 还要改的`
+          : `上次课${courseName} · ${fmtDay(last.createdAt)} 还要改的`);
     el.innerHTML = kickerHtml(kicker) + html;
   } catch (e) {
     el.textContent = '加载失败，下拉重试';
@@ -4834,6 +4963,97 @@ const ISSUE_PAGE_SIZE = 5;
 const ISSUES_EMPTY_DEFAULT = '请先点记录，做成课记。记下的问题会出现在这里。';
 const ISSUES_EMPTY_NONE = '最近没有还在跟进的问题。';
 
+// Shared by the 问题 and 汇总报告 tabs -- picking a course on either one
+// scopes both, since they're two views onto the same underlying records.
+let progressClassFilter = '';
+let issueClassFilterExpanded = false;
+let reviewClassFilterExpanded = false;
+const ISSUE_CLASS_FILTER_INITIAL = 4;
+const ISSUE_CLASS_FILTER_MAX = 12;
+
+// Most-used first, ties broken by most-recent-use -- so a course you just
+// started doesn't get buried under one you did a lot of months ago, but a
+// one-off doesn't outrank your regular classes either.
+function rankedClassNames(rows, limit = ISSUE_CLASS_FILTER_MAX) {
+  const stats = new Map();
+  (rows || []).forEach((r) => {
+    const n = (r.class_name || '').trim();
+    if (!n || isAutoClassName(n) || n === '训练记录' || n === '其他') return;
+    const t = Number(new Date(r.created_at).getTime()) || 0;
+    const cur = stats.get(n) || { count: 0, lastMs: 0 };
+    cur.count += 1;
+    if (t > cur.lastMs) cur.lastMs = t;
+    stats.set(n, cur);
+  });
+  return [...stats.entries()]
+    .sort((a, b) => b[1].count - a[1].count || b[1].lastMs - a[1].lastMs)
+    .slice(0, limit)
+    .map(([n]) => n);
+}
+
+function issueMatchesClassFilter(issue) {
+  if (!progressClassFilter) return true;
+  return (issue.occurrences || []).some((o) => (o.className || '').trim() === progressClassFilter);
+}
+
+function renderClassFilterRow(containerId, expanded, setExpanded, onPick) {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  const ranked = rankedClassNames(homeRows);
+  if (!ranked.length) {
+    wrap.classList.add('hidden');
+    wrap.innerHTML = '';
+    if (progressClassFilter) { progressClassFilter = ''; }
+    return;
+  }
+  const shown = expanded ? ranked : ranked.slice(0, ISSUE_CLASS_FILTER_INITIAL);
+  const chips = [`<button type="button" data-name="" class="class-tag-chip px-3 py-1 rounded-full border border-[var(--border-soft)] text-[11px] text-[var(--burgundy)] bg-white/70${progressClassFilter ? '' : ' is-selected'}">全部</button>`];
+  shown.forEach((n) => {
+    chips.push(`<button type="button" data-name="${escapeHtml(n)}" class="class-tag-chip px-3 py-1 rounded-full border border-[var(--border-soft)] text-[11px] text-[var(--burgundy)] bg-white/70${progressClassFilter === n ? ' is-selected' : ''}">${escapeHtml(n)}</button>`);
+  });
+  if (ranked.length > ISSUE_CLASS_FILTER_INITIAL) {
+    chips.push(`<button type="button" data-more="1" class="class-tag-chip px-3 py-1 rounded-full border border-[var(--border-soft)] text-[11px] text-[var(--ink-faint)] bg-white/70">${expanded ? '收起' : '更多'}</button>`);
+  }
+  wrap.innerHTML = chips.join('');
+  wrap.classList.remove('hidden');
+  wrap.onclick = (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.hasAttribute('data-more')) {
+      setExpanded(!expanded);
+      return;
+    }
+    progressClassFilter = b.getAttribute('data-name') || '';
+    onPick();
+  };
+}
+
+function renderIssueClassFilter() {
+  renderClassFilterRow(
+    'issue-class-filter',
+    issueClassFilterExpanded,
+    (v) => { issueClassFilterExpanded = v; renderIssueClassFilter(); },
+    onClassFilterChanged
+  );
+}
+
+function renderReviewClassFilter() {
+  renderClassFilterRow(
+    'review-class-filter',
+    reviewClassFilterExpanded,
+    (v) => { reviewClassFilterExpanded = v; renderReviewClassFilter(); },
+    onClassFilterChanged
+  );
+}
+
+function onClassFilterChanged() {
+  issuesVisibleCount = ISSUE_PAGE_SIZE;
+  renderIssueClassFilter();
+  renderReviewClassFilter();
+  renderIssues();
+  generateTrainingReview(currentReviewMode);
+}
+
 function issueCreatedMs(issue) {
   const t = Number(issue.created_at);
   return Number.isFinite(t) ? t : 0;
@@ -4857,6 +5077,7 @@ function issueActivityMs(issue) {
 function sortedOpenIssues() {
   return currentIssues
     .filter((issue) => issue.status !== 'resolved' && (Number(issue.occurrence_count) || 0) >= 1)
+    .filter(issueMatchesClassFilter)
     .sort((a, b) => {
       const countDiff = (Number(b.occurrence_count) || 0) - (Number(a.occurrence_count) || 0);
       if (countDiff) return countDiff;
@@ -4868,6 +5089,7 @@ async function loadIssues(opts = {}) {
   const res = await authFetch(`${API}/api/issues`);
   currentIssues = await res.json();
   if (!opts.keepPage) issuesVisibleCount = ISSUE_PAGE_SIZE;
+  renderIssueClassFilter();
   renderIssues();
 }
 function toggleIssuesShowAll() {
@@ -5003,7 +5225,8 @@ let lastTrainingReview = null;
 
 function formatTrainingReviewText(data) {
   if (!data) return '';
-  const title = data.mode === 'last' ? `汇总 · 近${data.lastCount}次` : `汇总 · 近${data.periodDays}天`;
+  let title = data.mode === 'last' ? `汇总 · 近${data.lastCount}次` : `汇总 · 近${data.periodDays}天`;
+  if (data.classFilter) title += ` · ${data.classFilter}`;
   const lines = [title];
   const good = uniqueCompactGoodPoints(data.goodPointsRecap || []).map((p) => (
     typeof compactPhrase === 'function' ? compactPhrase(p, 32) : p
@@ -5042,7 +5265,9 @@ function paintTrainingReview() {
   );
   let html = '';
   if (data.recordCount === 0) {
-    html = `<p class="recap-empty">请先点记录，做成课记。汇总报告会出现在这里。</p>`;
+    html = data.classFilter
+      ? `<p class="recap-empty">这段时间「${escapeHtml(data.classFilter)}」没有课记，换个范围或课程试试。</p>`
+      : `<p class="recap-empty">请先点记录，做成课记。汇总报告会出现在这里。</p>`;
   } else if (!goodHtml && !resolvedHtml) {
     html = `<p class="recap-empty">这几天还没有可汇总的条目。</p>`;
   } else {
@@ -5054,14 +5279,19 @@ function paintTrainingReview() {
   syncIssueDonut();
 }
 
+let currentReviewMode = 'days';
+
 async function generateTrainingReview(mode) {
+  currentReviewMode = mode;
   const daysBtn = document.getElementById('review-days-btn');
   const lastBtn = document.getElementById('review-last-btn');
   const contentEl = document.getElementById('review-content');
   const exportBtn = document.getElementById('review-export-btn');
   setReviewModeUi(mode);
   daysBtn.disabled = lastBtn.disabled = true;
-  const query = mode === 'last' ? 'last=5' : 'days=7';
+  let query = mode === 'last' ? 'last=5' : 'days=7';
+  if (progressClassFilter) query += `&class=${encodeURIComponent(progressClassFilter)}`;
+  renderReviewClassFilter();
   try {
     const res = await authFetch(`${API}/api/progress/review?${query}`);
     const data = await res.json();
@@ -5708,10 +5938,10 @@ function countedIssue(issue) {
 }
 
 function liveIssueDonutCounts() {
-  const live = currentIssues.filter(countedIssue);
+  const live = currentIssues.filter(countedIssue).filter(issueMatchesClassFilter);
   const resolved = (lastTrainingReview && lastTrainingReview.resolvedInPeriod) || [];
   return {
-    resolved: resolved.filter(countedIssue).length,
+    resolved: resolved.filter(countedIssue).filter(issueMatchesClassFilter).length,
     improving: live.filter((i) => i.status === 'improving').length,
     open: live.filter((i) => i.status === 'open').length,
   };
@@ -5862,26 +6092,33 @@ let recorderSupported = typeof MediaRecorder !== 'undefined' && navigator.mediaD
 
 let aiUnavailable = false;
 function updateGenerateBtn() {
-  if (aiUnavailable) { document.getElementById('generate-btn').disabled = true; return; }
+  // While AI is unavailable the button is repurposed by disableAiEntry() to
+  // route to 手动记 instead -- leave its enabled state alone.
+  if (aiUnavailable) return;
   const manualLen = document.getElementById('manual-input').value.trim().length;
   document.getElementById('generate-btn').disabled = (segments.length === 0 && manualLen === 0) || recognizing || transcribing;
 }
 function enableAiEntry() {
   aiUnavailable = false;
   const btn = document.getElementById('generate-btn');
+  btn.onclick = generateReview;
   btn.innerHTML = '<span class="pearl-sheen"></span><span class="relative z-10">完成</span>';
-  const retryBtn = document.querySelector('#screen-review button[onclick="retryGenerate()"]');
+  const retryBtn = document.getElementById('review-retry-btn');
   if (retryBtn) retryBtn.disabled = false;
   updateGenerateBtn();
 }
+// AI unavailable (weekly/daily quota, or a provider outage) -- rather than a
+// dead-end disabled button, repurpose it to route straight into 手动记 so
+// the user always has somewhere to go.
 function disableAiEntry(message) {
   aiUnavailable = true;
   const btn = document.getElementById('generate-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="relative z-10">整理暂时不可用，请先打字</span>';
-  const retryBtn = document.querySelector('#screen-review button[onclick="retryGenerate()"]');
+  btn.disabled = false;
+  btn.onclick = () => startManualEntry();
+  btn.innerHTML = '<span class="relative z-10">去手动记</span>';
+  const retryBtn = document.getElementById('review-retry-btn');
   if (retryBtn) retryBtn.disabled = true;
-  toast(message);
+  if (message) toast(message);
 }
 function insertPrompt(text) {
   const el = document.getElementById('manual-input');
@@ -6091,6 +6328,37 @@ function cancelGenerate() {
 function isAbortError(e) {
   return e && (e.name === 'AbortError' || e.message === 'The user aborted a request.');
 }
+// Toggles the parts of screen-review that only make sense for an AI draft
+// (语音转写, term correction, 重新生成) -- 手动记 has none of those, since
+// there's no AI output to show the source of or regenerate.
+function setReviewAiSectionsVisible(visible) {
+  document.getElementById('review-transcript-sec')?.classList.toggle('hidden', !visible);
+  document.getElementById('review-term-correction-sec')?.classList.toggle('hidden', !visible);
+  document.getElementById('review-retry-btn')?.classList.toggle('hidden', !visible);
+  // Only shown for 手动记 -- an AI draft already arrives one point per
+  // line, so the reminder would just be noise there.
+  document.getElementById('review-good-hint')?.classList.toggle('hidden', visible);
+  document.getElementById('review-improve-hint')?.classList.toggle('hidden', visible);
+  const kicker = document.getElementById('review-header-kicker');
+  const title = document.getElementById('review-header-title');
+  if (kicker && title) {
+    kicker.textContent = visible ? '成长中，再接再厉' : '不用AI，直接写';
+    title.textContent = visible ? '复盘' : '手动记';
+  }
+}
+// 手动记: skips voice/AI entirely -- reuses screen-review's good/improve
+// fields and course/duration/mood, but the user fills them in directly and
+// save goes straight to POST /api/records, no /api/generate call. Always
+// available (not just when AI quota runs out), since typing structured
+// fields yourself costs nothing and produces cleaner data for the issue
+// matcher than paying an AI call to unpack a paragraph.
+function startManualEntry() {
+  lastDraft = { manual: true, transcript: '', durationSec: 0, from: 'manual', result: {} };
+  setReviewAiSectionsVisible(false);
+  renderReview(true);
+  show('screen-review');
+}
+
 async function generateReview() {
   if (!allowGuideAction('recap-done')) return;
   const segText = segments.map(s => s.text).join('\n');
@@ -6112,6 +6380,7 @@ async function generateReview() {
     const result = await res.json();
     if (!res.ok) { const err = new Error(result.error || '生成失败'); err.status = res.status; throw err; }
     lastDraft.result = result;
+    setReviewAiSectionsVisible(true);
     renderReview();
     show('screen-review');
   } catch (e) {
@@ -6305,11 +6574,15 @@ async function confirmSave() {
   const improve = document.getElementById('review-improve').value.trim();
   const next = '';
   const tips = document.getElementById('review-tips').value.trim();
-  const originalImprove = joinImproveAndNext(lastDraft.result.improve_points, lastDraft.result.next_time_reminder);
-  const editedFields = [];
-  if (good !== (lastDraft.result.good_points || '').trim()) editedFields.push('good_points');
-  if (improve !== originalImprove) editedFields.push('improve_points');
-  if (tips !== (lastDraft.result.session_tips || '').trim()) editedFields.push('session_tips');
+  // "edited" tracks whether the user changed AI's draft -- meaningless for
+  // 手动记, where there was never an AI draft to diff against.
+  let editedFields = [];
+  if (!lastDraft.manual) {
+    const originalImprove = joinImproveAndNext(lastDraft.result.improve_points, lastDraft.result.next_time_reminder);
+    if (good !== (lastDraft.result.good_points || '').trim()) editedFields.push('good_points');
+    if (improve !== originalImprove) editedFields.push('improve_points');
+    if (tips !== (lastDraft.result.session_tips || '').trim()) editedFields.push('session_tips');
+  }
   const edited = editedFields.length > 0;
   const body = {
     className: document.getElementById('review-classname').value.trim() || defaultClassName(),
