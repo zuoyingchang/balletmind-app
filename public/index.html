@@ -1069,6 +1069,15 @@
       radial-gradient(70% 50% at 50% 18%, rgba(196,168,168,.22), transparent 58%),
       linear-gradient(180deg, #f6eceb 0%, #fdfbfa 42%, #f7f2f1 100%);
   }
+  #curtain-veil {
+    position: absolute; inset: 0; z-index: 50; pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(85% 70% at 50% 88%, #fffaf6 0%, #f6ece8 55%, #e9d7d2 100%);
+  }
+  #screen-auth.curtain-active #curtain-veil { opacity: 1; animation: curtainLift .85s ease-out forwards; }
+  #screen-auth.curtain-active main { opacity: 0; animation: curtainContentIn .65s ease-out .22s forwards; }
+  @keyframes curtainLift { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes curtainContentIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   .auth-hero {
     position: relative;
     margin: -8px -24px 0;
@@ -1218,6 +1227,7 @@
 
   <!-- ============ AUTH (LOGIN / REGISTER) ============ -->
   <div class="screen active flex-col w-full h-full wash-rose auth-reveal" id="screen-auth">
+    <div id="curtain-veil" aria-hidden="true"></div>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pt-8 pb-8 flex flex-col">
       <div class="auth-hero relative z-10">
         <img src="/img/pack-shoes-pink.png" alt="" class="deco-sway mx-auto">
@@ -2529,15 +2539,23 @@ async function exportMyData() {
   } catch (e) { toast(e.message || '导出失败'); }
 }
 
+function showAuthWithCurtain() {
+  show('screen-auth');
+  const seen = localStorage.getItem('bm_curtain_seen');
+  if (seen) return;
+  localStorage.setItem('bm_curtain_seen', '1');
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduceMotion) document.getElementById('screen-auth').classList.add('curtain-active');
+}
 async function checkAuthAndInit() {
   await loadNotices();
-  if (!getToken()) { show('screen-auth'); return; }
+  if (!getToken()) { showAuthWithCurtain(); return; }
   try {
     const res = await authFetch(`${API}/api/auth/me`);
     if (!res.ok) throw new Error();
     goHome();
   } catch (e) {
-    show('screen-auth');
+    showAuthWithCurtain();
   }
 }
 
