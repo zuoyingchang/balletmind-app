@@ -41,7 +41,15 @@
   body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif; background: #ddd6d4; color: var(--ink); }
   .font-display { font-family: "Cormorant Garamond", "Noto Serif SC", serif; letter-spacing: .01em; }
   .label-editorial { font-family: "Cormorant Garamond", -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", serif; font-style: italic; font-weight: 500; letter-spacing: .1em; }
-  .fr-term { font-family: "Cormorant Garamond", "Noto Serif SC", serif; font-style: italic; font-weight: 500; font-size: 1.18em; line-height: inherit; color: inherit; }
+  .fr-term {
+    font-family: inherit;
+    font-style: normal;
+    font-weight: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+  }
   .page-title { font-family: "Cormorant Garamond", "Noto Serif SC", serif; font-size: 28px; font-weight: 500; letter-spacing: .01em; line-height: 1.12; }
   ::-webkit-scrollbar { display:none; }
   .screen { display:none; }
@@ -317,10 +325,11 @@
     align-items: baseline;
     justify-content: center;
     gap: 4px;
-    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
-    font-size: 30px; font-weight: 500; line-height: 1.02;
-    letter-spacing: -.02em; color: var(--ink);
-    font-variant-numeric: tabular-nums;
+    font-family: "Noto Serif SC", "Songti SC", ui-serif, serif;
+    font-size: 28px; font-weight: 600; line-height: 1.02;
+    letter-spacing: 0; color: var(--ink);
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1;
     white-space: nowrap;
   }
   .archive-stat-num span {
@@ -329,7 +338,6 @@
     color: var(--ink-soft);
     flex-shrink: 0;
   }
-  #tip-label { display: block; width: 100%; text-align: right; }
   .archive-stat-num.is-hours { color: var(--burgundy); }
   .archive-stat-num.is-empty {
     font-size: 13px; font-weight: 400; letter-spacing: 0;
@@ -342,10 +350,11 @@
     font-variant-numeric: tabular-nums;
   }
   #rec-timer .rec-timer-num {
-    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
-    font-size: 34px; font-weight: 600; line-height: 1;
-    letter-spacing: -.03em;
+    font-family: "Noto Serif SC", "Songti SC", ui-serif, serif;
+    font-size: 32px; font-weight: 600; line-height: 1;
+    letter-spacing: 0;
     font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1;
   }
   #rec-timer .rec-timer-unit {
     margin-left: 4px;
@@ -423,7 +432,7 @@
   }
   .home-cta-row #home-cta-sub { color: rgba(106, 85, 85, .72); }
   .coach-tip {
-    --coach: #6a5555;
+    --coach: #c48b8b;
     --coach-ink: #fffaf7;
     position: absolute; z-index: 40;
     width: 196px; padding: 10px 12px; border-radius: 12px;
@@ -442,8 +451,11 @@
     border-top-color: transparent; border-bottom-color: var(--coach);
   }
   .coach-tip.hidden { display: none !important; }
-  #home-recap-tip { left: 2px; bottom: calc(100% + 8px); top: auto; }
-  #home-recap-tip::after { left: 42px; }
+  #home-recap-tip {
+    position: relative; left: auto; right: auto; top: auto; bottom: auto;
+    width: 196px; margin: 10px 0 0;
+  }
+  #home-recap-tip::after { display: none; }
   #home-checkin-tip { right: 0; bottom: calc(100% + 8px); top: auto; width: 168px; }
   #home-checkin-tip::after { right: 18px; }
   #nav-archive-tip, #nav-progress-tip {
@@ -472,6 +484,22 @@
   #progress-class-tip::after { left: 28px; }
   #progress-look-tip { margin-left: auto; margin-right: 8px; }
   #progress-look-tip::after { right: 28px; left: auto; }
+  #record-done-tip {
+    position: relative; left: auto; right: auto; top: auto; bottom: auto;
+    width: auto; max-width: 220px; margin: 0 0 8px auto;
+  }
+  #record-done-tip::after { left: auto; right: 28px; }
+  #review-save-tip {
+    position: absolute; left: auto; right: 20px; bottom: 64px; width: 188px;
+  }
+  #review-save-tip::after { left: auto; right: 36px; }
+  #toast {
+    position: absolute;
+    left: 50%;
+    bottom: 108px;
+    transform: translateX(-50%);
+    z-index: 80;
+  }
   #checkin-skip-tip {
     position: relative;
     left: auto; right: auto; top: auto; bottom: auto;
@@ -483,24 +511,23 @@
   .guide-skip {
     position: absolute;
     z-index: 90;
-    left: 14px;
-    right: auto;
-    bottom: 22px;
-    top: auto;
+    left: auto;
+    right: 14px;
+    bottom: auto;
+    top: 58px;
     transform: none;
     min-width: 0;
-    min-height: 44px;
-    padding: 10px 16px;
+    min-height: 32px;
+    padding: 6px 12px;
     border-radius: 999px;
-    background: linear-gradient(180deg, #8a6e76 0%, #635056 100%);
-    border: 1.5px solid #56464c;
-    box-shadow: 0 10px 22px -8px rgba(70, 50, 55, .4);
-    color: #f7f2f0;
-    font-size: 13px;
+    background: #c48b8b;
+    border: 0;
+    box-shadow: 0 8px 18px -10px rgba(160, 90, 100, .45);
+    color: #fffaf7;
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: .06em;
+    letter-spacing: .04em;
   }
-  .guide-skip.is-above-nav { bottom: 92px; }
   @keyframes guidePulse {
     0%, 100% { box-shadow: 0 0 0 3px #fff, 0 0 0 6px #a07d7d, 0 8px 18px rgba(120,70,70,.28); }
     50% { box-shadow: 0 0 0 5px #fff, 0 0 0 11px #c4a8a8, 0 8px 18px rgba(120,70,70,.12); }
@@ -770,7 +797,9 @@
     border-radius: 12px; font-size: 13px; color: #7a6e6c; position: relative;
   }
   .cal-cell.is-empty { pointer-events: none; }
-  .cal-cell.is-future { opacity: .32; }
+  .cal-cell.is-future { opacity: .55; }
+  #screen-home > main.is-month { padding-bottom: 9.5rem; }
+  #screen-home .home-week-ribbon.is-month .cal-cell { aspect-ratio: auto; min-height: 38px; padding-top: 6px; }
   .cal-cell.is-today { color: var(--ink); }
   .cal-cell.is-today::after {
     content: ''; position: absolute; inset: 2px; border-radius: 12px;
@@ -805,7 +834,12 @@
     background: transparent;
     box-shadow: none;
   }
-  .cal-daynum { position: relative; z-index: 1; line-height: 1; display: block; }
+  .cal-daynum {
+    position: relative; z-index: 1; line-height: 1; display: block;
+    font-family: "Noto Serif SC", "Songti SC", ui-serif, serif;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1;
+  }
   .cal-marks {
     position: relative; z-index: 1; display: flex; align-items: center; justify-content: center;
     gap: 1px; min-height: 20px;
@@ -1030,22 +1064,16 @@
   }
   .home-track-row {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 4px;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
     min-width: 0;
-    padding: 11px 11px 10px;
+    padding: 9px 10px;
     text-align: left;
     border-radius: 16px;
     background: linear-gradient(165deg, rgba(255,255,255,.92) 0%, rgba(248,236,234,.5) 100%);
     border: 1px solid rgba(255,255,255,.82);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.96);
-  }
-  .home-track-top {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
   }
   .home-track-icon {
     display: inline-flex;
@@ -1094,22 +1122,12 @@
   .home-track-name {
     flex: 1;
     min-width: 0;
-    font-size: 13px;
+    font-size: 11.5px;
     font-weight: 600;
-    line-height: 1.3;
+    line-height: 1.25;
     color: var(--ink);
-  }
-  .home-track-hint {
-    display: block;
-    padding-left: 28px;
-    font-size: 11px;
-    line-height: 1.35;
-    color: var(--ink-faint);
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .home-track-hint:empty { display: none; }
   .home-track-row iconify-icon.home-track-chevron {
     flex-shrink: 0;
     font-size: 13px;
@@ -1438,6 +1456,14 @@
   }
   .story-form { display: none; margin-top: 14px; }
   .story-beat.is-open .story-form { display: block; }
+  .story-glance {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--ink-soft);
+  }
+  .story-beat.is-open .story-glance { display: none; }
   .story-lbl {
     margin: 0 0 6px;
     font-size: 11px; font-weight: 650; letter-spacing: .14em; color: var(--sage);
@@ -1550,15 +1576,6 @@
     letter-spacing: .04em;
     color: var(--ink-faint);
   }
-  #tip-quote {
-    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
-    font-style: italic;
-    font-size: 13.5px;
-    line-height: 1.65;
-    letter-spacing: .01em;
-    color: var(--ink);
-  }
-
   /* preview/wow-first-look: login as curtain, home as one stage, record as footlights */
   #screen-auth.auth-reveal {
     background:
@@ -1714,7 +1731,9 @@
     font-size: 20px;
     font-weight: 500;
     letter-spacing: .02em;
+    white-space: nowrap;
   }
+  #progress-issues-sec .sec-head { min-width: 0; }
   #screen-progress .hist-tabs button {
     height: 36px;
     font-size: 12.5px;
@@ -1912,7 +1931,9 @@
     display: block;
   }
   .issue-count {
-    font-variant-numeric: tabular-nums;
+    font-family: "Noto Serif SC", "Songti SC", ui-serif, serif;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1;
     font-size: 12px;
     font-weight: 650;
     color: var(--ink-soft);
@@ -2176,14 +2197,13 @@
         </div>
       </div>
     </header>
-    <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-7">
+    <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-28">
       <section class="card-journal tinted grain relative overflow-visible home-hero px-5 pt-5 pb-4">
         <div class="pointer-events-none absolute inset-0 overflow-hidden" style="border-radius:inherit">
           <div class="pearl-sheen"></div>
           <img src="/img/shoes.png" alt="" aria-hidden="true" class="deco-photo tint-rose right-3 top-3 w-[72px] h-[86px] opacity-[0.5] z-[1]">
         </div>
         <div class="relative z-10 pr-16">
-          <p id="home-empty-hint" class="home-empty-hint hidden">还没写下第一节，请先点记录生成复盘总结</p>
           <div id="home-stat-nums" class="grid grid-cols-3 gap-2 cursor-pointer" onclick="goHistory()" role="button">
           <div>
             <span class="home-stat-icon is-count"><iconify-icon icon="solar:notebook-bookmark-linear"></iconify-icon></span>
@@ -2236,6 +2256,7 @@
           左边是记录，课后口述即可。这边是打卡。
         </div>
         </div>
+        <p id="home-empty-hint" class="home-empty-hint hidden relative z-10 mt-3">还没写下第一节，点「记录今天的课」即可</p>
       </section>
 
       <p id="home-in-app-tip" class="hidden mt-3 rounded-[12px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]">请用 Safari 打开这一页，录音会更顺利。</p>
@@ -2274,46 +2295,26 @@
           <div class="pearl-sheen"></div>
           <div class="relative z-10 home-track-grid">
             <button type="button" onclick="goProgress('brief')" class="home-track-row">
-              <span class="home-track-top">
-                <span class="home-track-icon is-brief"><iconify-icon icon="solar:notes-linear"></iconify-icon></span>
-                <span class="home-track-name">课前看一眼</span>
-                <iconify-icon class="home-track-chevron" icon="solar:alt-arrow-right-linear"></iconify-icon>
-              </span>
-              <span id="home-track-hint-brief" class="home-track-hint"></span>
+              <span class="home-track-icon is-brief"><iconify-icon icon="solar:notes-linear"></iconify-icon></span>
+              <span class="home-track-name">课前看一眼</span>
+              <iconify-icon class="home-track-chevron" icon="solar:alt-arrow-right-linear"></iconify-icon>
             </button>
             <button type="button" onclick="goProgress('issues')" class="home-track-row">
-              <span class="home-track-top">
-                <span class="home-track-icon is-issues"><iconify-icon icon="solar:list-check-linear"></iconify-icon></span>
-                <span class="home-track-name">重复出现的问题</span>
-                <iconify-icon class="home-track-chevron" icon="solar:alt-arrow-right-linear"></iconify-icon>
-              </span>
-              <span id="home-track-hint-issues" class="home-track-hint"></span>
+              <span class="home-track-icon is-issues"><iconify-icon icon="solar:list-check-linear"></iconify-icon></span>
+              <span class="home-track-name">重复出现的问题</span>
+              <iconify-icon class="home-track-chevron" icon="solar:alt-arrow-right-linear"></iconify-icon>
             </button>
             <button type="button" onclick="goProgress('ask')" class="home-track-row">
-              <span class="home-track-top">
-                <span class="home-track-icon is-ask"><iconify-icon icon="solar:chat-round-linear"></iconify-icon></span>
-                <span class="home-track-name">问问我的档案</span>
-                <iconify-icon class="home-track-chevron" icon="solar:alt-arrow-right-linear"></iconify-icon>
-              </span>
-              <span id="home-track-hint-ask" class="home-track-hint"></span>
+              <span class="home-track-icon is-ask"><iconify-icon icon="solar:chat-round-linear"></iconify-icon></span>
+              <span class="home-track-name">问问我的档案</span>
+              <iconify-icon class="home-track-chevron" icon="solar:alt-arrow-right-linear"></iconify-icon>
             </button>
             <button type="button" onclick="goProgress('recap')" class="home-track-row">
-              <span class="home-track-top">
-                <span class="home-track-icon is-recap"><iconify-icon icon="solar:document-text-linear"></iconify-icon></span>
-                <span class="home-track-name">汇总报告</span>
-                <iconify-icon class="home-track-chevron" icon="solar:alt-arrow-right-linear"></iconify-icon>
-              </span>
-              <span id="home-track-hint-recap" class="home-track-hint"></span>
+              <span class="home-track-icon is-recap"><iconify-icon icon="solar:document-text-linear"></iconify-icon></span>
+              <span class="home-track-name">汇总报告</span>
+              <iconify-icon class="home-track-chevron" icon="solar:alt-arrow-right-linear"></iconify-icon>
             </button>
           </div>
-        </div>
-      </section>
-
-      <section class="mt-6" id="home-tips-block">
-        <div class="card-journal tinted-rose grain relative overflow-hidden p-3.5" style="border-radius:18px 22px 16px 20px">
-          <div class="pearl-sheen"></div>
-          <p class="relative z-10" id="tip-quote"></p>
-          <p class="relative z-10 mt-1.5 text-right text-[12px] leading-5 text-[var(--rose-deep)]" id="tip-label"></p>
         </div>
       </section>
     </main>
@@ -2340,7 +2341,6 @@
   <!-- ============ VOICE / RECORD ============ -->
   <div class="screen flex-col w-full h-full wash-rose" id="screen-record">
     <header class="relative shrink-0 px-6 pt-7 pb-3">
-      <div id="record-back-tip" class="coach-tip is-back hidden">点这里回到首页。</div>
       <div class="flex items-center gap-4">
       <button id="record-back-btn" onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
       <div>
@@ -2403,6 +2403,7 @@
       </div>
     </main>
     <div class="sticky-actions shrink-0 px-6 pt-3">
+      <div id="record-done-tip" class="coach-tip hidden">说完或打完字，点「完成」。</div>
       <div class="flex gap-3">
       <button type="button" onclick="clearSegments()" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">清空</button>
       <button id="generate-btn" onclick="generateReview()" disabled
@@ -2454,13 +2455,10 @@
         <textarea id="review-good" class="field-good-lift note-area w-full rounded-2xl field-good" oninput="fitNoteArea(this)"></textarea>
       </div>
       <div class="relative z-10 mb-5 note-block is-improve">
-        <p class="note-kicker is-improve">待改进点</p>
+        <p class="note-kicker is-improve">还要改的</p>
         <textarea id="review-improve" class="note-area w-full rounded-2xl field-improve" oninput="fitNoteArea(this)"></textarea>
       </div>
-      <div class="relative z-10 mb-3 note-block is-next">
-        <p class="note-kicker is-next">我自己定的下次计划</p>
-        <textarea id="review-next" class="note-area w-full rounded-2xl field-next" oninput="fitNoteArea(this)"></textarea>
-      </div>
+      <textarea id="review-next" class="hidden" tabindex="-1" aria-hidden="true"></textarea>
       <div id="review-tips-open" class="relative z-10 mb-2 hidden"></div>
       </div>
 
@@ -2545,6 +2543,7 @@
       <button type="button" onclick="retryGenerate()" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">重新生成</button>
       <button type="button" id="review-save-btn" onclick="confirmSave()" class="btn-ribbon flex-1 h-11 rounded-full text-[12.5px] font-semibold"><span class="pearl-sheen"></span><span class="relative z-10">确认保存</span></button>
     </div>
+    <div id="review-save-tip" class="coach-tip hidden">看过就可以点「确认保存」。</div>
   </div>
 
   <!-- ============ HISTORY ============ -->
@@ -2662,10 +2661,10 @@
         <div class="field-good-lift rounded-2xl field-good px-3 py-1" id="detail-good"></div>
       </div>
       <div class="relative z-10 mb-5 note-block is-improve" id="detail-improve-wrap">
-        <p class="note-kicker is-improve">待改进点</p>
+        <p class="note-kicker is-improve">还要改的</p>
         <div class="rounded-2xl field-improve px-3 py-1" id="detail-improve"></div>
       </div>
-      <div class="relative z-10 mb-5 note-block is-next" id="detail-next-wrap">
+      <div class="relative z-10 mb-5 note-block is-next hidden" id="detail-next-wrap">
         <p class="note-kicker is-next">我自己定的下次计划</p>
         <div class="rounded-2xl field-next px-3 py-1" id="detail-next"></div>
       </div>
@@ -3097,7 +3096,7 @@
   </div>
 </div>
 
-<div id="toast" class="hidden fixed bottom-8 left-1/2 -translate-x-1/2 rounded-full bg-[var(--burgundy)] text-[#faf6f3] px-4 py-2 text-[11px] z-50"></div>
+<div id="toast" class="hidden rounded-full bg-[var(--burgundy)] text-[#faf6f3] px-4 py-2 text-[11px]"></div>
 
 <script src="/js/ballet-terms.js"></script>
 <script>
@@ -3110,6 +3109,7 @@ shareQrImg.src = '/img/qr-balletmind.png';
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById(id);
+  if (!el) return;
   el.classList.add('active');
   el.classList.remove('screen-transition-in');
   void el.offsetWidth; // force reflow so the animation replays on repeat visits
@@ -3259,7 +3259,7 @@ function emFrenchTerms(text) {
   const s = String(text || '');
   if (!s || !FR_TERM_RE) return escapeHtml(s);
   return s.split(FR_TERM_RE).map((part, i) => (
-    i % 2 === 1 ? `<em class="fr-term">${escapeHtml(part)}</em>` : escapeHtml(part)
+    i % 2 === 1 ? `<span class="fr-term">${escapeHtml(part)}</span>` : escapeHtml(part)
   )).join('');
 }
 function noteLines(text) {
@@ -3269,6 +3269,16 @@ function noteListHtml(text) {
   const lines = noteLines(text);
   if (!lines.length) return '';
   return `<ul class="note-list">${lines.map((p) => `<li>${emFrenchTerms(p)}</li>`).join('')}</ul>`;
+}
+function joinImproveAndNext(improve, next) {
+  const seen = new Set();
+  const lines = [];
+  noteLines(improve).concat(noteLines(next)).forEach((line) => {
+    if (seen.has(line)) return;
+    seen.add(line);
+    lines.push(line);
+  });
+  return lines.join('\n');
 }
 function uniqueLabels(lines, mapLine) {
   const out = [];
@@ -3322,9 +3332,11 @@ function uniqueCompactGoodPoints(lines) {
   });
 }
 function briefListHtml(text) {
-  const labels = uniqueCompactGoodPoints(noteLines(text));
-  if (!labels.length) return '';
-  return `<ul class="brief-lines">${labels.map((p) => `<li>${emFrenchTerms(p)}</li>`).join('')}</ul>`;
+  const raw = noteLines(text);
+  const labels = uniqueCompactGoodPoints(raw);
+  const shown = labels.length ? labels : raw;
+  if (!shown.length) return '';
+  return `<ul class="brief-lines">${shown.map((p) => `<li>${emFrenchTerms(p)}</li>`).join('')}</ul>`;
 }
 function fmtDay(ts) {
   const d = new Date(ts);
@@ -3753,14 +3765,14 @@ function isCheckinOnly(r) {
 }
 function classNameOf(r) {
   const n = ((r && r.class_name) || '').trim();
-  if (!n || n === '训练记录') return '其他';
+  if (!n || n === '训练记录' || isAutoClassName(n)) return '其他';
   return n;
 }
 /** What the person sees as the title (list and detail share this). */
 function displayClassName(r) {
   if (isCheckinOnly(r)) {
     const n = ((r && r.class_name) || '').trim();
-    if (!n || n === '训练记录' || n === '其他') return '打卡';
+    if (!n || n === '训练记录' || n === '其他' || isAutoClassName(n)) return '打卡';
     return n;
   }
   const n = classNameOf(r);
@@ -3820,52 +3832,6 @@ function paintTodayClassSummary(rows) {
   el.classList.toggle('hidden', !text);
   el.textContent = text ? `今天 ${text}` : '';
 }
-function firstTrackLine(text) {
-  const lines = uniqueCompactGoodPoints(noteLines(text));
-  if (!lines.length) return '';
-  return compactPhrase(lines[0], 22);
-}
-function setHomeTrackHint(id, text) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = text || '';
-}
-function lastImproveGlance(rows) {
-  const recaps = (rows || [])
-    .filter((r) => !isCheckinOnly(r))
-    .slice()
-    .sort((a, b) => Number(b.created_at) - Number(a.created_at));
-  for (const r of recaps) {
-    const line = firstTrackLine(r.improve_points);
-    if (line) return { row: r, line };
-  }
-  return null;
-}
-function paintHomeTrack(rows) {
-  const glance = lastImproveGlance(rows);
-  setHomeTrackHint('home-track-hint-brief', glance ? glance.line : '');
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const weekGoods = (rows || [])
-    .filter((r) => !isCheckinOnly(r) && Number(r.created_at) >= weekAgo)
-    .flatMap((r) => noteLines(r.good_points));
-  const recapFirst = uniqueCompactGoodPoints(weekGoods)[0];
-  setHomeTrackHint('home-track-hint-recap', recapFirst ? compactPhrase(recapFirst, 18) : '');
-  setHomeTrackHint('home-track-hint-ask', '比如转圈有什么问题');
-  paintHomeTrackIssues();
-}
-async function paintHomeTrackIssues() {
-  try {
-    const res = await authFetch(`${API}/api/issues`);
-    if (!res.ok) return;
-    const issues = await res.json();
-    const open = (issues || [])
-      .filter((issue) => issue.status !== 'resolved')
-      .sort((a, b) => (Number(b.occurrence_count) || 0) - (Number(a.occurrence_count) || 0));
-    const first = open[0] && compactPhrase(open[0].text || '', 18);
-    setHomeTrackHint('home-track-hint-issues', first || '');
-  } catch (e) {
-    setHomeTrackHint('home-track-hint-issues', '');
-  }
-}
 function renderBadges(rows, shareEarned) {
   const grid = document.getElementById('badge-grid');
   if (!grid) return;
@@ -3901,30 +3867,6 @@ function renderBadges(rows, shareEarned) {
 }
 
 // ---------- home ----------
-const TRAINING_TIPS = [
-  { quote: '对心里还解不开的事，要有耐心。', label: 'Rainer Maria Rilke，《给一个青年诗人的十封信》' },
-  { quote: '就一只一只来。', label: 'Anne Lamott，《一只一只来》' },
-  { quote: '一整天里，有时最要紧的，不过是两口深呼吸中间的那一点停。', label: 'Etty Hillesum' },
-  { quote: '把心放在一件事上，是最稀有、也最纯粹的慷慨。', label: 'Simone Weil' },
-  { quote: '快乐不靠冲得猛，靠匀，靠节奏，靠彼此合得上。', label: 'Thomas Merton' },
-  { quote: '小事，小片刻，其实都不小。', label: 'Jon Kabat-Zinn' },
-  { quote: '对了就会来。别赶。好的跑不了。', label: 'Jack Kerouac' },
-  { quote: '安详就在这一刻。你留意，就能看见。', label: '一行禅师' },
-  { quote: '练习要认真，自己不必太认真。前者少不了，后者只会坏事。', label: 'Margot Fonteyn' },
-  { quote: '天天做的，比偶尔做一次要紧。', label: 'Gretchen Rubin' },
-  { quote: '顺着自然的步调。它的秘密是耐心。', label: 'Ralph Waldo Emerson' },
-  { quote: '跳舞，不过是发现，发现，再发现。', label: 'Martha Graham' },
-  { quote: '身体能说的，话常常说不出。', label: 'Martha Graham' },
-  { quote: '我们靠练习学会。练舞是这样，过日子也是这样。', label: 'Martha Graham' },
-  { quote: '看见音乐，听见舞蹈。', label: 'George Balanchine' },
-  { quote: '我关心的不是人怎么动，是什么打动了他们。', label: 'Pina Bausch' },
-];
-function renderTip() {
-  const tip = TRAINING_TIPS[Math.floor(Math.random() * TRAINING_TIPS.length)];
-  document.getElementById('tip-quote').textContent = tip.quote;
-  document.getElementById('tip-label').textContent = `— ${tip.label}`;
-}
-
 let homeRows = [];
 // Real training duration is user-provided and optional (`training_duration_min`).
 // `duration_sec` is just the voice memo length — never use it for this stat.
@@ -3937,7 +3879,6 @@ function formatTrainingHours(rows) {
   return (totalMin / 60).toFixed(1);
 }
 async function loadHome() {
-  renderTip();
   refreshNoticeDot();
   const res = await authFetch(`${API}/api/records`);
   const rows = await res.json();
@@ -3947,7 +3888,6 @@ async function loadHome() {
   const homeEmpty = !rows.length;
   const emptyHint = document.getElementById('home-empty-hint');
   if (emptyHint) emptyHint.classList.toggle('hidden', !homeEmpty);
-  document.getElementById('home-stat-nums').classList.toggle('hidden', homeEmpty);
   document.getElementById('stat-count').innerHTML = `${recapCount}<span>次</span>`;
   document.getElementById('stat-streak').innerHTML = `${streak}<span>天</span>`;
   const hoursEl = document.getElementById('stat-duration');
@@ -3955,8 +3895,8 @@ async function loadHome() {
     hoursEl.classList.remove('is-empty');
     hoursEl.innerHTML = '0<span>小时</span>';
   } else if (trainedHours === null) {
-    hoursEl.classList.add('is-empty');
-    hoursEl.textContent = '可以先空着';
+    hoursEl.classList.remove('is-empty');
+    hoursEl.innerHTML = '0<span>小时</span>';
   } else {
     hoursEl.classList.remove('is-empty');
     hoursEl.innerHTML = `${String(trainedHours).replace(/\.0$/, '')}<span>小时</span>`;
@@ -3969,7 +3909,6 @@ async function loadHome() {
   renderHomeCalendar();
   paintTodayClassSummary(homeRows);
   renderCheckinStatus(homeRows);
-  paintHomeTrack(homeRows);
 }
 // Daily streak, purely client-side from records already loaded for the home
 // calendar — no new endpoint. Counts backward from today; if today has no
@@ -4014,7 +3953,8 @@ const GUIDE_LEGACY = {
 };
 const GUIDE_STEPS = [
   { id: 'recap', screen: 'home', target: 'home-cta-btn', tip: 'home-recap-tip', action: 'recap' },
-  { id: 'recap-back', screen: 'record', target: 'record-back-btn', tip: 'record-back-tip', action: 'back' },
+  { id: 'recap-done', screen: 'record', target: 'generate-btn', tip: 'record-done-tip', action: 'recap-done' },
+  { id: 'review-save', screen: 'review', target: 'review-save-btn', tip: 'review-save-tip', action: 'review-save' },
   { id: 'checkin', screen: 'home', target: 'home-checkin-btn', tip: 'home-checkin-tip', action: 'checkin' },
   { id: 'checkin-back', screen: 'checkin-sheet', target: 'checkin-skip-btn', tip: 'checkin-skip-tip', action: 'checkin-back' },
   { id: 'archive', screen: 'home', target: 'nav-archive-btn', tip: 'nav-archive-tip', action: 'archive' },
@@ -4051,13 +3991,16 @@ function guideSheetOpen() {
   return (sheet && !sheet.classList.contains('hidden')) || (share && !share.classList.contains('hidden'));
 }
 function skipWholeGuide() {
-  const empty = !(homeRows && homeRows.length);
-  return !empty && !guideSeen('recap');
+  return false;
+}
+function starterGuideIds() {
+  return ['recap', 'recap-done', 'review-save'];
 }
 function currentGuideStep() {
   if (!getUser()) return null;
-  if (skipWholeGuide()) return null;
+  const hasRecap = !!(homeRows && homeRows.some((r) => !isCheckinOnly(r)));
   for (const step of GUIDE_STEPS) {
+    if (hasRecap && starterGuideIds().includes(step.id)) continue;
     if (!guideSeen(step.id)) return step;
   }
   return null;
@@ -4082,7 +4025,9 @@ function nudgeGuide() {
 function allowGuideAction(action) {
   const step = currentGuideStepForScreen();
   if (!step) return true;
+  if (action === 'back') return true;
   if (step.action === action) return true;
+  if (step.screen === 'record' || step.screen === 'review') return true;
   nudgeGuide();
   return false;
 }
@@ -4107,13 +4052,13 @@ function paintGuides() {
     if (el) el.classList.add('hidden');
   });
   const skip = document.getElementById('guide-skip');
-  const ongoing = !!currentGuideStep() && currentScreenKey() !== 'auth';
-  if (skip) {
-    skip.classList.toggle('hidden', !ongoing);
-    const key = currentScreenKey();
-    skip.classList.toggle('is-above-nav', key === 'home' || key === 'history' || key === 'progress' || key === 'profile');
-  }
   const step = currentGuideStepForScreen();
+  if (skip) skip.classList.toggle('hidden', !step);
+  const emptyHint = document.getElementById('home-empty-hint');
+  if (emptyHint) {
+    const homeEmpty = !(homeRows && homeRows.length);
+    emptyHint.classList.toggle('hidden', !homeEmpty || !!(step && step.id === 'recap'));
+  }
   if (!step) return;
   const el = document.getElementById(step.tip);
   if (el) el.classList.remove('hidden');
@@ -4140,7 +4085,7 @@ async function openCheckinSheet(source) {
   const todayText = formatSessionSummary(classSessionCounts(rowsForSheet, dateKey(new Date())));
   if (sum) {
     sum.classList.toggle('hidden', !todayText);
-    sum.textContent = todayText ? `今天已经 ${todayText}` : '';
+    sum.textContent = todayText ? `今天已经记下 ${todayText}` : '';
   }
   fillClassNameChips('checkin-class-chips', 'checkin-classname', rowsForSheet);
   const m = document.getElementById('checkin-sheet-mask');
@@ -4473,7 +4418,7 @@ function drawCheckinCard() {
 
   const cols = [
     { label: '本月', value: `${monthDays} 天`, x: w * 0.185 },
-    { label: '时长', value: monthMin ? minutesLabel(monthMin) : '可以先空着', x: w * 0.395 },
+    { label: '时长', value: monthMin ? minutesLabel(monthMin) : '0小时', x: w * 0.395 },
     { label: '连续', value: `${streak} 天`, x: w * 0.605 },
     { label: '累计', value: `${totalDays} 天`, x: w * 0.815 },
   ];
@@ -4659,18 +4604,17 @@ function storyBeatHtml(r, monthEnd) {
       blocks.push(`<p class="story-lbl">做得好的地方</p>
       <div class="story-box field-good field-good-lift">${noteListHtml(r.good_points)}</div>`);
     }
-    if (r.improve_points) {
-      blocks.push(`<p class="story-lbl is-improve">待改进点</p>
-      <div class="story-box field-improve">${noteListHtml(r.improve_points)}</div>`);
-    }
-    if (r.next_time_reminder) {
-      blocks.push(`<p class="story-lbl is-next">我自己定的下次计划</p>
-      <div class="story-box field-next">${noteListHtml(r.next_time_reminder)}</div>`);
+    if (r.improve_points || r.next_time_reminder) {
+      blocks.push(`<p class="story-lbl is-improve">还要改的</p>
+      <div class="story-box field-improve">${noteListHtml(joinImproveAndNext(r.improve_points, r.next_time_reminder))}</div>`);
     }
     form = `<span class="story-form">${blocks.join('')}
       <button type="button" class="story-open-link" onclick="event.stopPropagation(); openDetail(${r.id})">查看</button></span>`;
     modOpen = `onclick="toggleStoryBeat(${r.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleStoryBeat(${r.id})}"`;
   }
+  const glance = checkin
+    ? '当天只打了卡'
+    : compactPhrase(r.good_points || joinImproveAndNext(r.improve_points, r.next_time_reminder) || '', 36);
   return `<article class="story-beat${recapClass}${monthEndClass}" data-id="${r.id}">
     <div class="story-rail">
       <div class="story-node">${day}<small>${wd}</small></div>
@@ -4681,7 +4625,8 @@ function storyBeatHtml(r, monthEnd) {
       <span class="story-wm">${day}</span>
       <span class="satin-mark"></span>
       <span class="relative z-10 block">
-        <span class="story-toc"><span class="name">${checkin ? '打卡' : emFrenchTerms(name)}</span><span class="rule"></span>${tocRight}</span>
+        <span class="story-toc"><span class="name">${emFrenchTerms(name)}</span><span class="rule"></span>${tocRight}</span>
+        ${glance ? `<p class="story-glance">${escapeHtml(glance)}</p>` : ''}
         ${form}
       </span>
     </div>
@@ -4731,7 +4676,7 @@ function storyRowMatches(r, keyword) {
 function entryCard(r) {
   const preview = isCheckinOnly(r)
     ? '当天只打了卡'
-    : compactPhrase(r.improve_points || r.good_points || r.next_time_reminder || '', 40);
+    : compactPhrase(joinImproveAndNext(r.improve_points, r.next_time_reminder) || r.good_points || '', 40);
   const dateOnly = fmtDate(r.created_at).split(' ')[0];
   const mood = r.mood ? moodMark(r.mood, 15) : '';
   const hasMin = r.training_duration_min != null && Number(r.training_duration_min) > 0;
@@ -4785,6 +4730,10 @@ async function goProgress(tab) {
   setProgressView(lookTabs ? 'look' : 'class');
   show('screen-progress');
   lastTrainingReview = null;
+  const briefEl = document.getElementById('brief-content');
+  if (briefEl) briefEl.innerHTML = '<p class="brief-empty">正在看看你上次留下的话…</p>';
+  const reviewEl = document.getElementById('review-content');
+  if (reviewEl) reviewEl.innerHTML = '<p class="recap-empty">正在整理汇总…</p>';
   await Promise.all([loadBrief(), loadIssues(), generateTrainingReview('days'), loadAskQuota()]);
   const scrollMap = {
     brief: 'progress-brief-sec',
@@ -4806,29 +4755,23 @@ async function loadBrief() {
     const res = await authFetch(`${API}/api/progress/brief`);
     const data = await res.json();
     const kickerHtml = (text) => `<p class="brief-kicker">${escapeHtml(text)}</p>`;
-    const expLines = data.experimentBrief && !data.experimentBrief.usedFallback ? (data.experimentBrief.lines || []) : [];
-    if (expLines.length) {
-      el.innerHTML = kickerHtml('上次课的待改进')
-        + `<ul class="brief-lines">${uniqueCompactGoodPoints(expLines).map((p) => `<li>${emFrenchTerms(p)}</li>`).join('')}</ul>`;
-      return;
-    }
     if (!data.lastRecord) {
       el.innerHTML = `<p class="brief-empty">${data.hasRecap
-        ? '最近几节还没有待改进。'
+        ? '最近几节还没有要改的。'
         : '请先点记录，做成课记。课前看一眼会出现在这里。'}</p>`;
       return;
     }
     const last = data.lastRecord || {};
-    const html = briefListHtml(last.improvePoints);
+    const html = briefListHtml(joinImproveAndNext(last.improvePoints, last.nextTimeReminder));
     if (!html) {
       el.innerHTML = `<p class="brief-empty">${data.hasRecap
-        ? '最近几节还没有待改进。'
+        ? '最近几节还没有要改的。'
         : '请先点记录，做成课记。课前看一眼会出现在这里。'}</p>`;
       return;
     }
     const kicker = last.isLatestRecap === false
-      ? `最近记下的待改进 · ${fmtDay(last.createdAt)}`
-      : '上次课的待改进';
+      ? `最近记下的还要改的 · ${fmtDay(last.createdAt)}`
+      : '上次课还要改的';
     el.innerHTML = kickerHtml(kicker) + html;
   } catch (e) {
     el.textContent = '加载失败，下拉重试';
@@ -4872,6 +4815,7 @@ let currentIssues = [];
 let issuesVisibleCount = 5;
 const ISSUE_PAGE_SIZE = 5;
 const ISSUES_EMPTY_DEFAULT = '请先点记录，做成课记。重复出现的问题会出现在这里。';
+const ISSUES_EMPTY_REPEAT = '同一条待改进出现两次以上，会出现在这里。';
 
 function issueCreatedMs(issue) {
   const t = Number(issue.created_at);
@@ -4895,7 +4839,7 @@ function issueActivityMs(issue) {
 
 function sortedOpenIssues() {
   return currentIssues
-    .filter((issue) => issue.status !== 'resolved')
+    .filter((issue) => issue.status !== 'resolved' && (Number(issue.occurrence_count) || 0) >= 2)
     .sort((a, b) => {
       const countDiff = (Number(b.occurrence_count) || 0) - (Number(a.occurrence_count) || 0);
       if (countDiff) return countDiff;
@@ -4924,9 +4868,15 @@ function renderIssues() {
   const moreBtn = document.getElementById('issues-more-btn');
   const open = sortedOpenIssues();
   if (open.length === 0) {
-    emptyEl.classList.remove('hidden');
-    emptyEl.textContent = ISSUES_EMPTY_DEFAULT;
-    listEl.innerHTML = '';
+    if (emptyEl) {
+      emptyEl.classList.remove('hidden');
+      emptyEl.textContent = (homeRows && homeRows.some((r) => !isCheckinOnly(r)))
+        ? ISSUES_EMPTY_REPEAT
+        : ISSUES_EMPTY_DEFAULT;
+    }
+    if (listEl) listEl.innerHTML = '';
+    const donut = document.getElementById('issue-donut-wrap');
+    if (donut) donut.classList.add('hidden');
     if (moreBtn) {
       moreBtn.classList.add('hidden');
       moreBtn.textContent = '';
@@ -5049,9 +4999,9 @@ function paintTrainingReview() {
   if (exportBtn) exportBtn.classList.toggle('hidden', data.recordCount === 0);
   if (data.resolvedInPeriod && data.openIssues) {
     renderIssueDonut({
-      resolved: data.resolvedInPeriod.length,
-      improving: data.openIssues.filter(i => i.status === 'improving').length,
-      open: data.openIssues.filter(i => i.status === 'open').length,
+      resolved: (data.resolvedInPeriod || []).filter((i) => (Number(i.occurrence_count) || 0) >= 2).length,
+      improving: data.openIssues.filter((i) => i.status === 'improving' && (Number(i.occurrence_count) || 0) >= 2).length,
+      open: data.openIssues.filter((i) => i.status === 'open' && (Number(i.occurrence_count) || 0) >= 2).length,
     });
   }
 }
@@ -5286,7 +5236,7 @@ function filterHistory() {
 }
 
 function minutesLabel(min) {
-  if (min == null || !Number.isFinite(Number(min)) || Number(min) <= 0) return '可以先空着';
+  if (min == null || !Number.isFinite(Number(min)) || Number(min) <= 0) return '0小时';
   const h = Number(min) / 60;
   const t = (Math.round(h * 10) / 10).toFixed(1).replace(/\.0$/, '');
   return `${t}小时`;
@@ -5310,11 +5260,6 @@ function minutesOf(rows) {
 }
 function fillHoursEl(el, minutes, allowEmptyCopy) {
   if (!el) return;
-  if (!minutes && allowEmptyCopy) {
-    el.classList.add('is-empty');
-    el.textContent = '可以先空着';
-    return;
-  }
   el.classList.remove('is-empty');
   const n = minutes ? minutesLabel(minutes).replace('小时', '') : '0';
   el.innerHTML = `${n}<span>小时</span>`;
@@ -5456,7 +5401,7 @@ function calendarCellHtml(key, dayNum, byDate, selectedKey, selectFnName, runCla
   if (has) cls.push('has-came');
   if (hasFullRecord) cls.push('has-record');
   if (isFuture) cls.push('is-future');
-  const action = isFuture ? 'disabled' : `onclick="${selectFnName}('${key}')"`;
+  const action = `onclick="${selectFnName}('${key}')"`;
   const bow = hasFullRecord
     ? '<img src="/img/bow.png" class="cal-bow" alt="" aria-hidden="true">'
     : (hasCheckin ? '<img src="/img/bow.png" class="cal-bow is-came" alt="" aria-hidden="true">' : '');
@@ -5560,7 +5505,8 @@ function paintDayList(byDate, year, month, selectedKey, emptyId, listId) {
     } else {
       listEl.innerHTML = '';
       emptyEl.classList.remove('hidden');
-      emptyEl.innerHTML = `<span class="text-[var(--ink-faint)]">这一天还没有记录。</span>`;
+      const future = selectedKey && selectedKey > dateKey(new Date());
+      emptyEl.innerHTML = `<span class="text-[var(--ink-faint)]">${future ? '这一天还没到。' : '这一天还没有记录。'}</span>`;
     }
     return;
   }
@@ -5649,6 +5595,10 @@ function renderHomeCalendar() {
   const rangeBtn = document.getElementById('home-cal-range-btn');
   const emptyEl = document.getElementById('home-calendar-day-empty');
   const listEl = document.getElementById('home-calendar-day-list');
+  const homeMain = document.querySelector('#screen-home > main');
+  const ribbon = document.querySelector('#screen-home .home-week-ribbon');
+  if (homeMain) homeMain.classList.toggle('is-month', !!homeCalendarExpanded);
+  if (ribbon) ribbon.classList.toggle('is-month', !!homeCalendarExpanded);
   if (rangeBtn) rangeBtn.textContent = homeCalendarExpanded ? '本周' : '整月';
   if (homeCalendarExpanded) {
     const year = homeCalendarCursor.getFullYear(), month = homeCalendarCursor.getMonth();
@@ -5764,17 +5714,15 @@ async function openDetail(id) {
   document.getElementById('detail-share-btn').classList.toggle('hidden', !checkin);
   if (!checkin) {
     const good = (r.good_points || '').trim();
-    const improve = (r.improve_points || '').trim();
-    const next = (r.next_time_reminder || '').trim();
+    const toFix = joinImproveAndNext(r.improve_points, r.next_time_reminder);
     const goodWrap = document.getElementById('detail-good-wrap');
     const improveWrap = document.getElementById('detail-improve-wrap');
     const nextWrap = document.getElementById('detail-next-wrap');
     goodWrap.classList.toggle('hidden', !good);
-    improveWrap.classList.toggle('hidden', !improve);
-    nextWrap.classList.toggle('hidden', !next);
+    improveWrap.classList.toggle('hidden', !toFix);
+    if (nextWrap) nextWrap.classList.add('hidden');
     if (good) document.getElementById('detail-good').innerHTML = noteListHtml(good);
-    if (improve) document.getElementById('detail-improve').innerHTML = noteListHtml(improve);
-    if (next) document.getElementById('detail-next').innerHTML = noteListHtml(next);
+    if (toFix) document.getElementById('detail-improve').innerHTML = noteListHtml(toFix);
     const tipsWrap = document.getElementById('detail-tips-wrap');
     const tips = (r.session_tips || '').trim();
     if (tips) {
@@ -5799,11 +5747,8 @@ function formatRecordText(r) {
     '【做得好的地方】',
     r.good_points || '（无）',
     '',
-    '【待改进点】',
-    r.improve_points || '（无）',
-    '',
-    '【我自己定的下次计划】',
-    r.next_time_reminder || '（无）',
+    '【还要改的】',
+    joinImproveAndNext(r.improve_points, r.next_time_reminder) || '（无）',
     '',
     '【给这次的小提示】',
     r.session_tips || '（无）',
@@ -6081,10 +6026,12 @@ function isAbortError(e) {
   return e && (e.name === 'AbortError' || e.message === 'The user aborted a request.');
 }
 async function generateReview() {
+  if (!allowGuideAction('recap-done')) return;
   const segText = segments.map(s => s.text).join('\n');
   const manualText = document.getElementById('manual-input').value.trim();
   const transcript = [segText, manualText].filter(Boolean).join('\n');
   if (!transcript) { toast('请先录音或输入内容'); return; }
+  markGuideSeen('recap-done');
   const totalDuration = segments.reduce((a,s)=>a+s.duration,0) || 60;
   lastDraft = { transcript, durationSec: totalDuration, from: captureInputFrom() };
   ensureCaptureSession();
@@ -6117,8 +6064,7 @@ async function retryGenerate() {
   // user typed by hand (same diff confirmSave() already does).
   const r = lastDraft.result || {};
   const edited = document.getElementById('review-good').value.trim() !== (r.good_points || '').trim()
-    || document.getElementById('review-improve').value.trim() !== (r.improve_points || '').trim()
-    || document.getElementById('review-next').value.trim() !== (r.next_time_reminder || '').trim()
+    || document.getElementById('review-improve').value.trim() !== joinImproveAndNext(r.improve_points, r.next_time_reminder)
     || document.getElementById('review-tips').value.trim() !== (r.session_tips || '').trim();
   if (edited && !confirm('重新生成会覆盖你刚才改过的内容，确定要继续吗？')) return;
   logEvent('ai_regenerated');
@@ -6225,12 +6171,12 @@ function renderReview(isFreshDraft = true) {
   document.getElementById('review-transcript').textContent = lastDraft.transcript;
   const r = lastDraft.result;
   document.getElementById('review-good').value = r.good_points || '';
-  document.getElementById('review-improve').value = r.improve_points || '';
-  document.getElementById('review-next').value = r.next_time_reminder || '';
+  document.getElementById('review-improve').value = joinImproveAndNext(r.improve_points, r.next_time_reminder);
+  const nextEl = document.getElementById('review-next');
+  if (nextEl) nextEl.value = '';
   document.getElementById('review-tips').value = r.session_tips || '';
   placeReviewTips(!!(r.session_tips || '').trim());
-  // Reveal in order (good -> improve -> next), reinforcing good_points as the lead field.
-  [['review-good', 0], ['review-improve', 90], ['review-next', 180]].forEach(([id, delay]) => {
+  [['review-good', 0], ['review-improve', 90]].forEach(([id, delay]) => {
     const wrap = document.getElementById(id).parentElement;
     wrap.classList.remove('fade-in-up');
     void wrap.offsetWidth;
@@ -6250,7 +6196,7 @@ function fitNoteArea(el) {
   el.style.height = `${Math.max(72, el.scrollHeight)}px`;
 }
 function fitReviewAreas() {
-  ['review-good', 'review-improve', 'review-next', 'review-tips'].forEach((id) => {
+  ['review-good', 'review-improve', 'review-tips'].forEach((id) => {
     fitNoteArea(document.getElementById(id));
   });
 }
@@ -6282,6 +6228,7 @@ async function submitTermCorrection() {
 }
 
 async function confirmSave() {
+  if (!allowGuideAction('review-save')) return;
   if (savingRecord) return;
   if (!lastDraft || !lastDraft.result) { toast('草稿已失效，请返回重新生成'); return; }
   savingRecord = true;
@@ -6290,12 +6237,12 @@ async function confirmSave() {
   try {
   const good = document.getElementById('review-good').value.trim();
   const improve = document.getElementById('review-improve').value.trim();
-  const next = document.getElementById('review-next').value.trim();
+  const next = '';
   const tips = document.getElementById('review-tips').value.trim();
+  const originalImprove = joinImproveAndNext(lastDraft.result.improve_points, lastDraft.result.next_time_reminder);
   const editedFields = [];
   if (good !== (lastDraft.result.good_points || '').trim()) editedFields.push('good_points');
-  if (improve !== (lastDraft.result.improve_points || '').trim()) editedFields.push('improve_points');
-  if (next !== (lastDraft.result.next_time_reminder || '').trim()) editedFields.push('next_time_reminder');
+  if (improve !== originalImprove) editedFields.push('improve_points');
   if (tips !== (lastDraft.result.session_tips || '').trim()) editedFields.push('session_tips');
   const edited = editedFields.length > 0;
   const body = {
@@ -6318,6 +6265,7 @@ async function confirmSave() {
   const res = await authFetch(`${API}/api/records`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
   const result = await res.json();
   if (!res.ok) { toast(result.error || '保存失败'); return; }
+  markGuideSeen('review-save');
   rememberClassName(body.className);
   captureSessionId = '';
   calMarkPopKey = dateKey(new Date());

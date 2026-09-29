@@ -10,13 +10,14 @@ const CASES = [
     name: '忠实提取 — 三段都明确说了',
     type: 'happy',
     dimensions: ['coverage', 'classification'],
-    rubric: 'passé 进 good；骨盆/重心进 improve；控腿进 next；置信度高',
+    rubric: 'passé 进 good；骨盆/重心/控腿都进 improve；next 为空；置信度高',
     transcript: '今天pirouette单圈，腿passé位置还行，但是转的时候骨盆晃，重心不稳，下次多练地面静态控腿。',
     check(r) {
       if (r.confidence_level !== '高') return fail(`期望 confidence_level=高，实际=${r.confidence_level}`);
       if (!/passé|收腿/.test(r.good_points)) return fail(`good_points 没提到 passé/收腿：${r.good_points}`);
       if (!/骨盆|重心/.test(r.improve_points)) return fail(`improve_points 没提到骨盆/重心：${r.improve_points}`);
-      if (!/控腿|passé/.test(r.next_time_reminder)) return fail(`next_time_reminder 没提到控腿：${r.next_time_reminder}`);
+      if (!/控腿/.test(r.improve_points)) return fail(`improve_points 没提到控腿：${r.improve_points}`);
+      if (r.next_time_reminder) return fail(`next 应空，下次注意已进 improve：${r.next_time_reminder}`);
       return pass();
     },
   }),
@@ -142,12 +143,13 @@ const CASES = [
     name: '中英夹杂 — spotting 下次计划要留下',
     type: 'mixed_language',
     dimensions: ['coverage', 'classification', 'terminology'],
-    rubric: 'plié/一位进 good；pirouette 掉进 improve；spotting 进 next',
+    rubric: 'plié/一位进 good；pirouette 掉和 spotting 都进 improve；next 为空',
     transcript: 'Today barre 一位plié还算稳，center 的 pirouette 单圈总是掉。下次我想先把 spotting 练慢一点。',
     check(r) {
       if (!/plié|一位/.test(r.good_points)) return fail(`good_points 没提到 plié/一位：${r.good_points}`);
       if (!/pirouette|掉/.test(r.improve_points)) return fail(`improve_points 没提到 pirouette：${r.improve_points}`);
-      if (!/spotting|甩头/.test(r.next_time_reminder)) return fail(`next_time_reminder 没留下 spotting：${r.next_time_reminder}`);
+      if (!/spotting|甩头/.test(r.improve_points)) return fail(`improve_points 没留下 spotting：${r.improve_points}`);
+      if (r.next_time_reminder) return fail(`next 应空：${r.next_time_reminder}`);
       return pass();
     },
   }),
@@ -178,14 +180,15 @@ const CASES = [
     },
   }),
   caseDef({
-    name: '明确的下次注意必须进 next',
+    name: '明确的下次注意必须进 improve',
     type: 'happy',
     dimensions: ['coverage', 'classification'],
-    rubric: 'fondu/重心在 improve；前脚掌/重量在 next',
+    rubric: 'fondu/重心和前脚掌/重量都在 improve；next 为空',
     transcript: '今天fondu重心后坐。下次注意把重量放在前脚掌。',
     check(r) {
       if (!/fondu|后坐|重心/.test(r.improve_points)) return fail(`improve 丢了 fondu/重心：${r.improve_points}`);
-      if (!/前脚掌|重量/.test(r.next_time_reminder)) return fail(`next 丢了用户原话：${r.next_time_reminder}`);
+      if (!/前脚掌|重量/.test(r.improve_points)) return fail(`improve 丢了用户说的下次注意：${r.improve_points}`);
+      if (r.next_time_reminder) return fail(`next 应空：${r.next_time_reminder}`);
       return pass();
     },
   }),
@@ -317,7 +320,9 @@ const CASES = [
     rubric: '「也许」不得升级成坚定的 next；不得建议每天练',
     transcript: '今天转圈掉了。也许下次我该把速度放慢吧，我也不确定。',
     check(r) {
-      if (/每天|必须|应该加强/.test(r.next_time_reminder)) return fail(`把不确定升级成计划：${r.next_time_reminder}`);
+      if (/每天|必须|应该加强/.test(`${r.improve_points}\n${r.next_time_reminder}`)) {
+        return fail(`把不确定升级成计划：${r.improve_points} ${r.next_time_reminder}`);
+      }
       if (r.confidence_level === '高') return fail('用户说不确定，不该是高置信度');
       return pass();
     },
@@ -335,15 +340,16 @@ const CASES = [
     },
   }),
   caseDef({
-    name: '只有下次注意 — 不编造今天的问题细节',
+    name: '只有下次注意 — 进 improve，不编造今天没说的动作',
     type: 'missing_field',
     dimensions: ['coverage', 'hallucination'],
-    rubric: 'next 含 地面；improve 不得编造具体动作名用户没说的',
+    rubric: 'improve 含 地面/控腿；不得编造用户没说的动作名；next 为空',
     transcript: '下次我想先把地面控腿做扎实。',
     check(r) {
-      if (!/地面|控腿/.test(r.next_time_reminder)) return fail(`next 没留下地面控腿：${r.next_time_reminder}`);
+      if (!/地面|控腿/.test(r.improve_points)) return fail(`improve 没留下地面控腿：${r.improve_points}`);
+      if (r.next_time_reminder) return fail(`next 应空：${r.next_time_reminder}`);
       if (/pirouette|fouetté|外开不够/.test(r.improve_points)) {
-        return fail(`用户没说今天的问题，却编了 improve：${r.improve_points}`);
+        return fail(`用户没说今天的问题，却编了动作名：${r.improve_points}`);
       }
       return pass();
     },
@@ -409,14 +415,15 @@ const CASES = [
     },
   }),
   caseDef({
-    name: '老师说下次注意 — 进 next 且不改写成自己的计划口吻乱加量',
+    name: '老师说下次注意 — 进 improve 且不乱加量',
     type: 'teacher_vs_self',
     dimensions: ['classification', 'hallucination'],
-    rubric: 'next 含 慢；不得出现每天20分钟',
+    rubric: 'improve 含 慢/adagio；不得出现每天20分钟；next 为空',
     transcript: '老师说下次把 adagio 做慢一点。',
     check(r) {
-      if (!/慢|adagio/.test(r.next_time_reminder)) return fail(`老师的下次注意应进 next：${r.next_time_reminder}`);
-      if (/每天\s*\d+\s*分钟/.test(r.next_time_reminder)) return fail(`给老师加了运动处方：${r.next_time_reminder}`);
+      if (!/慢|adagio/.test(r.improve_points)) return fail(`老师的下次注意应进 improve：${r.improve_points}`);
+      if (r.next_time_reminder) return fail(`next 应空：${r.next_time_reminder}`);
+      if (/每天\s*\d+\s*分钟/.test(r.improve_points)) return fail(`给老师加了运动处方：${r.improve_points}`);
       return pass();
     },
   }),
@@ -482,10 +489,11 @@ const CASES = [
     name: '小提示 — 紧扣本次问题，不是新计划',
     type: 'happy',
     dimensions: ['hallucination', 'coverage'],
-    rubric: 'next 仍是用户说的控腿；若有 session_tips 必须点到骨盆/重心/转，且不超过3条、不含每天练习',
+    rubric: '控腿在 improve；next 为空；若有 session_tips 必须点到骨盆/重心/转，且不超过3条、不含每天练习',
     transcript: '今天pirouette单圈，腿passé位置还行，但是转的时候骨盆晃，重心不稳，下次多练地面静态控腿。',
     check(r) {
-      if (!/控腿|passé/.test(r.next_time_reminder)) return fail(`next 应留下用户说的控腿：${r.next_time_reminder}`);
+      if (!/控腿/.test(r.improve_points)) return fail(`improve 应留下用户说的控腿：${r.improve_points}`);
+      if (r.next_time_reminder) return fail(`next 应空：${r.next_time_reminder}`);
       const tips = String(r.session_tips || '').trim();
       if (!tips) return pass();
       const lines = tips.split('\n').map((s) => s.trim()).filter(Boolean);

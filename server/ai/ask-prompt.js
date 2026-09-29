@@ -61,7 +61,7 @@ function recordBlock(r) {
   const parts = [];
   if (r.good_points) parts.push(`做得好的：${r.good_points}`);
   if (r.improve_points) parts.push(`待改进：${r.improve_points}`);
-  if (r.next_time_reminder) parts.push(`下次提醒：${r.next_time_reminder}`);
+  if (r.next_time_reminder) parts.push(`待改进：${r.next_time_reminder}`);
   return `[记录 ${r.id}｜${r.dateLabel}｜${r.class_name || '训练记录'}]\n${parts.join('\n') || '（此条无内容）'}`;
 }
 

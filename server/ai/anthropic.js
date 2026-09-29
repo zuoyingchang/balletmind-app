@@ -149,10 +149,13 @@ function findToolUse(data, name) {
 
 function reviewFromToolInput(input = {}) {
   const tips = Array.isArray(input.session_tips) ? input.session_tips.slice(0, 3) : input.session_tips;
+  const improveSrc = []
+    .concat(input.improve_points || [])
+    .concat(input.next_time_reminder || []);
   return {
     good_points: compactReviewField(input.good_points),
-    improve_points: compactReviewField(input.improve_points),
-    next_time_reminder: compactReviewField(input.next_time_reminder),
+    improve_points: compactReviewField(improveSrc),
+    next_time_reminder: '',
     session_tips: joinLines(tips),
     confidence_level: input.confidence_level || '',
     note: input.note || '',

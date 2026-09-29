@@ -13,6 +13,21 @@ const app = require('../app.js');
 const db = require('../db');
 const { providerName, aiConfigured } = require('../ai/provider');
 const { toOpenAIMessages, toOpenAITools, toToolChoice, fromOpenAIResponse } = require('../ai/openai-compat');
+const { reviewFromToolInput } = require('../ai/anthropic');
+
+test('reviewFromToolInput folds next_time_reminder into improve_points', () => {
+  const r = reviewFromToolInput({
+    good_points: ['passé'],
+    improve_points: ['骨盆晃'],
+    next_time_reminder: ['地面控腿'],
+    session_tips: [],
+    confidence_level: '高',
+    note: '',
+  });
+  assert.match(r.improve_points, /骨盆/);
+  assert.match(r.improve_points, /控腿/);
+  assert.equal(r.next_time_reminder, '');
+});
 
 let server;
 let base;

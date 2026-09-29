@@ -75,7 +75,13 @@ router.get('/review', async (req, res) => {
   const openIssues = issues.filter((i) => i.status !== 'resolved');
   const resolvedInPeriod = issues.filter((i) => i.status === 'resolved' && i.updated_at >= since);
 
-  const goodPointsRecap = uniqueCompactGoodPoints(records.flatMap((r) => splitLines(r.good_points)));
+  // Newest class first, so a just-saved 做得好 shows at the top instead of
+  // being buried after older unique lines (the UI only shows the first few).
+  const goodPointsRecap = uniqueCompactGoodPoints(
+    [...records]
+      .sort((a, b) => Number(b.created_at) - Number(a.created_at))
+      .flatMap((r) => splitLines(r.good_points))
+  );
 
   res.json({
     mode: useLast ? 'last' : 'days',
@@ -107,10 +113,12 @@ router.get('/brief', async (req, res) => {
   );
   const latestRecap = recaps[0] || null;
   let glance = null;
-  for (const row of recaps) {
-    const improveLines = uniqueCompactGoodPoints(splitLines(row.improve_points));
-    if (!improveLines.length) continue;
-    glance = { row, improveLines };
+    for (const row of recaps) {
+    const raw = [...splitLines(row.improve_points), ...splitLines(row.next_time_reminder)];
+    const improveLines = uniqueCompactGoodPoints(raw);
+    const lines = improveLines.length ? improveLines : raw;
+    if (!lines.length) continue;
+    glance = { row, improveLines: lines };
     break;
   }
 
@@ -129,8 +137,8 @@ router.get('/brief', async (req, res) => {
   const payload = {
     topIssues,
     hasRecap: Boolean(latestRecap),
-    // Glance is the newest recap that still has improve_points. If the
-    // latest class only had 做得好, we skip back rather than show an empty note.
+    // Glance is the newest recap that still has 还要改的 (improve, or an old next note).
+    // If the latest class only had 做得好, skip back rather than show an empty note.
     lastRecord: lastRecordPayload,
   };
 

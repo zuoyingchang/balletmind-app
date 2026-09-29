@@ -757,6 +757,14 @@ test('/api/progress/review keeps where/how specifics and drops praise-only tails
   assert.doesNotMatch(lift, /这次课我们/);
 });
 
+test('/api/progress/review goodPointsRecap lists the newest class first', async () => {
+  const { body: { token } } = await registerUser('review_newest_first@example.com');
+  await saveRecord(token, { className: '旧课', good_points: '旧优点 tendu' });
+  await saveRecord(token, { className: '新课', good_points: '新优点 pirouette' });
+  const body = await (await fetch(`${base}/api/progress/review?days=7`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  assert.equal(body.goodPointsRecap[0], '新优点 pirouette');
+});
+
 test('/api/progress/review?last=5 returns the most recent N records, not a calendar window', async () => {
   const { body: { token, user } } = await registerUser('review_last@example.com');
   for (let i = 1; i <= 6; i++) {
@@ -805,8 +813,9 @@ test('/api/progress/brief lastRecord skips a later check-in and keeps the recap 
   assert.equal(checkin.status, 200);
 
   const body = await (await fetch(`${base}/api/progress/brief`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  assert.match(body.lastRecord.improvePoints, /胯不要掉/);
+  assert.match(body.lastRecord.improvePoints, /alignment/);
   assert.equal(body.lastRecord.nextTimeReminder, '上课先对一下 alignment');
-  assert.equal(body.lastRecord.improvePoints, '胯不要掉');
 });
 
 test('/api/progress/brief skips a later recap with no improve_points', async () => {
