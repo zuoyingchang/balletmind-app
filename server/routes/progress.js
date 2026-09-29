@@ -3,9 +3,9 @@ const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { listIssuesWithOccurrences } = require('../issues');
 const { splitLines, sessionIdFromReq, withSession, uniqueCompactGoodPoints } = require('../lib/text');
-const { logEvent, countAiCallsToday, countSecondaryAiCallsToday, countAiRecapsThisWeek } = require('../events');
+const { logEvent, countAiCallsToday, countSecondaryAiCallsToday, countAiRecapsToday } = require('../events');
 const { aiConfigured, missingConfigHint } = require('../ai/provider');
-const { dailyAiLimitFor, dailySecondaryAiLimitFor, weeklyAiLimitFor } = require('../config');
+const { dailyAiLimitFor, dailySecondaryAiLimitFor, dailyRecapLimitFor } = require('../config');
 const { callAskRound1WithRetry, callAskRound2WithRetry, findToolUse, answerFromToolInput } = require('../ai/anthropic');
 const { llmUsageMeta } = require('../lib/llm-event-meta');
 const { retrieveAskRecords, KEYWORD_SPARSE_MAX } = require('../ai/ask-retrieve');
@@ -351,18 +351,18 @@ router.get('/ask', async (req, res) => {
 // entry points so a user sees "还能用 X 次" before hitting the limit,
 // not only after a 429.
 router.get('/quota', async (req, res) => {
-  const [core, secondary, weekly] = await Promise.all([
+  const [core, secondary, recap] = await Promise.all([
     countAiCallsToday(req.userId),
     countSecondaryAiCallsToday(req.userId),
-    countAiRecapsThisWeek(req.userId),
+    countAiRecapsToday(req.userId),
   ]);
   const coreLimit = dailyAiLimitFor(req.userId);
   const secondaryLimit = dailySecondaryAiLimitFor(req.userId);
-  const weeklyLimit = weeklyAiLimitFor(req.userId);
+  const recapLimit = dailyRecapLimitFor(req.userId);
   res.json({
     core: { used: core, limit: coreLimit, remaining: Math.max(0, coreLimit - core) },
     secondary: { used: secondary, limit: secondaryLimit, remaining: Math.max(0, secondaryLimit - secondary) },
-    weekly: { used: weekly, limit: weeklyLimit, remaining: Math.max(0, weeklyLimit - weekly) },
+    recap: { used: recap, limit: recapLimit, remaining: Math.max(0, recapLimit - recap) },
   });
 });
 

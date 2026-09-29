@@ -5,7 +5,7 @@ process.env.JWT_SECRET = 'test-secret-do-not-use-in-prod';
 process.env.TURSO_DATABASE_URL = 'file::memory:';
 process.env.ADMIN_KEY = 'test-admin-key';
 process.env.DAILY_AI_LIMIT = '5';
-process.env.WEEKLY_AI_LIMIT = '6'; // above DAILY_AI_LIMIT so the two quota tests can isolate each path
+process.env.DAILY_RECAP_LIMIT = '6'; // above DAILY_AI_LIMIT so the two quota tests can isolate each path
 process.env.RATE_LIMIT_DISABLED = '1'; // this suite registers many users from one IP; limiter has its own test file
 process.env.AI_TIMEOUT_MS = '200'; // short, so the timeout test doesn't take 25s
 process.env.ANTHROPIC_API_KEY = 'test-key-unused-fetch-is-mocked'; // real calls are always mocked in this file
@@ -380,12 +380,13 @@ test('/api/generate enforces the daily per-user quota', async () => {
   assert.match(body.error, /今天的AI/);
 });
 
-// Weekly quota is the actual free-tier business gate (unlike DAILY_AI_LIMIT,
-// an anti-abuse safety cap) -- checked first, so it wins even when a count
-// would also trip the daily cap. The manual-entry ("手动记") fallback this
-// unlocks is a client-side UI path with no dedicated endpoint of its own.
-test('/api/generate enforces the weekly free-tier quota, and it is checked before the daily cap', async () => {
-  const { body: { token, user } } = await registerUser('weekly_quota@example.com');
+// The daily recap quota is the actual free-tier business gate (unlike
+// DAILY_AI_LIMIT, an anti-abuse safety cap) -- checked first, so it wins
+// even when a count would also trip the daily abuse cap. The manual-entry
+// ("手动记") fallback this unlocks is a client-side UI path with no
+// dedicated endpoint of its own.
+test('/api/generate enforces the daily free-tier recap quota, and it is checked before the abuse-cap daily quota', async () => {
+  const { body: { token, user } } = await registerUser('recap_quota@example.com');
   const { logEvent } = require('../events');
   for (let i = 0; i < 6; i++) await logEvent(user.id, 'ai_process_success', {});
 
@@ -396,12 +397,12 @@ test('/api/generate enforces the weekly free-tier quota, and it is checked befor
   });
   assert.equal(res.status, 429);
   const body = await res.json();
-  assert.match(body.error, /这周的AI/);
-  assert.equal(body.code, 'weekly_quota');
+  assert.match(body.error, /今天的AI复盘/);
+  assert.equal(body.code, 'daily_recap_quota');
 });
 
-test('/api/progress/quota reports weekly AI usage alongside daily', async () => {
-  const { body: { token, user } } = await registerUser('quota_weekly_report@example.com');
+test('/api/progress/quota reports daily recap usage alongside the other two pools', async () => {
+  const { body: { token, user } } = await registerUser('quota_recap_report@example.com');
   const { logEvent } = require('../events');
   await logEvent(user.id, 'ai_process_success', {});
   await logEvent(user.id, 'ai_process_fail', {});
@@ -411,9 +412,9 @@ test('/api/progress/quota reports weekly AI usage alongside daily', async () => 
   });
   assert.equal(res.status, 200);
   const body = await res.json();
-  assert.equal(body.weekly.used, 2);
-  assert.equal(body.weekly.limit, 6);
-  assert.equal(body.weekly.remaining, 4);
+  assert.equal(body.recap.used, 2);
+  assert.equal(body.recap.limit, 6);
+  assert.equal(body.recap.remaining, 4);
 });
 
 // ---------- events ----------

@@ -3759,7 +3759,7 @@ function goRecord() {
   show('screen-record');
   loadRecordQuota();
 }
-// Shows the weekly AI-recap quota near the "完成" button, and -- if it's
+// Shows the daily AI-recap quota near the "完成" button, and -- if it's
 // used up -- repurposes that button to route straight into 手动记 (see
 // disableAiEntry) instead of letting the user tap it and hit a 429 cold.
 async function loadRecordQuota() {
@@ -3768,13 +3768,13 @@ async function loadRecordQuota() {
     const res = await authFetch(`${API}/api/progress/quota`);
     if (!res.ok) return;
     const data = await res.json();
-    const remaining = data.weekly ? Number(data.weekly.remaining) : NaN;
+    const remaining = data.recap ? Number(data.recap.remaining) : NaN;
     if (!Number.isFinite(remaining)) return;
     if (remaining <= 0) {
-      if (note) note.textContent = '这周的AI复盘额度用完了，可以直接手动记';
+      if (note) note.textContent = '今天的AI复盘额度用完了，可以直接手动记';
       disableAiEntry();
     } else if (note) {
-      note.textContent = `这周还能AI复盘 ${remaining} 次`;
+      note.textContent = `今天还能AI复盘 ${remaining} 次`;
     }
   } catch (e) {}
 }
@@ -4913,11 +4913,8 @@ async function loadBrief() {
       return;
     }
     const courseName = classNameOf({ class_name: last.className });
-    const kicker = courseName === '其他'
-      ? (last.isLatestRecap === false ? `最近记下的还要改的 · ${fmtDay(last.createdAt)}` : '上次课还要改的')
-      : (last.isLatestRecap === false
-          ? `最近${courseName} · ${fmtDay(last.createdAt)} 还要改的`
-          : `上次课${courseName} · ${fmtDay(last.createdAt)} 还要改的`);
+    const namePart = courseName === '其他' ? '' : courseName;
+    const kicker = `上次课${namePart} · ${fmtDay(last.createdAt)} 还要改的`;
     el.innerHTML = kickerHtml(kicker) + html;
   } catch (e) {
     el.textContent = '加载失败，下拉重试';
@@ -6105,11 +6102,16 @@ function enableAiEntry() {
   btn.innerHTML = '<span class="pearl-sheen"></span><span class="relative z-10">完成</span>';
   const retryBtn = document.getElementById('review-retry-btn');
   if (retryBtn) retryBtn.disabled = false;
+  const recBtn = document.getElementById('rec-btn');
+  if (recBtn) { recBtn.disabled = false; recBtn.classList.remove('opacity-40'); }
   updateGenerateBtn();
 }
-// AI unavailable (weekly/daily quota, or a provider outage) -- rather than a
-// dead-end disabled button, repurpose it to route straight into 手动记 so
-// the user always has somewhere to go.
+// AI unavailable (daily recap quota, or a provider outage) -- rather than a
+// dead-end disabled button, repurpose "完成" to route straight into 手动记.
+// Also disables the mic itself: recording anyway would still burn a real
+// ASR (Whisper) call for audio that can never be turned into an AI recap,
+// only to dead-end at the same "去手动记" redirect -- so stop it up front
+// instead of wasting that cost.
 function disableAiEntry(message) {
   aiUnavailable = true;
   const btn = document.getElementById('generate-btn');
@@ -6118,6 +6120,10 @@ function disableAiEntry(message) {
   btn.innerHTML = '<span class="relative z-10">去手动记</span>';
   const retryBtn = document.getElementById('review-retry-btn');
   if (retryBtn) retryBtn.disabled = true;
+  const recBtn = document.getElementById('rec-btn');
+  const recState = document.getElementById('rec-state');
+  if (recBtn) { recBtn.disabled = true; recBtn.classList.add('opacity-40'); }
+  if (recState) recState.textContent = 'AI额度用完了，直接手动记吧';
   if (message) toast(message);
 }
 function insertPrompt(text) {
@@ -6147,6 +6153,10 @@ function initSpeech() {
 
 function toggleRecording() {
   if (!recorderSupported || transcribing) return;
+  // Belt-and-suspenders alongside disableAiEntry()'s rec-btn.disabled --
+  // don't let a new recording start (and burn an ASR call) once AI is
+  // unavailable, even if something left the button clickable.
+  if (aiUnavailable && !recognizing) { startManualEntry(); return; }
   if (!recognizing) startRecording(); else stopRecording();
 }
 
