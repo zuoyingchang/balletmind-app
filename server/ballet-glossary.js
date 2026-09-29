@@ -24,6 +24,7 @@ const BALLET_TERMS = [
   // 高频 + 最容易被听错/转写错的词排最后（最靠近 224 token 窗口、最该保住）：
   'plié', 'tendu', 'dégagé', 'relevé', 'pirouette', 'grand battement',
   'chaîné', 'turnout', 'spotting', '一位', '二位', '五位', '把杆', '足尖',
+  '坐胯', '掉胯', '格朗巴特芒', '巴特芒', '巴特梦',
 ];
 
 // whisper-1 only keeps the final ~224 tokens of a long prompt — everything

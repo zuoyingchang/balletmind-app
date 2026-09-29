@@ -67,3 +67,39 @@ test('expandSearchNeedles for 蹲 includes ascii plie', () => {
   assert.ok(needles.includes('plie'));
   assert.ok(needles.includes('蹲'));
 });
+
+test('巴特梦 and 坐胯 map onto battement / hip-sit aliases', () => {
+  assert.equal(recordMatchesSearch({
+    good_points: '',
+    improve_points: 'grand battement 高度不够',
+    transcript: '',
+    class_name: '',
+    next_time_reminder: '',
+  }, '巴特梦'), true);
+  assert.equal(recordMatchesSearch({
+    good_points: '',
+    improve_points: '坐胯了',
+    transcript: '',
+    class_name: '',
+    next_time_reminder: '',
+  }, '掉胯'), true);
+});
+
+const { searchRecordsByQuestion } = require('../../public/js/ballet-terms');
+
+test('generic 做得好 / 待改进 questions fall back to recent recap fields', () => {
+  const recs = [
+    { id: 1, class_name: '基训', good_points: 'tendu 脚尖伸直', improve_points: '', next_time_reminder: '', created_at: 2 },
+    { id: 2, class_name: '基训', good_points: '', improve_points: '重心后坐', next_time_reminder: '', created_at: 1 },
+  ];
+  const goodHits = searchRecordsByQuestion(recs, '我最近有哪些做得好的地方', 3);
+  assert.equal(goodHits.length, 1);
+  assert.equal(goodHits[0].id, 1);
+  const improveHits = searchRecordsByQuestion(recs, '我最近有哪些需要改进的地方', 3);
+  assert.equal(improveHits.length, 1);
+  assert.equal(improveHits[0].id, 2);
+  const battementHits = searchRecordsByQuestion(recs.concat({
+    id: 3, class_name: '基训', good_points: '', improve_points: 'grand battement 高度不够', next_time_reminder: '', created_at: 3,
+  }), '我的巴特梦做得怎么样', 3);
+  assert.equal(battementHits[0].id, 3);
+});

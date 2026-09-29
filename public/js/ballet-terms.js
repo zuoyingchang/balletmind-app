@@ -12,13 +12,13 @@ function foldBalletText(s) {
 
 const TERM_ALIAS_GROUPS = [
   ['plié', 'plie', 'pli.e', '蹲'],
-  ['tendu', '擦地'],
+  ['tendu', 'tandoo', '擦地'],
   ['dégagé', 'degage', '小踢'],
   ['rond de jambe', 'ronddejambe', '划圈'],
   ['frappé', 'frappe', '打击'],
   ['fondu', '单腿蹲'],
   ['développé', 'developpe', '伸展'],
-  ['grand battement', '大踢腿', '大踢'],
+  ['grand battement', 'battement', '大踢腿', '大踢', '格朗巴特芒', '巴特芒', '巴特梦'],
   ['port de bras', 'portdebras', '手臂动作'],
   ['pirouette', '单足转'],
   ['chaîné', 'chaine', '链转'],
@@ -46,6 +46,7 @@ const TERM_ALIAS_GROUPS = [
   ['脚踝'],
   ['肩膀'],
   ['髋部', '髋'],
+  ['坐胯', '掉胯', '坐髋'],
   ['脚尖'],
 ];
 
@@ -61,7 +62,7 @@ const TERM_GLOSSARY = [
     { fr: 'frappé', en: 'frappe', zh: '打击' },
     { fr: 'fondu', en: 'fondu', zh: '单腿蹲' },
     { fr: 'développé', en: 'developpe', zh: '伸展' },
-    { fr: 'grand battement', en: 'grand battement', zh: '大踢腿' },
+    { fr: 'grand battement', en: 'battement', zh: '大踢腿' },
     { fr: 'port de bras', en: 'port de bras', zh: '手臂动作' },
     { fr: 'relevé', en: 'releve', zh: '半脚尖' },
   ]},
@@ -87,6 +88,7 @@ const TERM_GLOSSARY = [
     { fr: 'en dehors', en: 'turnout', zh: '外开' },
     { fr: 'spotting', en: 'spotting', zh: '甩头' },
     { fr: 'alignment', en: 'alignment', zh: '身体线条' },
+    { fr: 'hanches', en: 'hips', zh: '坐胯 / 掉胯' },
   ]},
   { group: '脚位', rows: [
     { fr: 'première', en: 'first', zh: '一位' },
@@ -161,9 +163,27 @@ function questionTokens(question) {
   }
   return [...new Set([...termTokens, ...latinWords, ...bigrams])];
 }
+function recapFieldIntent(question) {
+  const q = foldBalletText(question);
+  const good = /做得好|好的地方|优点/.test(q);
+  const improve = /待改进|还要改|需要改进|改进的地方|做得不好/.test(q);
+  return { good, improve };
+}
+
+function recordsForFieldIntent(records, intent, limit) {
+  const sorted = [...(records || [])].sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+  const hasGood = (r) => String(r.good_points || '').trim();
+  const hasImprove = (r) => String(r.improve_points || '').trim() || String(r.next_time_reminder || '').trim();
+  let pool = sorted;
+  if (intent.good && !intent.improve) pool = sorted.filter(hasGood);
+  else if (intent.improve && !intent.good) pool = sorted.filter(hasImprove);
+  else if (intent.good && intent.improve) pool = sorted.filter((r) => hasGood(r) || hasImprove(r));
+  else return [];
+  return pool.slice(0, limit);
+}
+
 function searchRecordsByQuestion(records, question, limit = 3) {
   const tokens = questionTokens(question);
-  if (!tokens.length) return [];
   const scored = (records || [])
     .map((r) => {
       const hay = foldBalletText([r.class_name, r.good_points, r.improve_points, r.next_time_reminder].join('\n'));
@@ -172,7 +192,10 @@ function searchRecordsByQuestion(records, question, limit = 3) {
     })
     .filter((x) => x.score > 0);
   scored.sort((a, b) => b.score - a.score || b.record.created_at - a.record.created_at);
-  return scored.slice(0, limit).map((x) => x.record);
+  if (scored.length) return scored.slice(0, limit).map((x) => x.record);
+  const intent = recapFieldIntent(question);
+  if (intent.good || intent.improve) return recordsForFieldIntent(records, intent, limit);
+  return [];
 }
 
 function stripEvalTails(text) {

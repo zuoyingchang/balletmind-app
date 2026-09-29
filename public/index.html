@@ -1743,12 +1743,19 @@
     border: none;
     background: linear-gradient(165deg, rgba(255,252,251,.9), rgba(244,234,232,.55));
     box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
-    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
-    font-style: italic;
-    font-size: 15px;
-    line-height: 1.65;
-    padding: 18px 20px;
+    font-family: inherit;
+    font-style: normal;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    padding: 14px 16px;
     border-radius: 18px;
+  }
+  .issue-card-text {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.45;
   }
   #issues-list {
     display: flex;
@@ -2431,6 +2438,7 @@
     <main class="relative z-10 flex-1 min-h-0 flex flex-col items-center justify-center px-6">
       <img src="/img/pack-shoes-pink.png" alt="" class="processing-shoes tint-rose">
       <p class="processing-hint mt-7 text-[12.5px] leading-5 text-center">马上就好</p>
+      <p class="mt-2 max-w-[260px] text-center text-[11.5px] leading-5 text-[var(--ink-soft)]">有认不清的字，整理完可以自己改几处。</p>
       <button type="button" onclick="cancelGenerate()" class="mt-8 text-[13px] text-[var(--rose-deep)]">返回修改</button>
     </main>
   </div>
@@ -2790,7 +2798,7 @@
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-8">
       <div class="mb-4">
         <div id="progress-class-tip" class="coach-tip hidden">点「问题」，看重复出现的。</div>
-        <div id="progress-look-tip" class="coach-tip hidden">点「回看」，问问我的档案。</div>
+        <div id="progress-look-tip" class="coach-tip hidden">点「回看」，问某一个动作在课记里怎么写。</div>
         <div class="hist-tabs relative flex items-center gap-1 rounded-full p-1">
         <button type="button" id="progress-tab-class" onclick="setProgressView('class')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium tab-pill-active">问题</button>
         <button type="button" id="progress-tab-look" onclick="setProgressView('look')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium text-[var(--ink-faint)]">回看</button>
@@ -2823,8 +2831,8 @@
             <div id="issue-donut-legend" class="mt-0.5 text-[11px] text-[var(--ink-soft)] flex flex-wrap gap-x-3 gap-y-0.5"></div>
           </div>
         </div>
-        <div id="issues-empty" class="hidden mt-3 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-[12px] leading-6 text-[var(--ink-soft)]">
-          请先点记录，做成课记。重复出现的问题会出现在这里。
+        <div id="issues-empty" class="hidden mt-3 rounded-2xl px-4 py-3 text-[13px] leading-[1.55] text-[var(--ink-soft)]">
+          请先点记录，做成课记。记下的问题会出现在这里。
         </div>
         <div id="issues-list" class="mt-3"></div>
         <button type="button" id="issues-more-btn" onclick="toggleIssuesShowAll()" class="hidden mt-1 w-full py-2 text-center text-[12px] text-[var(--rose-deep)] tracking-wide"></button>
@@ -2834,10 +2842,11 @@
       <div id="progress-look-view" class="hidden">
       <section id="progress-ask-sec">
         <h2 class="sec-head font-display text-[17px] font-semibold"><span class="home-track-icon is-ask"><iconify-icon icon="solar:chat-round-linear"></iconify-icon></span>问问我的档案</h2>
+        <p class="mt-1 text-[11.5px] leading-5 text-[var(--ink-faint)]">点名一个动作，看看课记里怎么写的。</p>
         <div class="ask-sheet card-journal grain relative overflow-hidden mt-3 p-4">
           <div class="pearl-sheen"></div>
           <div class="relative z-10 flex gap-2">
-            <input id="ask-archive-input" type="text" placeholder="比如：我最近转圈有什么问题" class="flex-1 h-10 px-3 rounded-xl border border-[var(--border-soft)] text-[12.5px] bg-white/70" onkeydown="if(event.key==='Enter') askArchive()">
+            <input id="ask-archive-input" type="text" placeholder="比如：tendu 最近怎么样" class="flex-1 h-10 px-3 rounded-xl border border-[var(--border-soft)] text-[12.5px] bg-white/70" onkeydown="if(event.key==='Enter') askArchive()">
             <button type="button" onclick="askArchive()" id="ask-archive-btn" class="btn-ribbon shrink-0 h-10 px-4 rounded-full text-[12.5px] font-medium">
               <span class="pearl-sheen"></span><span class="relative z-10">问</span>
             </button>
@@ -4814,8 +4823,8 @@ async function askArchive() {
 let currentIssues = [];
 let issuesVisibleCount = 5;
 const ISSUE_PAGE_SIZE = 5;
-const ISSUES_EMPTY_DEFAULT = '请先点记录，做成课记。重复出现的问题会出现在这里。';
-const ISSUES_EMPTY_REPEAT = '同一条待改进出现两次以上，会出现在这里。';
+const ISSUES_EMPTY_DEFAULT = '请先点记录，做成课记。记下的问题会出现在这里。';
+const ISSUES_EMPTY_NONE = '最近没有还在跟进的问题。';
 
 function issueCreatedMs(issue) {
   const t = Number(issue.created_at);
@@ -4839,7 +4848,7 @@ function issueActivityMs(issue) {
 
 function sortedOpenIssues() {
   return currentIssues
-    .filter((issue) => issue.status !== 'resolved' && (Number(issue.occurrence_count) || 0) >= 2)
+    .filter((issue) => issue.status !== 'resolved' && (Number(issue.occurrence_count) || 0) >= 1)
     .sort((a, b) => {
       const countDiff = (Number(b.occurrence_count) || 0) - (Number(a.occurrence_count) || 0);
       if (countDiff) return countDiff;
@@ -4847,10 +4856,10 @@ function sortedOpenIssues() {
     });
 }
 
-async function loadIssues() {
+async function loadIssues(opts = {}) {
   const res = await authFetch(`${API}/api/issues`);
   currentIssues = await res.json();
-  issuesVisibleCount = ISSUE_PAGE_SIZE;
+  if (!opts.keepPage) issuesVisibleCount = ISSUE_PAGE_SIZE;
   renderIssues();
 }
 function toggleIssuesShowAll() {
@@ -4871,16 +4880,15 @@ function renderIssues() {
     if (emptyEl) {
       emptyEl.classList.remove('hidden');
       emptyEl.textContent = (homeRows && homeRows.some((r) => !isCheckinOnly(r)))
-        ? ISSUES_EMPTY_REPEAT
+        ? ISSUES_EMPTY_NONE
         : ISSUES_EMPTY_DEFAULT;
     }
     if (listEl) listEl.innerHTML = '';
-    const donut = document.getElementById('issue-donut-wrap');
-    if (donut) donut.classList.add('hidden');
     if (moreBtn) {
       moreBtn.classList.add('hidden');
       moreBtn.textContent = '';
     }
+    syncIssueDonut();
     return;
   }
   emptyEl.classList.add('hidden');
@@ -4900,6 +4908,7 @@ function renderIssues() {
       moreBtn.textContent = '';
     }
   }
+  syncIssueDonut();
 }
 // Rows collapse to a single glanceable line (status dot + text + count) —
 // the status-change buttons only appear once you tap a row open. With
@@ -4916,12 +4925,12 @@ function issueCard(issue) {
   const days = uniqueDayLabels(issue.occurrences);
   const isOpen = expandedIssueIds.has(issue.id);
   let html = `<div class="issue-card${isOpen ? ' is-open' : ''}">
-    <button type="button" onclick="toggleIssueExpand(${issue.id})" class="w-full flex items-center gap-2 px-3.5 py-2.5 text-left">
-      <span class="shrink-0 w-2 h-2 rounded-full" style="background:${statusDot};box-shadow:0 0 0 2px rgba(255,255,255,.7)" aria-hidden="true"></span>
-      <span class="flex-1 min-w-0 text-[13px] font-medium truncate">${escapeHtml(compactPhrase(issue.text))}</span>
-      <span class="issue-count shrink-0">${issue.occurrence_count}<small>次</small></span>
-      ${days.length ? `<span class="issue-days">${escapeHtml(days.join(' · '))}</span>` : ''}
-      <iconify-icon icon="solar:alt-arrow-${isOpen ? 'up' : 'down'}-linear" class="shrink-0 text-[13px] text-[var(--ink-faint)]"></iconify-icon>
+    <button type="button" onclick="toggleIssueExpand(${issue.id})" class="w-full flex items-start gap-2 px-3.5 py-2.5 text-left">
+      <span class="shrink-0 mt-[6px] w-2 h-2 rounded-full" style="background:${statusDot};box-shadow:0 0 0 2px rgba(255,255,255,.7)" aria-hidden="true"></span>
+      <span class="issue-card-text flex-1 min-w-0 text-[13px] font-medium">${escapeHtml(stripEvalTails(issue.text) || issue.text)}</span>
+      <span class="issue-count shrink-0 mt-[2px]">${issue.occurrence_count}<small>次</small></span>
+      ${days.length ? `<span class="issue-days mt-[3px]">${escapeHtml(days.join(' · '))}</span>` : ''}
+      <iconify-icon icon="solar:alt-arrow-${isOpen ? 'up' : 'down'}-linear" class="shrink-0 mt-[4px] text-[13px] text-[var(--ink-faint)]"></iconify-icon>
     </button>`;
   if (isOpen) {
     html += `<div class="px-3.5 pb-3">
@@ -4935,14 +4944,44 @@ function issueCard(issue) {
   }
   return html + `</div>`;
 }
+function applyIssueStatusLocally(ids, status) {
+  const idSet = new Set(ids);
+  if (status === 'resolved') {
+    const moved = currentIssues.filter((i) => idSet.has(i.id));
+    currentIssues = currentIssues.filter((i) => !idSet.has(i.id));
+    if (lastTrainingReview) {
+      lastTrainingReview.openIssues = (lastTrainingReview.openIssues || []).filter((i) => !idSet.has(i.id));
+      lastTrainingReview.resolvedInPeriod = [
+        ...(lastTrainingReview.resolvedInPeriod || []),
+        ...moved.map((i) => ({ ...i, status: 'resolved', updated_at: Date.now() })),
+      ];
+    }
+    return;
+  }
+  currentIssues = currentIssues.map((i) => (idSet.has(i.id) ? { ...i, status } : i));
+  if (lastTrainingReview) {
+    lastTrainingReview.openIssues = (lastTrainingReview.openIssues || []).map((i) => (
+      idSet.has(i.id) ? { ...i, status } : i
+    ));
+  }
+}
+
 async function updateIssueStatus(id, status) {
-  await authFetch(`${API}/api/issues/${id}`, {
+  const res = await authFetch(`${API}/api/issues/${id}`, {
     method: 'PATCH', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({ status })
   });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    toast(data.error || '没改成功，请再试一次');
+    return;
+  }
+  const ids = Array.isArray(data.ids) && data.ids.length ? data.ids : [id];
+  applyIssueStatusLocally(ids, status);
   if (status === 'resolved') toast('已从追踪中移除');
-  expandedIssueIds.delete(id);
-  await loadIssues();
+  ids.forEach((issueId) => expandedIssueIds.delete(issueId));
+  renderIssues();
+  loadIssues({ keepPage: true });
 }
 
 let lastTrainingReview = null;
@@ -4997,13 +5036,7 @@ function paintTrainingReview() {
   contentEl.innerHTML = html;
   contentEl.classList.remove('hidden');
   if (exportBtn) exportBtn.classList.toggle('hidden', data.recordCount === 0);
-  if (data.resolvedInPeriod && data.openIssues) {
-    renderIssueDonut({
-      resolved: (data.resolvedInPeriod || []).filter((i) => (Number(i.occurrence_count) || 0) >= 2).length,
-      improving: data.openIssues.filter((i) => i.status === 'improving' && (Number(i.occurrence_count) || 0) >= 2).length,
-      open: data.openIssues.filter((i) => i.status === 'open' && (Number(i.occurrence_count) || 0) >= 2).length,
-    });
-  }
+  syncIssueDonut();
 }
 
 async function generateTrainingReview(mode) {
@@ -5655,6 +5688,24 @@ function renderProgressStrip(rows) {
   wrap.innerHTML = html;
 }
 
+function countedIssue(issue) {
+  return (Number(issue.occurrence_count) || 0) >= 1;
+}
+
+function liveIssueDonutCounts() {
+  const live = currentIssues.filter(countedIssue);
+  const resolved = (lastTrainingReview && lastTrainingReview.resolvedInPeriod) || [];
+  return {
+    resolved: resolved.filter(countedIssue).length,
+    improving: live.filter((i) => i.status === 'improving').length,
+    open: live.filter((i) => i.status === 'open').length,
+  };
+}
+
+function syncIssueDonut() {
+  renderIssueDonut(liveIssueDonutCounts());
+}
+
 // ---------- progress: recurring-issue status donut ----------
 // Hand-rolled SVG ring (2 stacked <circle> stroke-dasharray segments) so we
 // don't pull in a charting library for one small breakdown. Colors reuse
@@ -6282,7 +6333,7 @@ async function confirmSave() {
 // counting, never a capability judgement). Same trigger point, one overlay.
 function milestoneText(m) {
   if (!m) return '';
-  if (m.type === 'count' && m.value === 1) return '这是你的第一条课记。多记几次后，「追踪」里会出现反复提到的问题。';
+  if (m.type === 'count' && m.value === 1) return '这是你的第一条课记。保存后，「追踪」里会看到这次记下的问题。';
   if (m.type === 'count') return `已经写下 ${m.value} 次课记了。`;
   if (m.type === 'streak') return `已经连续 ${m.value} 周来过了。`;
   return '';
