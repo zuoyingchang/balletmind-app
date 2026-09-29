@@ -792,6 +792,15 @@
     border: 1px solid var(--border-soft);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
   }
+  .hist-tabs button {
+    transition: background .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;
+  }
+  .hist-tabs button.tab-pill-active {
+    background: var(--cta-pink);
+    color: var(--burgundy);
+    box-shadow: 0 6px 14px -9px rgba(160,110,120,.42), inset 0 1px 0 rgba(255,255,255,.55);
+    transform: translateY(-1px);
+  }
   .month-pick {
     position: relative; flex: 1; min-width: 0; margin: 0 8px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -1652,7 +1661,7 @@
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-7">
       <div class="hist-tabs flex items-center gap-1 mb-3 rounded-full p-1">
-        <button type="button" id="history-tab-checkin" onclick="setHistoryView('checkin')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium bg-white shadow-sm text-[var(--burgundy)]">统计</button>
+        <button type="button" id="history-tab-checkin" onclick="setHistoryView('checkin')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium tab-pill-active">统计</button>
         <button type="button" id="history-tab-list" onclick="setHistoryView('list')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium text-[var(--ink-faint)]">列表</button>
       </div>
 
@@ -1865,7 +1874,7 @@
         <div id="progress-class-tip" class="coach-tip hidden">点「问题」，看还在出现的。</div>
         <div id="progress-look-tip" class="coach-tip hidden">点「回看」，问问我的档案。</div>
         <div class="hist-tabs relative flex items-center gap-1 rounded-full p-1">
-        <button type="button" id="progress-tab-class" onclick="setProgressView('class')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium bg-white shadow-sm text-[var(--burgundy)]">问题</button>
+        <button type="button" id="progress-tab-class" onclick="setProgressView('class')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium tab-pill-active">问题</button>
         <button type="button" id="progress-tab-look" onclick="setProgressView('look')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium text-[var(--ink-faint)]">回看</button>
         </div>
       </div>
@@ -3691,9 +3700,7 @@ function setProgressView(mode) {
     const el = document.getElementById(id);
     if (!el) return;
     const on = progressViewMode === key;
-    el.classList.toggle('bg-white', on);
-    el.classList.toggle('shadow-sm', on);
-    el.classList.toggle('text-[var(--burgundy)]', on);
+    el.classList.toggle('tab-pill-active', on);
     el.classList.toggle('text-[var(--ink-faint)]', !on);
   });
   const classView = document.getElementById('progress-class-view');
@@ -4362,9 +4369,7 @@ function setHistoryView(mode) {
     const el = document.getElementById(id);
     if (!el) return;
     const on = mode === key;
-    el.classList.toggle('bg-white', on);
-    el.classList.toggle('shadow-sm', on);
-    el.classList.toggle('text-[var(--burgundy)]', on);
+    el.classList.toggle('tab-pill-active', on);
     el.classList.toggle('text-[var(--ink-faint)]', !on);
   });
   document.getElementById('history-list-view').classList.toggle('hidden', mode !== 'list');
