@@ -4,11 +4,9 @@ const { requireAuth } = require('../middleware/auth');
 const { listIssuesWithOccurrences, isSimilar } = require('../issues');
 const { splitLines, sessionIdFromReq, withSession, uniqueCompactGoodPoints } = require('../lib/text');
 const { logEvent, countAiCallsToday, countSecondaryAiCallsThisWeek, countAiRecapsToday } = require('../events');
-const { aiConfigured, missingConfigHint } = require('../ai/provider');
 const { dailyAiLimitFor, weeklyAskLimitFor, dailyRecapLimitFor } = require('../config');
-const { callAskRound1WithRetry, callAskRound2WithRetry, findToolUse, answerFromToolInput } = require('../ai/anthropic');
-const { llmUsageMeta } = require('../lib/llm-event-meta');
 const { retrieveAskRecords, KEYWORD_SPARSE_MAX } = require('../ai/ask-retrieve');
+const { buildAskDigest, wantResolvedSection } = require('../ai/ask-digest');
 const { isIssueBriefExperimentOn } = require('../experiments/issue-brief-gate');
 const { runIssueBriefExperiment } = require('../ai/issue-brief-experiment');
 
@@ -26,35 +24,6 @@ function uniqueSimilarLines(lines) {
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-// Year included on purpose — the model has no ground truth for "what year
-// is it" otherwise. Verified live: without a year anchor it guessed 2024
-// against real 2026 data, and a date-ranged search silently found nothing.
-const dateLabel = (ts) => { const d = new Date(ts); return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`; };
-
-function parseDateInput(input) {
-  if (!input || !/^\d{4}-\d{2}-\d{2}$/.test(input)) return null;
-  const ms = new Date(`${input}T00:00:00Z`).getTime();
-  return Number.isFinite(ms) ? ms : null;
-}
-
-// The model can ask for a date window (search_records' before/after), but
-// it never gets to invent one outside what this user actually has. Each
-// bound is clamped into [earliestTs, latestTs] independently — not just
-// capped in the one direction that seemed obvious — because a wrong-year
-// guess like "2024-08-31" undershoots the *lower* bound just as easily as
-// a bad guess could overshoot the upper one; clamping only one direction
-// left the other free to invert the range into an empty window (afterTs
-// ended up later than beforeTs, so the filter matched nothing). If the
-// range still comes out inverted after clamping both ends, fall back to
-// the user's full history rather than searching an empty window.
-function clampDateRange(after, before, earliestTs, latestTs) {
-  const parsedAfter = parseDateInput(after);
-  const parsedBefore = parseDateInput(before);
-  let afterTs = parsedAfter === null ? earliestTs : Math.min(Math.max(parsedAfter, earliestTs), latestTs);
-  let beforeTs = parsedBefore === null ? latestTs : Math.max(Math.min(parsedBefore + DAY_MS - 1, latestTs), earliestTs);
-  if (afterTs > beforeTs) { afterTs = earliestTs; beforeTs = latestTs; }
-  return { afterTs, beforeTs };
-}
 
 // GET /api/progress/review?days=7 | ?last=5 — Training Review (V0.2 #2).
 // User-triggered, not a background job — this just aggregates data that's
@@ -195,13 +164,10 @@ router.get('/brief', async (req, res) => {
   res.json(payload);
 });
 
-// GET /api/progress/ask?q=... — "问问你的档案" (ask-your-archive).
+// GET /api/progress/ask?q=... — "问问你的档案".
 // Retrieval is keyword-first. Embedding runs only when keyword hits are
-// 0 or 1 (KEYWORD_SPARSE_MAX) — enough signal (>=2) skips the extra cost.
-// Claude is only called after retrieval found something. The one place any
-// model autonomy lives: after seeing round 1's matches, the model can ask
-// for a second, differently-scoped search (typically a second time window)
-// instead of answering immediately. That hop is hard-capped at one.
+// 0 or 1 (KEYWORD_SPARSE_MAX). The answer is a digest of those records
+// (做得好的 / 待改进 / 已解决), not a model rewrite.
 router.get('/ask', async (req, res) => {
   const question = (req.query.q || '').trim();
   if (!question) return res.status(400).json({ error: '请输入问题' });
@@ -211,35 +177,51 @@ router.get('/ask', async (req, res) => {
     'SELECT id, class_name, good_points, improve_points, next_time_reminder, created_at FROM records WHERE user_id = ? ORDER BY created_at DESC',
     [req.userId]
   );
-  const keywordRound = await retrieveAskRecords(rows, question, { mode: 'keyword' });
+  const keywordRound = await retrieveAskRecords(rows, question, { mode: 'keyword', limit: 8 });
   const sessionId = sessionIdFromReq(req);
   const overQuota = (await countSecondaryAiCallsThisWeek(req.userId)) >= weeklyAskLimitFor(req.userId);
+  const archiveOverview = wantResolvedSection(question);
 
   let round1 = keywordRound;
-  if (keywordRound.keywordCount <= KEYWORD_SPARSE_MAX) {
+  if (archiveOverview) {
+    round1 = {
+      matches: rows.slice(0, 8),
+      retrievalPath: 'recent',
+      keywordCount: keywordRound.keywordCount,
+      embeddingCount: 0,
+    };
+  } else if (keywordRound.keywordCount <= KEYWORD_SPARSE_MAX) {
     if (overQuota) {
       if (keywordRound.matches.length === 0) {
-        return res.json({
-          answered: false,
-          answerPoints: ['档案里还没有找到相关记录。'],
-          citedRecordIds: [],
-          matchedRecords: [],
-          retrievalPath: 'none',
-        });
+        const issuesEmpty = await listIssuesWithOccurrences(req.userId);
+        const emptyDigest = buildAskDigest({ records: [], issues: issuesEmpty, question });
+        if (!emptyDigest.answered) {
+          return res.json({
+            answered: false,
+            answerPoints: ['档案里还没有找到相关记录。'],
+            citedRecordIds: [],
+            matchedRecords: [],
+            sections: [],
+            retrievalPath: 'none',
+          });
+        }
       }
       await logEvent(req.userId, 'ask_fail', withSession({ reason: 'quota_exceeded' }, sessionId));
       return res.status(429).json({ error: '这周的问问次数已经用完了，下周再问吧' });
     }
-    round1 = await retrieveAskRecords(rows, question);
+    round1 = await retrieveAskRecords(rows, question, { limit: 8 });
   }
 
   const round1Matches = round1.matches;
-  if (round1Matches.length === 0) {
+  const issues = await listIssuesWithOccurrences(req.userId);
+  const digest = buildAskDigest({ records: round1Matches, issues, question });
+  if (!digest.answered) {
     return res.json({
       answered: false,
-      answerPoints: ['档案里还没有找到相关记录。'],
+      answerPoints: digest.answerPoints,
       citedRecordIds: [],
       matchedRecords: [],
+      sections: [],
       retrievalPath: round1.retrievalPath,
     });
   }
@@ -248,114 +230,28 @@ router.get('/ask', async (req, res) => {
     await logEvent(req.userId, 'ask_fail', withSession({ reason: 'quota_exceeded' }, sessionId));
     return res.status(429).json({ error: '这周的问问次数已经用完了，下周再问吧' });
   }
-  if (!aiConfigured()) {
-    console.error(`[ALERT][config] ${missingConfigHint()}`);
-    return res.status(500).json({ error: 'AI服务暂时不可用，请稍后再试' });
-  }
-
-  const earliestTs = rows.length ? rows[rows.length - 1].created_at : Date.now();
-  const latestTs = rows.length ? rows[0].created_at : Date.now();
-  const dateRangeLabel = rows.length ? `${dateLabel(earliestTs)} ~ ${dateLabel(latestTs)}` : '（还没有记录）';
-  const todayLabel = dateLabel(Date.now());
-  const withDateLabel = (r) => ({ ...r, dateLabel: dateLabel(r.created_at) });
-
-  async function fail(reason, extra) {
-    console.error('[ask] fail', reason, JSON.stringify(extra || {}));
-    if (extra && (extra.status === 401 || extra.status === 402 || extra.status === 403)) console.error('[ALERT][billing-or-key] anthropic/ask HTTP', extra.status);
-    await logEvent(req.userId, 'ask_fail', withSession({ reason, ...extra }, sessionId));
-  }
 
   const startedAt = Date.now();
-  try {
-    const round1Call = await callAskRound1WithRetry(question, round1Matches.map(withDateLabel), dateRangeLabel, todayLabel);
-    if (round1Call.error) {
-      const reason = round1Call.error.message === 'timeout' ? 'timeout' : 'network_error';
-      await fail(reason, { round: 1, attempt: round1Call.attempt, latencyMs: Date.now() - startedAt });
-      return res.status(504).json({ error: reason === 'timeout' ? 'AI处理超时，请重新尝试' : 'AI服务连接失败，请重新尝试' });
-    }
-    if (!round1Call.response.ok) {
-      await fail('api_error', { round: 1, status: round1Call.response.status, attempt: round1Call.attempt, latencyMs: Date.now() - startedAt });
-      return res.status(502).json({ error: 'AI服务调用失败，请重新尝试' });
-    }
-    const data1 = await round1Call.response.json();
-    const toolUse1 = findToolUse(data1);
-    if (!toolUse1) {
-      await fail('no_tool_use', { round: 1, attempt: round1Call.attempt, latencyMs: Date.now() - startedAt });
-      return res.status(502).json({ error: 'AI未返回有效内容' });
-    }
+  await logEvent(req.userId, 'ask_success', withSession({
+    rounds: 1,
+    latencyMs: Date.now() - startedAt,
+    answered: true,
+    matchCount: round1Matches.length,
+    retrievalPath: round1.retrievalPath,
+    keywordCount: round1.keywordCount,
+    embeddingCount: round1.embeddingCount,
+    digest: true,
+  }, sessionId));
 
-    let lastLlmCall = round1Call;
-    let finalData = data1;
-    let allMatches = round1Matches;
-    let rounds = 1;
-    let retrievalPath = round1.retrievalPath;
-    let keywordCount = round1.keywordCount;
-    let embeddingCount = round1.embeddingCount;
-
-    if (toolUse1.name === 'search_records') {
-      const { keywords, before, after } = toolUse1.input || {};
-      const { afterTs, beforeTs } = clampDateRange(after, before, earliestTs, latestTs);
-      const scoped = rows.filter((r) => r.created_at >= afterTs && r.created_at <= beforeTs);
-      const round2Retrieve = await retrieveAskRecords(scoped, keywords || question);
-      const round2Matches = round2Retrieve.matches;
-      allMatches = [...round1Matches, ...round2Matches.filter((r) => !round1Matches.some((m) => m.id === r.id))];
-      keywordCount += round2Retrieve.keywordCount;
-      embeddingCount += round2Retrieve.embeddingCount;
-      if (round2Retrieve.retrievalPath === 'embedding' || round2Retrieve.retrievalPath === 'hybrid') {
-        retrievalPath = retrievalPath === 'keyword' ? 'hybrid' : round2Retrieve.retrievalPath;
-      }
-
-      const round2 = await callAskRound2WithRetry(round1Call.messages, toolUse1, round2Matches.map(withDateLabel));
-      rounds = 2;
-      if (round2.error) {
-        const reason = round2.error.message === 'timeout' ? 'timeout' : 'network_error';
-        await fail(reason, { round: 2, attempt: round2.attempt, latencyMs: Date.now() - startedAt });
-        return res.status(504).json({ error: reason === 'timeout' ? 'AI处理超时，请重新尝试' : 'AI服务连接失败，请重新尝试' });
-      }
-      if (!round2.response.ok) {
-        await fail('api_error', { round: 2, status: round2.response.status, attempt: round2.attempt, latencyMs: Date.now() - startedAt });
-        return res.status(502).json({ error: 'AI服务调用失败，请重新尝试' });
-      }
-      finalData = await round2.response.json();
-      lastLlmCall = round2;
-    }
-
-    const finalToolUse = findToolUse(finalData, 'submit_answer');
-    if (!finalToolUse) {
-      await fail('no_submit_answer', { round: rounds, latencyMs: Date.now() - startedAt });
-      return res.status(502).json({ error: 'AI未返回有效内容' });
-    }
-
-    const answer = answerFromToolInput(finalToolUse.input);
-    await logEvent(req.userId, 'ask_success', withSession(llmUsageMeta({
-      data: finalData,
-      attempt: lastLlmCall.attempt,
-      fellBack: lastLlmCall.fellBack,
-      extra: {
-        rounds,
-        latencyMs: Date.now() - startedAt,
-        answered: answer.answered,
-        matchCount: allMatches.length,
-        retrievalPath,
-        keywordCount,
-        embeddingCount,
-      },
-    }), sessionId));
-
-    const citedIds = new Set(answer.citedRecordIds);
-    res.json({
-      ...answer,
-      rounds,
-      retrievalPath,
-      matchedRecords: allMatches
-        .filter((r) => citedIds.has(r.id))
-        .map((r) => ({ id: r.id, className: r.class_name, createdAt: r.created_at })),
-    });
-  } catch (e) {
-    await fail('exception', { latencyMs: Date.now() - startedAt });
-    console.error('[ask] exception', e);
-    res.status(500).json({ error: '服务器错误，请稍后重试' });
-  }
+  const citedIds = new Set(digest.citedRecordIds);
+  res.json({
+    ...digest,
+    rounds: 1,
+    retrievalPath: round1.retrievalPath,
+    matchedRecords: round1Matches
+      .filter((r) => citedIds.has(r.id))
+      .map((r) => ({ id: r.id, className: r.class_name, createdAt: r.created_at })),
+  });
 });
 
 // GET /api/progress/quota -- today's AI usage, shown near the record/ask

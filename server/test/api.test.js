@@ -1518,31 +1518,27 @@ test('/api/progress/ask with no matching records answers "not found" without cal
   assert.equal(calls, 0, 'no AI call should happen when retrieval finds nothing');
 });
 
-test('/api/progress/ask retrieves the matching record and returns a cited answer', async () => {
+test('/api/progress/ask retrieves the matching record and returns a cited digest', async () => {
   const { body: { token } } = await registerUser('ask_match@example.com');
   const saved = await saveRecord(token, {
-    className: '基训', improve_points: '转圈的时候重心不稳', next_time_reminder: '多练习定点',
+    className: '基训',
+    good_points: '定点比上次稳',
+    improve_points: '转圈的时候重心不稳',
+    next_time_reminder: '多练习定点',
   });
 
-  let seenQuestion = null;
-  await withMockAnthropicFetch(
-    async (url, opts) => {
-      seenQuestion = JSON.parse(opts.body).messages[0].content;
-      return fakeAskResponse({ answered: true, answer: '你在转圈时提到过重心不稳。', citedRecordIds: [saved.id] });
-    },
-    async () => {
-      const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('我转圈的时候有什么问题')}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      assert.equal(res.status, 200);
-      const body = await res.json();
-      assert.equal(body.answered, true);
-      assert.match(body.answerPoints.join(' '), /重心不稳/);
-      assert.equal(body.matchedRecords.length, 1);
-      assert.equal(body.matchedRecords[0].id, saved.id);
-    }
-  );
-  assert.match(seenQuestion, /转圈的时候重心不稳/, 'the matched record content should have been sent to the model');
+  const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('我转圈的时候有什么问题')}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.answered, true);
+  assert.match(body.answerPoints.join(' '), /重心不稳/);
+  assert.equal(body.matchedRecords.length, 1);
+  assert.equal(body.matchedRecords[0].id, saved.id);
+  const improve = body.sections.find((s) => s.id === 'improve');
+  assert.ok(improve);
+  assert.match(improve.lines[0].cite, /基训/);
 });
 
 test('/api/progress/ask only searches the caller\'s own records, not another user\'s', async () => {
@@ -1577,13 +1573,8 @@ test('问问档案 weekly quota does not count last week\'s asks', async () => {
       [user.id, 'ask_success', null, lastWeek]
     );
   }
-  await withMockAnthropicFetch(
-    async () => fakeAskResponse({ answered: true, answer: '重心不稳。', citedRecordIds: [] }),
-    async () => {
-      const res = await fetch(`${base}/api/progress/ask?q=转圈`, { headers: { Authorization: `Bearer ${token}` } });
-      assert.equal(res.status, 200, 'asks from last week must not spend this week\'s slots');
-    }
-  );
+  const res = await fetch(`${base}/api/progress/ask?q=转圈`, { headers: { Authorization: `Bearer ${token}` } });
+  assert.equal(res.status, 200, 'asks from last week must not spend this week\'s slots');
 });
 
 test('core and secondary AI quotas are isolated from each other', async () => {
@@ -1593,13 +1584,8 @@ test('core and secondary AI quotas are isolated from each other', async () => {
   const { body: { token: coreMaxed, user: coreUser } } = await registerUser('quota_core_maxed@example.com');
   await saveRecord(coreMaxed, { className: '基训', improve_points: '转圈时重心不稳' });
   for (let i = 0; i < 5; i++) await logEvent(coreUser.id, 'ai_process_success', {});
-  await withMockAnthropicFetch(
-    async () => fakeAskResponse({ answered: true, answer: '重心不稳。', citedRecordIds: [] }),
-    async () => {
-      const res = await fetch(`${base}/api/progress/ask?q=转圈`, { headers: { Authorization: `Bearer ${coreMaxed}` } });
-      assert.equal(res.status, 200, 'a maxed-out core pool must not block the secondary pool');
-    }
-  );
+  const resCore = await fetch(`${base}/api/progress/ask?q=转圈`, { headers: { Authorization: `Bearer ${coreMaxed}` } });
+  assert.equal(resCore.status, 200, 'a maxed-out core pool must not block the secondary pool');
 
   // Maxing out the secondary pool (ask + issue-brief) must not block /api/generate.
   const { body: { token: secondaryMaxed, user: secondaryUser } } = await registerUser('quota_secondary_maxed@example.com');
@@ -1612,8 +1598,8 @@ test('core and secondary AI quotas are isolated from each other', async () => {
   assert.notEqual(res.status, 429, 'a maxed-out secondary pool must not block the core pool');
 });
 
-// ---------- ask-your-archive: the one-hop agent (optional 2nd search) ----------
-test('/api/progress/ask costs exactly one Claude call when the model answers from round 1', async () => {
+// ---------- ask-your-archive: retrieve then digest (no Claude rewrite) ----------
+test('/api/progress/ask does not call Claude; it digests matched records', async () => {
   const { body: { token } } = await registerUser('ask_oneround@example.com');
   await saveRecord(token, { className: '基训', improve_points: '转圈时重心不稳' });
 
@@ -1625,80 +1611,48 @@ test('/api/progress/ask costs exactly one Claude call when the model answers fro
       assert.equal(res.status, 200);
       const body = await res.json();
       assert.equal(body.rounds, 1);
-    }
-  );
-  assert.equal(calls, 1, 'a question the first batch already answers must not trigger a second hop');
-});
-
-test('/api/progress/ask makes exactly one extra search when the model asks for one, then is forced to answer', async () => {
-  const { body: { token } } = await registerUser('ask_tworound@example.com');
-  const saved = await saveRecord(token, { className: '基训', improve_points: '转圈时重心不稳' });
-
-  let calls = 0;
-  const seenToolChoiceTypes = [];
-  await withMockAnthropicFetch(
-    async (url, opts) => {
-      calls++;
-      seenToolChoiceTypes.push(JSON.parse(opts.body).tool_choice.type);
-      if (calls === 1) {
-        return {
-          ok: true, status: 200,
-          json: async () => ({
-            content: [{ type: 'tool_use', id: 'toolu_1', name: 'search_records', input: { keywords: '转圈', after: '2000-01-01' } }],
-            usage: { input_tokens: 100, output_tokens: 20, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
-          }),
-        };
-      }
-      return fakeAskResponse({ answered: true, answer: '两段时间都提到重心不稳。', citedRecordIds: [saved.id] });
-    },
-    async () => {
-      const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('这个月和上个月转圈有什么不同')}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      assert.equal(res.status, 200);
-      const body = await res.json();
-      assert.equal(body.rounds, 2);
       assert.equal(body.answered, true);
-      assert.equal(body.matchedRecords.length, 1);
     }
   );
-  assert.equal(calls, 2, 'expected exactly 2 Claude calls: one where the model chooses, one forced answer');
-  assert.deepEqual(seenToolChoiceTypes, ['auto', 'tool'], 'round 1 must let the model choose; round 2 must be forced to submit_answer so the loop cannot run a 3rd time');
+  assert.equal(calls, 0, 'digest answers must not call Claude');
 });
 
-test('/api/progress/ask clamps a search_records date range to the user\'s own record history', async () => {
-  const { body: { token } } = await registerUser('ask_dateclamp@example.com');
-  await saveRecord(token, { className: '基训', improve_points: '转圈时重心不稳' });
+test('/api/progress/ask lists recent archive lines when the question is 我的档案', async () => {
+  const { body: { token } } = await registerUser('ask_archive@example.com');
+  await saveRecord(token, {
+    className: '把杆',
+    good_points: '手位更稳',
+    improve_points: '脚背再绷',
+  });
+  const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('我的档案')}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.answered, true);
+  assert.equal(body.retrievalPath, 'recent');
+  assert.ok(body.sections.find((s) => s.id === 'good').lines.some((l) => l.text === '手位更稳'));
+  assert.match(body.sections.find((s) => s.id === 'good').lines[0].cite, /把杆/);
+});
 
-  let secondCallQuestionText = null;
-  let calls = 0;
-  await withMockAnthropicFetch(
-    async (url, opts) => {
-      calls++;
-      if (calls === 1) {
-        return {
-          ok: true, status: 200,
-          json: async () => ({
-            content: [{ type: 'tool_use', id: 'toolu_1', name: 'search_records', input: { keywords: '转圈', after: '1999-01-01', before: '2999-01-01' } }],
-            usage: { input_tokens: 100, output_tokens: 20, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
-          }),
-        };
-      }
-      const body = JSON.parse(opts.body);
-      secondCallQuestionText = body.messages[body.messages.length - 1].content[0].content;
-      return fakeAskResponse({ answered: true, answer: 'ok', citedRecordIds: [] });
-    },
-    async () => {
-      const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('转圈这个月和上个月有什么不同')}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      assert.equal(res.status, 200);
-    }
-  );
-  // Out-of-range 1999/2999 dates must not have blown up the search into an
-  // error or an empty/unbounded result — it should have found the one real
-  // record, clamped to this user's actual history.
-  assert.match(secondCallQuestionText, /重心不稳/, 'the out-of-range request should still clamp to and return the real record');
+test('/api/progress/ask lists good and improve lines with class and date', async () => {
+  const { body: { token } } = await registerUser('ask_tworound@example.com');
+  await saveRecord(token, {
+    className: '基训',
+    good_points: '定点比上次稳',
+    improve_points: '转圈时重心不稳',
+  });
+  const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('这个月和上个月转圈有什么不同')}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.answered, true);
+  assert.equal(body.rounds, 1);
+  const titles = body.sections.map((s) => s.title);
+  assert.ok(titles.includes('做得好的'));
+  assert.ok(titles.includes('待改进'));
+  assert.match(body.sections.find((s) => s.id === 'good').lines[0].cite, /基训/);
 });
 
 test('/api/progress/ask uses embedding when keywords miss a paraphrase of the record', async () => {
@@ -1740,7 +1694,7 @@ test('/api/progress/ask uses embedding when keywords miss a paraphrase of the re
     }
   );
   assert.equal(embedCalls, 1, 'sparse keyword must trigger one embedding call');
-  assert.equal(claudeCalls, 1);
+  assert.equal(claudeCalls, 0);
 });
 
 test('/api/progress/ask skips embedding when keyword already returned 2+ records', async () => {

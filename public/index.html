@@ -597,7 +597,7 @@
     overflow-y: auto;
   }
   #manual-sheet-mask .note-block { padding-left: 10px; }
-  #manual-sheet-mask .note-area { min-height: 72px; }
+  #manual-sheet-mask .note-ruled-box { min-height: 72px; }
   .checkin-sheet-panel > .pearl-sheen { opacity: .82; }
   .checkin-sheet-bow {
     position: absolute;
@@ -776,8 +776,8 @@
     border-top: 1px solid rgba(255,255,255,.7);
     padding-bottom: max(16px, env(safe-area-inset-bottom));
   }
-  .field-good { background: rgba(232, 234, 226, .78); }
-  .field-improve { background: rgba(242, 232, 226, .8); }
+  .field-good { background-color: rgba(232, 234, 226, .78); }
+  .field-improve { background-color: rgba(242, 232, 226, .8); }
   .field-next { background: rgba(240, 228, 226, .72); }
   .field-good-lift { box-shadow: 0 3px 10px -6px rgba(122, 140, 122, .45); }
   .rec-mic {
@@ -1804,6 +1804,33 @@
     line-height: 1.4;
     color: var(--ink-faint);
   }
+  .ask-sec { margin-top: 12px; }
+  .ask-sec:first-child { margin-top: 2px; }
+  .ask-sec-k {
+    margin: 0;
+    font-size: 11px;
+    letter-spacing: .12em;
+    color: var(--ink-faint);
+  }
+  .ask-sec.is-good .ask-sec-k { color: #6f7d6c; }
+  .ask-sec.is-improve .ask-sec-k { color: #a07a48; }
+  .ask-sec.is-resolved .ask-sec-k { color: #7a6e6c; }
+  .ask-sec-list { list-style: none; margin: 4px 0 0; padding: 0; }
+  .ask-sec-list li + li { border-top: 1px solid rgba(110, 80, 90, .14); }
+  .ask-sec-line {
+    display: block;
+    width: 100%;
+    padding: 7px 0;
+    text-align: left;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .ask-sec-cite {
+    margin-left: 4px;
+    font-size: 11px;
+    color: var(--ink-faint);
+  }
   .home-week-ribbon {
     padding: 8px 4px 4px;
     background: transparent;
@@ -2027,13 +2054,6 @@
     margin: 0 0 8px;
   }
   .note-head .note-kicker { margin: 0; }
-  .note-line-hint {
-    flex-shrink: 0;
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: .02em;
-    color: var(--ink-faint);
-  }
   .field-optional {
     display: inline-block;
     margin-left: 6px;
@@ -2064,6 +2084,44 @@
     overflow: hidden;
     resize: none;
     display: block;
+  }
+  .note-src {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .note-ruled-box {
+    position: relative;
+    min-height: 72px;
+    padding: 2px 0 6px;
+    border-radius: 1rem;
+  }
+  .note-ruled-item {
+    position: relative;
+    padding: 8px 14px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    outline: none;
+  }
+  .note-ruled-item + .note-ruled-item {
+    border-top: 1px solid var(--note-rule, rgba(110, 80, 90, .18));
+  }
+  .note-block.is-good .note-ruled-box { --note-rule: rgba(122, 140, 122, .38); }
+  .note-block.is-improve .note-ruled-box { --note-rule: rgba(184, 148, 86, .4); }
+  .note-ruled-item.is-blank:only-child::before {
+    content: '每一行写一条';
+    position: absolute;
+    left: 14px;
+    top: 8px;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--ink-faint);
+    opacity: .42;
+    pointer-events: none;
   }
   .issue-count {
     font-family: "Noto Serif SC", "Songti SC", ui-serif, serif;
@@ -2217,7 +2275,12 @@
   }
   .recap-sec.is-good .recap-mark { background: var(--sage); }
   .recap-sec.is-improve .recap-mark { background: var(--gold); }
-  .recap-text { min-width: 0; flex: 1; }
+  .recap-text {
+    min-width: 0;
+    flex: 1;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
   .recap-more {
     position: relative;
     z-index: 2;
@@ -2600,16 +2663,20 @@
       <div class="relative z-10 mb-5 note-block is-good">
         <div class="note-head">
           <p class="note-kicker is-good">做得好的地方</p>
-          <p id="review-good-hint" class="note-line-hint hidden">一行一条</p>
         </div>
-        <textarea id="review-good" class="field-good-lift note-area w-full rounded-2xl field-good" oninput="fitNoteArea(this)"></textarea>
+        <div class="note-ruled-box field-good-lift field-good">
+          <textarea id="review-good" class="note-src" tabindex="-1" aria-hidden="true"></textarea>
+          <div class="note-ruled-list" data-for="review-good"></div>
+        </div>
       </div>
       <div class="relative z-10 mb-5 note-block is-improve">
         <div class="note-head">
           <p class="note-kicker is-improve">还要改的</p>
-          <p id="review-improve-hint" class="note-line-hint hidden">一行一条</p>
         </div>
-        <textarea id="review-improve" class="note-area w-full rounded-2xl field-improve" oninput="fitNoteArea(this)"></textarea>
+        <div class="note-ruled-box field-improve">
+          <textarea id="review-improve" class="note-src" tabindex="-1" aria-hidden="true"></textarea>
+          <div class="note-ruled-list" data-for="review-improve"></div>
+        </div>
       </div>
       <textarea id="review-next" class="hidden" tabindex="-1" aria-hidden="true"></textarea>
       <div id="review-tips-open" class="relative z-10 mb-2 hidden"></div>
@@ -2988,7 +3055,7 @@
       <div id="progress-look-view" class="hidden">
       <section id="progress-ask-sec">
         <h2 class="sec-head font-display text-[17px] font-semibold"><span class="home-track-icon is-ask"><iconify-icon icon="solar:chat-round-linear"></iconify-icon></span>问问我的档案</h2>
-        <p class="mt-1 text-[11.5px] leading-5 text-[var(--ink-faint)]">问一个动作，或者问一节课/组合，都可以。</p>
+        <p class="mt-1 text-[11.5px] leading-5 text-[var(--ink-faint)]">问一个动作或一节课，档案里相关的会按做得好的、待改进、已解决列出来。</p>
         <div class="ask-sheet card-journal grain relative overflow-hidden mt-3 p-4">
           <div class="pearl-sheen"></div>
           <div class="relative z-10 flex gap-2">
@@ -3250,18 +3317,22 @@
       <div class="note-block is-good">
         <div class="note-head">
           <p class="note-kicker is-good">做得好的</p>
-          <p class="note-line-hint">一行一条</p>
         </div>
-        <textarea id="manual-sheet-good" class="field-good-lift note-area w-full rounded-2xl field-good" placeholder="一行一条" oninput="fitNoteArea(this)"></textarea>
+        <div class="note-ruled-box field-good-lift field-good">
+          <textarea id="manual-sheet-good" class="note-src" tabindex="-1" aria-hidden="true"></textarea>
+          <div class="note-ruled-list" data-for="manual-sheet-good"></div>
+        </div>
       </div>
     </div>
     <div class="checkin-sheet-field">
       <div class="note-block is-improve">
         <div class="note-head">
           <p class="note-kicker is-improve">还要改的</p>
-          <p class="note-line-hint">一行一条</p>
         </div>
-        <textarea id="manual-sheet-improve" class="note-area w-full rounded-2xl field-improve" placeholder="一行一条" oninput="fitNoteArea(this)"></textarea>
+        <div class="note-ruled-box field-improve">
+          <textarea id="manual-sheet-improve" class="note-src" tabindex="-1" aria-hidden="true"></textarea>
+          <div class="note-ruled-list" data-for="manual-sheet-improve"></div>
+        </div>
       </div>
     </div>
     <div class="checkin-sheet-field">
@@ -3528,10 +3599,7 @@ function uniqueLabels(lines, mapLine) {
 const RECAP_LINE_CAP = 5;
 let recapOpen = { good: false, improve: false, resolved: false };
 function recapShortLines(labels, expanded) {
-  const compact = (line) => (
-    typeof compactPhrase === 'function' ? compactPhrase(line, 32) : String(line || '').trim()
-  );
-  const all = uniqueCompactGoodPoints(labels).map(compact).filter(Boolean);
+  const all = uniqueCompactGoodPoints(labels).filter(Boolean);
   const shown = expanded ? all : all.slice(0, RECAP_LINE_CAP);
   return { shown, extra: Math.max(0, all.length - RECAP_LINE_CAP), total: all.length };
 }
@@ -4577,8 +4645,8 @@ function resetManualSheet() {
   if (nameInput) nameInput.value = '';
   const rowsForSheet = (homeRows && homeRows.length) ? homeRows : (historyRows || []);
   fillClassNameChips('manual-sheet-class-chips', 'manual-sheet-classname', rowsForSheet);
-  fitNoteArea(good);
-  fitNoteArea(improve);
+  fillNoteRuled('manual-sheet-good');
+  fillNoteRuled('manual-sheet-improve');
 }
 function openManualSheet(reason) {
   markGuideSeen('recap-done');
@@ -4638,6 +4706,8 @@ function dismissManualSheet() {
 }
 async function submitManualSheet() {
   if (!allowGuideAction('review-save')) return;
+  syncNoteRuled('manual-sheet-good');
+  syncNoteRuled('manual-sheet-improve');
   const good = (document.getElementById('manual-sheet-good')?.value || '').trim();
   const improve = (document.getElementById('manual-sheet-improve')?.value || '').trim();
   if (!good || !improve) { toast('「做得好的」和「还要改的」是必选，先写一句'); return; }
@@ -5279,6 +5349,26 @@ async function loadBrief() {
   }
 }
 
+function renderAskDigest(data) {
+  const sections = Array.isArray(data.sections) ? data.sections.filter((s) => s && s.lines && s.lines.length) : [];
+  if (!data.answered || !sections.length) {
+    const fallback = (Array.isArray(data.answerPoints) && data.answerPoints[0]) || '档案里还没有找到相关记录。';
+    return `<p class="text-[var(--ink-soft)]">${escapeHtml(fallback)}</p>`;
+  }
+  return sections.map((sec) => {
+    const kind = sec.id === 'good' || sec.id === 'improve' || sec.id === 'resolved' ? sec.id : 'improve';
+    const rows = sec.lines.map((line) => {
+      const cite = line.cite ? `（${escapeHtml(line.cite)}）` : '';
+      const body = `${escapeHtml(line.text)}<span class="ask-sec-cite">${cite}</span>`;
+      if (line.recordId) {
+        return `<li><button type="button" class="ask-sec-line" onclick="openDetail(${Number(line.recordId)})">${body}</button></li>`;
+      }
+      return `<li><span class="ask-sec-line">${body}</span></li>`;
+    }).join('');
+    return `<div class="ask-sec is-${kind}"><p class="ask-sec-k">${escapeHtml(sec.title)}</p><ul class="ask-sec-list">${rows}</ul></div>`;
+  }).join('');
+}
+
 async function askArchive() {
   const input = document.getElementById('ask-archive-input');
   const btn = document.getElementById('ask-archive-btn');
@@ -5296,14 +5386,7 @@ async function askArchive() {
       await loadAskQuota();
       return;
     }
-    const points = Array.isArray(data.answerPoints) ? data.answerPoints : [];
-    let html = points.map((p) => `<p class="mb-1.5 last:mb-0">${escapeHtml(String(p).replace(/记录\s*\d+\s*[（(]/g, '（').replace(/记录\s*\d+\s*/g, ''))}</p>`).join('');
-    if (data.matchedRecords && data.matchedRecords.length > 0) {
-      html += `<div class="mt-2 flex flex-wrap gap-1.5">` + data.matchedRecords.map((r) =>
-        `<button type="button" onclick="openDetail(${r.id})" class="chip rounded-full px-2.5 py-1 text-[10.5px] text-[var(--rose-deep)]">${escapeHtml(fmtDate(r.createdAt).split(' ')[0])} · ${escapeHtml(r.className || '复盘')}</button>`
-      ).join('') + `</div>`;
-    }
-    resultEl.innerHTML = html;
+    resultEl.innerHTML = renderAskDigest(data);
     await loadAskQuota();
   } catch (e) {
     resultEl.innerHTML = '<p class="text-[var(--rose-deep)]">查询失败，请再试一次</p>';
@@ -5583,15 +5666,9 @@ function formatTrainingReviewText(data) {
   let title = data.mode === 'last' ? `汇总 · 近${data.lastCount}次` : `汇总 · 近${data.periodDays}天`;
   if (data.classFilter) title += ` · ${data.classFilter}`;
   const lines = [title];
-  const good = uniqueCompactGoodPoints(data.goodPointsRecap || []).map((p) => (
-    typeof compactPhrase === 'function' ? compactPhrase(p, 32) : p
-  ));
-  const improve = uniqueCompactGoodPoints(data.improvePointsRecap || []).map((p) => (
-    typeof compactPhrase === 'function' ? compactPhrase(p, 32) : p
-  ));
-  const resolved = uniqueCompactGoodPoints((data.resolvedInPeriod || []).map((i) => i.text)).map((p) => (
-    typeof compactPhrase === 'function' ? compactPhrase(p, 32) : p
-  ));
+  const good = uniqueCompactGoodPoints(data.goodPointsRecap || []);
+  const improve = uniqueCompactGoodPoints(data.improvePointsRecap || []);
+  const resolved = uniqueCompactGoodPoints((data.resolvedInPeriod || []).map((i) => i.text));
   if (good.length) lines.push('', '做得好的', ...good.map((p) => `· ${p}`));
   if (improve.length) lines.push('', '还要改的', ...improve.map((p) => `· ${p}`));
   if (resolved.length) lines.push('', '已解决', ...resolved.map((p) => `· ${p}`));
@@ -6722,10 +6799,6 @@ function setReviewAiSectionsVisible(visible) {
   document.getElementById('review-transcript-sec')?.classList.toggle('hidden', !visible);
   document.getElementById('review-term-correction-sec')?.classList.toggle('hidden', !visible);
   document.getElementById('review-retry-btn')?.classList.toggle('hidden', !visible);
-  // Only shown for 手动记 -- an AI draft already arrives one point per
-  // line, so the reminder would just be noise there.
-  document.getElementById('review-good-hint')?.classList.toggle('hidden', visible);
-  document.getElementById('review-improve-hint')?.classList.toggle('hidden', visible);
   // 给这次的小提示 is meant for a stray thing the AI draft surfaced --
   // 手动记 has no draft to pull a tip out of, so drop the field entirely
   // rather than leave an empty box with nothing to extract.
@@ -6785,6 +6858,8 @@ async function retryGenerate() {
   // only worth a confirm when it would actually throw away something the
   // user typed by hand (same diff confirmSave() already does).
   const r = lastDraft.result || {};
+  syncNoteRuled('review-good');
+  syncNoteRuled('review-improve');
   const edited = document.getElementById('review-good').value.trim() !== (r.good_points || '').trim()
     || document.getElementById('review-improve').value.trim() !== joinImproveAndNext(r.improve_points, r.next_time_reminder)
     || document.getElementById('review-tips').value.trim() !== (r.session_tips || '').trim();
@@ -6896,12 +6971,15 @@ function renderReview(isFreshDraft = true) {
   const r = lastDraft.result;
   document.getElementById('review-good').value = r.good_points || '';
   document.getElementById('review-improve').value = joinImproveAndNext(r.improve_points, r.next_time_reminder);
+  fillNoteRuled('review-good');
+  fillNoteRuled('review-improve');
   const nextEl = document.getElementById('review-next');
   if (nextEl) nextEl.value = '';
   document.getElementById('review-tips').value = r.session_tips || '';
   placeReviewTips(!!(r.session_tips || '').trim());
   [['review-good', 0], ['review-improve', 90]].forEach(([id, delay]) => {
-    const wrap = document.getElementById(id).parentElement;
+    const wrap = document.getElementById(id)?.closest('.note-block');
+    if (!wrap) return;
     wrap.classList.remove('fade-in-up');
     void wrap.offsetWidth;
     wrap.style.animationDelay = delay + 'ms';
@@ -6914,8 +6992,135 @@ function renderReview(isFreshDraft = true) {
   fitReviewAreas();
   requestAnimationFrame(fitReviewAreas);
 }
+const NOTE_RULED_IDS = ['review-good', 'review-improve', 'manual-sheet-good', 'manual-sheet-improve'];
+function noteRuledListEl(id) {
+  return document.querySelector(`.note-ruled-list[data-for="${id}"]`);
+}
+function noteItemPlain(el) {
+  return (el.textContent || '').replace(/\u200B/g, '');
+}
+function paintNoteItemBlank(el) {
+  el.classList.toggle('is-blank', !noteItemPlain(el));
+}
+function placeCaretEnd(el) {
+  const range = document.createRange();
+  const sel = window.getSelection();
+  range.selectNodeContents(el);
+  range.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+function caretAtStart(el) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return false;
+  const r = sel.getRangeAt(0);
+  if (!r.collapsed || !el.contains(r.startContainer)) return false;
+  if (r.startOffset !== 0) return false;
+  return r.startContainer === el || r.startContainer === el.firstChild;
+}
+function syncNoteRuled(id) {
+  const ta = document.getElementById(id);
+  const list = noteRuledListEl(id);
+  if (!ta || !list) return;
+  const items = [...list.querySelectorAll('.note-ruled-item')];
+  const lines = items.map(noteItemPlain);
+  const last = items[items.length - 1];
+  const keepTail = last && document.activeElement === last && !noteItemPlain(last);
+  if (!keepTail) {
+    while (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
+  }
+  ta.value = lines.join('\n');
+}
+function bindNoteItem(el) {
+  el.addEventListener('input', onNoteItemInput);
+  el.addEventListener('keydown', onNoteItemKey);
+  el.addEventListener('paste', onNoteItemPaste);
+}
+function makeNoteItem(text) {
+  const el = document.createElement('div');
+  el.className = 'note-ruled-item';
+  el.contentEditable = 'true';
+  el.spellcheck = false;
+  el.textContent = text || '';
+  paintNoteItemBlank(el);
+  bindNoteItem(el);
+  return el;
+}
+function onNoteItemInput(e) {
+  const el = e.currentTarget;
+  if (el.querySelector('br,div,p')) {
+    el.textContent = noteItemPlain(el);
+    placeCaretEnd(el);
+  }
+  paintNoteItemBlank(el);
+  const id = el.parentElement && el.parentElement.getAttribute('data-for');
+  if (id) syncNoteRuled(id);
+}
+function onNoteItemKey(e) {
+  if (e.isComposing) return;
+  const el = e.currentTarget;
+  const list = el.parentElement;
+  const id = list && list.getAttribute('data-for');
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    const next = makeNoteItem('');
+    el.after(next);
+    next.focus();
+    if (id) syncNoteRuled(id);
+    return;
+  }
+  if (e.key !== 'Backspace') return;
+  const prev = el.previousElementSibling;
+  if (!prev || !prev.classList.contains('note-ruled-item')) return;
+  if (!noteItemPlain(el)) {
+    e.preventDefault();
+    el.remove();
+    placeCaretEnd(prev);
+    paintNoteItemBlank(prev);
+    if (id) syncNoteRuled(id);
+    return;
+  }
+  if (caretAtStart(el)) {
+    e.preventDefault();
+    prev.textContent = noteItemPlain(prev) + noteItemPlain(el);
+    el.remove();
+    placeCaretEnd(prev);
+    paintNoteItemBlank(prev);
+    if (id) syncNoteRuled(id);
+  }
+}
+function onNoteItemPaste(e) {
+  e.preventDefault();
+  const el = e.currentTarget;
+  const list = el.parentElement;
+  const id = list && list.getAttribute('data-for');
+  const parts = String((e.clipboardData || window.clipboardData).getData('text') || '').replace(/\r/g, '').split('\n');
+  document.execCommand('insertText', false, parts[0] || '');
+  let node = el;
+  for (let i = 1; i < parts.length; i++) {
+    const n = makeNoteItem(parts[i]);
+    node.after(n);
+    node = n;
+  }
+  paintNoteItemBlank(el);
+  node.focus();
+  placeCaretEnd(node);
+  if (id) syncNoteRuled(id);
+}
+function fillNoteRuled(id) {
+  const ta = document.getElementById(id);
+  const list = noteRuledListEl(id);
+  if (!ta || !list) return;
+  const raw = ta.value;
+  const lines = raw === '' ? [''] : raw.replace(/\n+$/, '').split('\n');
+  list.innerHTML = '';
+  lines.forEach((line) => list.appendChild(makeNoteItem(line)));
+}
+function initNoteRuledLists() {
+  NOTE_RULED_IDS.forEach((id) => fillNoteRuled(id));
+}
 function fitNoteArea(el) {
-  if (!el) return;
+  if (!el || el.classList.contains('note-src')) return;
   el.style.height = 'auto';
   el.style.height = `${Math.max(72, el.scrollHeight)}px`;
 }
@@ -6955,6 +7160,8 @@ async function confirmSave() {
   if (!allowGuideAction('review-save')) return;
   if (savingRecord) return;
   if (!lastDraft || !lastDraft.result) { toast('草稿已失效，请返回重新生成'); return; }
+  syncNoteRuled('review-good');
+  syncNoteRuled('review-improve');
   const good = document.getElementById('review-good').value.trim();
   const improve = document.getElementById('review-improve').value.trim();
   if (!good) { toast('「做得好的」是必选，先写一句'); return; }
@@ -7128,6 +7335,7 @@ function showSaveCeremony(milestone) {
 }
 
 initSpeech();
+initNoteRuledLists();
 checkAuthAndInit();
 </script>
 </body>
