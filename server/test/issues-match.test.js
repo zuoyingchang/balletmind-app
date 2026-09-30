@@ -23,7 +23,12 @@ test('a line that used both turnout and 外开 still matches a later 外开-only
   assert.equal(isSimilar('turnout 不够，外开要再打开', '外开还是不够'), true);
 });
 
-test('same move with different body-part leftovers stay separate issues', () => {
+test('same named move with the same leftover in different spoken order is one issue', () => {
+  assert.equal(isSimilar('spotting 定点转过头', '中间 spotting 不好、头转太晚'), true);
+  assert.equal(isSimilar('plié 蹲时膝盖没对脚趾', 'plié 膝盖没对脚趾'), true);
+});
+
+test('same named move with different body-part leftovers stay separate issues', () => {
   assert.equal(isSimilar('turnout 骨盆前倾', '外开 膝盖内扣'), false);
 });
 

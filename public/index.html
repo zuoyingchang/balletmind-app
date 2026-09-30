@@ -399,7 +399,7 @@
   @media (prefers-reduced-motion: no-preference) {
     #home-cta-btn > .pearl-sheen.is-cta-sweep { animation: ctaSheenSweep 5.5s ease-in-out infinite; }
   }
-  .home-cta-row { position: relative; display: flex; gap: 8px; align-items: stretch; overflow: visible; }
+  .home-cta-row { position: relative; display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; overflow: visible; }
   .home-cta-row #home-cta-btn {
     flex: 1; min-width: 0;
     color: var(--burgundy);
@@ -453,7 +453,7 @@
   .coach-tip.hidden { display: none !important; }
   #home-recap-tip {
     position: relative; left: auto; right: auto; top: auto; bottom: auto;
-    width: 196px; margin: 10px 0 0;
+    flex: 0 0 100%; width: 196px; margin: 10px 0 0;
   }
   #home-recap-tip::after { display: none; }
   #home-checkin-tip { right: 0; bottom: calc(100% + 8px); top: auto; width: 168px; }
@@ -489,10 +489,20 @@
     width: auto; max-width: 220px; margin: 0 0 8px auto;
   }
   #record-done-tip::after { left: auto; right: 28px; }
+  #record-done-tip.is-manual {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  #record-done-tip.is-manual::after { left: 50%; right: auto; margin-left: -6px; }
   #review-save-tip {
     position: absolute; left: auto; right: 20px; bottom: 64px; width: 188px;
   }
   #review-save-tip::after { left: auto; right: 36px; }
+  #manual-sheet-save-tip {
+    position: relative; left: auto; right: auto; top: auto; bottom: auto;
+    width: auto; max-width: 220px; margin: 12px auto 0;
+  }
+  #manual-sheet-save-tip::after { left: 50%; margin-left: -6px; }
   #toast {
     position: absolute;
     left: 50%;
@@ -563,7 +573,8 @@
   }
   #detail-transcript-wrap summary { list-style: none; }
   #detail-transcript-wrap summary::-webkit-details-marker { display: none; }
-  #checkin-sheet-mask .checkin-sheet-panel {
+  #checkin-sheet-mask .checkin-sheet-panel,
+  #manual-sheet-mask .checkin-sheet-panel {
     border-radius: 40px 40px 0 0;
     box-shadow: 0 -28px 50px -16px rgba(90,60,60,.34), inset 0 1px 0 rgba(255,255,255,.96);
     background:
@@ -571,6 +582,12 @@
       radial-gradient(58% 40% at 92% 100%, rgba(122,158,136,.16) 0%, transparent 58%),
       linear-gradient(180deg, #fffefb 0%, #f6e8ea 46%, #ebe0e4 100%);
   }
+  #manual-sheet-mask .checkin-sheet-panel {
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  #manual-sheet-mask .note-block { padding-left: 10px; }
+  #manual-sheet-mask .note-area { min-height: 72px; }
   .checkin-sheet-panel > .pearl-sheen { opacity: .82; }
   .checkin-sheet-bow {
     position: absolute;
@@ -609,18 +626,30 @@
     border-top: 1px solid rgba(214,198,196,.3);
   }
   .checkin-sheet-k {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
     margin-bottom: 8px;
     font-size: 10px; letter-spacing: .16em;
     color: var(--ink-faint);
   }
+
   .checkin-sheet-field:nth-child(1) .checkin-sheet-k { color: #8a6d7a; }
   .checkin-sheet-field:nth-child(2) .checkin-sheet-k { color: #b8863f; }
   .checkin-sheet-field:nth-child(3) .checkin-sheet-k { color: #5f8a6c; }
-  .checkin-mood-chip[data-mood="low"] .mood-chip-emoji { color: var(--rose-deep); }
-  .checkin-mood-chip[data-mood="meh"] .mood-chip-emoji { color: #b8863f; }
-  .checkin-mood-chip[data-mood="good"] .mood-chip-emoji { color: #8a6d7a; }
-  .checkin-mood-chip[data-mood="great"] .mood-chip-emoji { color: #5f8a6c; }
-  .checkin-duration-chip {
+  .checkin-sheet-field:nth-child(4) .checkin-sheet-k { color: #8a6d7a; }
+  .checkin-sheet-field:nth-child(5) .checkin-sheet-k { color: #b8863f; }
+  .checkin-mood-chip[data-mood="low"] .mood-chip-emoji,
+  .manual-mood-chip[data-mood="low"] .mood-chip-emoji { color: var(--rose-deep); }
+  .checkin-mood-chip[data-mood="meh"] .mood-chip-emoji,
+  .manual-mood-chip[data-mood="meh"] .mood-chip-emoji { color: #b8863f; }
+  .checkin-mood-chip[data-mood="good"] .mood-chip-emoji,
+  .manual-mood-chip[data-mood="good"] .mood-chip-emoji { color: #8a6d7a; }
+  .checkin-mood-chip[data-mood="great"] .mood-chip-emoji,
+  .manual-mood-chip[data-mood="great"] .mood-chip-emoji { color: #5f8a6c; }
+  .checkin-duration-chip,
+  .manual-duration-chip {
     background: rgba(255,248,242,.82);
   }
   #home-today-summary {
@@ -886,12 +915,16 @@
     60% { transform: scale(1.02) translateY(0) rotate(1.5deg); }
     to { opacity: 1; transform: scale(1) translateY(0) rotate(0deg); }
   }
-  #checkin-sheet-mask { transition: background-color .32s ease; z-index: 70; }
-  #checkin-sheet-mask .checkin-sheet-panel {
+  #checkin-sheet-mask,
+  #manual-sheet-mask { transition: background-color .32s ease; z-index: 70; }
+  #checkin-sheet-mask .checkin-sheet-panel,
+  #manual-sheet-mask .checkin-sheet-panel {
     animation: sheetSlideUp .4s cubic-bezier(.32,.72,.24,1);
   }
-  #checkin-sheet-mask.is-leaving { background-color: transparent; pointer-events: none; }
-  #checkin-sheet-mask.is-leaving .checkin-sheet-panel {
+  #checkin-sheet-mask.is-leaving,
+  #manual-sheet-mask.is-leaving { background-color: transparent; pointer-events: none; }
+  #checkin-sheet-mask.is-leaving .checkin-sheet-panel,
+  #manual-sheet-mask.is-leaving .checkin-sheet-panel {
     animation: none;
     transform: translateY(108%);
     transition: transform .36s cubic-bezier(.4,0,.2,1);
@@ -912,8 +945,10 @@
     .cal-marks.cal-mark-pop .cal-check,
     .cal-marks.cal-mark-pop .cal-bow,
     #checkin-sheet-mask .checkin-sheet-panel,
+    #manual-sheet-mask .checkin-sheet-panel,
     #checkin-share-card { animation: none; }
-    #checkin-sheet-mask.is-leaving .checkin-sheet-panel {
+    #checkin-sheet-mask.is-leaving .checkin-sheet-panel,
+    #manual-sheet-mask.is-leaving .checkin-sheet-panel {
       transform: none; transition: none;
     }
   }
@@ -1744,6 +1779,14 @@
     border: none;
     background: transparent;
   }
+  .rec-write.is-disabled {
+    opacity: .45;
+    pointer-events: none;
+  }
+  .rec-write #manual-input:disabled {
+    cursor: not-allowed;
+    color: var(--ink-faint);
+  }
   .rec-write .rec-prompts { margin-top: 2px; }
   #rec-quota-note,
   #ask-quota-note {
@@ -1982,9 +2025,26 @@
     color: var(--ink-faint);
   }
   .field-optional {
-    font-weight: 400;
-    letter-spacing: 0;
-    color: var(--ink-faint);
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .04em;
+    line-height: 1.4;
+    vertical-align: 1px;
+    color: var(--mauve);
+    background: rgba(168, 130, 138, .14);
+  }
+  .checkin-sheet-k .field-optional {
+    margin-left: 0;
+    letter-spacing: .04em;
+    vertical-align: 0;
+  }
+  .note-kicker .field-optional {
+    margin-left: 8px;
+    vertical-align: 2px;
   }
   .note-area {
     min-height: 72px;
@@ -2487,8 +2547,8 @@
         <span class="relative z-10">完成</span>
         </button>
       </div>
-      <p id="rec-quota-note" class="text-center mt-2">每天大约可以复盘 4 到 6 次</p>
-      <button type="button" onclick="startManualEntry()" class="block w-full text-center mt-1.5 text-[11.5px] text-[var(--rose-deep)]">不用AI，直接手动记</button>
+      <p id="rec-quota-note" class="text-center mt-2">每天可以免费复盘 2 次</p>
+      <button type="button" id="manual-entry-btn" onclick="startManualEntry()" class="block w-full text-center mt-1.5 text-[11.5px] text-[var(--rose-deep)]">不用AI，直接手动记</button>
       </div>
   </div>
 
@@ -2548,11 +2608,11 @@
       <div class="card-journal grain relative overflow-hidden mb-4 px-4 py-3.5" style="border-radius:18px">
         <div class="pearl-sheen"></div>
         <div class="relative z-10">
-          <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">课程/组合<span class="field-optional">（可选）</span></p>
-          <input id="review-classname" oninput="updateClassNameHint('review-classname','review-classname-hint')" placeholder="如：基训、软开拉伸、跳跃组合" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] text-[12.5px]">
+          <p class="text-[11.5px] text-[var(--ink)] mb-2">课程/组合<span class="field-optional">可选</span></p>
+          <input id="review-classname" oninput="updateClassNameHint('review-classname','review-classname-hint')" placeholder="如：基训、把杆、跳跃组合" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] text-[12.5px]">
           <p id="review-classname-hint" class="mt-1.5 text-[10.5px] text-[var(--ink-faint)]">填一下的话，以后能按课程/组合筛选</p>
           <div id="review-class-chips" class="mt-2 flex gap-2 flex-wrap"></div>
-          <p class="mt-3 text-[11.5px] text-[var(--ink-faint)] mb-2">时长<span class="field-optional">（可选）</span></p>
+          <p class="mt-3 text-[11.5px] text-[var(--ink)] mb-2">时长<span class="field-optional">可选</span></p>
           <div class="flex gap-2 flex-wrap" id="duration-chips">
             <button type="button" onclick="selectDuration(30)" data-min="30" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">0.5小时</button>
             <button type="button" onclick="selectDuration(60)" data-min="60" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1小时</button>
@@ -2566,14 +2626,14 @@
       <div class="mb-4 rounded-2xl bg-[var(--paper)] border border-[var(--border-soft)] px-3.5 py-3">
         <button type="button" onclick="toggleReviewExtras()" class="w-full flex items-center justify-between text-left gap-2">
           <span class="min-w-0">
-            <span class="block text-[12.5px] font-medium text-[var(--ink)]">还可以记下<span class="field-optional font-normal">（可选）</span></span>
+            <span class="block text-[12.5px] font-medium text-[var(--ink)]">还可以记下<span class="field-optional">可选</span></span>
             <span class="block mt-0.5 text-[11px] leading-4 text-[var(--ink-faint)]" id="review-extras-summary">心情、小提示，都可以以后再补</span>
           </span>
           <iconify-icon icon="solar:alt-arrow-down-linear" id="review-extras-icon" class="shrink-0 text-[16px] text-[var(--ink-faint)]"></iconify-icon>
         </button>
         <div id="review-extras-body" class="hidden mt-3 space-y-4">
           <div>
-            <p class="text-[11.5px] text-[var(--ink-faint)] mb-2">心情</p>
+            <p class="text-[11.5px] text-[var(--ink)] mb-2">心情<span class="field-optional">可选</span></p>
             <div class="flex gap-2.5" id="mood-chips">
               <button type="button" onclick="selectMood('low')" data-mood="low" aria-label="不在状态" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
                 <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7.2 15.2a4.2 4.2 0 0 1 .1-8.3 5.6 5.6 0 0 1 10.6 1.7A3.6 3.6 0 0 1 17.8 15.2Z"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M9.2 17.4v1.8M12 17.8v2.1M14.8 17.4v1.8"/></svg>
@@ -2596,7 +2656,7 @@
 
           <div id="review-tips-fold">
             <div id="review-tips-field" class="note-block is-tip">
-              <p class="note-kicker is-tip">给这次的小提示</p>
+              <p class="note-kicker is-tip">给这次的小提示<span class="field-optional">可选</span></p>
               <textarea id="review-tips" class="note-area w-full rounded-2xl border border-dashed border-[var(--border-soft)]" oninput="updateReviewExtrasSummary(); fitNoteArea(this)"></textarea>
             </div>
           </div>
@@ -2927,7 +2987,7 @@
               <span class="pearl-sheen"></span><span class="relative z-10">问</span>
             </button>
           </div>
-          <p id="ask-quota-note" class="relative z-10 mt-2">每天限量，问问看</p>
+          <p id="ask-quota-note" class="relative z-10 mt-2">每周可以问 10 次</p>
           <div id="ask-archive-result" class="relative z-10 mt-3 hidden text-[12.5px] leading-6 text-[var(--ink)]"></div>
         </div>
       </section>
@@ -3114,19 +3174,19 @@
     <div class="checkin-sheet-head">
       <p class="label-editorial text-[11px] text-[var(--rose-deep)]">BalletMind</p>
       <h2 class="font-display mt-1 text-[24px] font-semibold tracking-wide">今天练过了</h2>
-      <p class="mt-1 text-[11.5px] leading-5 text-[var(--ink-faint)]">都可以先空着</p>
+      <p class="mt-1 text-[11.5px] leading-5 text-[var(--ink-faint)]">时长和心情都可以先空着</p>
       <p id="checkin-today-summary" class="hidden text-[10.5px] leading-4 text-[var(--burgundy)]"></p>
       <div class="checkin-sheet-rule" aria-hidden="true"><i></i></div>
     </div>
     <div class="checkin-sheet-fields">
     <div class="checkin-sheet-field">
       <p class="checkin-sheet-k">课程/组合</p>
-      <input id="checkin-classname" maxlength="40" oninput="updateClassNameHint('checkin-classname','checkin-classname-hint')" placeholder="如：基训、软开拉伸、跳跃组合" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] bg-white/70 text-[12.5px]">
-      <p id="checkin-classname-hint" class="mt-1.5 text-[10.5px] text-[var(--ink-faint)]">填一下的话，以后能按课程/组合筛选</p>
+      <input id="checkin-classname" maxlength="40" oninput="updateClassNameHint('checkin-classname','checkin-classname-hint')" placeholder="如：基训、把杆、跳跃组合" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] bg-white/70 text-[12.5px]">
+      <p id="checkin-classname-hint" class="mt-1.5 text-[10.5px] text-[var(--ink-faint)]">记下课程/组合，以后能按这个筛选</p>
       <div id="checkin-class-chips" class="mt-2 flex gap-2 flex-wrap"></div>
     </div>
     <div class="checkin-sheet-field">
-      <p class="checkin-sheet-k">时长</p>
+      <p class="checkin-sheet-k">时长<span class="field-optional">可选</span></p>
       <div class="flex gap-2 flex-wrap">
         <button type="button" onclick="selectCheckinDuration(30)" data-min="30" class="checkin-duration-chip duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">0.5小时</button>
         <button type="button" onclick="selectCheckinDuration(60)" data-min="60" class="checkin-duration-chip duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1小时</button>
@@ -3135,7 +3195,7 @@
       </div>
     </div>
     <div class="checkin-sheet-field">
-      <p class="checkin-sheet-k">心情</p>
+      <p class="checkin-sheet-k">心情<span class="field-optional">可选</span></p>
       <div class="flex gap-2">
         <button type="button" onclick="selectCheckinMood('low')" data-mood="low" aria-label="不在状态" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
           <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7.2 15.2a4.2 4.2 0 0 1 .1-8.3 5.6 5.6 0 0 1 10.6 1.7A3.6 3.6 0 0 1 17.8 15.2Z"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M9.2 17.4v1.8M12 17.8v2.1M14.8 17.4v1.8"/></svg>
@@ -3159,6 +3219,81 @@
     <button type="button" id="checkin-submit-btn" onclick="submitCheckin()" class="btn-ribbon relative mt-5 w-full h-11 rounded-full text-[13px] font-medium"><span class="pearl-sheen"></span><span class="relative z-10">记下</span></button>
     <div id="checkin-skip-tip" class="coach-tip hidden">先不记下也可以，点这里回去。</div>
     <button type="button" id="checkin-skip-btn" onclick="hideCheckinSheet()" class="mt-1.5 w-full h-10 text-[12px] text-[var(--ink-faint)]">先不了</button>
+    </div>
+  </div>
+</div>
+
+<div id="manual-sheet-mask" class="hidden fixed inset-0 z-[70] items-end justify-center bg-black/40" onclick="if(event.target===this) hideManualSheet()">
+  <div class="checkin-sheet-panel card-journal card-satin grain relative w-full max-w-[393px] overflow-hidden rounded-t-[24px] px-5 pt-3.5 pb-7" onclick="event.stopPropagation()">
+    <div class="pearl-sheen"></div>
+    <img src="/img/bow.png" alt="" class="checkin-sheet-bow" aria-hidden="true">
+    <div class="relative z-10">
+    <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--rose-deep)]/25"></div>
+    <div class="checkin-sheet-head">
+      <p class="label-editorial text-[11px] text-[var(--rose-deep)]">BalletMind</p>
+      <h2 class="font-display mt-1 text-[24px] font-semibold tracking-wide">手动记</h2>
+      <p id="manual-sheet-sub" class="mt-1 text-[11.5px] leading-5 text-[var(--ink-faint)]">不用AI，自己写几句。课程、时长、心情都可以先空着。</p>
+      <div class="checkin-sheet-rule" aria-hidden="true"><i></i></div>
+    </div>
+    <div class="checkin-sheet-fields">
+    <div class="checkin-sheet-field">
+      <div class="note-block is-good">
+        <div class="note-head">
+          <p class="note-kicker is-good">做得好的</p>
+          <p class="note-line-hint">一行一条</p>
+        </div>
+        <textarea id="manual-sheet-good" class="field-good-lift note-area w-full rounded-2xl field-good" placeholder="一行一条" oninput="fitNoteArea(this)"></textarea>
+      </div>
+    </div>
+    <div class="checkin-sheet-field">
+      <div class="note-block is-improve">
+        <div class="note-head">
+          <p class="note-kicker is-improve">还要改的</p>
+          <p class="note-line-hint">一行一条</p>
+        </div>
+        <textarea id="manual-sheet-improve" class="note-area w-full rounded-2xl field-improve" placeholder="一行一条" oninput="fitNoteArea(this)"></textarea>
+      </div>
+    </div>
+    <div class="checkin-sheet-field">
+      <p class="checkin-sheet-k">课程/组合<span class="field-optional">可选</span></p>
+      <input id="manual-sheet-classname" maxlength="40" oninput="updateClassNameHint('manual-sheet-classname','manual-sheet-classname-hint')" placeholder="如：基训、把杆、跳跃组合" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] bg-white/70 text-[12.5px]">
+      <p id="manual-sheet-classname-hint" class="mt-1.5 text-[10.5px] text-[var(--ink-faint)]">填一下的话，以后能按课程/组合筛选</p>
+      <div id="manual-sheet-class-chips" class="mt-2 flex gap-2 flex-wrap"></div>
+    </div>
+    <div class="checkin-sheet-field">
+      <p class="checkin-sheet-k">时长<span class="field-optional">可选</span></p>
+      <div class="flex gap-2 flex-wrap">
+        <button type="button" onclick="selectManualDuration(30)" data-min="30" class="manual-duration-chip duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">0.5小时</button>
+        <button type="button" onclick="selectManualDuration(60)" data-min="60" class="manual-duration-chip duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1小时</button>
+        <button type="button" onclick="selectManualDuration(90)" data-min="90" class="manual-duration-chip duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1.5小时</button>
+        <button type="button" onclick="selectManualDuration(120)" data-min="120" class="manual-duration-chip duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">2小时+</button>
+      </div>
+    </div>
+    <div class="checkin-sheet-field">
+      <p class="checkin-sheet-k">心情<span class="field-optional">可选</span></p>
+      <div class="flex gap-2">
+        <button type="button" onclick="selectManualMood('low')" data-mood="low" aria-label="不在状态" class="manual-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7.2 15.2a4.2 4.2 0 0 1 .1-8.3 5.6 5.6 0 0 1 10.6 1.7A3.6 3.6 0 0 1 17.8 15.2Z"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M9.2 17.4v1.8M12 17.8v2.1M14.8 17.4v1.8"/></svg>
+          <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">不在状态</span>
+        </button>
+        <button type="button" onclick="selectManualMood('meh')" data-mood="meh" aria-label="一般" class="manual-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7 16a4.4 4.4 0 0 1 .2-8.7 5.8 5.8 0 0 1 11 1.8A3.7 3.7 0 0 1 18.2 16Z"/></svg>
+          <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">一般</span>
+        </button>
+        <button type="button" onclick="selectManualMood('good')" data-mood="good" aria-label="还不错" class="manual-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M12 4.2v1.5M12 18.3v1.5M4.2 12h1.5M18.3 12h1.5M6.4 6.4l1.1 1.1M16.5 16.5l1.1 1.1M6.4 17.6l1.1-1.1M16.5 7.5l1.1-1.1"/></svg>
+          <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">还不错</span>
+        </button>
+        <button type="button" onclick="selectManualMood('great')" data-mood="great" aria-label="状态很好" class="manual-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M12 4.2l1.7 4.6 4.9.3-3.8 3.2 1.3 4.7L12 14.6 7.9 17l1.3-4.7-3.8-3.2 4.9-.3Z"/></svg>
+          <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">很好</span>
+        </button>
+      </div>
+    </div>
+    </div>
+    <div id="manual-sheet-save-tip" class="coach-tip hidden mt-4">看过就可以点「记下」。</div>
+    <button type="button" id="manual-sheet-save-btn" onclick="submitManualSheet()" class="btn-ribbon relative mt-3 w-full h-11 rounded-full text-[13px] font-medium"><span class="pearl-sheen"></span><span class="relative z-10">记下</span></button>
+    <button type="button" id="manual-sheet-skip-btn" onclick="hideManualSheet()" class="mt-1.5 w-full h-10 text-[12px] text-[var(--ink-faint)]">先不了</button>
     </div>
   </div>
 </div>
@@ -3381,7 +3516,7 @@ function uniqueLabels(lines, mapLine) {
   return out;
 }
 const RECAP_LINE_CAP = 5;
-let recapOpen = { good: false, resolved: false };
+let recapOpen = { good: false, improve: false, resolved: false };
 function recapShortLines(labels, expanded) {
   const compact = (line) => (
     typeof compactPhrase === 'function' ? compactPhrase(line, 32) : String(line || '').trim()
@@ -3715,16 +3850,15 @@ async function checkAuthAndInit() {
 }
 
 // ---------- navigation ----------
-function goHome() {
+async function goHome() {
   const step = currentGuideStepForScreen();
   if (step && step.action === 'back') markGuideSeen(step.id);
-  else if (step && step.action !== 'back' && step.screen !== 'home') {
+  else if (step && step.action !== 'back' && step.screen !== 'home' && step.screen !== 'record' && step.screen !== 'review') {
     nudgeGuide();
     return;
   }
-  loadHome();
   show('screen-home');
-  refreshNoticeDot();
+  await loadHome();
   refreshProgressDot();
 }
 function setRecTimer(sec) {
@@ -3750,33 +3884,47 @@ function resetRecordScreen() {
   const prompts = document.querySelector('#screen-record .rec-prompts');
   if (prompts) prompts.open = false;
 }
-function goRecord() {
+async function fetchRecapRemaining() {
+  try {
+    const res = await authFetch(`${API}/api/progress/quota`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const remaining = data.recap ? Number(data.recap.remaining) : NaN;
+    return Number.isFinite(remaining) ? remaining : null;
+  } catch (e) { return null; }
+}
+function paintRecapQuotaNote(remaining) {
+  const note = document.getElementById('rec-quota-note');
+  if (!note || remaining == null) return;
+  note.textContent = remaining <= 0
+    ? '今天的AI复盘额度用完了，请手动记'
+    : `今天还能AI复盘 ${remaining} 次`;
+}
+function openManualBecauseQuotaGone() {
+  disableAiEntry();
+  const processing = document.getElementById('screen-processing');
+  if (processing && processing.classList.contains('active')) show('screen-home');
+  openManualSheet('quota');
+}
+async function goRecord() {
   if (!allowGuideAction('recap')) return;
-  const step = currentGuideStepForScreen();
-  if (step && step.action === 'recap') markGuideSeen(step.id);
+  markGuideIfPending('recap');
+  const remaining = await fetchRecapRemaining();
+  if (remaining === 0) {
+    openManualBecauseQuotaGone();
+    return;
+  }
   enableAiEntry();
   resetRecordScreen();
   show('screen-record');
-  loadRecordQuota();
+  if (remaining != null) paintRecapQuotaNote(remaining);
+  else loadRecordQuota();
 }
-// Shows the daily AI-recap quota near the "完成" button, and -- if it's
-// used up -- repurposes that button to route straight into 手动记 (see
-// disableAiEntry) instead of letting the user tap it and hit a 429 cold.
 async function loadRecordQuota() {
-  const note = document.getElementById('rec-quota-note');
-  try {
-    const res = await authFetch(`${API}/api/progress/quota`);
-    if (!res.ok) return;
-    const data = await res.json();
-    const remaining = data.recap ? Number(data.recap.remaining) : NaN;
-    if (!Number.isFinite(remaining)) return;
-    if (remaining <= 0) {
-      if (note) note.textContent = '今天的AI复盘额度用完了，可以直接手动记';
-      disableAiEntry();
-    } else if (note) {
-      note.textContent = `今天还能AI复盘 ${remaining} 次`;
-    }
-  } catch (e) {}
+  const remaining = await fetchRecapRemaining();
+  if (remaining == null) return;
+  paintRecapQuotaNote(remaining);
+  if (remaining <= 0) disableAiEntry();
 }
 async function loadAskQuota() {
   const el = document.getElementById('ask-quota-note');
@@ -3787,16 +3935,19 @@ async function loadAskQuota() {
     const data = await res.json();
     const remaining = data.secondary && Number(data.secondary.remaining);
     if (!Number.isFinite(remaining)) return;
-    el.textContent = remaining <= 0 ? '今天问过了，明天再问吧' : `今天还能问 ${remaining} 次`;
+    el.textContent = remaining <= 0 ? '这周问过了，下周再问吧' : `这周还能问 ${remaining} 次`;
   } catch (e) {}
 }
 function goBackFromReview() {
+  if (aiUnavailable) {
+    goHome();
+    return;
+  }
   show('screen-record');
 }
 function goHistory() {
   if (!allowGuideAction('archive')) return;
-  const step = currentGuideStepForScreen();
-  if (step && step.action === 'archive') markGuideSeen(step.id);
+  markGuideIfPending('archive');
   ensureBrowseSession();
   logEvent('history_opened', {}, 'browse');
   historyViewMode = 'checkin';
@@ -3815,8 +3966,7 @@ function headerInitial() {
 
 async function goProfile() {
   if (!allowGuideAction('profile')) return;
-  const step = currentGuideStepForScreen();
-  if (step && step.action === 'profile') markGuideSeen(step.id);
+  markGuideIfPending('profile');
   const user = getUser();
   document.getElementById('profile-name').textContent = user?.displayName || '-';
   document.getElementById('profile-email').textContent = user?.email || '-';
@@ -3924,6 +4074,7 @@ function formatSessionSummary(counts) {
   // Unnamed sessions: just the count, not "其他 4节" -- no judgment on not naming it.
   return counts.slice(0, 3).map(([n, c]) => (n === '其他' ? `${c}节` : `${n} ${c}节`)).join('｜');
 }
+const CLASS_CHIP_MAX = 10;
 function recentClassNames(rows) {
   const seen = [];
   (rows || []).forEach((r) => {
@@ -3931,17 +4082,26 @@ function recentClassNames(rows) {
     if (!n || isAutoClassName(n) || n === '训练记录' || n === '其他') return;
     if (!seen.includes(n)) seen.push(n);
   });
-  return seen.slice(0, 6);
+  return seen.slice(0, CLASS_CHIP_MAX);
 }
-// Shown only when the user has no class-name history yet (recentClassNames comes back
-// empty) -- new users otherwise see an empty row here with nothing to tap.
-const DEFAULT_CLASS_TAGS = ['基训', '软开拉伸', 'PBT'];
+const DEFAULT_CLASS_TAGS = ['基训', '把杆', '拉伸软开', 'PBT', '跳跃组合'];
+function classChipNames(rows) {
+  const seen = new Set();
+  const names = [];
+  for (const n of [...DEFAULT_CLASS_TAGS, ...recentClassNames(rows)]) {
+    const name = String(n || '').trim();
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    names.push(name);
+    if (names.length >= CLASS_CHIP_MAX) break;
+  }
+  return names;
+}
 function fillClassNameChips(containerId, inputId, rows) {
   const chips = document.getElementById(containerId);
   const nameInput = document.getElementById(inputId);
   if (!chips) return;
-  const recent = recentClassNames(rows);
-  const names = recent.length ? recent : DEFAULT_CLASS_TAGS;
+  const names = classChipNames(rows);
   chips.innerHTML = names.map((n) =>
     `<button type="button" data-class="${escapeHtml(n)}" class="class-tag-chip px-3 py-1 rounded-full border border-[var(--border-soft)] text-[11px] text-[var(--burgundy)] bg-white/70">${escapeHtml(n)}</button>`
   ).join('');
@@ -3959,9 +4119,8 @@ function fillClassNameChips(containerId, inputId, rows) {
   });
   updateClassNameHint(inputId, `${inputId}-hint`);
 }
-// Gentle, non-blocking nudge: 课程/组合 stays optional (an empty one just
-// becomes "其他"), but filling it in is what makes the 追踪 filter chips and
-// ask-archive course-scoping actually useful, so say so -- only while empty.
+// 课程/组合 empty: hide the "以后能筛" hint once filled. Check-in requires
+// a name before save; recap/manual still allow empty (saved as 训练记录).
 function updateClassNameHint(inputId, hintId) {
   const input = document.getElementById(inputId);
   const hint = document.getElementById(hintId);
@@ -4131,7 +4290,13 @@ function currentScreenKey() {
 function guideSheetOpen() {
   const sheet = document.getElementById('checkin-sheet-mask');
   const share = document.getElementById('checkin-share-mask');
-  return (sheet && !sheet.classList.contains('hidden')) || (share && !share.classList.contains('hidden'));
+  return (sheet && !sheet.classList.contains('hidden'))
+    || (share && !share.classList.contains('hidden'))
+    || manualSheetOpen();
+}
+function manualSheetOpen() {
+  const sheet = document.getElementById('manual-sheet-mask');
+  return !!(sheet && !sheet.classList.contains('hidden'));
 }
 function skipWholeGuide() {
   return false;
@@ -4154,9 +4319,26 @@ function currentGuideStepForScreen() {
   const sheet = document.getElementById('checkin-sheet-mask');
   const sheetOpen = sheet && !sheet.classList.contains('hidden');
   if (step.screen === 'checkin-sheet') return sheetOpen ? step : null;
+  if (step.id === 'review-save' && manualSheetOpen()) return step;
   if (guideSheetOpen() && step.screen === 'home') return null;
   if (step.screen !== currentScreenKey()) return null;
   return step;
+}
+function markGuideIfPending(action) {
+  const step = currentGuideStep();
+  if (step && step.action === action) markGuideSeen(step.id);
+}
+function guideTargetId(step) {
+  if (step && step.id === 'recap-done') {
+    const gen = document.getElementById('generate-btn');
+    if (gen && gen.disabled) return 'manual-entry-btn';
+  }
+  if (step && step.id === 'review-save' && manualSheetOpen()) return 'manual-sheet-save-btn';
+  return step && step.target;
+}
+function guideTipId(step) {
+  if (step && step.id === 'review-save' && manualSheetOpen()) return 'manual-sheet-save-tip';
+  return step && step.tip;
 }
 function nudgeGuide() {
   const spot = document.querySelector('.guide-spot');
@@ -4166,13 +4348,19 @@ function nudgeGuide() {
   spot.classList.add('guide-nudge');
 }
 function allowGuideAction(action) {
-  const step = currentGuideStepForScreen();
-  if (!step) return true;
-  if (action === 'back') return true;
-  if (step.action === action) return true;
-  if (step.screen === 'record' || step.screen === 'review') return true;
-  nudgeGuide();
-  return false;
+  const onScreen = currentGuideStepForScreen();
+  if (onScreen) {
+    if (action === 'back' || action === 'checkin-back' || action === 'manual-back') return true;
+    if (onScreen.action === action) return true;
+    if (onScreen.screen === 'record' || onScreen.screen === 'review') return true;
+    nudgeGuide();
+    return false;
+  }
+  const pending = currentGuideStep();
+  if (pending && guideSheetOpen() && pending.screen === 'home') {
+    return action === pending.action || action === 'back' || action === 'checkin-back' || action === 'manual-back';
+  }
+  return true;
 }
 function clearGuideSpots() {
   document.querySelectorAll('.guide-spot').forEach((el) => {
@@ -4194,6 +4382,8 @@ function paintGuides() {
     const el = document.getElementById(step.tip);
     if (el) el.classList.add('hidden');
   });
+  const extraTip = document.getElementById('manual-sheet-save-tip');
+  if (extraTip) extraTip.classList.add('hidden');
   const skip = document.getElementById('guide-skip');
   const step = currentGuideStepForScreen();
   if (skip) skip.classList.toggle('hidden', !step);
@@ -4203,9 +4393,21 @@ function paintGuides() {
     emptyHint.classList.toggle('hidden', !homeEmpty || !!(step && step.id === 'recap'));
   }
   if (!step) return;
-  const el = document.getElementById(step.tip);
-  if (el) el.classList.remove('hidden');
-  const target = document.getElementById(step.target);
+  const el = document.getElementById(guideTipId(step));
+  if (el) {
+    if (step.id === 'recap-done') {
+      const gen = document.getElementById('generate-btn');
+      const manual = gen && gen.disabled;
+      el.textContent = manual
+        ? '也可以先手动记；说完后再点「完成」。'
+        : '说完或打完字，点「完成」。';
+      el.classList.toggle('is-manual', !!manual);
+    } else {
+      el.classList.remove('is-manual');
+    }
+    el.classList.remove('hidden');
+  }
+  const target = document.getElementById(guideTargetId(step));
   if (target) target.classList.add('guide-spot');
 }
 function paintHomeGuides() { paintGuides(); }
@@ -4302,12 +4504,13 @@ function selectCheckinMood(mood) {
   });
 }
 async function submitCheckin() {
+  const className = (document.getElementById('checkin-classname')?.value || '').trim();
+  if (!className) { toast('「课程/组合」是必选，先填一下'); return; }
   const back = currentGuideStep();
   if (back && back.id === 'checkin-back') markGuideSeen('checkin-back');
   const submit = document.getElementById('checkin-submit-btn');
   if (submit) submit.disabled = true;
   try {
-    const className = (document.getElementById('checkin-classname')?.value || '').trim();
     const res = await authFetch(`${API}/api/records/checkin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -4337,6 +4540,137 @@ async function submitCheckin() {
     if (submit) submit.disabled = false;
   }
 }
+let manualDurationMin = null;
+let manualMood = null;
+function selectManualDuration(min) {
+  manualDurationMin = (manualDurationMin === min) ? null : min;
+  document.querySelectorAll('.manual-duration-chip').forEach((btn) => {
+    btn.classList.toggle('is-selected', Number(btn.dataset.min) === manualDurationMin);
+  });
+}
+function selectManualMood(mood) {
+  manualMood = (manualMood === mood) ? null : mood;
+  document.querySelectorAll('.manual-mood-chip').forEach((btn) => {
+    btn.classList.toggle('is-selected', btn.dataset.mood === manualMood);
+  });
+}
+function resetManualSheet() {
+  manualDurationMin = null;
+  manualMood = null;
+  document.querySelectorAll('.manual-duration-chip').forEach((el) => el.classList.remove('is-selected'));
+  document.querySelectorAll('.manual-mood-chip').forEach((el) => el.classList.remove('is-selected'));
+  const good = document.getElementById('manual-sheet-good');
+  const improve = document.getElementById('manual-sheet-improve');
+  const nameInput = document.getElementById('manual-sheet-classname');
+  if (good) good.value = '';
+  if (improve) improve.value = '';
+  if (nameInput) nameInput.value = '';
+  const rowsForSheet = (homeRows && homeRows.length) ? homeRows : (historyRows || []);
+  fillClassNameChips('manual-sheet-class-chips', 'manual-sheet-classname', rowsForSheet);
+  fitNoteArea(good);
+  fitNoteArea(improve);
+}
+function openManualSheet(reason) {
+  markGuideSeen('recap-done');
+  lastDraft = { manual: true, transcript: '', durationSec: 0, from: 'manual', result: {} };
+  resetManualSheet();
+  const sub = document.getElementById('manual-sheet-sub');
+  if (sub) {
+    sub.textContent = reason === 'quota'
+      ? '今天的AI复盘额度用完了，自己写几句就好。课程、时长、心情都可以先空着。'
+      : '不用AI，自己写几句。课程、时长、心情都可以先空着。';
+  }
+  const m = document.getElementById('manual-sheet-mask');
+  if (!m) return;
+  m.classList.remove('is-leaving');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+  const panel = m.querySelector('.checkin-sheet-panel');
+  if (panel) replayAnimation(panel);
+  paintGuides();
+}
+function actuallyHideManualSheet() {
+  const m = document.getElementById('manual-sheet-mask');
+  if (!m) return;
+  m.classList.add('hidden');
+  m.classList.remove('flex', 'is-leaving');
+  paintGuides();
+}
+function hideManualSheet() {
+  if (!allowGuideAction('manual-back')) return;
+  const step = currentGuideStepForScreen();
+  if (step && step.action === 'review-save') markGuideSeen('review-save');
+  dismissManualSheet();
+}
+function dismissManualSheet() {
+  const m = document.getElementById('manual-sheet-mask');
+  return new Promise((resolve) => {
+    if (!m || m.classList.contains('hidden')) { resolve(); return; }
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { actuallyHideManualSheet(); resolve(); return; }
+    if (m.classList.contains('is-leaving')) { resolve(); return; }
+    const panel = m.querySelector('.checkin-sheet-panel');
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      actuallyHideManualSheet();
+      resolve();
+    };
+    m.classList.add('is-leaving');
+    if (panel) {
+      panel.addEventListener('transitionend', (e) => {
+        if (e.propertyName === 'transform') finish();
+      }, { once: true });
+    }
+    setTimeout(finish, 420);
+  });
+}
+async function submitManualSheet() {
+  if (!allowGuideAction('review-save')) return;
+  const good = (document.getElementById('manual-sheet-good')?.value || '').trim();
+  const improve = (document.getElementById('manual-sheet-improve')?.value || '').trim();
+  if (!good || !improve) { toast('「做得好的」和「还要改的」是必选，先写一句'); return; }
+  if (savingRecord) return;
+  savingRecord = true;
+  const saveBtn = document.getElementById('manual-sheet-save-btn');
+  if (saveBtn) saveBtn.disabled = true;
+  try {
+    const className = (document.getElementById('manual-sheet-classname')?.value || '').trim() || defaultClassName();
+    const body = {
+      className,
+      transcript: '',
+      good_points: good,
+      improve_points: improve,
+      next_time_reminder: '',
+      session_tips: '',
+      confidence_level: '',
+      note: '',
+      durationSec: 0,
+      trainingDurationMin: manualDurationMin,
+      mood: manualMood,
+      edited: false,
+      editedFields: [],
+      sessionId: captureSessionId,
+      from: 'manual',
+    };
+    const res = await authFetch(`${API}/api/records`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const result = await res.json();
+    if (!res.ok) { toast(result.error || '保存失败'); return; }
+    markGuideSeen('recap-done');
+    markGuideSeen('review-save');
+    rememberClassName(body.className);
+    captureSessionId = '';
+    calMarkPopKey = dateKey(new Date());
+    await dismissManualSheet();
+    showSaveCeremony(result.milestone);
+  } catch (e) {
+    toast('保存失败：' + (e.message || '请重试'));
+  } finally {
+    savingRecord = false;
+    if (saveBtn) saveBtn.disabled = false;
+  }
+}
 function hideCheckinShare() {
   const m = document.getElementById('checkin-share-mask');
   if (m) {
@@ -4348,7 +4682,7 @@ function hideCheckinShare() {
   pendingShareMilestone = null;
   actuallyHideCheckinSheet();
   try { playPendingCalMarkPop(); } catch (e) {}
-  paintGuides();
+  requestAnimationFrame(() => paintGuides());
 }
 function checkinShareBlob() {
   return new Promise((resolve) => {
@@ -4606,6 +4940,7 @@ function openCheckinShare() {
   if (card) replayAnimation(card);
   spawnCeremonyPetals(18, true, 'checkin-share-petals');
   playChime('soft');
+  paintGuides();
 }
 function shareCheckinCard() { openCheckinShare(); }
 function isAppleTouch() {
@@ -4838,6 +5173,7 @@ function entryCard(r) {
 
 // ---------- progress (recurring issues / training review / pre-class brief) ----------
 let progressViewMode = 'class';
+let progressLookLoaded = false;
 function setProgressView(mode) {
   const want = mode === 'look' ? 'look' : 'class';
   const step = currentGuideStepForScreen();
@@ -4861,23 +5197,35 @@ function setProgressView(mode) {
   const lookView = document.getElementById('progress-look-view');
   if (classView) classView.classList.toggle('hidden', progressViewMode !== 'class');
   if (lookView) lookView.classList.toggle('hidden', progressViewMode !== 'look');
+  if (progressViewMode === 'look') ensureProgressLookLoaded();
   paintGuides();
+}
+function ensureProgressLookLoaded() {
+  if (progressLookLoaded) return;
+  progressLookLoaded = true;
+  generateTrainingReview(currentReviewMode || 'days');
+  loadAskQuota();
 }
 async function goProgress(tab) {
   if (!allowGuideAction('progress')) return;
-  const step = currentGuideStepForScreen();
-  if (step && step.action === 'progress') markGuideSeen(step.id);
+  markGuideIfPending('progress');
   logEvent('progress_opened', {}, 'browse');
   markProgressVisited();
   const lookTabs = tab === 'look' || tab === 'ask' || tab === 'recap';
+  progressLookLoaded = false;
+  lastTrainingReview = null;
   setProgressView(lookTabs ? 'look' : 'class');
   show('screen-progress');
-  lastTrainingReview = null;
+  if (!lookTabs) {
+    markGuideIfPending('progress-class');
+    paintGuides();
+  }
   const briefEl = document.getElementById('brief-content');
   if (briefEl) briefEl.innerHTML = '<p class="brief-empty">正在看看你上次留下的话…</p>';
   const reviewEl = document.getElementById('review-content');
   if (reviewEl) reviewEl.innerHTML = '<p class="recap-empty">正在整理汇总…</p>';
-  await Promise.all([loadBrief(), loadIssues(), generateTrainingReview('days'), loadAskQuota()]);
+  loadIssues();
+  await loadBrief();
   const scrollMap = {
     brief: 'progress-brief-sec',
     issues: 'progress-issues-sec',
@@ -4939,7 +5287,7 @@ async function askArchive() {
       return;
     }
     const points = Array.isArray(data.answerPoints) ? data.answerPoints : [];
-    let html = points.map((p) => `<p class="mb-1.5 last:mb-0">${escapeHtml(p)}</p>`).join('');
+    let html = points.map((p) => `<p class="mb-1.5 last:mb-0">${escapeHtml(String(p).replace(/记录\s*\d+\s*[（(]/g, '（').replace(/记录\s*\d+\s*/g, ''))}</p>`).join('');
     if (data.matchedRecords && data.matchedRecords.length > 0) {
       html += `<div class="mt-2 flex flex-wrap gap-1.5">` + data.matchedRecords.map((r) =>
         `<button type="button" onclick="openDetail(${r.id})" class="chip rounded-full px-2.5 py-1 text-[10.5px] text-[var(--rose-deep)]">${escapeHtml(fmtDate(r.createdAt).split(' ')[0])} · ${escapeHtml(r.className || '复盘')}</button>`
@@ -4966,7 +5314,7 @@ let progressClassFilter = '';
 let issueClassFilterExpanded = false;
 let reviewClassFilterExpanded = false;
 const ISSUE_CLASS_FILTER_INITIAL = 4;
-const ISSUE_CLASS_FILTER_MAX = 12;
+const ISSUE_CLASS_FILTER_MAX = 10;
 
 // Most-used first, ties broken by most-recent-use -- so a course you just
 // started doesn't get buried under one you did a lot of months ago, but a
@@ -5228,13 +5576,17 @@ function formatTrainingReviewText(data) {
   const good = uniqueCompactGoodPoints(data.goodPointsRecap || []).map((p) => (
     typeof compactPhrase === 'function' ? compactPhrase(p, 32) : p
   ));
+  const improve = uniqueCompactGoodPoints(data.improvePointsRecap || []).map((p) => (
+    typeof compactPhrase === 'function' ? compactPhrase(p, 32) : p
+  ));
   const resolved = uniqueCompactGoodPoints((data.resolvedInPeriod || []).map((i) => i.text)).map((p) => (
     typeof compactPhrase === 'function' ? compactPhrase(p, 32) : p
   ));
   if (good.length) lines.push('', '做得好的', ...good.map((p) => `· ${p}`));
+  if (improve.length) lines.push('', '还要改的', ...improve.map((p) => `· ${p}`));
   if (resolved.length) lines.push('', '已解决', ...resolved.map((p) => `· ${p}`));
   if (data.recordCount === 0) lines.push('还没有可汇总的课记');
-  else if (!good.length && !resolved.length) lines.push('这几天还没有可汇总的条目');
+  else if (!good.length && !improve.length && !resolved.length) lines.push('这几天还没有可汇总的条目');
   return lines.join('\n');
 }
 
@@ -5254,6 +5606,7 @@ function paintTrainingReview() {
   const exportBtn = document.getElementById('review-export-btn');
   if (!data || !contentEl) return;
   const goodHtml = recapSection('做得好的', 'is-good', 'good', data.goodPointsRecap);
+  const improveHtml = recapSection('还要改的', 'is-improve', 'improve', data.improvePointsRecap);
   const resolvedHtml = recapSection(
     '已解决',
     'is-improve',
@@ -5265,10 +5618,10 @@ function paintTrainingReview() {
     html = data.classFilter
       ? `<p class="recap-empty">这段时间「${escapeHtml(data.classFilter)}」没有课记，换个范围或课程试试。</p>`
       : `<p class="recap-empty">请先点记录，做成课记。汇总报告会出现在这里。</p>`;
-  } else if (!goodHtml && !resolvedHtml) {
+  } else if (!goodHtml && !improveHtml && !resolvedHtml) {
     html = `<p class="recap-empty">这几天还没有可汇总的条目。</p>`;
   } else {
-    html = `${goodHtml}${resolvedHtml}`;
+    html = `${goodHtml}${improveHtml}${resolvedHtml}`;
   }
   contentEl.innerHTML = html;
   contentEl.classList.remove('hidden');
@@ -5293,7 +5646,7 @@ async function generateTrainingReview(mode) {
     const res = await authFetch(`${API}/api/progress/review?${query}`);
     const data = await res.json();
     lastTrainingReview = data;
-    recapOpen = { good: false, resolved: false };
+    recapOpen = { good: false, improve: false, resolved: false };
     paintTrainingReview();
   } catch (e) {
     toast('生成失败，请再试一次');
@@ -6094,6 +6447,23 @@ function updateGenerateBtn() {
   if (aiUnavailable) return;
   const manualLen = document.getElementById('manual-input').value.trim().length;
   document.getElementById('generate-btn').disabled = (segments.length === 0 && manualLen === 0) || recognizing || transcribing;
+  paintGuides();
+}
+function setAiRecapTypingEnabled(on) {
+  const el = document.getElementById('manual-input');
+  const wrap = document.querySelector('#screen-record .rec-write');
+  const prompts = document.querySelector('#screen-record .rec-prompts');
+  if (el) {
+    el.disabled = !on;
+    el.placeholder = on
+      ? '也可以打字，比如：今天 pirouette 能转一圈，视线定点比上次稳。'
+      : '额度用完了，请点下面「去手动记」';
+  }
+  if (wrap) wrap.classList.toggle('is-disabled', !on);
+  if (prompts) {
+    if (!on) prompts.open = false;
+    prompts.querySelectorAll('button').forEach((b) => { b.disabled = !on; });
+  }
 }
 function enableAiEntry() {
   aiUnavailable = false;
@@ -6104,14 +6474,9 @@ function enableAiEntry() {
   if (retryBtn) retryBtn.disabled = false;
   const recBtn = document.getElementById('rec-btn');
   if (recBtn) { recBtn.disabled = false; recBtn.classList.remove('opacity-40'); }
+  setAiRecapTypingEnabled(true);
   updateGenerateBtn();
 }
-// AI unavailable (daily recap quota, or a provider outage) -- rather than a
-// dead-end disabled button, repurpose "完成" to route straight into 手动记.
-// Also disables the mic itself: recording anyway would still burn a real
-// ASR (Whisper) call for audio that can never be turned into an AI recap,
-// only to dead-end at the same "去手动记" redirect -- so stop it up front
-// instead of wasting that cost.
 function disableAiEntry(message) {
   aiUnavailable = true;
   const btn = document.getElementById('generate-btn');
@@ -6124,9 +6489,11 @@ function disableAiEntry(message) {
   const recState = document.getElementById('rec-state');
   if (recBtn) { recBtn.disabled = true; recBtn.classList.add('opacity-40'); }
   if (recState) recState.textContent = 'AI额度用完了，直接手动记吧';
+  setAiRecapTypingEnabled(false);
   if (message) toast(message);
 }
 function insertPrompt(text) {
+  if (aiUnavailable) return;
   const el = document.getElementById('manual-input');
   el.value = el.value.trim() ? el.value.trimEnd() + '\n' + text : text;
   updateGenerateBtn();
@@ -6349,6 +6716,10 @@ function setReviewAiSectionsVisible(visible) {
   // line, so the reminder would just be noise there.
   document.getElementById('review-good-hint')?.classList.toggle('hidden', visible);
   document.getElementById('review-improve-hint')?.classList.toggle('hidden', visible);
+  // 给这次的小提示 is meant for a stray thing the AI draft surfaced --
+  // 手动记 has no draft to pull a tip out of, so drop the field entirely
+  // rather than leave an empty box with nothing to extract.
+  document.getElementById('review-tips-fold')?.classList.toggle('hidden', !visible);
   const kicker = document.getElementById('review-header-kicker');
   const title = document.getElementById('review-header-title');
   if (kicker && title) {
@@ -6356,17 +6727,10 @@ function setReviewAiSectionsVisible(visible) {
     title.textContent = visible ? '复盘' : '手动记';
   }
 }
-// 手动记: skips voice/AI entirely -- reuses screen-review's good/improve
-// fields and course/duration/mood, but the user fills them in directly and
-// save goes straight to POST /api/records, no /api/generate call. Always
-// available (not just when AI quota runs out), since typing structured
-// fields yourself costs nothing and produces cleaner data for the issue
-// matcher than paying an AI call to unpack a paragraph.
+// 手动记: bottom sheet like 打卡. Skips voice/AI and POSTs /api/records.
+// Always available from the record page; auto-opens when daily AI quota is gone.
 function startManualEntry() {
-  lastDraft = { manual: true, transcript: '', durationSec: 0, from: 'manual', result: {} };
-  setReviewAiSectionsVisible(false);
-  renderReview(true);
-  show('screen-review');
+  openManualSheet('choice');
 }
 
 async function generateReview() {
@@ -6394,10 +6758,13 @@ async function generateReview() {
     renderReview();
     show('screen-review');
   } catch (e) {
+    if (isAbortError(e)) { show('screen-record'); return; }
+    if (e.status === 429) {
+      openManualBecauseQuotaGone(e.message || '今天的AI复盘额度用完了，请手动记');
+      return;
+    }
     show('screen-record');
-    if (isAbortError(e)) return;
-    if (e.status === 429) disableAiEntry(e.message);
-    else toast('AI生成失败：' + (e.message || '请重试') + '。原始录音已保留');
+    toast('AI生成失败：' + (e.message || '请重试') + '。原始录音已保留');
   } finally {
     generateAbort = null;
   }
@@ -6451,6 +6818,8 @@ function updateReviewExtrasSummary() {
   const tipsOpen = !document.getElementById('review-tips-open')?.classList.contains('hidden');
   if (selectedMood) {
     el.textContent = `已记下 ${MOOD_LABELS[selectedMood]}`;
+  } else if (lastDraft && lastDraft.manual) {
+    el.textContent = '心情都可以先空着';
   } else {
     el.textContent = tipsOpen ? '心情都可以先空着' : '心情、小提示，都可以以后再补';
   }
@@ -6576,12 +6945,14 @@ async function confirmSave() {
   if (!allowGuideAction('review-save')) return;
   if (savingRecord) return;
   if (!lastDraft || !lastDraft.result) { toast('草稿已失效，请返回重新生成'); return; }
+  const good = document.getElementById('review-good').value.trim();
+  const improve = document.getElementById('review-improve').value.trim();
+  if (!good) { toast('「做得好的」是必选，先写一句'); return; }
+  if (!improve) { toast('「还要改的」是必选，先写一句'); return; }
   savingRecord = true;
   const saveBtn = document.getElementById('review-save-btn');
   if (saveBtn) saveBtn.disabled = true;
   try {
-  const good = document.getElementById('review-good').value.trim();
-  const improve = document.getElementById('review-improve').value.trim();
   const next = '';
   const tips = document.getElementById('review-tips').value.trim();
   // "edited" tracks whether the user changed AI's draft -- meaningless for
@@ -6614,6 +6985,7 @@ async function confirmSave() {
   const res = await authFetch(`${API}/api/records`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
   const result = await res.json();
   if (!res.ok) { toast(result.error || '保存失败'); return; }
+  markGuideSeen('recap-done');
   markGuideSeen('review-save');
   rememberClassName(body.className);
   captureSessionId = '';

@@ -1,11 +1,11 @@
 const express = require('express');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
-const { listIssuesWithOccurrences } = require('../issues');
+const { listIssuesWithOccurrences, isSimilar } = require('../issues');
 const { splitLines, sessionIdFromReq, withSession, uniqueCompactGoodPoints } = require('../lib/text');
-const { logEvent, countAiCallsToday, countSecondaryAiCallsToday, countAiRecapsToday } = require('../events');
+const { logEvent, countAiCallsToday, countSecondaryAiCallsThisWeek, countAiRecapsToday } = require('../events');
 const { aiConfigured, missingConfigHint } = require('../ai/provider');
-const { dailyAiLimitFor, dailySecondaryAiLimitFor, dailyRecapLimitFor } = require('../config');
+const { dailyAiLimitFor, weeklyAskLimitFor, dailyRecapLimitFor } = require('../config');
 const { callAskRound1WithRetry, callAskRound2WithRetry, findToolUse, answerFromToolInput } = require('../ai/anthropic');
 const { llmUsageMeta } = require('../lib/llm-event-meta');
 const { retrieveAskRecords, KEYWORD_SPARSE_MAX } = require('../ai/ask-retrieve');
@@ -14,6 +14,16 @@ const { runIssueBriefExperiment } = require('../ai/issue-brief-experiment');
 
 const router = express.Router();
 router.use(requireAuth);
+function uniqueSimilarLines(lines) {
+  const base = uniqueCompactGoodPoints(lines);
+  const out = [];
+  for (const line of base) {
+    const idx = out.findIndex((existing) => isSimilar(existing, line) || isSimilar(line, existing));
+    if (idx < 0) out.push(line);
+    else if (String(line).length > String(out[idx]).length) out[idx] = line;
+  }
+  return out;
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 // Year included on purpose — the model has no ground truth for "what year
@@ -62,7 +72,7 @@ router.get('/review', async (req, res) => {
   let since;
   if (useLast) {
     const params = [req.userId];
-    let sql = 'SELECT id, class_name, good_points, created_at FROM records WHERE user_id = ?';
+    let sql = 'SELECT id, class_name, good_points, improve_points, next_time_reminder, created_at FROM records WHERE user_id = ?';
     if (classFilter) { sql += ' AND TRIM(class_name) = ?'; params.push(classFilter); }
     sql += ' ORDER BY created_at DESC LIMIT ?';
     params.push(lastCount);
@@ -72,7 +82,7 @@ router.get('/review', async (req, res) => {
   } else {
     since = Date.now() - days * DAY_MS;
     const params = [req.userId, since];
-    let sql = 'SELECT id, class_name, good_points, created_at FROM records WHERE user_id = ? AND created_at >= ?';
+    let sql = 'SELECT id, class_name, good_points, improve_points, next_time_reminder, created_at FROM records WHERE user_id = ? AND created_at >= ?';
     if (classFilter) { sql += ' AND TRIM(class_name) = ?'; params.push(classFilter); }
     sql += ' ORDER BY created_at ASC';
     records = await db.all(sql, params);
@@ -87,12 +97,12 @@ router.get('/review', async (req, res) => {
     ));
   }
 
-  // Newest class first, so a just-saved 做得好 shows at the top instead of
-  // being buried after older unique lines (the UI only shows the first few).
+  const newestFirst = [...records].sort((a, b) => Number(b.created_at) - Number(a.created_at));
   const goodPointsRecap = uniqueCompactGoodPoints(
-    [...records]
-      .sort((a, b) => Number(b.created_at) - Number(a.created_at))
-      .flatMap((r) => splitLines(r.good_points))
+    newestFirst.flatMap((r) => splitLines(r.good_points))
+  );
+  const improvePointsRecap = uniqueSimilarLines(
+    newestFirst.flatMap((r) => [...splitLines(r.improve_points), ...splitLines(r.next_time_reminder)])
   );
 
   res.json({
@@ -105,6 +115,7 @@ router.get('/review', async (req, res) => {
     openIssues,
     resolvedInPeriod,
     goodPointsRecap,
+    improvePointsRecap,
   });
 });
 
@@ -157,7 +168,7 @@ router.get('/brief', async (req, res) => {
 
   // Dual gate default-off: no user hits this unless both env vars are set.
   if (isIssueBriefExperimentOn(req.userId) && topIssues.length > 0) {
-    const overQuota = (await countSecondaryAiCallsToday(req.userId)) >= dailySecondaryAiLimitFor(req.userId);
+    const overQuota = (await countSecondaryAiCallsThisWeek(req.userId)) >= weeklyAskLimitFor(req.userId);
     if (!overQuota) {
       const startedAt = Date.now();
       try {
@@ -202,7 +213,7 @@ router.get('/ask', async (req, res) => {
   );
   const keywordRound = await retrieveAskRecords(rows, question, { mode: 'keyword' });
   const sessionId = sessionIdFromReq(req);
-  const overQuota = (await countSecondaryAiCallsToday(req.userId)) >= dailySecondaryAiLimitFor(req.userId);
+  const overQuota = (await countSecondaryAiCallsThisWeek(req.userId)) >= weeklyAskLimitFor(req.userId);
 
   let round1 = keywordRound;
   if (keywordRound.keywordCount <= KEYWORD_SPARSE_MAX) {
@@ -217,7 +228,7 @@ router.get('/ask', async (req, res) => {
         });
       }
       await logEvent(req.userId, 'ask_fail', withSession({ reason: 'quota_exceeded' }, sessionId));
-      return res.status(429).json({ error: '今天的AI调用次数已经用完了，明天再问吧' });
+      return res.status(429).json({ error: '这周的问问次数已经用完了，下周再问吧' });
     }
     round1 = await retrieveAskRecords(rows, question);
   }
@@ -235,7 +246,7 @@ router.get('/ask', async (req, res) => {
 
   if (overQuota) {
     await logEvent(req.userId, 'ask_fail', withSession({ reason: 'quota_exceeded' }, sessionId));
-    return res.status(429).json({ error: '今天的AI调用次数已经用完了，明天再问吧' });
+    return res.status(429).json({ error: '这周的问问次数已经用完了，下周再问吧' });
   }
   if (!aiConfigured()) {
     console.error(`[ALERT][config] ${missingConfigHint()}`);
@@ -353,15 +364,15 @@ router.get('/ask', async (req, res) => {
 router.get('/quota', async (req, res) => {
   const [core, secondary, recap] = await Promise.all([
     countAiCallsToday(req.userId),
-    countSecondaryAiCallsToday(req.userId),
+    countSecondaryAiCallsThisWeek(req.userId),
     countAiRecapsToday(req.userId),
   ]);
   const coreLimit = dailyAiLimitFor(req.userId);
-  const secondaryLimit = dailySecondaryAiLimitFor(req.userId);
+  const secondaryLimit = weeklyAskLimitFor(req.userId);
   const recapLimit = dailyRecapLimitFor(req.userId);
   res.json({
     core: { used: core, limit: coreLimit, remaining: Math.max(0, coreLimit - core) },
-    secondary: { used: secondary, limit: secondaryLimit, remaining: Math.max(0, secondaryLimit - secondary) },
+    secondary: { used: secondary, limit: secondaryLimit, remaining: Math.max(0, secondaryLimit - secondary), period: 'week' },
     recap: { used: recap, limit: recapLimit, remaining: Math.max(0, recapLimit - recap) },
   });
 });

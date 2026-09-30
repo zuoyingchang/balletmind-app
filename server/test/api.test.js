@@ -5,6 +5,7 @@ process.env.JWT_SECRET = 'test-secret-do-not-use-in-prod';
 process.env.TURSO_DATABASE_URL = 'file::memory:';
 process.env.ADMIN_KEY = 'test-admin-key';
 process.env.DAILY_AI_LIMIT = '5';
+process.env.WEEKLY_ASK_LIMIT = '3'; // below 5 so the ask-quota test can fill the weekly pool without hitting the core cap
 process.env.DAILY_RECAP_LIMIT = '6'; // above DAILY_AI_LIMIT so the two quota tests can isolate each path
 process.env.RATE_LIMIT_DISABLED = '1'; // this suite registers many users from one IP; limiter has its own test file
 process.env.AI_TIMEOUT_MS = '200'; // short, so the timeout test doesn't take 25s
@@ -139,7 +140,7 @@ test('a user can create and list their own records', async () => {
   const create = await fetch(`${base}/api/records`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ className: '基训', transcript: '今天练了tendu', durationSec: 90 }),
+    body: JSON.stringify({ className: '基训', transcript: '今天练了tendu', durationSec: 90, good_points: 'tendu 比上次稳', improve_points: '脚背再绷直一点' }),
   });
   assert.equal(create.status, 200);
   const { id } = await create.json();
@@ -152,7 +153,7 @@ test('a user can create and list their own records', async () => {
   assert.equal(rows[0].transcript, '今天练了tendu');
 });
 
-test('check-in works without a recap, stores optional mood/duration/class, skips the capture funnel, and allows several sessions in one day', async () => {
+test('check-in works without a recap, stores optional mood/duration, requires class, skips the capture funnel, and allows several sessions in one day', async () => {
   const { body: { token, user } } = await registerUser('checkin-flow@example.com');
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
   const tzOffsetMin = new Date().getTimezoneOffset();
@@ -192,12 +193,39 @@ test('check-in works without a recap, stores optional mood/duration/class, skips
   assert.equal(names.filter((n) => n === 'session_confirmed').length, 0);
 });
 
+test('check-in without 课程/组合 is rejected', async () => {
+  const { body: { token } } = await registerUser('checkin-need-class@example.com');
+  const res = await fetch(`${base}/api/records/checkin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ tzOffsetMin: new Date().getTimezoneOffset() }),
+  });
+  assert.equal(res.status, 400);
+  const body = await res.json();
+  assert.match(body.error, /课程\/组合/);
+});
+
+test('saving a recap without 做得好的 or 还要改的 is rejected', async () => {
+  const { body: { token } } = await registerUser('recap-need-points@example.com');
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  const noGood = await fetch(`${base}/api/records`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ className: '基训', improve_points: '胯不要掉' }),
+  });
+  assert.equal(noGood.status, 400);
+  const noImprove = await fetch(`${base}/api/records`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ className: '基训', good_points: '定点比上次稳' }),
+  });
+  assert.equal(noImprove.status, 400);
+});
+
 test('check-in does not re-fire recap-count milestones', async () => {
   const { body: { token } } = await registerUser('checkin-no-count-ms@example.com');
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
   for (let i = 0; i < 3; i++) await saveRecord(token, { className: '基训' });
   const res = await fetch(`${base}/api/records/checkin`, {
-    method: 'POST', headers, body: JSON.stringify({ tzOffsetMin: new Date().getTimezoneOffset() }),
+    method: 'POST', headers, body: JSON.stringify({ tzOffsetMin: new Date().getTimezoneOffset(), className: '基训' }),
   });
   assert.equal(res.status, 200);
   const body = await res.json();
@@ -218,12 +246,12 @@ test('first visit of a second week can celebrate a 来过 streak on check-in', a
   );
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
   const first = await fetch(`${base}/api/records/checkin`, {
-    method: 'POST', headers, body: JSON.stringify({ tzOffsetMin: new Date().getTimezoneOffset() }),
+    method: 'POST', headers, body: JSON.stringify({ tzOffsetMin: new Date().getTimezoneOffset(), className: '基训' }),
   });
   assert.equal(first.status, 200);
   assert.deepEqual(await first.json().then((b) => b.milestone), { type: 'streak', value: 2 });
   const second = await fetch(`${base}/api/records/checkin`, {
-    method: 'POST', headers, body: JSON.stringify({ tzOffsetMin: new Date().getTimezoneOffset() }),
+    method: 'POST', headers, body: JSON.stringify({ tzOffsetMin: new Date().getTimezoneOffset(), className: '基训' }),
   });
   assert.equal(second.status, 200);
   assert.equal((await second.json()).milestone, null);
@@ -235,14 +263,14 @@ test('training_duration_min is optional and distinct from the voice memo length 
   const withDuration = await fetch(`${base}/api/records`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ className: '基训', transcript: 'x', durationSec: 12, trainingDurationMin: 90 }),
+    body: JSON.stringify({ className: '基训', transcript: 'x', durationSec: 12, trainingDurationMin: 90, good_points: '节奏匀', improve_points: '重心再向前' }),
   });
   assert.equal(withDuration.status, 200);
 
   const withoutDuration = await fetch(`${base}/api/records`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ className: '基训', transcript: 'y', durationSec: 8 }),
+    body: JSON.stringify({ className: '基训', transcript: 'y', durationSec: 8, good_points: '节奏匀', improve_points: '重心再向前' }),
   });
   assert.equal(withoutDuration.status, 200);
 
@@ -262,7 +290,7 @@ test('one user cannot see, fetch, or delete another user\'s records', async () =
   const create = await fetch(`${base}/api/records`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenA}` },
-    body: JSON.stringify({ className: '私密记录', transcript: '只属于dave' }),
+    body: JSON.stringify({ className: '私密记录', transcript: '只属于dave', good_points: '手位稳定', improve_points: '继续跟进' }),
   });
   const { id } = await create.json();
 
@@ -290,7 +318,7 @@ test('one user cannot see, or update, another user\'s recurring issues', async (
     await fetch(`${base}/api/records`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenA}` },
-      body: JSON.stringify({ className: '基训', improve_points: '转圈时骨盆晃动明显' }),
+      body: JSON.stringify({ className: '基训', good_points: '手位稳定', improve_points: '转圈时骨盆晃动明显' }),
     });
   }
   const issuesAsA = await (await fetch(`${base}/api/issues`, { headers: { Authorization: `Bearer ${tokenA}` } })).json();
@@ -335,7 +363,7 @@ test('a user can delete their own record', async () => {
   const create = await fetch(`${base}/api/records`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ className: '待删除' }),
+    body: JSON.stringify({ className: '待删除', good_points: '手位稳定', improve_points: '继续跟进' }),
   });
   const { id } = await create.json();
 
@@ -499,6 +527,7 @@ test('saving a record logs save_record and user_edit_ai_result events', async ()
     body: JSON.stringify({
       className: '测试',
       good_points: '进步',
+      improve_points: '继续跟进',
       edited: true,
       editedFields: ['good_points'],
       transcript: 'should-not-be-in-analytics',
@@ -509,7 +538,7 @@ test('saving a record logs save_record and user_edit_ai_result events', async ()
   const saveEvent = await db.get('SELECT * FROM events WHERE user_id = ? AND event_name = ?', [user.id, 'save_record']);
   assert.ok(saveEvent);
   const saveMeta = JSON.parse(saveEvent.metadata);
-  assert.equal(saveMeta.slotsFilled, 1);
+  assert.equal(saveMeta.slotsFilled, 2);
   assert.equal(saveMeta.from, 'typed');
   assert.equal(saveMeta.transcript, undefined);
   const confirmed = await db.get('SELECT * FROM events WHERE user_id = ? AND event_name = ?', [user.id, 'session_confirmed']);
@@ -593,7 +622,11 @@ async function saveRecord(token, body) {
   const res = await fetch(`${base}/api/records`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      good_points: '手位稳定',
+      improve_points: '继续跟进',
+      ...body,
+    }),
   });
   return res.json();
 }
@@ -799,8 +832,19 @@ test('/api/progress/review aggregates records and open issues with zero AI calls
   assert.equal(body.recordCount, 1);
   assert.equal(body.openIssues.length, 1);
   assert.ok(body.goodPointsRecap.includes('高位更稳定'));
+  assert.ok(body.improvePointsRecap.includes('重心不稳'));
   const after = await countAiCallsToday(user.id);
   assert.equal(after, before, 'training review must not consume the AI quota');
+});
+
+test('/api/progress/review improvePointsRecap merges the same leftover in different wording', async () => {
+  const { body: { token } } = await registerUser('review_improve_merge@example.com');
+  await saveRecord(token, { className: '把杆', improve_points: 'plié 蹲时膝盖没对脚趾' });
+  await saveRecord(token, { className: '把杆', improve_points: 'plié 膝盖没对脚趾' });
+  const body = await (await fetch(`${base}/api/progress/review?days=7`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  assert.equal(body.improvePointsRecap.length, 1);
+  assert.match(body.improvePointsRecap[0], /plié/);
+  assert.match(body.improvePointsRecap[0], /膝盖没对脚趾/);
 });
 
 test('/api/progress/review goodPointsRecap drops empty praise tails', async () => {
@@ -897,9 +941,14 @@ test('/api/progress/brief lastRecord skips a later check-in and keeps the recap 
 });
 
 test('/api/progress/brief skips a later recap with no improve_points', async () => {
-  const { body: { token } } = await registerUser('brief-skip-empty-improve@example.com');
+  const { body: { token, user } } = await registerUser('brief-skip-empty-improve@example.com');
   await saveRecord(token, { className: '基训1', improve_points: '胯不要掉' });
-  await saveRecord(token, { className: '基训2', good_points: 'tendu 更稳' });
+  await db.run(
+    `INSERT INTO records
+      (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, session_tips, confidence_level, note, duration_sec, created_at, is_checkin_only)
+    VALUES (?, '基训2', '', 'tendu 更稳', '', '', '', '', '', 0, ?, 0)`,
+    [user.id, Date.now()]
+  );
 
   const body = await (await fetch(`${base}/api/progress/brief`, { headers: { Authorization: `Bearer ${token}` } })).json();
   assert.equal(body.hasRecap, true);
@@ -1506,11 +1555,11 @@ test('/api/progress/ask only searches the caller\'s own records, not another use
   assert.equal(body.answered, false, "user A must not get an answer built from user B's records");
 });
 
-test('/api/progress/ask enforces the secondary daily AI quota once a match is found', async () => {
+test('/api/progress/ask enforces the weekly ask quota once a match is found', async () => {
   const { body: { token, user } } = await registerUser('ask_quota@example.com');
   await saveRecord(token, { className: '基训', improve_points: '转圈时重心不稳' });
   const { logEvent } = require('../events');
-  // Fills the secondary pool (ask + issue-brief), not the core one -- recording/saving a class
+  // Fills the weekly ask pool (ask + issue-brief), not the core one -- recording/saving a class
   // should never be blocked by this, which is the whole point of the two pools being separate.
   for (let i = 0; i < 5; i++) await logEvent(user.id, 'ask_success', {});
 
@@ -1518,7 +1567,26 @@ test('/api/progress/ask enforces the secondary daily AI quota once a match is fo
   assert.equal(res.status, 429);
 });
 
-test('core and secondary daily AI quotas are isolated from each other', async () => {
+test('问问档案 weekly quota does not count last week\'s asks', async () => {
+  const { body: { token, user } } = await registerUser('ask_quota_week@example.com');
+  await saveRecord(token, { className: '基训', improve_points: '转圈时重心不稳' });
+  const lastWeek = Date.now() - 8 * 24 * 60 * 60 * 1000;
+  for (let i = 0; i < 5; i++) {
+    await db.run(
+      'INSERT INTO events (user_id, event_name, metadata, created_at) VALUES (?, ?, ?, ?)',
+      [user.id, 'ask_success', null, lastWeek]
+    );
+  }
+  await withMockAnthropicFetch(
+    async () => fakeAskResponse({ answered: true, answer: '重心不稳。', citedRecordIds: [] }),
+    async () => {
+      const res = await fetch(`${base}/api/progress/ask?q=转圈`, { headers: { Authorization: `Bearer ${token}` } });
+      assert.equal(res.status, 200, 'asks from last week must not spend this week\'s slots');
+    }
+  );
+});
+
+test('core and secondary AI quotas are isolated from each other', async () => {
   const { logEvent } = require('../events');
 
   // Maxing out the core pool (asr + generate) must not block ask-your-archive.

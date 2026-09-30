@@ -166,10 +166,18 @@ function answerFromToolInput(input = {}) {
   return {
     answered: !!input.answered,
     answerPoints: Array.isArray(input.answer_points)
-      ? uniqueCompactGoodPoints(input.answer_points.map((s) => String(s).trim()).filter(Boolean))
+      ? uniqueCompactGoodPoints(input.answer_points.map((s) => String(s).trim()).filter(Boolean).map(stripAskRecordId))
       : [],
     citedRecordIds: Array.isArray(input.cited_record_ids) ? input.cited_record_ids.filter((n) => Number.isInteger(n)) : [],
   };
+}
+
+function stripAskRecordId(s) {
+  return String(s || '')
+    .replace(/记录\s*\d+\s*[（(]/g, '（')
+    .replace(/记录\s*\d+\s*/g, '')
+    .replace(/^：/, '')
+    .trim();
 }
 
 module.exports = {

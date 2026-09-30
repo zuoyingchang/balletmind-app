@@ -7,9 +7,8 @@ const KNOWN_EVENTS = knownEventNames();
 // product exists to do, so it gets the main daily budget (DAILY_AI_LIMIT).
 const CORE_QUOTA_EVENTS = ['ai_process_success', 'ai_process_fail', 'asr_success', 'asr_fail'];
 
-// Secondary: optional, exploratory features (ask-your-archive, the gated pre-class multi-agent
-// experiment). Separate, smaller budget (DAILY_SECONDARY_AI_LIMIT) so poking around in these can
-// never crowd out the quota a user needs to actually record and save a real class.
+// Secondary: optional features (ask-your-archive, the gated pre-class multi-agent
+// experiment). Weekly budget (WEEKLY_ASK_LIMIT) so these never crowd out recap.
 const SECONDARY_QUOTA_EVENTS = [
   'ask_success', 'ask_fail',
   'experiment_issue_brief_success', 'experiment_issue_brief_fail',
@@ -27,6 +26,14 @@ function startOfLocalDayMs() {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   return start.getTime();
+}
+// Monday 00:00 local — same week cut as milestones.mondayOf.
+function startOfLocalWeekMs(ts = Date.now()) {
+  const d = new Date(ts);
+  const day = d.getDay() || 7;
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - day + 1);
+  return d.getTime();
 }
 
 async function logEvent(userId, eventName, metadata) {
@@ -53,11 +60,11 @@ function countAiCallsToday(userId) {
   return countEventsSince(userId, CORE_QUOTA_EVENTS, startOfLocalDayMs());
 }
 
-function countSecondaryAiCallsToday(userId) {
-  return countEventsSince(userId, SECONDARY_QUOTA_EVENTS, startOfLocalDayMs());
+function countSecondaryAiCallsThisWeek(userId) {
+  return countEventsSince(userId, SECONDARY_QUOTA_EVENTS, startOfLocalWeekMs());
 }
 
-// Calendar day, same boundary as countAiCallsToday/countSecondaryAiCallsToday.
+// Calendar day, same boundary as countAiCallsToday.
 //
 // Counts distinct 复盘 attempts (by sessionId), not raw generate() calls --
 // tapping "重新生成" to fix a mis-heard word calls /api/generate again for
@@ -84,5 +91,6 @@ async function countAiRecapsToday(userId) {
 }
 
 module.exports = {
-  logEvent, KNOWN_EVENTS, countAiCallsToday, countSecondaryAiCallsToday, countAiRecapsToday,
+  logEvent, KNOWN_EVENTS, countAiCallsToday, countSecondaryAiCallsThisWeek, countAiRecapsToday,
+  startOfLocalWeekMs,
 };

@@ -37,12 +37,16 @@ router.post('/', async (req, res) => {
   const from = (fromClient === 'voice' || fromClient === 'typed' || fromClient === 'mixed' || fromClient === 'manual')
     ? fromClient
     : (Number(durationSec) > 0 ? 'voice' : 'typed');
+  const good = String(good_points || '').trim();
+  const improve = String(improve_points || '').trim();
+  if (!good) return res.status(400).json({ error: '「做得好的」是必选，先写一句' });
+  if (!improve) return res.status(400).json({ error: '「还要改的」是必选，先写一句' });
   const info = await db.run(
     `INSERT INTO records
       (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, session_tips, confidence_level, note, duration_sec, created_at, training_duration_min, mood, is_checkin_only)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
     [
-      req.userId, className || '训练记录', transcript || '', good_points || '', improve_points || '',
+      req.userId, className || '训练记录', transcript || '', good, improve,
       next_time_reminder || '', session_tips || '', confidence_level || '', note || '', durationSec || 0, Date.now(), trainingMin, moodValue,
     ]
   );
@@ -64,7 +68,7 @@ router.post('/', async (req, res) => {
   for (const field_name of fields) {
     await logEvent(req.userId, 'field_edited', withSession({ field_name }, sessionId));
   }
-  await processRecordForIssues(req.userId, info.lastInsertRowid, improve_points);
+  await processRecordForIssues(req.userId, info.lastInsertRowid, improve);
   const milestone = await checkMilestone(req.userId, { source: 'recap' });
   res.json({ id: info.lastInsertRowid, milestone });
 });
@@ -78,7 +82,8 @@ router.post('/checkin', async (req, res) => {
     : null;
   const MOOD_VALUES = new Set(['low', 'meh', 'good', 'great']);
   const moodValue = MOOD_VALUES.has(mood) ? mood : null;
-  const name = String(className || '').trim().slice(0, 40) || '训练记录';
+  const name = String(className || '').trim().slice(0, 40);
+  if (!name) return res.status(400).json({ error: '「课程/组合」是必选，先填一下' });
   const info = await db.run(
     `INSERT INTO records
       (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, session_tips, confidence_level, note, duration_sec, created_at, training_duration_min, mood, is_checkin_only)

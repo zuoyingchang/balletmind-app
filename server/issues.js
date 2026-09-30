@@ -106,6 +106,19 @@ function hasOverlap(a, b) {
   return false;
 }
 
+// Same named move, slightly different spoken leftovers (定点转过头 / 头转太晚)
+// should still be one card. Fold a few reversible / equivalent fragments
+// before the 2-gram check so those don't split the list.
+function foldIssueLeftover(s) {
+  return String(s || '')
+    .replace(/头转/g, '转头')
+    .replace(/转过/g, '转头')
+    .replace(/过头/g, '转头')
+    .replace(/坐胯/g, '掉胯')
+    .replace(/胯掉/g, '掉胯')
+    .replace(/掉下去/g, '掉');
+}
+
 // NOT symmetric on purpose: `existingText` is an already-stored issue's
 // text, `newLine` is the incoming improve_points line being matched against
 // it (see the one call site below — always isSimilar(issue.text, line)).
@@ -132,8 +145,8 @@ function isSimilar(existingText, newLine) {
   const tb = extractTerm(newLine);
   if (ta && tb) {
     if (ta.canonical !== tb.canonical) return false; // different named moves -- containment doesn't apply either
-    const rNew = stripFiller(stripNamedMove(nb, tb.canonical));
-    const rExisting = stripFiller(stripNamedMove(na, ta.canonical));
+    const rNew = foldIssueLeftover(stripFiller(stripNamedMove(nb, tb.canonical)));
+    const rExisting = foldIssueLeftover(stripFiller(stripNamedMove(na, ta.canonical)));
     if (!rNew && !rExisting) return true;
     if (!rNew) return true; // new line says nothing specific -- safe to bucket here
     if (!rExisting) return false; // existing issue has no specific content -- don't swallow a real complaint

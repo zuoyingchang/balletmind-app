@@ -4,6 +4,7 @@ const {
   foldBalletText,
   expandSearchNeedles,
   recordMatchesSearch,
+  searchRecordsByQuestion,
   compactPhrase,
 } = require('../../public/js/ballet-terms');
 
@@ -20,9 +21,13 @@ test('plie / plié / 蹲 / pli.e belong to the same search group', () => {
   assert.equal(recordMatchesSearch(chinese, 'plié'), true);
 });
 
-test('searching 外开 finds turnout, and tendu finds 擦地', () => {
-  assert.equal(recordMatchesSearch({ good_points: 'turnout 还不够', improve_points: '', transcript: '', class_name: '', next_time_reminder: '' }, '外开'), true);
-  assert.equal(recordMatchesSearch({ good_points: '擦地脚尖没伸直', improve_points: '', transcript: '', class_name: '', next_time_reminder: '' }, 'tendu'), true);
+test('定点 / 甩头 search also matches spotting leftovers like 头转太晚', () => {
+  const rec = { class_name: '中间', good_points: '', improve_points: 'spotting 不好、头转太晚', next_time_reminder: '', created_at: 1 };
+  assert.equal(recordMatchesSearch(rec, '定点'), true);
+  assert.equal(recordMatchesSearch(rec, '甩头'), true);
+  const hits = searchRecordsByQuestion([rec], '定点', 3);
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].class_name, '中间');
 });
 
 test('compactPhrase keeps the action and drops spoken filler', () => {
@@ -84,8 +89,6 @@ test('巴特梦 and 坐胯 map onto battement / hip-sit aliases', () => {
     next_time_reminder: '',
   }, '掉胯'), true);
 });
-
-const { searchRecordsByQuestion } = require('../../public/js/ballet-terms');
 
 test('generic 做得好 / 待改进 questions fall back to recent recap fields', () => {
   const recs = [

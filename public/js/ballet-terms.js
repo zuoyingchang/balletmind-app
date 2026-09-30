@@ -36,7 +36,7 @@ const TERM_ALIAS_GROUPS = [
   ['relevé', 'releve', '半脚尖'],
   ['pointe', '足尖'],
   ['turnout', '外开'],
-  ['spotting', '甩头'],
+  ['spotting', '甩头', '定点'],
   ['alignment', '身体线条'],
   ['barre', '把杆'],
   ['core', '核心'],
@@ -146,6 +146,9 @@ function questionTokens(question) {
     if (group.some((alias) => folded.includes(foldBalletText(alias)))) {
       termTokens.push(...group.map(foldBalletText));
     }
+  }
+  if (/(spotting|甩头|定点|转头|头转)/.test(folded)) {
+    ['spotting', '甩头', '定点', '转头', '头转'].forEach((t) => termTokens.push(t));
   }
   const stripped = folded.replace(/[，。？！,.?!、；;""'']/g, ' ');
   // Latin/digit runs (English term spellings, numbers) as whole-word tokens.
