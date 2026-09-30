@@ -1642,7 +1642,7 @@ test('/api/progress/ask lists good and improve lines with class and date', async
     good_points: '定点比上次稳',
     improve_points: '转圈时重心不稳',
   });
-  const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('这个月和上个月转圈有什么不同')}`, {
+  const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('基训')}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   assert.equal(res.status, 200);

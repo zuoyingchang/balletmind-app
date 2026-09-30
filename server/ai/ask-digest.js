@@ -1,5 +1,5 @@
 const { splitLines } = require('../lib/text');
-const { recordMatchesSearch } = require('../../public/js/ballet-terms');
+const { recordMatchesSearch, searchRecordsByQuestion, foldBalletText } = require('../../public/js/ballet-terms');
 
 function citeDate(ts) {
   const d = new Date(ts);
@@ -32,8 +32,42 @@ function wantResolvedSection(question) {
   return /档案|课记|已解决/.test(String(question || ''));
 }
 
-function pushLines(out, text, record) {
+function hayMatchesQuestion(hay, question) {
+  const q = String(question || '').trim();
+  if (!q) return true;
+  return searchRecordsByQuestion([{
+    class_name: '',
+    good_points: hay || '',
+    improve_points: '',
+    next_time_reminder: '',
+    created_at: 1,
+  }], q, 1).length > 0;
+}
+
+function classIsQuestionTopic(className, question) {
+  const n = foldBalletText(className).trim();
+  const q = foldBalletText(question).trim();
+  return !!(n && q && q.includes(n));
+}
+
+function recordHasMatchingLine(record, question) {
+  const q = String(question || '').trim();
+  if (!q) return false;
+  const blobs = [record.good_points, record.improve_points, record.next_time_reminder];
+  return blobs.some((t) => splitLines(t).some((line) => hayMatchesQuestion(line, q)));
+}
+
+function keepAskLine(line, record, question, hasLineHits) {
+  const q = String(question || '').trim();
+  if (!q || wantResolvedSection(q)) return true;
+  if (classIsQuestionTopic(record.class_name, q)) return true;
+  if (!hasLineHits) return true;
+  return hayMatchesQuestion(line, q);
+}
+
+function pushLines(out, text, record, question, hasLineHits) {
   for (const line of splitLines(text)) {
+    if (!keepAskLine(line, record, question, hasLineHits)) continue;
     out.push({
       text: line,
       cite: citeLabel(record.class_name, record.created_at),
@@ -44,20 +78,26 @@ function pushLines(out, text, record) {
 
 function buildAskDigest({ records, issues, question }) {
   const recs = [...(records || [])].sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+  const q = String(question || '').trim();
   const good = [];
   const improve = [];
   for (const r of recs) {
-    pushLines(good, r.good_points, r);
-    pushLines(improve, [r.improve_points, r.next_time_reminder].filter(Boolean).join('\n'), r);
+    const hasLineHits = recordHasMatchingLine(r, q);
+    pushLines(good, r.good_points, r, q, hasLineHits);
+    pushLines(improve, [r.improve_points, r.next_time_reminder].filter(Boolean).join('\n'), r, q, hasLineHits);
   }
 
-  const q = String(question || '').trim();
   const resolved = [];
   const includeAllResolved = wantResolvedSection(q);
   for (const issue of issues || []) {
     if (issue.status !== 'resolved') continue;
     const occ = (issue.occurrences || [])[(issue.occurrences || []).length - 1];
-    if (!includeAllResolved && q && !recordMatchesSearch(asSearchRecord(issue, occ), q)) continue;
+    if (!includeAllResolved && q) {
+      const text = String(issue.text || '').trim();
+      const className = (occ && occ.className) || '';
+      if (!hayMatchesQuestion(text, q) && !classIsQuestionTopic(className, q)
+        && !recordMatchesSearch(asSearchRecord(issue, occ), q)) continue;
+    }
     resolved.push({
       text: String(issue.text || '').trim(),
       cite: citeLabel(occ && occ.className, occ && occ.createdAt),

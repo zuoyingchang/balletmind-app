@@ -1831,6 +1831,17 @@
     font-size: 11px;
     color: var(--ink-faint);
   }
+  .ask-sec-more {
+    display: block;
+    width: 100%;
+    margin: 2px 0 0;
+    padding: 6px 0 2px;
+    font-size: 12px;
+    text-align: center;
+    color: var(--rose-deep);
+    background: none;
+    border: 0;
+  }
   .home-week-ribbon {
     padding: 8px 4px 4px;
     background: transparent;
@@ -5349,6 +5360,21 @@ async function loadBrief() {
   }
 }
 
+const ASK_SEC_PAGE = 5;
+let lastAskDigest = null;
+const askSecVisible = { good: ASK_SEC_PAGE, improve: ASK_SEC_PAGE, resolved: ASK_SEC_PAGE };
+function resetAskSecVisible() {
+  askSecVisible.good = ASK_SEC_PAGE;
+  askSecVisible.improve = ASK_SEC_PAGE;
+  askSecVisible.resolved = ASK_SEC_PAGE;
+}
+function loadAskSecMore(id) {
+  const key = id === 'good' || id === 'improve' || id === 'resolved' ? id : 'improve';
+  askSecVisible[key] = (askSecVisible[key] || ASK_SEC_PAGE) + ASK_SEC_PAGE;
+  const resultEl = document.getElementById('ask-archive-result');
+  if (resultEl && lastAskDigest) resultEl.innerHTML = renderAskDigest(lastAskDigest);
+}
+
 function renderAskDigest(data) {
   const sections = Array.isArray(data.sections) ? data.sections.filter((s) => s && s.lines && s.lines.length) : [];
   if (!data.answered || !sections.length) {
@@ -5357,7 +5383,11 @@ function renderAskDigest(data) {
   }
   return sections.map((sec) => {
     const kind = sec.id === 'good' || sec.id === 'improve' || sec.id === 'resolved' ? sec.id : 'improve';
-    const rows = sec.lines.map((line) => {
+    const all = sec.lines;
+    const vis = askSecVisible[sec.id] || ASK_SEC_PAGE;
+    const shown = all.slice(0, vis);
+    const extra = Math.max(0, all.length - shown.length);
+    const rows = shown.map((line) => {
       const cite = line.cite ? `（${escapeHtml(line.cite)}）` : '';
       const body = `${escapeHtml(line.text)}<span class="ask-sec-cite">${cite}</span>`;
       if (line.recordId) {
@@ -5365,7 +5395,10 @@ function renderAskDigest(data) {
       }
       return `<li><span class="ask-sec-line">${body}</span></li>`;
     }).join('');
-    return `<div class="ask-sec is-${kind}"><p class="ask-sec-k">${escapeHtml(sec.title)}</p><ul class="ask-sec-list">${rows}</ul></div>`;
+    const more = extra
+      ? `<button type="button" class="ask-sec-more" onclick="loadAskSecMore('${kind}')">还有 ${extra} 条</button>`
+      : '';
+    return `<div class="ask-sec is-${kind}"><p class="ask-sec-k">${escapeHtml(sec.title)}</p><ul class="ask-sec-list">${rows}</ul>${more}</div>`;
   }).join('');
 }
 
@@ -5386,6 +5419,8 @@ async function askArchive() {
       await loadAskQuota();
       return;
     }
+    resetAskSecVisible();
+    lastAskDigest = data;
     resultEl.innerHTML = renderAskDigest(data);
     await loadAskQuota();
   } catch (e) {
