@@ -63,6 +63,10 @@
   button:focus-visible, a:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
   @keyframes fadeInUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   .fade-in-up { opacity: 0; animation: fadeInUp .5s ease-out forwards; }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translate(-50%, 6px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
   @keyframes gentleSway { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
   .deco-sway { transform-origin: top center; animation: gentleSway 4.5s ease-in-out infinite; }
   @keyframes ceremonyCardIn { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
@@ -509,7 +513,13 @@
     bottom: 108px;
     transform: translateX(-50%);
     z-index: 80;
+    max-width: min(361px, calc(100vw - 32px));
+    box-sizing: border-box;
+    text-align: center;
+    line-height: 1.45;
+    white-space: normal;
   }
+  #toast.fade-in-up { animation: toastIn .5s ease-out forwards; }
   #checkin-skip-tip {
     position: relative;
     left: auto; right: auto; top: auto; bottom: auto;
@@ -5283,7 +5293,7 @@ async function askArchive() {
     const data = await res.json();
     if (!res.ok) {
       resultEl.innerHTML = `<p class="text-[var(--rose-deep)]">${escapeHtml(data.error || '查询失败')}</p>`;
-      loadAskQuota();
+      await loadAskQuota();
       return;
     }
     const points = Array.isArray(data.answerPoints) ? data.answerPoints : [];
@@ -5294,7 +5304,7 @@ async function askArchive() {
       ).join('') + `</div>`;
     }
     resultEl.innerHTML = html;
-    loadAskQuota();
+    await loadAskQuota();
   } catch (e) {
     resultEl.innerHTML = '<p class="text-[var(--rose-deep)]">查询失败，请再试一次</p>';
   } finally {
