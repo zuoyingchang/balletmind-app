@@ -1,5 +1,15 @@
 // Tests must not depend on the developer's local .env (dotenv never overrides a variable that is already set).
-for (const k of ['AI_BASE_URL', 'AI_MODEL', 'AI_API_KEY', 'AI_FALLBACK_PROVIDER', 'AI_FALLBACK_MODEL', 'AI_FORCED_TOOL_CHOICE']) process.env[k] = '';
+// DAILY_AI_LIMIT_OVERRIDE_USER_IDS in particular is a real footgun here: the
+// dev .env sets it to a specific user id for manual testing, and in-memory
+// test users are assigned sequential ids starting at 1 -- whichever test
+// happens to register the Nth user, where N matches that id, silently gets
+// unlimited quota and its AI call escapes the mock, hitting the real
+// Anthropic API (and failing with an upstream auth error) instead of the
+// quota-exceeded response the test expects.
+for (const k of [
+  'AI_BASE_URL', 'AI_MODEL', 'AI_API_KEY', 'AI_FALLBACK_PROVIDER', 'AI_FALLBACK_MODEL', 'AI_FORCED_TOOL_CHOICE',
+  'DAILY_AI_LIMIT_OVERRIDE', 'DAILY_AI_LIMIT_OVERRIDE_USER_IDS',
+]) process.env[k] = '';
 process.env.AI_PROVIDER = 'anthropic';
 process.env.JWT_SECRET = 'test-secret-do-not-use-in-prod';
 process.env.TURSO_DATABASE_URL = 'file::memory:';

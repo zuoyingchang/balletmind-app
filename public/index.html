@@ -1001,6 +1001,14 @@
     font-size: 13px;
     color: #b8863f;
   }
+  .class-progress-row { margin-bottom: 11px; }
+  .class-progress-row:last-child { margin-bottom: 0; }
+  .class-progress-track {
+    height: 6px; border-radius: 999px; overflow: hidden;
+    background: var(--border-soft);
+    margin-top: 5px;
+  }
+  .class-progress-fill { height: 100%; border-radius: 999px; transition: width .3s ease; }
 
   /* Recent-activity strip (成长追踪): tiny squares, one per day, colored by
      that day's record count. Deliberately not a full calendar — compact. */
@@ -1342,9 +1350,13 @@
     cursor: pointer;
   }
   .term-chip-row {
-    display: flex; flex-wrap: wrap; gap: 6px 8px;
-    margin-bottom: 12px;
+    display: flex; flex-wrap: nowrap; gap: 6px 8px;
+    margin-bottom: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
   }
+  .term-chip-row::-webkit-scrollbar { display: none; }
   .term-chip {
     flex: 0 0 auto;
     height: 24px;
@@ -1383,10 +1395,10 @@
   .story-beat {
     display: grid;
     grid-template-columns: 44px 1fr;
-    margin: 0 0 20px;
+    margin: 0 0 14px;
     align-items: start;
   }
-  .story-beat.is-open { margin-bottom: 24px; }
+  .story-beat.is-open { margin-bottom: 18px; }
   .story-rail { position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 14px; }
   .story-rail::before {
     content: '';
@@ -1424,7 +1436,7 @@
   .story-mod {
     overflow: hidden;
     border-radius: 26px 20px 24px 18px;
-    padding: 18px 18px 18px 20px;
+    padding: 13px 16px 13px 18px;
     text-align: left; width: 100%; cursor: pointer; color: inherit;
     transform: translateY(-1px);
     background: linear-gradient(90deg,
@@ -1451,7 +1463,7 @@
   }
   .story-beat.is-open .story-wm { display: block; }
   .story-beat.is-open .story-mod {
-    padding: 20px 20px 18px 22px;
+    padding: 16px 18px 15px 20px;
     transform: translateY(-3px);
     background: linear-gradient(90deg,
       #fffefd 0%,
@@ -1681,12 +1693,9 @@
   }
   .home-empty-hint {
     margin: 4px 0 10px;
-    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
-    font-size: 15px;
-    font-style: italic;
+    font-size: 12.5px;
     line-height: 1.55;
-    letter-spacing: .02em;
-    color: var(--ink-soft);
+    color: var(--ink-faint);
   }
   .rec-stage {
     position: relative;
@@ -2475,7 +2484,7 @@
           左边是记录，课后口述即可。这边是打卡。
         </div>
         </div>
-        <p id="home-empty-hint" class="home-empty-hint hidden relative z-10 mt-3">还没写下第一节，点「记录今天的课」即可</p>
+        <p id="home-empty-hint" class="home-empty-hint hidden relative z-10 mt-3">还没写下第一节，点上面开始吧</p>
       </section>
 
       <p id="home-in-app-tip" class="hidden mt-3 rounded-[12px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]">请用 Safari 打开这一页，录音会更顺利。</p>
@@ -2724,19 +2733,19 @@
             <p class="text-[11.5px] text-[var(--ink)] mb-2">心情<span class="field-optional">可选</span></p>
             <div class="flex gap-2.5" id="mood-chips">
               <button type="button" onclick="selectMood('low')" data-mood="low" aria-label="不在状态" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
-                <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7.2 15.2a4.2 4.2 0 0 1 .1-8.3 5.6 5.6 0 0 1 10.6 1.7A3.6 3.6 0 0 1 17.8 15.2Z"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M9.2 17.4v1.8M12 17.8v2.1M14.8 17.4v1.8"/></svg>
+                <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8 9.6L9.7 10.6M16 9.6L14.3 10.6"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.6 16.3Q12 13.7 15.4 16.3"/></svg>
                 <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">不在状态</span>
               </button>
               <button type="button" onclick="selectMood('meh')" data-mood="meh" aria-label="一般" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
-                <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7 16a4.4 4.4 0 0 1 .2-8.7 5.8 5.8 0 0 1 11 1.8A3.7 3.7 0 0 1 18.2 16Z"/></svg>
+                <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.2 10h1.6M14.2 10h1.6"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.6 15.3h6.8"/></svg>
                 <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">一般</span>
               </button>
               <button type="button" onclick="selectMood('good')" data-mood="good" aria-label="还不错" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
-                <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M12 4.2v1.5M12 18.3v1.5M4.2 12h1.5M18.3 12h1.5M6.4 6.4l1.1 1.1M16.5 16.5l1.1 1.1M6.4 17.6l1.1-1.1M16.5 7.5l1.1-1.1"/></svg>
+                <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="10" r="0.6" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="0.6" fill="currentColor" stroke="none"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.8 14.8Q12 17.2 15.2 14.8"/></svg>
                 <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">还不错</span>
               </button>
               <button type="button" onclick="selectMood('great')" data-mood="great" aria-label="状态很好" class="mood-chip flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl">
-                <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M12 4.2l1.7 4.6 4.9.3-3.8 3.2 1.3 4.7L12 14.6 7.9 17l1.3-4.7-3.8-3.2 4.9-.3Z"/></svg>
+                <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M7.8 10.4Q9 8.8 10.2 10.4M13.8 10.4Q15 8.8 16.2 10.4"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M7.8 14.4Q12 18.6 16.2 14.4"/><path fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" d="M19.3 4v1.2M19.3 6.8v1.2M18 5.9h1.1M20.6 5.9h1.1"/></svg>
                 <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">很好</span>
               </button>
             </div>
@@ -2809,7 +2818,14 @@
           <span class="row-icon is-ask relative z-10"><iconify-icon icon="solar:magnifer-linear"></iconify-icon></span>
           <input id="history-search" oninput="filterHistory()" placeholder="搜索全部记录（plie / 蹲 / plié 都可以）" class="relative z-10 flex-1 bg-transparent outline-none text-[12.5px] placeholder:text-[var(--ink-faint)]">
         </div>
-        <div id="history-term-chips" class="term-chip-row" onclick="onHistoryChipClick(event)"></div>
+        <div id="history-term-filter-block" class="hidden">
+          <p class="text-[10.5px] text-[var(--ink-faint)] mb-1">动作</p>
+          <div id="history-term-chips" class="term-chip-row" onclick="onHistoryChipClick(event)"></div>
+        </div>
+        <div id="history-class-filter-block" class="hidden mt-2.5 mb-3">
+          <p class="text-[10.5px] text-[var(--ink-faint)] mb-1">课程/组合</p>
+          <div id="history-class-chips" class="flex flex-wrap gap-1.5"></div>
+        </div>
         <div id="history-empty" class="mt-8 text-center">
           <img src="/img/bow.png" alt="" aria-hidden="true" class="history-empty-bow">
           <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]">这本课记还是空的，等你写下第一页。</p>
@@ -2823,7 +2839,12 @@
         <div class="card-journal tinted grain relative overflow-hidden home-hero px-5 pt-5 pb-4 mb-3">
           <div class="pearl-sheen"></div>
           <div class="relative z-10">
-            <p class="label-editorial text-[12px] text-[var(--rose-deep)]">这个月</p>
+            <p class="label-editorial text-[12px] text-[var(--rose-deep)]">练习统计</p>
+            <div id="stats-range-tabs" class="mt-2 flex gap-1.5 overflow-x-auto" style="scrollbar-width:none"></div>
+            <button type="button" id="stats-custom-range" onclick="openStatsRangePicker()" class="hidden mt-2 w-full h-9 px-3 rounded-lg border border-[var(--border-soft)] bg-white/70 text-[11.5px] text-[var(--burgundy)] flex items-center justify-between">
+              <span id="stats-custom-range-label">选择日期范围</span>
+              <iconify-icon icon="solar:calendar-minimalistic-linear" class="text-[14px] text-[var(--rose-deep)]"></iconify-icon>
+            </button>
             <div id="checkin-month-stats" class="mt-3 grid grid-cols-3 gap-2">
               <div class="archive-stat-tile is-came">
                 <span class="home-stat-icon is-came"><iconify-icon icon="solar:calendar-mark-linear"></iconify-icon></span>
@@ -2842,7 +2863,7 @@
               </div>
             </div>
             <p id="checkin-month-empty" class="hidden mt-3 text-[12.5px] leading-6 text-[var(--ink-soft)]">请先点记录，复盘或打卡。课时统计会出现在这里。</p>
-            <p id="checkin-class-kicker" class="label-editorial archive-stat-kicker text-[12px] text-[var(--rose-deep)]">课程总计</p>
+            <p id="checkin-class-kicker" class="label-editorial archive-stat-kicker text-[12px] text-[var(--rose-deep)]">课程分析</p>
             <div class="archive-class-sheet" id="checkin-class-stats"></div>
           </div>
         </div>
@@ -2853,6 +2874,14 @@
             <span class="text-[11px] text-[var(--ink-faint)]">颜色越深，来得越多</span>
           </div>
           <div class="relative z-10 mt-2 flex items-end gap-0.5" id="progress-strip"></div>
+        </div>
+        <div class="card-journal grain relative overflow-hidden px-4 pt-3 pb-3 mb-3" style="border-radius:18px">
+          <div class="pearl-sheen"></div>
+          <div class="relative z-10 flex items-center justify-between mb-2">
+            <span class="label-editorial text-[12px] text-[var(--rose-deep)]">时长趋势</span>
+            <div id="trend-mode-tabs" class="flex gap-1.5"></div>
+          </div>
+          <div id="trend-chart" class="relative z-10"></div>
         </div>
         <div class="card-journal card-satin grain relative overflow-hidden px-3 pt-3 pb-3 mb-3" style="border-radius:24px">
           <div class="pearl-sheen"></div>
@@ -3241,15 +3270,34 @@
   </div>
 </div>
 
-<div id="glossary-modal" class="hidden fixed inset-0 z-[60] items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideGlossary()">
-  <div id="glossary-modal-card" class="relative w-full max-w-[340px] max-h-[80vh] flex flex-col rounded-[24px] bg-[var(--paper)] p-5" onclick="event.stopPropagation()">
-    <button type="button" onclick="hideGlossary()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></button>
-    <h2 class="font-display pr-8 text-[21px] font-semibold">芭蕾术语</h2>
-    <p class="mt-1 text-[11px] text-[var(--ink-faint)]">搜档案时，plie 和「蹲」都能找到。</p>
-    <div class="mt-3 grid grid-cols-3 gap-2 text-[10px] text-[var(--ink-faint)] px-1">
-      <span>法语</span><span>英文</span><span>中文</span>
+<div id="stats-range-modal" class="hidden fixed inset-0 z-[60] items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideStatsRangePicker()">
+  <div id="stats-range-modal-card" class="relative w-full max-w-[360px] flex flex-col rounded-[24px] bg-[var(--paper)] p-4" onclick="event.stopPropagation()">
+    <button type="button" onclick="hideStatsRangePicker()" class="absolute right-3.5 top-3.5 w-7 h-7 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[17px] text-[var(--rose-deep)]"></iconify-icon></button>
+    <h2 class="shrink-0 font-display pr-8 text-[18px] font-semibold">选择日期范围</h2>
+    <p id="stats-range-hint" class="mt-1 text-[11px] text-[var(--ink-faint)]">先点开始日期，再点结束日期</p>
+    <div class="mt-3 flex items-center justify-between">
+      <button type="button" onclick="shiftStatsRangeMonth(-1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]" aria-label="上个月"><iconify-icon icon="solar:alt-arrow-left-linear" class="text-[16px]"></iconify-icon></button>
+      <span id="stats-range-month-label" class="text-[13px] font-medium"></span>
+      <button type="button" onclick="shiftStatsRangeMonth(1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)]" aria-label="下个月"><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px]"></iconify-icon></button>
     </div>
-    <div id="glossary-list" class="mt-1 min-h-0 flex-1 overflow-y-auto pr-1"></div>
+    <div class="mt-1 cal-grid text-center text-[11px] tracking-[0.06em] text-[var(--ink-faint)]">
+      <span class="py-0.5">日</span><span class="py-0.5">一</span><span class="py-0.5">二</span><span class="py-0.5">三</span><span class="py-0.5">四</span><span class="py-0.5">五</span><span class="py-0.5">六</span>
+    </div>
+    <div class="cal-grid" id="stats-range-cal-grid"></div>
+    <div class="mt-3 flex gap-2">
+      <button type="button" onclick="clearStatsRangePicker()" class="flex-1 h-10 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">清空</button>
+      <button type="button" id="stats-range-apply-btn" onclick="applyStatsRangePicker()" disabled class="btn-ribbon flex-1 h-10 rounded-full text-[12.5px] font-semibold disabled:opacity-40"><span class="pearl-sheen"></span><span class="relative z-10">确定</span></button>
+    </div>
+  </div>
+</div>
+
+<div id="glossary-modal" class="hidden fixed inset-0 z-[60] items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideGlossary()">
+  <div id="glossary-modal-card" class="relative w-full max-w-[360px] max-h-[82vh] flex flex-col rounded-[24px] bg-[var(--paper)] p-4" onclick="event.stopPropagation()">
+    <button type="button" onclick="hideGlossary()" class="absolute right-3.5 top-3.5 w-7 h-7 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[17px] text-[var(--rose-deep)]"></iconify-icon></button>
+    <h2 class="shrink-0 font-display pr-8 text-[18px] font-semibold">芭蕾术语</h2>
+    <input id="glossary-search" oninput="renderGlossaryList()" placeholder="搜索术语，中英法都可以" class="shrink-0 mt-2 w-full h-8 px-3 rounded-xl border border-[var(--border-soft)] text-[11.5px] bg-white/70">
+    <div id="glossary-category-chips" class="shrink-0 mt-2 flex gap-1.5 overflow-x-auto" style="scrollbar-width:none"></div>
+    <div id="glossary-list" class="mt-2 min-h-0 flex-1 overflow-y-auto pr-1"></div>
   </div>
 </div>
 
@@ -3286,19 +3334,19 @@
       <p class="checkin-sheet-k">心情<span class="field-optional">可选</span></p>
       <div class="flex gap-2">
         <button type="button" onclick="selectCheckinMood('low')" data-mood="low" aria-label="不在状态" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
-          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7.2 15.2a4.2 4.2 0 0 1 .1-8.3 5.6 5.6 0 0 1 10.6 1.7A3.6 3.6 0 0 1 17.8 15.2Z"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M9.2 17.4v1.8M12 17.8v2.1M14.8 17.4v1.8"/></svg>
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8 9.6L9.7 10.6M16 9.6L14.3 10.6"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.6 16.3Q12 13.7 15.4 16.3"/></svg>
           <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">不在状态</span>
         </button>
         <button type="button" onclick="selectCheckinMood('meh')" data-mood="meh" aria-label="一般" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
-          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7 16a4.4 4.4 0 0 1 .2-8.7 5.8 5.8 0 0 1 11 1.8A3.7 3.7 0 0 1 18.2 16Z"/></svg>
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.2 10h1.6M14.2 10h1.6"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.6 15.3h6.8"/></svg>
           <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">一般</span>
         </button>
         <button type="button" onclick="selectCheckinMood('good')" data-mood="good" aria-label="还不错" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
-          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M12 4.2v1.5M12 18.3v1.5M4.2 12h1.5M18.3 12h1.5M6.4 6.4l1.1 1.1M16.5 16.5l1.1 1.1M6.4 17.6l1.1-1.1M16.5 7.5l1.1-1.1"/></svg>
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="10" r="0.6" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="0.6" fill="currentColor" stroke="none"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.8 14.8Q12 17.2 15.2 14.8"/></svg>
           <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">还不错</span>
         </button>
         <button type="button" onclick="selectCheckinMood('great')" data-mood="great" aria-label="状态很好" class="checkin-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
-          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M12 4.2l1.7 4.6 4.9.3-3.8 3.2 1.3 4.7L12 14.6 7.9 17l1.3-4.7-3.8-3.2 4.9-.3Z"/></svg>
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M7.8 10.4Q9 8.8 10.2 10.4M13.8 10.4Q15 8.8 16.2 10.4"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M7.8 14.4Q12 18.6 16.2 14.4"/><path fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" d="M19.3 4v1.2M19.3 6.8v1.2M18 5.9h1.1M20.6 5.9h1.1"/></svg>
           <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">很好</span>
         </button>
       </div>
@@ -3365,19 +3413,19 @@
       <p class="checkin-sheet-k">心情<span class="field-optional">可选</span></p>
       <div class="flex gap-2">
         <button type="button" onclick="selectManualMood('low')" data-mood="low" aria-label="不在状态" class="manual-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
-          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7.2 15.2a4.2 4.2 0 0 1 .1-8.3 5.6 5.6 0 0 1 10.6 1.7A3.6 3.6 0 0 1 17.8 15.2Z"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M9.2 17.4v1.8M12 17.8v2.1M14.8 17.4v1.8"/></svg>
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8 9.6L9.7 10.6M16 9.6L14.3 10.6"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.6 16.3Q12 13.7 15.4 16.3"/></svg>
           <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">不在状态</span>
         </button>
         <button type="button" onclick="selectManualMood('meh')" data-mood="meh" aria-label="一般" class="manual-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
-          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7 16a4.4 4.4 0 0 1 .2-8.7 5.8 5.8 0 0 1 11 1.8A3.7 3.7 0 0 1 18.2 16Z"/></svg>
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.2 10h1.6M14.2 10h1.6"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.6 15.3h6.8"/></svg>
           <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">一般</span>
         </button>
         <button type="button" onclick="selectManualMood('good')" data-mood="good" aria-label="还不错" class="manual-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
-          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M12 4.2v1.5M12 18.3v1.5M4.2 12h1.5M18.3 12h1.5M6.4 6.4l1.1 1.1M16.5 16.5l1.1 1.1M6.4 17.6l1.1-1.1M16.5 7.5l1.1-1.1"/></svg>
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="10" r="0.6" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="0.6" fill="currentColor" stroke="none"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.8 14.8Q12 17.2 15.2 14.8"/></svg>
           <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">还不错</span>
         </button>
         <button type="button" onclick="selectManualMood('great')" data-mood="great" aria-label="状态很好" class="manual-mood-chip mood-chip flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl">
-          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M12 4.2l1.7 4.6 4.9.3-3.8 3.2 1.3 4.7L12 14.6 7.9 17l1.3-4.7-3.8-3.2 4.9-.3Z"/></svg>
+          <svg class="mood-chip-emoji" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M7.8 10.4Q9 8.8 10.2 10.4M13.8 10.4Q15 8.8 16.2 10.4"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M7.8 14.4Q12 18.6 16.2 14.4"/><path fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" d="M19.3 4v1.2M19.3 6.8v1.2M18 5.9h1.1M20.6 5.9h1.1"/></svg>
           <span class="mood-chip-label text-[9.5px] text-[var(--ink-faint)]">很好</span>
         </button>
       </div>
@@ -3444,20 +3492,94 @@ function showAbout() {
   card.classList.remove('ceremony-card-in'); void card.offsetWidth; card.classList.add('ceremony-card-in');
 }
 function hideAbout() { const m = document.getElementById('about-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
-function showGlossary() {
-  const list = document.getElementById('glossary-list');
-  if (list && !list.dataset.ready) {
-    list.innerHTML = TERM_GLOSSARY.map((section) => {
-      const rows = section.rows.map((r) => `<div class="grid grid-cols-3 gap-2 py-2 text-[12px] leading-5">
-        <span class="font-medium text-[var(--ink)]">${escapeHtml(r.fr)}</span>
-        <span class="text-[var(--ink-soft)]">${escapeHtml(r.en)}</span>
-        <span class="text-[var(--ink)]">${escapeHtml(r.zh)}</span>
-      </div>`).join('');
-      return `<p class="mt-3 mb-1 text-[11px] font-semibold text-[var(--mauve)]">${escapeHtml(section.group)}</p>
-        <div class="divide-y divide-[var(--border-soft)]">${rows}</div>`;
-    }).join('');
-    list.dataset.ready = '1';
+// Some entries (turnout, spotting, alignment) are English ballet-classroom
+// terms with no single canonical French word -- pron is '—' for those, and
+// tapping speaks the English spelling instead of French.
+function speakTerm(text, lang) {
+  try {
+    if (!window.speechSynthesis) { toast('这台设备不支持朗读'); return; }
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = lang || 'fr-FR';
+    utter.rate = 0.85;
+    window.speechSynthesis.speak(utter);
+  } catch (e) {}
+}
+let glossaryFlatTerms = null;
+let glossaryGroupFilter = '';
+function glossaryFlat() {
+  if (!glossaryFlatTerms) {
+    glossaryFlatTerms = [];
+    TERM_GLOSSARY.forEach((section) => {
+      section.rows.forEach((r) => glossaryFlatTerms.push({ ...r, group: section.group }));
+    });
   }
+  return glossaryFlatTerms;
+}
+function glossaryRowHtml(r) {
+  const noFrench = r.pron === '—';
+  const speakText = (noFrench ? r.en : r.fr).replace(/'/g, "\\'");
+  const speakLang = noFrench ? 'en-US' : 'fr-FR';
+  return `<div class="py-2">
+    <div class="flex items-center gap-2">
+      <button type="button" onclick="speakTerm('${speakText}', '${speakLang}')" class="glossary-play w-6 h-6 rounded-full bg-[var(--blush)]/60 flex items-center justify-center shrink-0" aria-label="播放发音">
+        <iconify-icon icon="solar:volume-loud-linear" class="text-[12px] text-[var(--rose-deep)]"></iconify-icon>
+      </button>
+      <span class="min-w-0 flex-1">
+        <span class="font-medium text-[12px] text-[var(--ink)]">${escapeHtml(r.fr)}</span>
+        <span class="ml-1 text-[9.5px] text-[var(--ink-faint)]">${escapeHtml(r.en)}</span>
+      </span>
+      <span class="shrink-0 text-[11px] font-medium text-[var(--mauve)]">${escapeHtml(r.zh)}</span>
+    </div>
+    <p class="mt-0.5 pl-8 text-[10px] leading-[1.35] text-[var(--ink-faint)]">${escapeHtml(r.desc || '')}</p>
+  </div>`;
+}
+function renderGlossaryCategoryChips() {
+  const wrap = document.getElementById('glossary-category-chips');
+  if (!wrap || wrap.dataset.ready) return;
+  const groups = TERM_GLOSSARY.map((s) => s.group);
+  const chip = (name, label) => `<button type="button" data-group="${escapeHtml(name)}" class="class-tag-chip px-3 py-1 rounded-full border border-[var(--border-soft)] text-[10.5px] text-[var(--burgundy)] bg-white/70 shrink-0${glossaryGroupFilter === name ? ' is-selected' : ''}">${escapeHtml(label)}</button>`;
+  wrap.innerHTML = [chip('', '全部'), ...groups.map((g) => chip(g, g))].join('');
+  wrap.dataset.ready = '1';
+  wrap.onclick = (e) => {
+    const b = e.target.closest('button[data-group]');
+    if (!b) return;
+    glossaryGroupFilter = b.getAttribute('data-group') || '';
+    wrap.querySelectorAll('button[data-group]').forEach((el) => {
+      el.classList.toggle('is-selected', el.getAttribute('data-group') === glossaryGroupFilter);
+    });
+    renderGlossaryList();
+  };
+}
+function renderGlossaryList() {
+  const list = document.getElementById('glossary-list');
+  if (!list) return;
+  const q = document.getElementById('glossary-search')?.value.trim() || '';
+  const folded = foldBalletText(q);
+  const terms = glossaryFlat().filter((t) => {
+    if (glossaryGroupFilter && t.group !== glossaryGroupFilter) return false;
+    if (!folded) return true;
+    return [t.fr, t.en, t.zh, t.desc, t.pron].some((v) => foldBalletText(v || '').includes(folded));
+  });
+  if (!terms.length) {
+    list.innerHTML = `<p class="mt-8 text-center text-[12px] text-[var(--ink-faint)]">没有找到相关术语</p>`;
+    return;
+  }
+  const order = [];
+  const byGroup = new Map();
+  terms.forEach((t) => {
+    if (!byGroup.has(t.group)) { byGroup.set(t.group, []); order.push(t.group); }
+    byGroup.get(t.group).push(t);
+  });
+  list.innerHTML = order.map((g) => {
+    const rows = byGroup.get(g).map(glossaryRowHtml).join('');
+    return `<p class="mt-2 mb-0.5 text-[10.5px] font-semibold text-[var(--mauve)]">${escapeHtml(g)}</p>
+      <div class="divide-y divide-[var(--border-soft)]">${rows}</div>`;
+  }).join('');
+}
+function showGlossary() {
+  renderGlossaryCategoryChips();
+  renderGlossaryList();
   const m = document.getElementById('glossary-modal');
   m.classList.remove('hidden');
   m.classList.add('flex');
@@ -3991,20 +4113,23 @@ function paintRecapQuotaNote(remaining) {
 }
 function openManualBecauseQuotaGone() {
   disableAiEntry();
-  const processing = document.getElementById('screen-processing');
-  if (processing && processing.classList.contains('active')) show('screen-home');
+  paintRecapQuotaNote(0);
+  show('screen-record');
   openManualSheet('quota');
 }
 async function goRecord() {
   if (!allowGuideAction('recap')) return;
   markGuideIfPending('recap');
+  resetRecordScreen();
   const remaining = await fetchRecapRemaining();
   if (remaining === 0) {
-    openManualBecauseQuotaGone();
+    disableAiEntry();
+    paintRecapQuotaNote(0);
+    show('screen-record');
+    openManualSheet('quota');
     return;
   }
   enableAiEntry();
-  resetRecordScreen();
   show('screen-record');
   if (remaining != null) paintRecapQuotaNote(remaining);
   else loadRecordQuota();
@@ -4666,7 +4791,7 @@ function openManualSheet(reason) {
   const sub = document.getElementById('manual-sheet-sub');
   if (sub) {
     sub.textContent = reason === 'quota'
-      ? '今天的AI复盘额度用完了，自己写几句就好。课程、时长、心情都可以先空着。'
+      ? '今天的AI复盘额度用完了，自己写几句就好。'
       : '不用AI，自己写几句。课程、时长、心情都可以先空着。';
   }
   const m = document.getElementById('manual-sheet-mask');
@@ -5129,11 +5254,13 @@ function renderCheckinStatus(rows) {
   el.classList.toggle('hidden', !el.textContent.trim());
 }
 // Shared with openDetail() — one place to keep the mood→emoji mapping in sync.
+// Real mood faces, not weather symbols -- one thin-stroke circle face per
+// mood, drawn in the same stroke-only style as the rest of the app's icons.
 const MOOD_SVG = {
-  low: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7.2 15.2a4.2 4.2 0 0 1 .1-8.3 5.6 5.6 0 0 1 10.6 1.7A3.6 3.6 0 0 1 17.8 15.2Z"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M9.2 17.4v1.8M12 17.8v2.1M14.8 17.4v1.8"/></svg>',
-  meh: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7 16a4.4 4.4 0 0 1 .2-8.7 5.8 5.8 0 0 1 11 1.8A3.7 3.7 0 0 1 18.2 16Z"/></svg>',
-  good: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M12 4.2v1.5M12 18.3v1.5M4.2 12h1.5M18.3 12h1.5M6.4 6.4l1.1 1.1M16.5 16.5l1.1 1.1M6.4 17.6l1.1-1.1M16.5 7.5l1.1-1.1"/></svg>',
-  great: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M12 4.2l1.7 4.6 4.9.3-3.8 3.2 1.3 4.7L12 14.6 7.9 17l1.3-4.7-3.8-3.2 4.9-.3Z"/></svg>',
+  low: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8 9.6L9.7 10.6M16 9.6L14.3 10.6"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.6 16.3Q12 13.7 15.4 16.3"/></svg>',
+  meh: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.2 10h1.6M14.2 10h1.6"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.6 15.3h6.8"/></svg>',
+  good: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="10" r="0.6" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="0.6" fill="currentColor" stroke="none"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8.8 14.8Q12 17.2 15.2 14.8"/></svg>',
+  great: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M7.8 10.4Q9 8.8 10.2 10.4M13.8 10.4Q15 8.8 16.2 10.4"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M7.8 14.4Q12 18.6 16.2 14.4"/><path fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" d="M19.3 4v1.2M19.3 6.8v1.2M18 5.9h1.1M20.6 5.9h1.1"/></svg>',
 };
 function moodMark(mood, size = 16) {
   const svg = MOOD_SVG[mood];
@@ -5181,9 +5308,6 @@ function storyBeatHtml(r, monthEnd) {
       <button type="button" class="story-open-link" onclick="event.stopPropagation(); openDetail(${r.id})">查看</button></span>`;
     modOpen = `onclick="toggleStoryBeat(${r.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleStoryBeat(${r.id})}"`;
   }
-  const glance = checkin
-    ? '当天只打了卡'
-    : compactPhrase(r.good_points || joinImproveAndNext(r.improve_points, r.next_time_reminder) || '', 36);
   return `<article class="story-beat${recapClass}${monthEndClass}" data-id="${r.id}">
     <div class="story-rail">
       <div class="story-node">${day}<small>${wd}</small></div>
@@ -5195,7 +5319,6 @@ function storyBeatHtml(r, monthEnd) {
       <span class="satin-mark"></span>
       <span class="relative z-10 block">
         <span class="story-toc"><span class="name">${emFrenchTerms(name)}</span><span class="rule"></span>${tocRight}</span>
-        ${glance ? `<p class="story-glance">${escapeHtml(glance)}</p>` : ''}
         ${form}
       </span>
     </div>
@@ -5626,6 +5749,7 @@ function issueCard(issue) {
   const statusDot = { open: 'var(--issue-open)', improving: 'var(--issue-improving)' }[issue.status] || 'var(--issue-open)';
   const statusLabel = { open: '仍然存在', improving: '有改善' }[issue.status] || '仍然存在';
   const days = uniqueDayLabels(issue.occurrences);
+  const latestDay = days[days.length - 1];
   const isOpen = expandedIssueIds.has(issue.id);
   const cleaned = stripEvalTails(issue.text) || issue.text;
   // Same action's multiple details are deliberately kept on one 顿号-joined
@@ -5639,7 +5763,7 @@ function issueCard(issue) {
       <span class="shrink-0 mt-[6px] w-2 h-2 rounded-full" style="background:${statusDot};box-shadow:0 0 0 2px rgba(255,255,255,.7)" aria-hidden="true"></span>
       <span class="issue-card-text flex-1 min-w-0 text-[13px] font-medium">${textHtml}</span>
       <span class="issue-count shrink-0 mt-[2px]">${issue.occurrence_count}<small>次</small></span>
-      ${days.length ? `<span class="issue-days mt-[3px]">${escapeHtml(days.join(' · '))}</span>` : ''}
+      ${latestDay ? `<span class="issue-days mt-[3px]">${escapeHtml(latestDay)}</span>` : ''}
       <iconify-icon icon="solar:alt-arrow-${isOpen ? 'up' : 'down'}-linear" class="shrink-0 mt-[4px] text-[13px] text-[var(--ink-faint)]"></iconify-icon>
     </button>`;
   if (isOpen) {
@@ -5946,11 +6070,14 @@ async function loadHistory() {
 }
 function renderHistoryTermChips() {
   const wrap = document.getElementById('history-term-chips');
+  const block = document.getElementById('history-term-filter-block');
   if (!wrap) return;
   if (historyRows.length === 0) {
     wrap.innerHTML = '';
+    if (block) block.classList.add('hidden');
     return;
   }
+  if (block) block.classList.remove('hidden');
   const needles = expandSearchNeedles(document.getElementById('history-search').value);
   wrap.innerHTML = HISTORY_SEARCH_CHIPS.map((term) => {
     const on = needles.includes(foldBalletText(term));
@@ -5971,18 +6098,58 @@ function applyHistoryTerm(term) {
   filterHistory();
 }
 
+// Course/combination filter for the 列表 view -- separate axis from the
+// keyword search above it, so "只看基训" and "搜 plié" can combine.
+let historyClassFilter = '';
+let historyClassFilterExpanded = false;
+function renderHistoryClassChips() {
+  const wrap = document.getElementById('history-class-chips');
+  const block = document.getElementById('history-class-filter-block');
+  if (!wrap) return;
+  const ranked = rankedClassNames(historyRows);
+  if (!ranked.length) {
+    if (block) block.classList.add('hidden');
+    wrap.innerHTML = '';
+    if (historyClassFilter) historyClassFilter = '';
+    return;
+  }
+  if (block) block.classList.remove('hidden');
+  const shown = historyClassFilterExpanded ? ranked : ranked.slice(0, ISSUE_CLASS_FILTER_INITIAL);
+  const chips = [`<button type="button" data-name="" class="class-tag-chip px-3 py-1 rounded-full border border-[var(--border-soft)] text-[11px] text-[var(--burgundy)] bg-white/70${historyClassFilter ? '' : ' is-selected'}">全部</button>`];
+  shown.forEach((n) => {
+    chips.push(`<button type="button" data-name="${escapeHtml(n)}" class="class-tag-chip px-3 py-1 rounded-full border border-[var(--border-soft)] text-[11px] text-[var(--burgundy)] bg-white/70${historyClassFilter === n ? ' is-selected' : ''}">${escapeHtml(n)}</button>`);
+  });
+  if (ranked.length > ISSUE_CLASS_FILTER_INITIAL) {
+    chips.push(`<button type="button" data-more="1" class="class-tag-chip px-3 py-1 rounded-full border border-[var(--border-soft)] text-[11px] text-[var(--ink-faint)] bg-white/70">${historyClassFilterExpanded ? '收起' : '更多'}</button>`);
+  }
+  wrap.innerHTML = chips.join('');
+  wrap.onclick = (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.hasAttribute('data-more')) {
+      historyClassFilterExpanded = !historyClassFilterExpanded;
+      renderHistoryClassChips();
+      return;
+    }
+    historyClassFilter = b.getAttribute('data-name') || '';
+    filterHistory();
+  };
+}
 function filterHistory() {
   renderStoryMonthNav();
   const keyword = document.getElementById('history-search').value.trim();
-  const rows = keyword
-    ? historyRows.filter((r) => storyRowMatches(r, keyword))
+  const classMatch = (r) => !historyClassFilter || (r.class_name || '').trim() === historyClassFilter;
+  const active = keyword || historyClassFilter;
+  const rows = active
+    ? historyRows.filter((r) => (!keyword || storyRowMatches(r, keyword)) && classMatch(r))
     : historyRows.filter((r) => inStoryMonth(r));
   const allEmpty = historyRows.length === 0;
   document.getElementById('history-empty').style.display = allEmpty ? 'block' : 'none';
-  document.getElementById('history-month-empty').classList.toggle('hidden', allEmpty || keyword || rows.length > 0);
-  document.getElementById('history-search-empty').classList.toggle('hidden', allEmpty || !keyword || rows.length > 0);
-  document.getElementById('history-list').innerHTML = renderStoryList(rows, { chapter: !!keyword });
+  document.getElementById('history-month-empty').classList.toggle('hidden', allEmpty || active || rows.length > 0);
+  document.getElementById('history-search-empty').classList.toggle('hidden', allEmpty || !active || rows.length > 0);
+  document.getElementById('history-list').innerHTML = renderStoryList(rows, { chapter: !!active });
   renderHistoryTermChips();
+  renderHistoryClassChips();
 }
 
 function minutesLabel(min) {
@@ -6042,6 +6209,284 @@ function selectCheckinDate(key) {
   selectedCheckinDate = selectedCheckinDate === key ? null : key;
   renderCheckinArchive();
 }
+// 练习统计's time-range: independent of the calendar navigator below it
+// (that one still browses month-by-month for the day grid/day list). Kept
+// relative to today, not to calendarCursor, matching how the reference
+// stats apps separate "which period am I comparing" from "which month am I
+// browsing".
+let statsRange = 'month'; // 'week' | 'month' | 'year' | 'all' | 'custom'
+let statsCustomStart = null;
+let statsCustomEnd = null;
+const STATS_RANGE_LABELS = [['week', '本周'], ['month', '本月'], ['year', '今年'], ['all', '全部'], ['custom', '自定义']];
+function statsRangeBounds(range) {
+  const now = new Date();
+  if (range === 'week') return { start: startOfWeekSunday(now), end: null };
+  if (range === 'month') return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: null };
+  if (range === 'year') return { start: new Date(now.getFullYear(), 0, 1), end: null };
+  if (range === 'custom') return { start: statsCustomStart, end: statsCustomEnd };
+  return { start: null, end: null };
+}
+function filterRowsByStatsRange(rows, range) {
+  const { start, end } = statsRangeBounds(range);
+  return (rows || []).filter((r) => {
+    const t = new Date(r.created_at);
+    if (start && t < start) return false;
+    if (end) {
+      const endOfDay = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59, 999);
+      if (t > endOfDay) return false;
+    }
+    return true;
+  });
+}
+function renderStatsRangeTabs() {
+  const wrap = document.getElementById('stats-range-tabs');
+  if (!wrap) return;
+  wrap.innerHTML = STATS_RANGE_LABELS.map(([key, label]) =>
+    `<button type="button" data-range="${key}" class="class-tag-chip shrink-0 px-3 py-1 rounded-full border border-[var(--border-soft)] text-[11px] text-[var(--burgundy)] bg-white/70${statsRange === key ? ' is-selected' : ''}">${label}</button>`
+  ).join('');
+  wrap.onclick = (e) => {
+    const b = e.target.closest('button[data-range]');
+    if (!b) return;
+    statsRange = b.getAttribute('data-range');
+    const customBtn = document.getElementById('stats-custom-range');
+    if (statsRange === 'custom') {
+      if (customBtn) customBtn.classList.remove('hidden');
+      if (statsCustomStart && statsCustomEnd) renderCheckinArchive();
+      else { renderStatsRangeTabs(); openStatsRangePicker(); }
+    } else {
+      if (customBtn) customBtn.classList.add('hidden');
+      renderCheckinArchive();
+    }
+  };
+}
+
+// ---------- custom date-range picker (styled to match the app's own
+// calendar, instead of the browser's native <input type=date> widget) ----------
+let statsRangePickerCursor = new Date();
+let statsRangePickStart = null; // 'YYYY-MM-DD' or null, staged until 确定
+let statsRangePickEnd = null;
+function weekRangeRunClasses(weekCells, startKey, endKey) {
+  const inRange = weekCells.map((c) => !!(c && startKey && endKey && c.key >= startKey && c.key <= endKey));
+  const out = weekCells.map(() => '');
+  let i = 0;
+  while (i < weekCells.length) {
+    if (!inRange[i]) { i += 1; continue; }
+    let j = i;
+    while (j + 1 < weekCells.length && inRange[j + 1]) j += 1;
+    if (j === i) out[i] = 'in-run run-only';
+    else {
+      for (let k = i; k <= j; k += 1) {
+        if (k === i) out[k] = 'in-run run-start';
+        else if (k === j) out[k] = 'in-run run-end';
+        else out[k] = 'in-run run-mid';
+      }
+    }
+    i = j + 1;
+  }
+  return out;
+}
+function statsRangeCellHtml(key, dayNum, startKey, endKey, gridCol) {
+  const todayKey = dateKey(new Date());
+  const isEndpoint = key === startKey || key === endKey;
+  const cls = ['cal-cell'];
+  if (key === todayKey) cls.push('is-today');
+  if (isEndpoint) cls.push('is-selected');
+  const colStyle = gridCol ? ` style="grid-column:${gridCol}"` : '';
+  return `<button type="button" onclick="pickStatsRangeDay('${key}')" class="${cls.join(' ')}"${colStyle}><span class="cal-daynum">${dayNum}</span><span class="cal-marks"></span></button>`;
+}
+function paintStatsRangeWeekRow(week, startKey, endKey) {
+  const ribbon = weekRangeRunClasses(week, startKey, endKey);
+  let html = '';
+  let idx = 0;
+  while (idx < week.length) {
+    const col = idx + 1;
+    const cell = week[idx];
+    if (!cell) { html += `<div class="cal-cell is-empty" style="grid-column:${col}"></div>`; idx += 1; continue; }
+    const run = ribbon[idx] || '';
+    if (run.includes('run-start')) {
+      let end = idx;
+      while (end + 1 < week.length && /run-(mid|end)/.test(ribbon[end + 1] || '')) end += 1;
+      const span = end - idx + 1;
+      html += `<div class="cal-run" style="grid-column:${col} / span ${span}">`;
+      for (let k = idx; k <= end; k += 1) html += statsRangeCellHtml(week[k].key, week[k].day, startKey, endKey);
+      html += `</div>`;
+      idx = end + 1;
+      continue;
+    }
+    html += statsRangeCellHtml(cell.key, cell.day, startKey, endKey, col);
+    idx += 1;
+  }
+  return html;
+}
+function paintStatsRangeGrid(cursor, startKey, endKey) {
+  const year = cursor.getFullYear(), month = cursor.getMonth();
+  const startWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(null);
+  for (let day = 1; day <= daysInMonth; day++) {
+    cells.push({ key: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`, day });
+  }
+  let html = '';
+  for (let i = 0; i < cells.length; i += 7) {
+    const week = cells.slice(i, i + 7);
+    while (week.length < 7) week.push(null);
+    html += paintStatsRangeWeekRow(week, startKey, endKey);
+  }
+  return html;
+}
+function renderStatsRangePicker() {
+  const grid = document.getElementById('stats-range-cal-grid');
+  const label = document.getElementById('stats-range-month-label');
+  const hint = document.getElementById('stats-range-hint');
+  const applyBtn = document.getElementById('stats-range-apply-btn');
+  if (!grid || !label) return;
+  label.textContent = `${statsRangePickerCursor.getFullYear()} 年 ${statsRangePickerCursor.getMonth() + 1} 月`;
+  grid.innerHTML = paintStatsRangeGrid(statsRangePickerCursor, statsRangePickStart, statsRangePickEnd);
+  if (hint) {
+    hint.textContent = (statsRangePickStart && statsRangePickEnd)
+      ? `${statsRangePickStart} 至 ${statsRangePickEnd}`
+      : (statsRangePickStart ? `已选开始日期 ${statsRangePickStart}，再点结束日期` : '先点开始日期，再点结束日期');
+  }
+  if (applyBtn) applyBtn.disabled = !(statsRangePickStart && statsRangePickEnd);
+}
+function shiftStatsRangeMonth(delta) {
+  statsRangePickerCursor = new Date(statsRangePickerCursor.getFullYear(), statsRangePickerCursor.getMonth() + delta, 1);
+  renderStatsRangePicker();
+}
+function pickStatsRangeDay(key) {
+  if (!statsRangePickStart || (statsRangePickStart && statsRangePickEnd)) {
+    statsRangePickStart = key;
+    statsRangePickEnd = null;
+  } else if (key < statsRangePickStart) {
+    statsRangePickEnd = statsRangePickStart;
+    statsRangePickStart = key;
+  } else {
+    statsRangePickEnd = key;
+  }
+  renderStatsRangePicker();
+}
+function clearStatsRangePicker() {
+  statsRangePickStart = null;
+  statsRangePickEnd = null;
+  renderStatsRangePicker();
+}
+function openStatsRangePicker() {
+  statsRangePickStart = statsCustomStart ? dateKey(statsCustomStart) : null;
+  statsRangePickEnd = statsCustomEnd ? dateKey(statsCustomEnd) : null;
+  statsRangePickerCursor = statsCustomStart ? new Date(statsCustomStart) : new Date();
+  renderStatsRangePicker();
+  const m = document.getElementById('stats-range-modal');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+  const card = document.getElementById('stats-range-modal-card');
+  card.classList.remove('ceremony-card-in'); void card.offsetWidth; card.classList.add('ceremony-card-in');
+}
+function hideStatsRangePicker() {
+  const m = document.getElementById('stats-range-modal');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+function applyStatsRangePicker() {
+  if (!statsRangePickStart || !statsRangePickEnd) return;
+  statsCustomStart = new Date(statsRangePickStart + 'T00:00:00');
+  statsCustomEnd = new Date(statsRangePickEnd + 'T00:00:00');
+  const label = document.getElementById('stats-custom-range-label');
+  if (label) label.textContent = `${formatMd(statsCustomStart)} - ${formatMd(statsCustomEnd)}`;
+  hideStatsRangePicker();
+  renderCheckinArchive();
+}
+function renderClassProgressBars(rows) {
+  const statsEl = document.getElementById('checkin-class-stats');
+  const classKicker = document.getElementById('checkin-class-kicker');
+  if (!statsEl) return;
+  const stats = classHourStats(rows);
+  if (!stats.length) {
+    statsEl.innerHTML = '';
+    statsEl.classList.add('hidden');
+    if (classKicker) classKicker.classList.add('hidden');
+    return;
+  }
+  statsEl.classList.remove('hidden');
+  if (classKicker) classKicker.classList.remove('hidden');
+  const totalMin = stats.reduce((s, x) => s + x.minutes, 0);
+  const extra = stats.length - CLASS_STATS_PREVIEW;
+  const shown = (classStatsShowAll || extra <= 0) ? stats : stats.slice(0, CLASS_STATS_PREVIEW);
+  statsEl.innerHTML = shown.map((s, i) => {
+    const pct = totalMin > 0 ? Math.max(2, Math.round((s.minutes / totalMin) * 100)) : 0;
+    const star = i === 0
+      ? '<iconify-icon class="class-top-star" icon="solar:star-bold" aria-label="来得最多"></iconify-icon>'
+      : '';
+    return `<div class="class-progress-row">
+      <div class="flex items-center justify-between text-[12.5px]">
+        <span class="flex items-center gap-1.5 min-w-0"><span class="class-dot" style="background:${classDotColor(s.name)}"></span><span class="font-medium text-[var(--ink)] truncate">${escapeHtml(s.name)}</span>${star}</span>
+        <span class="shrink-0 text-[var(--ink-soft)]">${s.minutes ? minutesLabel(s.minutes) : '—'}</span>
+      </div>
+      <div class="class-progress-track"><div class="class-progress-fill" style="width:${pct}%;background:${classDotColor(s.name)}"></div></div>
+    </div>`;
+  }).join('') + (extra > 0
+    ? `<button type="button" onclick="toggleClassStatsShowAll()" class="mt-2 w-full py-1 text-center text-[12px] text-[var(--rose-deep)]">${classStatsShowAll ? '收起' : `还有 ${extra} 门`}</button>`
+    : '');
+}
+// 时长趋势: bar chart, complementary to 近14天's heatmap above (that one
+// reads frequency by color depth; this reads actual hours by bar height).
+let trendMode = 'week'; // 'week' | 'month'
+function lastNWeeksBuckets(rows, n) {
+  const thisWeekStart = startOfWeekSunday(new Date());
+  const buckets = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const start = new Date(thisWeekStart);
+    start.setDate(start.getDate() - i * 7);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    buckets.push({ start, end, label: `${start.getMonth() + 1}/${start.getDate()}`, minutes: 0 });
+  }
+  (rows || []).forEach((r) => {
+    const t = new Date(r.created_at);
+    const b = buckets.find((x) => t >= x.start && t <= new Date(x.end.getFullYear(), x.end.getMonth(), x.end.getDate(), 23, 59, 59, 999));
+    if (b) b.minutes += Number(r.training_duration_min) || 0;
+  });
+  return buckets;
+}
+function lastNMonthsBuckets(rows, n) {
+  const now = new Date();
+  const buckets = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    buckets.push({ year: d.getFullYear(), month: d.getMonth(), label: `${d.getMonth() + 1}月`, minutes: 0 });
+  }
+  (rows || []).forEach((r) => {
+    const t = new Date(r.created_at);
+    const b = buckets.find((x) => x.year === t.getFullYear() && x.month === t.getMonth());
+    if (b) b.minutes += Number(r.training_duration_min) || 0;
+  });
+  return buckets;
+}
+function renderTrendChart(rows) {
+  const wrap = document.getElementById('trend-chart');
+  const tabs = document.getElementById('trend-mode-tabs');
+  if (!wrap || !tabs) return;
+  tabs.innerHTML = [['week', '周'], ['month', '月']].map(([k, l]) =>
+    `<button type="button" data-trend="${k}" class="px-2.5 h-6 rounded-full border border-[var(--border-soft)] text-[10.5px] ${trendMode === k ? 'text-white bg-[var(--cta-pink)] border-transparent' : 'text-[var(--burgundy)] bg-white/70'}">${l}</button>`
+  ).join('');
+  tabs.onclick = (e) => {
+    const b = e.target.closest('button[data-trend]');
+    if (!b) return;
+    trendMode = b.getAttribute('data-trend');
+    renderTrendChart(rows);
+  };
+  const buckets = trendMode === 'week' ? lastNWeeksBuckets(rows, 8) : lastNMonthsBuckets(rows, 6);
+  const max = Math.max(1, ...buckets.map((b) => b.minutes));
+  wrap.innerHTML = `<div class="flex items-end gap-2" style="height:96px">${buckets.map((b) => {
+    const h = b.minutes ? Math.round((b.minutes / max) * 72) + 6 : 2;
+    const hrsLabel = b.minutes ? (Math.round(b.minutes / 6) / 10).toString() : '';
+    return `<div class="flex-1 min-w-0 flex flex-col items-center justify-end gap-1">
+      <span class="text-[9px] text-[var(--ink-faint)]">${hrsLabel}</span>
+      <div style="width:100%;height:${h}px;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#e8b6ba,#d4a0a6)"></div>
+      <span class="text-[9px] text-[var(--ink-faint)] truncate">${b.label}</span>
+    </div>`;
+  }).join('')}</div>`;
+}
 function renderCheckinArchive() {
   const statsEl = document.getElementById('checkin-class-stats');
   const grid = document.getElementById('checkin-cal-grid');
@@ -6056,55 +6501,32 @@ function renderCheckinArchive() {
     const d = new Date(r.created_at);
     return d.getFullYear() === year && d.getMonth() === month;
   });
-  const came = cameDayCount(monthRows);
   const allRows = historyRows || [];
-  const monthEmpty = !monthRows.length;
   const statsWrap = document.getElementById('checkin-month-stats');
   const emptyHint = document.getElementById('checkin-month-empty');
+  renderStatsRangeTabs();
+  const rangeRows = filterRowsByStatsRange(allRows, statsRange);
+  const rangeEmpty = !rangeRows.length;
   if (statsWrap) statsWrap.classList.remove('hidden');
   if (emptyHint) emptyHint.classList.toggle('hidden', allRows.length > 0);
   const setNum = (id, n, unit) => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = `${n}<span>${unit}</span>`;
   };
-  setNum('checkin-month-days', came, '天');
-  setNum('checkin-month-recaps', recapCountOf(monthRows), '次');
-  fillHoursEl(document.getElementById('checkin-month-hours'), minutesOf(monthRows), !monthEmpty);
+  setNum('checkin-month-days', cameDayCount(rangeRows), '天');
+  setNum('checkin-month-recaps', recapCountOf(rangeRows), '次');
+  fillHoursEl(document.getElementById('checkin-month-hours'), minutesOf(rangeRows), !rangeEmpty);
   renderProgressStrip(allRows);
+  renderTrendChart(allRows);
   paintDayList(painted.byDate, painted.year, painted.month, selectedCheckinDate, 'checkin-day-empty', 'checkin-day-list');
-  if (monthEmpty) {
+  if (!monthRows.length) {
     const dayEmpty = document.getElementById('checkin-day-empty');
     if (dayEmpty) dayEmpty.classList.add('hidden');
   }
-  const monthMap = new Map(classHourStats(monthRows).map((s) => [s.name, s]));
-  const stats = classHourStats(allRows);
-  const classKicker = document.getElementById('checkin-class-kicker');
-  if (!stats.length) {
-    statsEl.innerHTML = '';
-    statsEl.classList.add('hidden');
-    if (classKicker) classKicker.classList.add('hidden');
-    return;
-  }
-  statsEl.classList.remove('hidden');
-  if (classKicker) classKicker.classList.remove('hidden');
-  const extra = stats.length - CLASS_STATS_PREVIEW;
-  const shown = (classStatsShowAll || extra <= 0) ? stats : stats.slice(0, CLASS_STATS_PREVIEW);
-  const head = `<div class="checkin-class-head"><span>课名</span><span>本月</span><span>一共</span></div>`;
-  statsEl.innerHTML = head + shown.map((s, i) => {
-    const star = i === 0
-      ? '<iconify-icon class="class-top-star" icon="solar:star-bold" aria-label="来得最多"></iconify-icon>'
-      : '';
-    return `<div class="checkin-class-row">
-      <p class="checkin-class-name"><span class="class-dot" style="background:${classDotColor(s.name)}"></span><span class="checkin-class-label">${escapeHtml(s.name)}</span>${star}</p>
-      ${classHourHtml(monthMap.get(s.name))}
-      ${classHourHtml(s)}
-    </div>`;
-  }).join('') + (extra > 0
-    ? `<button type="button" onclick="toggleClassStatsShowAll()" class="mt-1 w-full py-1 text-center text-[12px] text-[var(--rose-deep)]">${classStatsShowAll ? '收起' : `还有 ${extra} 门`}</button>`
-    : '');
+  renderClassProgressBars(rangeRows);
 }
 let classStatsShowAll = false;
-const CLASS_STATS_PREVIEW = 3;
+const CLASS_STATS_PREVIEW = 5;
 function toggleClassStatsShowAll() {
   classStatsShowAll = !classStatsShowAll;
   renderCheckinArchive();
@@ -6848,7 +7270,7 @@ function setReviewAiSectionsVisible(visible) {
 // 手动记: bottom sheet like 打卡. Skips voice/AI and POSTs /api/records.
 // Always available from the record page; auto-opens when daily AI quota is gone.
 function startManualEntry() {
-  openManualSheet('choice');
+  openManualSheet(aiUnavailable ? 'quota' : 'choice');
 }
 
 async function generateReview() {
