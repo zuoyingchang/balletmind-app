@@ -92,19 +92,24 @@ router.get('/review', async (req, res) => {
 // GET /api/progress/brief — Pre-Class Brief (V0.2 #3).
 // Default view renders entirely from local data (0 LLM calls), per the spec.
 router.get('/brief', async (req, res) => {
-  const issues = await listIssuesWithOccurrences(req.userId);
+  // issues (then its own occurrences query) and recaps don't depend on each
+  // other -- this used to be 3 sequential DB round-trips when it's really
+  // only 2 deep. Running them in parallel is the main latency win here,
+  // since listIssuesWithOccurrences itself still does 2 queries in series.
+  const [issues, recaps] = await Promise.all([
+    listIssuesWithOccurrences(req.userId),
+    db.all(
+      `SELECT class_name, next_time_reminder, improve_points, session_tips, good_points, created_at
+       FROM records
+       WHERE user_id = ? AND COALESCE(is_checkin_only, 0) = 0
+       ORDER BY created_at DESC LIMIT 12`,
+      [req.userId]
+    ),
+  ]);
   const topIssues = issues
     .filter((i) => i.status !== 'resolved')
     .sort((a, b) => b.occurrence_count - a.occurrence_count)
     .slice(0, 3);
-
-  const recaps = await db.all(
-    `SELECT class_name, next_time_reminder, improve_points, session_tips, good_points, created_at
-     FROM records
-     WHERE user_id = ? AND COALESCE(is_checkin_only, 0) = 0
-     ORDER BY created_at DESC LIMIT 12`,
-    [req.userId]
-  );
   const latestRecap = recaps[0] || null;
   let glance = null;
     for (const row of recaps) {
