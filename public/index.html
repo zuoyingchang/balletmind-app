@@ -4150,6 +4150,7 @@ async function submitAuth() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '操作失败');
     setAuth(data.token, data.user);
+    resetAccountScopedCaches();
     document.getElementById('auth-email').value = '';
     document.getElementById('auth-password').value = '';
     document.getElementById('auth-confirm-password').value = '';
@@ -4161,7 +4162,26 @@ async function submitAuth() {
     errEl.classList.remove('hidden');
   }
 }
-function logout() { clearAuth(); guideSeenServer = null; setAuthMode('login'); show('screen-auth'); }
+// Clears every in-memory cache keyed to "whoever is currently logged in".
+// Most server calls (askArchive, loadHome, loadHistory...) always refetch
+// fresh and are safe regardless -- but a few places guard against refetching
+// when a cache is already non-empty (ensureHistoryRowsLoaded, glossaryFlat),
+// and a 401 redirect to the login screen (authFetch) does NOT go through
+// logout() -- it only clears the token, not these. Call this on logout AND
+// right after a fresh login/register succeeds, so neither direction of an
+// account switch in the same tab can leave a previous account's content
+// sitting in memory for one of those guarded paths to reuse.
+function resetAccountScopedCaches() {
+  homeRows = [];
+  homeRowsLoaded = false;
+  historyRows = [];
+  glossaryFlatTerms = null;
+  expandedGlossaryTerms = new Set();
+  lastAskDigest = null;
+  currentIssues = [];
+  lastDraft = null;
+}
+function logout() { clearAuth(); guideSeenServer = null; resetAccountScopedCaches(); setAuthMode('login'); show('screen-auth'); }
 
 function showFeedback() { const m = document.getElementById('feedback-modal'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => document.getElementById('feedback-text').focus(), 50); }
 function hideFeedback() { const m = document.getElementById('feedback-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
@@ -7544,6 +7564,12 @@ async function deleteEntry() {
 // ---------- recording (MediaRecorder → server Whisper, not browser SpeechRecognition) ----------
 let segments = [];
 const MAX_REC_SEGMENTS = 2;
+// After the first segment, it's not obvious tapping the mic again adds a
+// SECOND segment rather than overwriting the first (it appends -- see
+// transcribeSegment's segments.push) -- say so once there's room for another.
+function recPausedLabel() {
+  return (segments.length > 0 && segments.length < MAX_REC_SEGMENTS) ? '已暂停，还可以再录一段' : '已暂停';
+}
 let recognizing = false;
 let transcribing = false;
 let mediaStream = null;
@@ -7702,7 +7728,7 @@ function stopRecording() {
     recordedChunks = [];
     if (blob.size < 200) {
       toast('这段太短了，请再说一次');
-  document.getElementById('rec-state').textContent = '已暂停';
+  document.getElementById('rec-state').textContent = recPausedLabel();
       updateGenerateBtn();
       return;
     }
@@ -7755,7 +7781,7 @@ async function transcribeSegment(blob, duration) {
     transcribing = false;
     document.getElementById('rec-btn').disabled = segments.length >= MAX_REC_SEGMENTS;
     if (segments.length >= MAX_REC_SEGMENTS) document.getElementById('rec-btn').classList.add('opacity-40');
-    document.getElementById('rec-state').textContent = '已暂停';
+    document.getElementById('rec-state').textContent = recPausedLabel();
   updateGenerateBtn();
 }
 }
