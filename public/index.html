@@ -4716,17 +4716,38 @@ function guideSeen(id) {
   if (!guideSeenServer) return true;
   return guideSeenServer.has(id);
 }
-function markGuideSeen(id) {
+function markGuideSeenLocal(id) {
   if (guideSeenServer) guideSeenServer.add(id);
   try { localStorage.setItem(guideStorageKey(id), '1'); } catch (e) {}
   const step = GUIDE_STEPS.find((s) => s.id === id);
   const el = step && document.getElementById(step.tip);
   if (el) el.classList.add('hidden');
+}
+function markGuideSeen(id) {
+  markGuideSeenLocal(id);
   authFetch(`${API}/api/guide/seen`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id }),
   }).catch(() => {});
+}
+// Skipping is "I'm done with the whole guide," not eleven separate small
+// decisions -- it must not be possible to end up half-persisted (some steps
+// recorded on the account, some only optimistic in this tab) if the network
+// hiccups partway through. One batch request, with one retry, instead of
+// firing markGuideSeen() once per step.
+async function markGuideSeenBatch(ids) {
+  ids.forEach(markGuideSeenLocal);
+  const post = () => authFetch(`${API}/api/guide/seen-batch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  });
+  try {
+    await post();
+  } catch (e) {
+    try { await post(); } catch (e2) {}
+  }
 }
 // Called once right after auth succeeds (checkAuthAndInit / submitAuth),
 // before the first paintGuides() of the session. Also bridges a browser's
@@ -4857,7 +4878,7 @@ function dismissGuide(id) {
   paintGuides();
 }
 function skipGuide() {
-  GUIDE_STEPS.forEach((step) => markGuideSeen(step.id));
+  markGuideSeenBatch(GUIDE_STEPS.map((s) => s.id));
   paintGuides();
   showGuideCompleteIfDue();
 }
