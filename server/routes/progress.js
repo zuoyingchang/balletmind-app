@@ -7,6 +7,7 @@ const { logEvent, countAiCallsToday, countSecondaryAiCallsThisWeek, countAiRecap
 const { dailyAiLimitFor, weeklyAskLimitFor, dailyRecapLimitFor } = require('../config');
 const { retrieveAskRecords, KEYWORD_SPARSE_MAX } = require('../ai/ask-retrieve');
 const { buildAskDigest, wantResolvedSection } = require('../ai/ask-digest');
+const { parseAskDateRange } = require('../ai/ask-daterange');
 const { isIssueBriefExperimentOn } = require('../experiments/issue-brief-gate');
 const { runIssueBriefExperiment } = require('../ai/issue-brief-experiment');
 
@@ -137,7 +138,7 @@ router.get('/brief', async (req, res) => {
 
   // Dual gate default-off: no user hits this unless both env vars are set.
   if (isIssueBriefExperimentOn(req.userId) && topIssues.length > 0) {
-    const overQuota = (await countSecondaryAiCallsThisWeek(req.userId)) >= weeklyAskLimitFor(req.userId);
+    const overQuota = (await countSecondaryAiCallsThisWeek(req.userId)) >= (await weeklyAskLimitFor(req.userId));
     if (!overQuota) {
       const startedAt = Date.now();
       try {
@@ -173,14 +174,28 @@ router.get('/ask', async (req, res) => {
   if (!question) return res.status(400).json({ error: '请输入问题' });
   if (question.length > 200) return res.status(400).json({ error: '问题太长了，精简一下' });
 
-  const rows = await db.all(
+  const allRows = await db.all(
     'SELECT id, class_name, good_points, improve_points, next_time_reminder, created_at FROM records WHERE user_id = ? ORDER BY created_at DESC',
     [req.userId]
   );
-  const keywordRound = await retrieveAskRecords(rows, question, { mode: 'keyword', limit: 8 });
+  const dateRange = parseAskDateRange(question);
+  const rows = dateRange
+    ? allRows.filter((r) => r.created_at >= dateRange.since && r.created_at <= dateRange.until)
+    : allRows;
+  // Once a time expression is pulled out for the date filter above, it's
+  // just noise for keyword/embedding matching -- "最近十天我的进步" scored
+  // 0.41 similarity against a real "转圈有进步" record (cutoff is 0.45)
+  // because "最近十天" was still in the embedded text, diluting the topic
+  // signal. Strip it so retrieval runs on "我的进步" alone.
+  const searchQuestion = dateRange ? question.replace(dateRange.matchedText, '').trim() : question;
+  const topicless = !!dateRange && !searchQuestion;
+  const keywordRound = topicless
+    ? { matches: [], retrievalPath: 'none', keywordCount: 0, embeddingCount: 0 }
+    : await retrieveAskRecords(rows, searchQuestion, { mode: 'keyword', limit: 8 });
+  const emptyAnswerPoints = dateRange ? [`${dateRange.label}内还没有找到相关记录。`] : ['档案里还没有找到相关记录。'];
   const sessionId = sessionIdFromReq(req);
-  const overQuota = (await countSecondaryAiCallsThisWeek(req.userId)) >= weeklyAskLimitFor(req.userId);
-  const archiveOverview = wantResolvedSection(question);
+  const overQuota = (await countSecondaryAiCallsThisWeek(req.userId)) >= (await weeklyAskLimitFor(req.userId));
+  const archiveOverview = wantResolvedSection(question) || topicless;
 
   let round1 = keywordRound;
   if (archiveOverview) {
@@ -194,11 +209,11 @@ router.get('/ask', async (req, res) => {
     if (overQuota) {
       if (keywordRound.matches.length === 0) {
         const issuesEmpty = await listIssuesWithOccurrences(req.userId);
-        const emptyDigest = buildAskDigest({ records: [], issues: issuesEmpty, question });
+        const emptyDigest = buildAskDigest({ records: [], issues: issuesEmpty, question: searchQuestion });
         if (!emptyDigest.answered) {
           return res.json({
             answered: false,
-            answerPoints: ['档案里还没有找到相关记录。'],
+            answerPoints: emptyAnswerPoints,
             citedRecordIds: [],
             matchedRecords: [],
             sections: [],
@@ -209,16 +224,16 @@ router.get('/ask', async (req, res) => {
       await logEvent(req.userId, 'ask_fail', withSession({ reason: 'quota_exceeded' }, sessionId));
       return res.status(429).json({ error: '这周的问问次数已经用完了，下周再问吧' });
     }
-    round1 = await retrieveAskRecords(rows, question, { limit: 8 });
+    round1 = await retrieveAskRecords(rows, searchQuestion, { limit: 8 });
   }
 
   const round1Matches = round1.matches;
   const issues = await listIssuesWithOccurrences(req.userId);
-  const digest = buildAskDigest({ records: round1Matches, issues, question });
+  const digest = buildAskDigest({ records: round1Matches, issues, question: searchQuestion });
   if (!digest.answered) {
     return res.json({
       answered: false,
-      answerPoints: digest.answerPoints,
+      answerPoints: dateRange ? emptyAnswerPoints : digest.answerPoints,
       citedRecordIds: [],
       matchedRecords: [],
       sections: [],
@@ -264,7 +279,7 @@ router.get('/quota', async (req, res) => {
     countAiRecapsToday(req.userId),
   ]);
   const coreLimit = dailyAiLimitFor(req.userId);
-  const secondaryLimit = weeklyAskLimitFor(req.userId);
+  const secondaryLimit = await weeklyAskLimitFor(req.userId);
   const recapLimit = dailyRecapLimitFor(req.userId);
   res.json({
     core: { used: core, limit: coreLimit, remaining: Math.max(0, coreLimit - core) },

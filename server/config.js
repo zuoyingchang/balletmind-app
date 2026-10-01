@@ -1,4 +1,5 @@
 require('dotenv').config();
+const db = require('./db');
 
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -12,9 +13,15 @@ const ADMIN_KEY = process.env.ADMIN_KEY; // optional — gates the /stats.html m
 // needs to actually record and save a real class.
 const DAILY_AI_LIMIT = Number(process.env.DAILY_AI_LIMIT) || 12; // per user, per calendar day; ~4 recaps if 2 ASR + 1 generate
 // 问问档案 (+ the gated issue-brief experiment) — weekly, not daily.
-// Paid-tier shape (not gated in code yet): 每天复盘 2 次，每周问问档案 10 次。
-// Later: new users get a 3-recap + 3-ask gift; unpaid after that gets none.
+// WEEKLY_ASK_LIMIT is the shared fallback both tiers resolve to today (see
+// weeklyAskLimitFor below) -- during the trial, free and paid get the same
+// 10/week. When the paid tier actually launches: lower
+// WEEKLY_ASK_LIMIT_FREE (e.g. to a one-time gift that doesn't refill) and
+// leave WEEKLY_ASK_LIMIT_PAID where it is. No payment flow exists yet;
+// users.plan is just the column a future admin/payment action will set.
 const WEEKLY_ASK_LIMIT = Number(process.env.WEEKLY_ASK_LIMIT) || 10;
+const WEEKLY_ASK_LIMIT_PAID = Number(process.env.WEEKLY_ASK_LIMIT_PAID) || WEEKLY_ASK_LIMIT;
+const WEEKLY_ASK_LIMIT_FREE = Number(process.env.WEEKLY_ASK_LIMIT_FREE) || WEEKLY_ASK_LIMIT;
 const MAX_TRANSCRIPT_LENGTH = Number(process.env.MAX_TRANSCRIPT_LENGTH) || 4000; // characters
 
 // The actual free-tier business quota (unlike DAILY_AI_LIMIT above, which is
@@ -38,8 +45,13 @@ function isDailyAiLimitOverridden(userId) {
 function dailyAiLimitFor(userId) {
   return isDailyAiLimitOverridden(userId) ? DAILY_AI_LIMIT_OVERRIDE : DAILY_AI_LIMIT;
 }
-function weeklyAskLimitFor(userId) {
-  return isDailyAiLimitOverridden(userId) ? DAILY_AI_LIMIT_OVERRIDE : WEEKLY_ASK_LIMIT;
+async function isPaidUser(userId) {
+  const row = await db.get('SELECT plan FROM users WHERE id = ?', [userId]);
+  return !!row && row.plan === 'paid';
+}
+async function weeklyAskLimitFor(userId) {
+  if (isDailyAiLimitOverridden(userId)) return DAILY_AI_LIMIT_OVERRIDE;
+  return (await isPaidUser(userId)) ? WEEKLY_ASK_LIMIT_PAID : WEEKLY_ASK_LIMIT_FREE;
 }
 function dailyRecapLimitFor(userId) {
   return isDailyAiLimitOverridden(userId) ? DAILY_AI_LIMIT_OVERRIDE : DAILY_RECAP_LIMIT;
@@ -112,7 +124,7 @@ if (!JWT_SECRET) {
 
 module.exports = {
   PORT, JWT_SECRET, ADMIN_KEY, DAILY_AI_LIMIT, dailyAiLimitFor,
-  WEEKLY_ASK_LIMIT, weeklyAskLimitFor,
+  WEEKLY_ASK_LIMIT, WEEKLY_ASK_LIMIT_PAID, WEEKLY_ASK_LIMIT_FREE, weeklyAskLimitFor, isPaidUser,
   DAILY_RECAP_LIMIT, dailyRecapLimitFor, MAX_TRANSCRIPT_LENGTH,
   AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS, AI_TEMPERATURE,
   OPENAI_API_KEY, ASR_MODEL, ASR_TIMEOUT_MS, MAX_AUDIO_BYTES,

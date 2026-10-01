@@ -50,6 +50,12 @@
     letter-spacing: inherit;
     color: inherit;
   }
+  .fr-term-tap {
+    color: var(--rose-deep);
+    font-weight: 600;
+    border-bottom: 1.5px dotted currentColor;
+    cursor: pointer;
+  }
   .page-title { font-family: "Cormorant Garamond", "Noto Serif SC", serif; font-size: 28px; font-weight: 500; letter-spacing: .01em; line-height: 1.12; }
   ::-webkit-scrollbar { display:none; }
   .screen { display:none; }
@@ -469,6 +475,12 @@
   #nav-archive-tip::after, #nav-progress-tip::after { left: 50%; margin-left: -6px; }
   #home-profile-tip { right: 0; top: calc(100% + 10px); width: 168px; }
   #home-profile-tip::after { right: 12px; }
+  #ceremony-dismiss-tip {
+    left: 50%; right: auto; top: auto; bottom: 48px;
+    transform: translateX(-50%);
+    width: 200px; text-align: center;
+  }
+  #ceremony-dismiss-tip::after { left: 50%; margin-left: -6px; }
   /* In-flow above the title/back row so they never sit on tabs or the next block. */
   .coach-tip.is-back {
     position: relative;
@@ -531,11 +543,11 @@
   .guide-skip {
     position: absolute;
     z-index: 90;
-    left: auto;
-    right: 14px;
+    left: 50%;
+    right: auto;
     bottom: auto;
-    top: 58px;
-    transform: none;
+    top: 12px;
+    transform: translateX(-50%);
     min-width: 0;
     min-height: 32px;
     padding: 6px 12px;
@@ -562,6 +574,7 @@
     animation: guidePulse 1.2s ease-in-out infinite;
   }
   .nav-ballet .guide-spot { border-radius: 12px; padding: 4px 8px; }
+  #manual-sheet-skip-btn.guide-spot { border-radius: 999px; }
   .guide-spot.guide-nudge { animation: guidePulse 1.2s ease-in-out infinite, guideNudge .4s ease; }
   @media (prefers-reduced-motion: reduce) {
     .guide-spot { animation: none; box-shadow: 0 0 0 3px #fff, 0 0 0 6px #a07d7d; }
@@ -939,11 +952,14 @@
     transform: translateY(108%);
     transition: transform .36s cubic-bezier(.4,0,.2,1);
   }
-  #checkin-share-mask { z-index: 80; }
-  #checkin-share-card {
+  #checkin-share-mask,
+  #month-share-mask { z-index: 80; }
+  #checkin-share-card,
+  #month-share-card {
     animation: shareCardIn .42s cubic-bezier(.34,1.12,.64,1) both;
   }
-  #checkin-share-close {
+  #checkin-share-close,
+  #month-share-close {
     position: absolute; z-index: 30; pointer-events: auto;
     right: 8px; top: 8px;
     width: 40px; height: 40px;
@@ -956,7 +972,8 @@
     .cal-marks.cal-mark-pop .cal-bow,
     #checkin-sheet-mask .checkin-sheet-panel,
     #manual-sheet-mask .checkin-sheet-panel,
-    #checkin-share-card { animation: none; }
+    #checkin-share-card,
+    #month-share-card { animation: none; }
     #checkin-sheet-mask.is-leaving .checkin-sheet-panel,
     #manual-sheet-mask.is-leaving .checkin-sheet-panel {
       transform: none; transition: none;
@@ -2534,7 +2551,7 @@
             </button>
             <button type="button" onclick="goProgress('ask')" class="home-track-row">
               <span class="home-track-icon is-ask"><iconify-icon icon="solar:chat-round-linear"></iconify-icon></span>
-              <span class="home-track-name">问问我的档案</span>
+              <span class="home-track-name">查查我的档案</span>
               <iconify-icon class="home-track-chevron" icon="solar:alt-arrow-right-linear"></iconify-icon>
             </button>
             <button type="button" onclick="goProgress('recap')" class="home-track-row">
@@ -2569,6 +2586,7 @@
   <!-- ============ VOICE / RECORD ============ -->
   <div class="screen flex-col w-full h-full wash-rose" id="screen-record">
     <header class="relative shrink-0 px-6 pt-7 pb-3">
+      <div id="record-back-tip" class="coach-tip is-back hidden">点这里回到首页。</div>
       <div class="flex items-center gap-4">
       <button id="record-back-btn" onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
       <div>
@@ -2627,6 +2645,7 @@
               <span class="block mt-0.5 text-[10.5px] leading-4 text-[var(--ink-faint)]">把杆后多练一次 spotting。</span>
             </button>
           </div>
+          <button type="button" onclick="showGlossary()" class="mt-2 w-full text-center text-[11px] text-[var(--rose-deep)]">不确定怎么说，查一下芭蕾术语 ›</button>
         </details>
       </div>
     </main>
@@ -2783,7 +2802,7 @@
       <button type="button" id="review-retry-btn" onclick="retryGenerate()" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">重新生成</button>
       <button type="button" id="review-save-btn" onclick="confirmSave()" class="btn-ribbon flex-1 h-11 rounded-full text-[12.5px] font-semibold"><span class="pearl-sheen"></span><span class="relative z-10">确认保存</span></button>
     </div>
-    <div id="review-save-tip" class="coach-tip hidden">看过就可以点「确认保存」。</div>
+    <div id="review-save-tip" class="coach-tip hidden">不用急，看过可以保存<br>不想存，返回就行</div>
   </div>
 
   <!-- ============ HISTORY ============ -->
@@ -2863,6 +2882,9 @@
               </div>
             </div>
             <p id="checkin-month-empty" class="hidden mt-3 text-[12.5px] leading-6 text-[var(--ink-soft)]">请先点记录，复盘或打卡。课时统计会出现在这里。</p>
+            <button type="button" id="month-share-entry" onclick="openMonthShare()" class="hidden mt-3 w-full h-10 rounded-full border border-[var(--border-soft)] bg-white/70 text-[12px] text-[var(--rose-deep)] font-medium flex items-center justify-center gap-1.5">
+              <iconify-icon icon="solar:gallery-wide-linear" class="text-[14px]"></iconify-icon>分享本月总结
+            </button>
             <p id="checkin-class-kicker" class="label-editorial archive-stat-kicker text-[12px] text-[var(--rose-deep)]">课程分析</p>
             <div class="archive-class-sheet" id="checkin-class-stats"></div>
           </div>
@@ -3039,12 +3061,15 @@
   <div class="screen flex-col w-full h-full wash-rose" id="screen-progress">
     <header class="relative z-[1] shrink-0 px-6 pt-7 pb-3">
       <div id="progress-back-tip" class="coach-tip is-back hidden">点这里回到首页。</div>
+      <div class="flex items-center justify-between gap-4">
       <div class="flex items-center gap-4">
       <button id="progress-back-btn" onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
       <div>
         <p class="label-editorial text-[13px] text-[var(--rose-deep)]">给下次提个醒</p>
         <h1 class="page-title mt-0.5">追踪</h1>
       </div>
+      </div>
+      <button type="button" onclick="showGlossary()" class="w-11 h-11 rounded-full chip flex items-center justify-center shrink-0" aria-label="芭蕾术语"><iconify-icon icon="solar:book-2-linear" class="text-[19px] text-[var(--rose-deep)]"></iconify-icon></button>
       </div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-8">
@@ -3094,12 +3119,16 @@
 
       <div id="progress-look-view" class="hidden">
       <section id="progress-ask-sec">
-        <h2 class="sec-head font-display text-[17px] font-semibold"><span class="home-track-icon is-ask"><iconify-icon icon="solar:chat-round-linear"></iconify-icon></span>问问我的档案</h2>
-        <p class="mt-1 text-[11.5px] leading-5 text-[var(--ink-faint)]">问一个动作或一节课，档案里相关的会按做得好的、待改进、已解决列出来。</p>
-        <div class="ask-sheet card-journal grain relative overflow-hidden mt-3 p-4">
+        <h2 class="sec-head font-display text-[17px] font-semibold"><span class="home-track-icon is-ask"><iconify-icon icon="solar:chat-round-linear"></iconify-icon></span>查查我的档案</h2>
+        <div class="hist-tabs recap-tabs relative flex items-center gap-1 rounded-full p-1 mt-2">
+          <button type="button" id="ask-mode-ai-btn" onclick="setAskMode('ai')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium tab-pill-active">问AI</button>
+          <button type="button" id="ask-mode-term-btn" onclick="setAskMode('term')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium text-[var(--ink-faint)]">按术语查</button>
+        </div>
+        <p id="ask-mode-desc" class="mt-2 text-[11.5px] leading-5 text-[var(--ink-faint)]">可以问得宽泛一些，例如一节课的整体情况、一段时间的进步，AI 会综合档案作答。</p>
+        <div id="ask-mode-ai-panel" class="ask-sheet card-journal grain relative overflow-hidden mt-3 p-4">
           <div class="pearl-sheen"></div>
           <div class="relative z-10 flex gap-2">
-            <input id="ask-archive-input" type="text" placeholder="比如：基训课最近有什么问题" class="flex-1 h-10 px-3 rounded-xl border border-[var(--border-soft)] text-[12.5px] bg-white/70" onkeydown="if(event.key==='Enter') askArchive()">
+            <input id="ask-archive-input" type="text" placeholder="比如：这两周基训课有没有进步" class="flex-1 h-10 px-3 rounded-xl border border-[var(--border-soft)] text-[12.5px] bg-white/70" onkeydown="if(event.key==='Enter') askArchive()">
             <button type="button" onclick="askArchive()" id="ask-archive-btn" class="btn-ribbon shrink-0 h-10 px-4 rounded-full text-[12.5px] font-medium">
               <span class="pearl-sheen"></span><span class="relative z-10">问</span>
             </button>
@@ -3107,6 +3136,11 @@
           <p id="ask-quota-note" class="relative z-10 mt-2">每周可以问 10 次</p>
           <div id="ask-archive-result" class="relative z-10 mt-3 hidden text-[12.5px] leading-6 text-[var(--ink)]"></div>
         </div>
+        <button type="button" id="ask-mode-term-panel" onclick="showGlossary()" class="hidden ask-sheet card-journal grain relative overflow-hidden mt-3 p-4 w-full flex items-center justify-between gap-3 text-left">
+          <div class="pearl-sheen"></div>
+          <span class="relative z-10 text-[12.5px] text-[var(--ink-soft)]">打开术语表，挑一个动作看看</span>
+          <iconify-icon icon="solar:alt-arrow-right-linear" class="relative z-10 text-[16px] text-[var(--rose-deep)] shrink-0"></iconify-icon>
+        </button>
       </section>
 
       <section id="progress-recap-sec" class="mt-5">
@@ -3149,6 +3183,7 @@
 </div>
 <div id="save-ceremony" class="hidden absolute inset-0 z-[70] items-center justify-center bg-black/40 px-8 overflow-hidden" role="status" aria-live="polite" onclick="dismissSaveCeremony()">
   <div id="ceremony-petals" class="pointer-events-none absolute inset-0 overflow-hidden z-20" aria-hidden="true"></div>
+  <div id="ceremony-dismiss-tip" class="coach-tip hidden">点一下空白处，返回。</div>
   <div class="card-journal card-satin grain ceremony-card-in relative z-10 w-full max-w-[300px] px-6 pt-6 pb-6 text-center" style="border-radius:24px" onclick="event.stopPropagation()">
     <div class="pearl-sheen"></div>
     <p class="relative z-10 label-editorial text-[12px] text-[var(--rose-deep)]">BalletMind</p>
@@ -3203,6 +3238,20 @@
       </div>
       <p class="mt-1.5 text-[13px] leading-6 text-[var(--ink-soft)]" id="milestone-text"></p>
     </div>
+  </div>
+</div>
+
+<div id="guide-complete-modal" class="hidden absolute inset-0 z-[70] items-center justify-center bg-black/40 px-8" onclick="if(event.target===this) hideGuideComplete()">
+  <div class="card-journal card-satin grain relative w-full max-w-[300px] px-6 pt-6 pb-6 text-center" style="border-radius:24px" onclick="event.stopPropagation()">
+    <div class="pearl-sheen"></div>
+    <p class="relative z-10 label-editorial text-[12px] text-[var(--rose-deep)]">BalletMind</p>
+    <div class="relative z-10 mx-auto mt-3 w-14 h-14 flex items-center justify-center shadow-[0_6px_20px_rgba(155,100,95,.35)]" style="border-radius:18px 10px 18px 10px; background:linear-gradient(150deg,var(--paper),var(--blush) 55%,var(--gold))">
+      <span class="pearl-sheen"></span>
+      <iconify-icon icon="mdi:shoe-ballet" class="relative z-10 text-[22px] text-[var(--burgundy)]"></iconify-icon>
+    </div>
+    <p class="relative z-10 mt-3 font-display text-[20px] font-semibold text-[var(--ink)]">引导完成</p>
+    <p class="relative z-10 mt-2 text-[13px] leading-6 text-[var(--ink-soft)]">欢迎踏上你的芭蕾复盘之旅<br>剩下的，慢慢来就好</p>
+    <button type="button" onclick="hideGuideComplete()" class="btn-ribbon relative z-10 mt-5 w-full h-11 rounded-full text-[13px] font-semibold"><span class="pearl-sheen"></span><span class="relative z-10">好的</span></button>
   </div>
 </div>
 
@@ -3295,6 +3344,7 @@
   <div id="glossary-modal-card" class="relative w-full max-w-[360px] max-h-[82vh] flex flex-col rounded-[24px] bg-[var(--paper)] p-4" onclick="event.stopPropagation()">
     <button type="button" onclick="hideGlossary()" class="absolute right-3.5 top-3.5 w-7 h-7 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[17px] text-[var(--rose-deep)]"></iconify-icon></button>
     <h2 class="shrink-0 font-display pr-8 text-[18px] font-semibold">芭蕾术语</h2>
+    <p class="shrink-0 mt-0.5 text-[10.5px] text-[var(--ink-faint)]">点开一个术语，除了要点，还能看你自己写过的相关记录</p>
     <input id="glossary-search" oninput="renderGlossaryList()" placeholder="搜索术语，中英法都可以" class="shrink-0 mt-2 w-full h-8 px-3 rounded-xl border border-[var(--border-soft)] text-[11.5px] bg-white/70">
     <div id="glossary-category-chips" class="shrink-0 mt-2 flex gap-1.5 overflow-x-auto" style="scrollbar-width:none"></div>
     <div id="glossary-list" class="mt-2 min-h-0 flex-1 overflow-y-auto pr-1"></div>
@@ -3431,7 +3481,7 @@
       </div>
     </div>
     </div>
-    <div id="manual-sheet-save-tip" class="coach-tip hidden mt-4">看过就可以点「记下」。</div>
+    <div id="manual-sheet-save-tip" class="coach-tip hidden mt-4">看过可以记下<br>不想存也能先不了</div>
     <button type="button" id="manual-sheet-save-btn" onclick="submitManualSheet()" class="btn-ribbon relative mt-3 w-full h-11 rounded-full text-[13px] font-medium"><span class="pearl-sheen"></span><span class="relative z-10">记下</span></button>
     <button type="button" id="manual-sheet-skip-btn" onclick="hideManualSheet()" class="mt-1.5 w-full h-10 text-[12px] text-[var(--ink-faint)]">先不了</button>
     </div>
@@ -3454,6 +3504,25 @@
     <button type="button" onclick="downloadCheckinCard()" class="btn-pearl relative mt-3 w-full h-11 rounded-full text-[13px]"><span class="pearl-sheen"></span><span class="relative z-10">保存图片</span></button>
     <button type="button" id="checkin-share-native" onclick="nativeShareCheckinCard()" class="mt-2 w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">系统分享</button>
     <button type="button" onclick="hideCheckinShare()" class="mt-1 w-full h-10 text-[12px] text-[var(--ink-faint)]">关掉</button>
+    </div>
+  </div>
+</div>
+
+<div id="month-share-mask" class="hidden fixed inset-0 z-[70] items-center justify-center bg-black/45 px-6" onclick="if(event.target===this) hideMonthShare()">
+  <div id="month-share-card" class="card-journal card-satin grain relative w-full max-w-[228px] overflow-hidden rounded-[24px] p-4" onclick="event.stopPropagation()">
+    <div class="pearl-sheen"></div>
+    <div id="month-share-petals" class="pointer-events-none absolute inset-0 overflow-hidden z-20" aria-hidden="true"></div>
+    <button type="button" id="month-share-close" onclick="hideMonthShare()" aria-label="关掉">
+      <iconify-icon icon="solar:close-circle-linear" class="text-[22px] text-[var(--rose-deep)]"></iconify-icon>
+    </button>
+    <div class="relative z-10 text-center">
+    <p class="label-editorial text-[12px] text-[var(--rose-deep)]">BalletMind</p>
+    <h2 class="font-display mt-0.5 text-[20px] font-semibold">本月总结</h2>
+    <p class="mt-1 text-[11px] leading-5 text-[var(--ink-faint)]">保存图片，可以发到朋友圈。</p>
+    <canvas id="month-share-canvas" class="mt-3 w-full rounded-[18px] border border-[var(--border-soft)]" width="621" height="828"></canvas>
+    <button type="button" onclick="downloadMonthCard()" class="btn-pearl relative mt-3 w-full h-11 rounded-full text-[13px]"><span class="pearl-sheen"></span><span class="relative z-10">保存图片</span></button>
+    <button type="button" id="month-share-native" onclick="nativeShareMonthCard()" class="mt-2 w-full h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">系统分享</button>
+    <button type="button" onclick="hideMonthShare()" class="mt-1 w-full h-10 text-[12px] text-[var(--ink-faint)]">关掉</button>
     </div>
   </div>
 </div>
@@ -3516,13 +3585,26 @@ function glossaryFlat() {
   }
   return glossaryFlatTerms;
 }
+// Rows collapse to term + translation only; tapping reveals "要点" (the
+// desc field) instead of always showing it, so the list reads as a quick
+// scan by default and the technique cue is an explicit tap away -- same
+// idea as issueCard's expand-on-tap, before any illustration work lands.
+let expandedGlossaryTerms = new Set();
+function toggleGlossaryTerm(key) {
+  if (expandedGlossaryTerms.has(key)) expandedGlossaryTerms.delete(key); else expandedGlossaryTerms.add(key);
+  renderGlossaryList();
+}
 function glossaryRowHtml(r) {
   const noFrench = r.pron === '—';
   const speakText = (noFrench ? r.en : r.fr).replace(/'/g, "\\'");
   const speakLang = noFrench ? 'en-US' : 'fr-FR';
-  return `<div class="py-2">
-    <div class="flex items-center gap-2">
-      <button type="button" onclick="speakTerm('${speakText}', '${speakLang}')" class="glossary-play w-6 h-6 rounded-full bg-[var(--blush)]/60 flex items-center justify-center shrink-0" aria-label="播放发音">
+  const key = r.fr.replace(/'/g, "\\'");
+  const isOpen = expandedGlossaryTerms.has(r.fr);
+  const count = termRecordCount(r.fr);
+  const badge = count === null ? '' : `<span class="shrink-0 text-[9px] text-[var(--rose-deep)] bg-[var(--blush)]/55 rounded-full px-1.5 py-[1px]">${count}次</span>`;
+  return `<div class="py-2" data-term="${escapeHtml(r.fr)}">
+    <div role="button" tabindex="0" onclick="toggleGlossaryTerm('${key}')" class="flex items-center gap-2 cursor-pointer">
+      <button type="button" onclick="event.stopPropagation(); speakTerm('${speakText}', '${speakLang}')" class="glossary-play w-6 h-6 rounded-full bg-[var(--blush)]/60 flex items-center justify-center shrink-0" aria-label="播放发音">
         <iconify-icon icon="solar:volume-loud-linear" class="text-[12px] text-[var(--rose-deep)]"></iconify-icon>
       </button>
       <span class="min-w-0 flex-1">
@@ -3530,9 +3612,109 @@ function glossaryRowHtml(r) {
         <span class="ml-1 text-[9.5px] text-[var(--ink-faint)]">${escapeHtml(r.en)}</span>
       </span>
       <span class="shrink-0 text-[11px] font-medium text-[var(--mauve)]">${escapeHtml(r.zh)}</span>
+      ${badge}
+      <iconify-icon icon="solar:alt-arrow-${isOpen ? 'up' : 'down'}-linear" class="shrink-0 text-[11px] text-[var(--ink-faint)]"></iconify-icon>
     </div>
-    <p class="mt-0.5 pl-8 text-[10px] leading-[1.35] text-[var(--ink-faint)]">${escapeHtml(r.desc || '')}</p>
+    ${isOpen ? `<div class="mt-1 pl-8">
+      <p class="text-[10px] leading-[1.35] text-[var(--ink-faint)]"><b class="text-[var(--rose-deep)] font-semibold">要点：</b>${escapeHtml(r.desc || '')}</p>
+      <button type="button" onclick="event.stopPropagation(); toggleTermDigest('${key}')" class="mt-1 text-[10px] text-[var(--rose-deep)] font-medium">${termDigestOpen.has(r.fr) ? '收起我的记录 ‹' : `看我的 ${escapeHtml(r.fr)} 记录 ›`}</button>
+      ${termDigestOpen.has(r.fr) ? termDigestHtml(r.fr) : ''}
+    </div>` : ''}
   </div>`;
+}
+// Right inside the glossary, no screen change, no AI call: pull every
+// good/improve LINE (not whole records) that mentions this term out of
+// the user's own history and bucket them 做得好的 / 待改进 -- same shape
+// as the AI ask-archive digest, but computed locally from historyRows so
+// it's instant and free. Synonym-aware via expandSearchNeedles (the same
+// alias expansion the plain-text archive search already uses), so e.g.
+// "turnout" also catches lines written as "外开".
+let termDigestOpen = new Set();
+async function toggleTermDigest(term) {
+  if (termDigestOpen.has(term)) {
+    termDigestOpen.delete(term);
+    renderGlossaryList();
+    return;
+  }
+  termDigestOpen.add(term);
+  renderGlossaryList();
+  await ensureHistoryRowsLoaded();
+  if (termDigestOpen.has(term)) renderGlossaryList();
+}
+async function ensureHistoryRowsLoaded() {
+  if (historyRows && historyRows.length) return;
+  try {
+    const res = await authFetch(`${API}/api/records`);
+    historyRows = await res.json();
+  } catch (e) { historyRows = historyRows || []; }
+}
+function lineNeedleMatch(line, needles) {
+  const folded = foldBalletText(line);
+  return needles.some((n) => n && folded.includes(n));
+}
+// Collapsed-row badge: the whole point of term-digest was invisible when
+// it only showed up after expanding a row and tapping again -- a visible
+// "N条" count is what actually tells a browsing user "there's something
+// of mine here" before they commit to tapping in.
+function termRecordCount(term) {
+  if (!historyRows) return null;
+  const needles = expandSearchNeedles(term);
+  let count = 0;
+  historyRows.forEach((r) => {
+    if (isCheckinOnly(r)) return;
+    noteLines(r.good_points).forEach((line) => { if (lineNeedleMatch(line, needles)) count++; });
+    noteLines(joinImproveAndNext(r.improve_points, r.next_time_reminder)).forEach((line) => { if (lineNeedleMatch(line, needles)) count++; });
+  });
+  return count;
+}
+function termDigestHtml(term) {
+  if (!historyRows) return `<p class="mt-2 text-[10px] text-[var(--ink-faint)]">正在翻你的课记…</p>`;
+  const needles = expandSearchNeedles(term);
+  const good = [];
+  const improve = [];
+  historyRows.forEach((r) => {
+    if (isCheckinOnly(r)) return;
+    const cite = `${classNameOf(r)} ${fmtDay(r.created_at)}`;
+    noteLines(r.good_points).forEach((line) => {
+      if (lineNeedleMatch(line, needles)) good.push({ text: line, cite });
+    });
+    noteLines(joinImproveAndNext(r.improve_points, r.next_time_reminder)).forEach((line) => {
+      if (lineNeedleMatch(line, needles)) improve.push({ text: line, cite });
+    });
+  });
+  if (!good.length && !improve.length) {
+    return `<p class="mt-2 text-[10px] text-[var(--ink-faint)]">还没有跟 ${escapeHtml(term)} 相关的课记</p>`;
+  }
+  const sec = (label, items) => !items.length ? '' : `
+      <p class="mt-2 text-[10px] font-semibold text-[var(--rose-deep)]">${label}<span class="text-[var(--ink-faint)] font-normal"> ${items.length}</span></p>
+      <ul class="mt-0.5 space-y-1 list-disc pl-3.5">${items.map((it) => `<li class="text-[10px] leading-[1.4] text-[var(--ink-soft)]">${escapeHtml(it.text)}<span class="text-[var(--ink-faint)]">（${escapeHtml(it.cite)}）</span></li>`).join('')}</ul>`;
+  return sec('做得好的', good) + sec('待改进', improve);
+}
+function openGlossaryTerm(term) {
+  const folded = foldBalletText(term).replace(/[()\s.-]/g, '');
+  glossaryGroupFilter = '';
+  let matchedFr = null;
+  glossaryFlat().forEach((t) => {
+    const frKey = foldBalletText(t.fr).replace(/[()\s.-]/g, '');
+    const enKey = foldBalletText(t.en).replace(/[()\s.-]/g, '');
+    if (frKey === folded || enKey === folded) {
+      expandedGlossaryTerms.add(t.fr);
+      if (!matchedFr) matchedFr = t.fr;
+    }
+  });
+  const search = document.getElementById('glossary-search');
+  if (search) search.value = '';
+  showGlossary();
+  const chipsWrap = document.getElementById('glossary-category-chips');
+  if (chipsWrap) {
+    chipsWrap.querySelectorAll('button[data-group]').forEach((el) => {
+      el.classList.toggle('is-selected', (el.getAttribute('data-group') || '') === '');
+    });
+  }
+  if (matchedFr) {
+    const row = document.querySelector(`#glossary-list [data-term="${CSS.escape(matchedFr)}"]`);
+    if (row) row.scrollIntoView({ block: 'center' });
+  }
 }
 function renderGlossaryCategoryChips() {
   const wrap = document.getElementById('glossary-category-chips');
@@ -3585,6 +3767,14 @@ function showGlossary() {
   m.classList.add('flex');
   const card = document.getElementById('glossary-modal-card');
   card.classList.remove('ceremony-card-in'); void card.offsetWidth; card.classList.add('ceremony-card-in');
+  // Record counts aren't known until historyRows loads -- kick that off now
+  // (not awaited) so each row's "N条记录" badge fades in a beat after the
+  // list first paints, instead of blocking the modal open on a fetch.
+  if (!historyRows || !historyRows.length) {
+    ensureHistoryRowsLoaded().then(() => {
+      if (!document.getElementById('glossary-modal').classList.contains('hidden')) renderGlossaryList();
+    });
+  }
 }
 function hideGlossary() {
   const m = document.getElementById('glossary-modal');
@@ -3691,12 +3881,19 @@ const FR_TERM_LIST = (() => {
 const FR_TERM_RE = FR_TERM_LIST.length
   ? new RegExp(`(${FR_TERM_LIST.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi')
   : null;
-function emFrenchTerms(text) {
+// `interactive` is opt-in: 课记详情/档案列表 展开 (reading your own notes)
+// get tappable highlighted terms that jump to the glossary; 课前看一眼、
+// 重复出现的问题、追踪汇总 stay plain text on purpose, so the highlight
+// doesn't show up everywhere the same text gets echoed.
+function emFrenchTerms(text, interactive) {
   const s = String(text || '');
   if (!s || !FR_TERM_RE) return escapeHtml(s);
-  return s.split(FR_TERM_RE).map((part, i) => (
-    i % 2 === 1 ? `<span class="fr-term">${escapeHtml(part)}</span>` : escapeHtml(part)
-  )).join('');
+  return s.split(FR_TERM_RE).map((part, i) => {
+    if (i % 2 !== 1) return escapeHtml(part);
+    if (!interactive) return `<span class="fr-term">${escapeHtml(part)}</span>`;
+    const safe = part.replace(/'/g, "\\'");
+    return `<span class="fr-term fr-term-tap" onclick="event.stopPropagation(); openGlossaryTerm('${safe}')">${escapeHtml(part)}</span>`;
+  }).join('');
 }
 function noteLines(text) {
   return String(text || '').split(/\n+/).map((s) => s.replace(/^[·•\-]\s*/, '').trim()).filter(Boolean);
@@ -3704,7 +3901,7 @@ function noteLines(text) {
 function noteListHtml(text) {
   const lines = noteLines(text);
   if (!lines.length) return '';
-  return `<ul class="note-list">${lines.map((p) => `<li>${emFrenchTerms(p)}</li>`).join('')}</ul>`;
+  return `<ul class="note-list">${lines.map((p) => `<li>${emFrenchTerms(p, true)}</li>`).join('')}</ul>`;
 }
 function joinImproveAndNext(improve, next) {
   const seen = new Set();
@@ -4071,6 +4268,7 @@ async function goHome() {
   show('screen-home');
   await loadHome();
   refreshProgressDot();
+  showGuideCompleteIfDue();
 }
 function setRecTimer(sec) {
   const el = document.getElementById('rec-timer');
@@ -4384,6 +4582,13 @@ function renderBadges(rows, shareEarned) {
 
 // ---------- home ----------
 let homeRows = [];
+// True only after the first /api/records fetch resolves. Guards the guide's
+// "does this user already have a recap?" check (currentGuideStep) against
+// the window between show('screen-home') -- which paints guides synchronously
+// -- and loadHome()'s fetch actually resolving: with homeRows still at its []
+// default, hasRecap read as false and flashed the starter-step bubble at a
+// returning user for the ~1 fetch round-trip before loadHome() corrected it.
+let homeRowsLoaded = false;
 // Real training duration is user-provided and optional (`training_duration_min`).
 // `duration_sec` is just the voice memo length — never use it for this stat.
 // Returns null (not "0") when nobody has recorded a duration yet, so the UI
@@ -4418,6 +4623,7 @@ async function loadHome() {
     hoursEl.innerHTML = `${String(trainedHours).replace(/\.0$/, '')}<span>小时</span>`;
   }
   homeRows = Array.isArray(rows) ? rows : [];
+  homeRowsLoaded = true;
   rememberClassNameFromRecords(homeRows);
   homeCalendarExpanded = false;
   homeCalendarCursor = new Date();
@@ -4467,20 +4673,28 @@ const GUIDE_LEGACY = {
   progress: 'bm_guide_progress',
   profile: 'bm_guide_profile',
 };
+// Single main path, shown once right after registration, ending in
+// showGuideCompleteIfDue()'s one-time congratulations modal back on
+// home. Deliberately NOT a per-feature tour: once this finishes, no
+// guide bubble shows again, even the first time the user later opens
+// 档案/追踪 -- re-surfacing a tip on organic discovery reads as
+// repetitive rather than helpful, per explicit product direction.
+// 打卡 and 我的 are intentionally left out of the walkthrough (minor/
+// secondary, not the app's core value); 档案 and 追踪 are kept in since
+// they're where the app's actual value (progress, recurring issues)
+// shows up.
 const GUIDE_STEPS = [
   { id: 'recap', screen: 'home', target: 'home-cta-btn', tip: 'home-recap-tip', action: 'recap' },
   { id: 'recap-done', screen: 'record', target: 'generate-btn', tip: 'record-done-tip', action: 'recap-done' },
   { id: 'review-save', screen: 'review', target: 'review-save-btn', tip: 'review-save-tip', action: 'review-save' },
-  { id: 'checkin', screen: 'home', target: 'home-checkin-btn', tip: 'home-checkin-tip', action: 'checkin' },
-  { id: 'checkin-back', screen: 'checkin-sheet', target: 'checkin-skip-btn', tip: 'checkin-skip-tip', action: 'checkin-back' },
+  { id: 'ceremony-dismiss', screen: 'record', target: null, tip: 'ceremony-dismiss-tip', action: 'ceremony-dismiss' },
+  { id: 'record-back', screen: 'record', target: 'record-back-btn', tip: 'record-back-tip', action: 'back' },
   { id: 'archive', screen: 'home', target: 'nav-archive-btn', tip: 'nav-archive-tip', action: 'archive' },
   { id: 'archive-back', screen: 'history', target: 'history-back-btn', tip: 'history-back-tip', action: 'back' },
   { id: 'progress', screen: 'home', target: 'nav-progress-btn', tip: 'nav-progress-tip', action: 'progress' },
   { id: 'progress-class', screen: 'progress', target: 'progress-tab-class', tip: 'progress-class-tip', action: 'progress-class' },
   { id: 'progress-look', screen: 'progress', target: 'progress-tab-look', tip: 'progress-look-tip', action: 'progress-look' },
   { id: 'progress-back', screen: 'progress', target: 'progress-back-btn', tip: 'progress-back-tip', action: 'back' },
-  { id: 'profile', screen: 'home', target: 'home-profile-btn', tip: 'home-profile-tip', action: 'profile' },
-  { id: 'profile-back', screen: 'profile', target: 'profile-back-btn', tip: 'profile-back-tip', action: 'back' },
 ];
 function guideStorageKey(id) {
   const user = getUser();
@@ -4512,15 +4726,23 @@ function manualSheetOpen() {
   const sheet = document.getElementById('manual-sheet-mask');
   return !!(sheet && !sheet.classList.contains('hidden'));
 }
+function ceremonyOpen() {
+  const el = document.getElementById('save-ceremony');
+  return !!(el && !el.classList.contains('hidden'));
+}
 function skipWholeGuide() {
   return false;
 }
 function starterGuideIds() {
-  return ['recap', 'recap-done', 'review-save'];
+  return ['recap', 'recap-done', 'review-save', 'ceremony-dismiss', 'record-back'];
 }
 function currentGuideStep() {
   if (!getUser()) return null;
-  const hasRecap = !!(homeRows && homeRows.some((r) => !isCheckinOnly(r)));
+  // Before the first /api/records fetch resolves, homeRows is still its []
+  // default -- that's not evidence the user is new, so don't treat it as
+  // "no recap yet" (which would flash the starter-step bubble at a returning
+  // user for one fetch round-trip). Only trust hasRecap once loaded.
+  const hasRecap = !homeRowsLoaded || homeRows.some((r) => !isCheckinOnly(r));
   for (const step of GUIDE_STEPS) {
     if (hasRecap && starterGuideIds().includes(step.id)) continue;
     if (!guideSeen(step.id)) return step;
@@ -4534,6 +4756,8 @@ function currentGuideStepForScreen() {
   const sheetOpen = sheet && !sheet.classList.contains('hidden');
   if (step.screen === 'checkin-sheet') return sheetOpen ? step : null;
   if (step.id === 'review-save' && manualSheetOpen()) return step;
+  if (step.id === 'ceremony-dismiss') return ceremonyOpen() ? step : null;
+  if (step.id === 'record-back' && ceremonyOpen()) return null;
   if (guideSheetOpen() && step.screen === 'home') return null;
   if (step.screen !== currentScreenKey()) return null;
   return step;
@@ -4589,6 +4813,23 @@ function dismissGuide(id) {
 function skipGuide() {
   GUIDE_STEPS.forEach((step) => markGuideSeen(step.id));
   paintGuides();
+  showGuideCompleteIfDue();
+}
+// One-time closing note for the whole guide, shown the moment the main
+// path finishes (or is skipped) and never again -- this app doesn't do
+// a per-feature tour, so there's no later tip to "complete" into.
+function guideCompleteSeen() {
+  try { return !!localStorage.getItem(guideStorageKey('complete')); } catch (e) { return false; }
+}
+function showGuideCompleteIfDue() {
+  if (!getUser() || guideCompleteSeen() || !guideSeen('progress-back')) return;
+  markGuideSeen('complete');
+  const m = document.getElementById('guide-complete-modal');
+  if (m) { m.classList.remove('hidden'); m.classList.add('flex'); }
+}
+function hideGuideComplete() {
+  const m = document.getElementById('guide-complete-modal');
+  if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
 }
 function paintGuides() {
   clearGuideSpots();
@@ -4621,8 +4862,21 @@ function paintGuides() {
     }
     el.classList.remove('hidden');
   }
-  const target = document.getElementById(guideTargetId(step));
-  if (target) target.classList.add('guide-spot');
+  // Saving isn't mandatory, so this step doesn't push the save button --
+  // on the manual sheet "先不了" gets the highlight instead (the easy-to-
+  // miss plain-text option, worth calling out as equally valid); on the
+  // AI-review screen there's no matching skip button co-located with the
+  // tip, so it's text-only ("返回就行") with no highlight at all, rather
+  // than pointing a spotlight across the screen at the header back button.
+  if (step.id === 'review-save') {
+    if (manualSheetOpen()) {
+      const skipBtn = document.getElementById('manual-sheet-skip-btn');
+      if (skipBtn) skipBtn.classList.add('guide-spot');
+    }
+  } else {
+    const target = document.getElementById(guideTargetId(step));
+    if (target) target.classList.add('guide-spot');
+  }
 }
 function paintHomeGuides() { paintGuides(); }
 function dismissCheckinTip() { dismissGuide('checkin'); }
@@ -4813,7 +5067,14 @@ function actuallyHideManualSheet() {
 function hideManualSheet() {
   if (!allowGuideAction('manual-back')) return;
   const step = currentGuideStepForScreen();
-  if (step && step.action === 'review-save') markGuideSeen('review-save');
+  if (step && step.action === 'review-save') {
+    // Skipping without saving means no ceremony ever shows, so its
+    // dismiss step can never be satisfied on its own -- mark it too,
+    // otherwise every later guide step (checkin, archive, progress,
+    // profile) stays stuck behind this permanently-pending one.
+    markGuideSeen('review-save');
+    markGuideSeen('ceremony-dismiss');
+  }
   dismissManualSheet();
 }
 function dismissManualSheet() {
@@ -5210,6 +5471,237 @@ async function nativeShareCheckinCard() {
   }
   await downloadCheckinCard();
 }
+// ---------- 本月总结 share card (V1: deterministic stats + a quoted highlight
+// line, zero AI calls -- a narrative/AI version can layer on top once the
+// visual direction itself is approved). Always the real current calendar
+// month, independent of whatever range tab or calendar page the archive
+// screen happens to be showing. ----------
+function thisCalendarMonthRows(rows) {
+  const now = new Date();
+  return (rows || []).filter((r) => {
+    const d = new Date(r.created_at);
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  });
+}
+function longestStreakInMonth(rows) {
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth();
+  const days = new Set(thisCalendarMonthRows(rows).map((r) => dateKey(new Date(r.created_at))));
+  if (!days.size) return 0;
+  let longest = 0, run = 0;
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= lastDay; d++) {
+    if (days.has(dateKey(new Date(year, month, d)))) { run++; longest = Math.max(longest, run); } else { run = 0; }
+  }
+  return longest;
+}
+function topClassThisMonth(rows) {
+  const counts = new Map();
+  thisCalendarMonthRows(rows).filter((r) => !isCheckinOnly(r)).forEach((r) => {
+    const name = classNameOf(r);
+    if (name === '其他') return;
+    counts.set(name, (counts.get(name) || 0) + 1);
+  });
+  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh'));
+  return sorted[0] ? { name: sorted[0][0], count: sorted[0][1] } : null;
+}
+// The longest 做得好的 line this month, as a pull-quote -- longest, not most
+// recent, because a one-off throwaway "不错" line is a worse highlight than
+// a real sentence, and this card has no AI call to judge "best" any other way.
+function monthHighlightLine(rows) {
+  const candidates = [];
+  thisCalendarMonthRows(rows).filter((r) => !isCheckinOnly(r)).forEach((r) => {
+    noteLines(r.good_points).forEach((line) => candidates.push({ text: line, record: r }));
+  });
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => b.text.length - a.text.length);
+  return candidates[0];
+}
+function wrapCanvasLines(ctx, text, maxWidth) {
+  const out = [];
+  let line = '';
+  for (const ch of String(text || '')) {
+    const next = line + ch;
+    if (ctx.measureText(next).width > maxWidth && line) {
+      out.push(line);
+      line = ch;
+    } else {
+      line = next;
+    }
+  }
+  if (line) out.push(line);
+  return out;
+}
+function drawMonthSummaryCard() {
+  const canvas = document.getElementById('month-share-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const bg = ctx.createLinearGradient(0, 0, w, h);
+  bg.addColorStop(0, '#efe4e1');
+  bg.addColorStop(1, '#dccfcb');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  const inset = 36;
+  paintPearl(ctx, inset, inset, w - inset * 2, h - inset * 2, 28);
+  ctx.strokeStyle = 'rgba(176,148,144,.28)';
+  ctx.lineWidth = 0.8;
+  roundRectPath(ctx, inset + 12, inset + 12, w - (inset + 12) * 2, h - (inset + 12) * 2, 20);
+  ctx.stroke();
+
+  const now = new Date();
+  const rows = historyRows || [];
+  const monthRows = thisCalendarMonthRows(rows);
+  const recapRows = monthRows.filter((r) => !isCheckinOnly(r));
+  const days = cameDayCount(monthRows);
+  const hours = minutesLabel(minutesOf(monthRows));
+  const streak = longestStreakInMonth(rows);
+  const topClass = topClassThisMonth(rows);
+  const highlight = monthHighlightLine(rows);
+  const cx = w / 2;
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  drawBowKnot(ctx, cx, 62, 54);
+
+  ctx.fillStyle = '#b89a9a';
+  ctx.font = 'italic 500 16px "Cormorant Garamond", Georgia, serif';
+  ctx.fillText('BalletMind', cx, 118);
+
+  ctx.fillStyle = '#4a4341';
+  ctx.font = '600 26px "Cormorant Garamond", "Songti SC", serif';
+  ctx.fillText(`${now.getMonth() + 1}月总结`, cx, 150);
+  ctx.fillStyle = '#a89896';
+  ctx.font = '400 12px "PingFang SC", "Hiragino Sans GB", sans-serif';
+  ctx.fillText(`${now.getFullYear()}年${now.getMonth() + 1}月`, cx, 170);
+
+  drawHairline(ctx, 108, 188, w - 108, 0.32);
+
+  const cols = [
+    { label: '练习天数', value: `${days} 天`, x: w * 0.185 },
+    { label: '总时长', value: hours, x: w * 0.395 },
+    { label: '最长连续', value: `${streak} 天`, x: w * 0.605 },
+    { label: '上课次数', value: `${recapRows.length} 次`, x: w * 0.815 },
+  ];
+  cols.forEach((c) => {
+    ctx.fillStyle = '#a89896';
+    ctx.font = '400 11px "PingFang SC", "Hiragino Sans GB", sans-serif';
+    ctx.fillText(c.label, c.x, 214);
+    ctx.fillStyle = '#4a4341';
+    ctx.font = '600 20px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif';
+    ctx.fillText(c.value, c.x, 244);
+  });
+
+  drawHairline(ctx, 108, 264, w - 108, 0.28);
+
+  ctx.fillStyle = '#a89896';
+  ctx.font = '400 12px "PingFang SC", "Hiragino Sans GB", sans-serif';
+  ctx.fillText('这个月最常上的课', cx, 296);
+  ctx.fillStyle = '#4a4341';
+  ctx.font = '600 22px "PingFang SC", "Hiragino Sans GB", sans-serif';
+  ctx.fillText(topClass ? `${topClass.name} · ${topClass.count}次` : '还没有上课记录', cx, 328);
+
+  drawHairline(ctx, 108, 352, w - 108, 0.28);
+
+  ctx.fillStyle = '#a89896';
+  ctx.font = '400 12px "PingFang SC", "Hiragino Sans GB", sans-serif';
+  ctx.fillText('这个月印象最深', cx, 384);
+  ctx.font = 'italic 500 18px "Cormorant Garamond", "Songti SC", serif';
+  ctx.fillStyle = '#4a3836';
+  const quoteText = highlight ? `“${highlight.text}”` : '“认真练习的每一天，都值得被记住”';
+  const quoteLines = wrapCanvasLines(ctx, quoteText, w - 160);
+  quoteLines.slice(0, 4).forEach((line, i) => ctx.fillText(line, cx, 418 + i * 28));
+  if (highlight) {
+    ctx.font = '400 11px "PingFang SC", "Hiragino Sans GB", sans-serif';
+    ctx.fillStyle = '#a89896';
+    const hlClass = classNameOf(highlight.record);
+    const cite = hlClass !== '其他' ? `${hlClass} ${fmtDay(highlight.record.created_at)}` : fmtDay(highlight.record.created_at);
+    ctx.fillText(cite, cx, 418 + quoteLines.slice(0, 4).length * 28 + 20);
+  }
+
+  drawHairline(ctx, 108, 748, w - 108, 0.28);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#8f7f7d';
+  ctx.font = '400 13px "PingFang SC", "Hiragino Sans GB", sans-serif';
+  ctx.fillText('认真练习的每一天，都值得被记住', 108, 778);
+
+  drawShareQr(ctx, w - (inset + 12), h - (inset + 12));
+}
+async function openMonthShare() {
+  await ensureHistoryRowsLoaded();
+  drawMonthSummaryCard();
+  if (!calBowImg.complete) calBowImg.onload = () => drawMonthSummaryCard();
+  if (!shareQrImg.complete) shareQrImg.onload = () => drawMonthSummaryCard();
+  const m = document.getElementById('month-share-mask');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+  const nativeBtn = document.getElementById('month-share-native');
+  nativeBtn.classList.toggle('hidden', !(navigator.share || navigator.canShare));
+  const card = document.getElementById('month-share-card');
+  if (card) replayAnimation(card);
+  spawnCeremonyPetals(18, true, 'month-share-petals');
+  playChime('soft');
+}
+function hideMonthShare() {
+  const m = document.getElementById('month-share-mask');
+  if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
+  const petals = document.getElementById('month-share-petals');
+  if (petals) petals.innerHTML = '';
+}
+function monthShareBlob() {
+  return new Promise((resolve) => {
+    const canvas = document.getElementById('month-share-canvas');
+    canvas.toBlob((blob) => resolve(blob), 'image/png');
+  });
+}
+async function shareMonthFile(file) {
+  if (typeof navigator.share !== 'function') return false;
+  if (navigator.canShare && !navigator.canShare({ files: [file] })) return false;
+  await navigator.share({ files: [file], title: 'BalletMind', text: '我的芭蕾月度总结' });
+  return true;
+}
+async function downloadMonthCard() {
+  drawMonthSummaryCard();
+  const blob = await monthShareBlob();
+  if (!blob) { toast('生成图片失败'); return; }
+  logEvent('month_share_card_downloaded', {}, 'none');
+  const fileName = `balletmind-month-${dateKey(new Date())}.png`;
+  const file = new File([blob], fileName, { type: 'image/png' });
+  if (isAppleTouch()) {
+    try {
+      if (await shareMonthFile(file)) return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+    }
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    toast('请长按图片，储存到相册');
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  toast('图片已保存，发给朋友看看也可以');
+}
+async function nativeShareMonthCard() {
+  drawMonthSummaryCard();
+  const blob = await monthShareBlob();
+  if (!blob) { toast('生成图片失败'); return; }
+  const file = new File([blob], 'balletmind-month.png', { type: 'image/png' });
+  try {
+    if (await shareMonthFile(file)) return;
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+  }
+  await downloadMonthCard();
+}
 function computeDailyStreak(rows) {
   if (!rows.length) return 0;
   const days = new Set(rows.map(r => dateKey(new Date(r.created_at))));
@@ -5525,6 +6017,20 @@ function renderAskDigest(data) {
   }).join('');
 }
 
+function setAskMode(mode) {
+  const isAi = mode === 'ai';
+  const aiBtn = document.getElementById('ask-mode-ai-btn');
+  const termBtn = document.getElementById('ask-mode-term-btn');
+  [[aiBtn, isAi], [termBtn, !isAi]].forEach(([btn, on]) => {
+    btn.classList.toggle('tab-pill-active', on);
+    btn.classList.toggle('text-[var(--ink-faint)]', !on);
+  });
+  document.getElementById('ask-mode-ai-panel').classList.toggle('hidden', !isAi);
+  document.getElementById('ask-mode-term-panel').classList.toggle('hidden', isAi);
+  document.getElementById('ask-mode-desc').textContent = isAi
+    ? '可以问得宽泛一些，例如一节课的整体情况、一段时间的进步，AI 会综合档案作答。'
+    : '选择一个动作，查看相关的做得好、待改进记录。';
+}
 async function askArchive() {
   const input = document.getElementById('ask-archive-input');
   const btn = document.getElementById('ask-archive-btn');
@@ -6516,6 +7022,8 @@ function renderCheckinArchive() {
   setNum('checkin-month-days', cameDayCount(rangeRows), '天');
   setNum('checkin-month-recaps', recapCountOf(rangeRows), '次');
   fillHoursEl(document.getElementById('checkin-month-hours'), minutesOf(rangeRows), !rangeEmpty);
+  const shareEntry = document.getElementById('month-share-entry');
+  if (shareEntry) shareEntry.classList.toggle('hidden', !thisCalendarMonthRows(allRows).length);
   renderProgressStrip(allRows);
   renderTrendChart(allRows);
   paintDayList(painted.byDate, painted.year, painted.month, selectedCheckinDate, 'checkin-day-empty', 'checkin-day-list');
@@ -6896,7 +7404,7 @@ async function openDetail(id) {
   const trainedNote = r.training_duration_min != null ? ` · ${minutesLabel(r.training_duration_min)}` : '';
   const checkin = isCheckinOnly(r);
   document.getElementById('detail-date').textContent = fmtDate(r.created_at).split(' ')[0] + trainedNote;
-  document.getElementById('detail-transcript').innerHTML = checkin ? '这天只打了个卡，没有写详细内容。' : emFrenchTerms(r.transcript || '');
+  document.getElementById('detail-transcript').innerHTML = checkin ? '这天只打了个卡，没有写详细内容。' : emFrenchTerms(r.transcript || '', true);
   document.getElementById('detail-fields').classList.toggle('hidden', checkin);
   const tWrap = document.getElementById('detail-transcript-wrap');
   if (tWrap) tWrap.classList.toggle('hidden', checkin);
@@ -7753,7 +8261,12 @@ function dismissSaveCeremony() {
   overlay.classList.remove('flex');
   const layer = document.getElementById('ceremony-petals');
   if (layer) layer.innerHTML = '';
-  goHome();
+  markGuideSeen('ceremony-dismiss');
+  if (!guideSeen('record-back')) {
+    paintGuides();
+  } else {
+    goHome();
+  }
   setTimeout(() => { calMarkPopKey = null; }, 800);
 }
 function showSaveCeremony(milestone) {
@@ -7788,7 +8301,11 @@ function showSaveCeremony(milestone) {
   overlay.querySelectorAll('.fade-in-up, .ceremony-card-in, .ceremony-ribbon, .ribbon-loop-l, .ribbon-loop-r, .ribbon-tail-l, .ribbon-tail-r, .ceremony-dancer, .ceremony-tutu, .ceremony-ring').forEach(replayAnimation);
   playChime(text ? 'chord' : 'soft');
   clearTimeout(ceremonyTimer);
-  ceremonyTimer = setTimeout(dismissSaveCeremony, text ? 3400 : 2200);
+  const pendingStep = currentGuideStep();
+  if (!pendingStep || pendingStep.id !== 'ceremony-dismiss') {
+    ceremonyTimer = setTimeout(dismissSaveCeremony, text ? 3400 : 2200);
+  }
+  paintGuides();
 }
 
 initSpeech();

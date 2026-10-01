@@ -1561,6 +1561,90 @@ test('/api/progress/ask only searches the caller\'s own records, not another use
   assert.equal(body.answered, false, "user A must not get an answer built from user B's records");
 });
 
+test('/api/progress/ask with a time expression excludes records outside that window', async () => {
+  const { body: { token } } = await registerUser('ask_daterange@example.com');
+  const recent = await saveRecord(token, { className: '基训', good_points: '转圈进步明显，定点更稳了' });
+  const old = await saveRecord(token, { className: '基训', good_points: '转圈进步明显，定点更稳了' });
+  const tenDaysAgo = Date.now() - 10 * 24 * 60 * 60 * 1000;
+  await db.run('UPDATE records SET created_at = ? WHERE id = ?', [tenDaysAgo, old.id]);
+
+  const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('最近3天我的进步')}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.answered, true);
+  assert.equal(body.matchedRecords.length, 1);
+  assert.equal(body.matchedRecords[0].id, recent.id);
+});
+
+test('/api/progress/ask strips the time phrase before the embedding call too, not just the date filter', async () => {
+  const { body: { token } } = await registerUser('ask_daterange_strip@example.com');
+  // "转圈比之前有改进" never literally contains "进步", so keyword search misses it
+  // either way -- this only tests the embedding path.
+  const saved = await saveRecord(token, { className: '基训', good_points: '转圈比之前有改进' });
+
+  // The record's corpus text always embeds to [1,0]. The QUESTION only embeds to
+  // [1,0] (a hit) when it's the date-stripped form ("我的进步") -- the raw,
+  // unstripped question ("最近3天我的进步") embeds to an orthogonal [0,1]. So this
+  // only clears EMBEDDING_MIN_SIM if the route stripped the date phrase before
+  // calling the embeddings API, not only before filtering by created_at.
+  const embeddingsFn = (opts) => {
+    const input = JSON.parse(opts.body).input;
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        data: input.map((text, i) => ({ index: i, embedding: i === 0 ? (text === '我的进步' ? [1, 0] : [0, 1]) : [1, 0] })),
+      }),
+    };
+  };
+
+  await withMockAnthropicFetch(
+    async () => fakeAnthropicResponse(),
+    async () => {
+      const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('最近3天我的进步')}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(body.answered, true);
+      assert.equal(body.matchedRecords.length, 1);
+      assert.equal(body.matchedRecords[0].id, saved.id);
+    },
+    embeddingsFn
+  );
+});
+
+test('/api/progress/ask with only a time expression and no topic returns everything in that window', async () => {
+  const { body: { token } } = await registerUser('ask_daterange_topicless@example.com');
+  const saved = await saveRecord(token, { className: '基训', good_points: '手位更稳了' });
+
+  const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('最近3天')}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.answered, true);
+  assert.equal(body.matchedRecords.length, 1);
+  assert.equal(body.matchedRecords[0].id, saved.id);
+});
+
+test('/api/progress/ask with a time expression and nothing in range says so without crashing', async () => {
+  const { body: { token } } = await registerUser('ask_daterange_empty@example.com');
+  const old = await saveRecord(token, { className: '基训', good_points: '转圈进步明显' });
+  const tenDaysAgo = Date.now() - 10 * 24 * 60 * 60 * 1000;
+  await db.run('UPDATE records SET created_at = ? WHERE id = ?', [tenDaysAgo, old.id]);
+
+  const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('最近3天我的进步')}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.answered, false);
+  assert.match(body.answerPoints.join(' '), /最近3天/);
+});
+
 test('/api/progress/ask enforces the weekly ask quota once a match is found', async () => {
   const { body: { token, user } } = await registerUser('ask_quota@example.com');
   await saveRecord(token, { className: '基训', improve_points: '转圈时重心不稳' });
@@ -1571,6 +1655,21 @@ test('/api/progress/ask enforces the weekly ask quota once a match is found', as
 
   const res = await fetch(`${base}/api/progress/ask?q=转圈`, { headers: { Authorization: `Bearer ${token}` } });
   assert.equal(res.status, 429);
+});
+
+test('new users default to the free plan, and weeklyAskLimitFor resolves for both plans', async () => {
+  const { isPaidUser, weeklyAskLimitFor } = require('../config');
+  const { body: { user } } = await registerUser('plan_default@example.com');
+  assert.equal(await isPaidUser(user.id), false);
+
+  // Trial period: free and paid resolve to the same limit today (no separate
+  // WEEKLY_ASK_LIMIT_PAID/FREE env set here) -- this just locks in that the
+  // plan column and the async lookup work, not a specific number.
+  const freeLimit = await weeklyAskLimitFor(user.id);
+  await db.run("UPDATE users SET plan = 'paid' WHERE id = ?", [user.id]);
+  assert.equal(await isPaidUser(user.id), true);
+  const paidLimit = await weeklyAskLimitFor(user.id);
+  assert.equal(paidLimit, freeLimit);
 });
 
 test('问问档案 weekly quota does not count last week\'s asks', async () => {

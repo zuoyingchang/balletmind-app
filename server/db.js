@@ -124,6 +124,15 @@ const ready = client.batch(
   } catch (e) {
     if (!/duplicate column/i.test(e.message || '')) throw e;
   }
+  try {
+    // Paid-tier scaffolding: not wired to any payment flow yet, and during
+    // the trial everyone resolves to the same quota regardless of this value
+    // (see config.js weeklyAskLimitFor) -- just the column so a plan change
+    // later is an UPDATE, not a migration.
+    await client.execute("ALTER TABLE users ADD COLUMN plan TEXT NOT NULL DEFAULT 'free'");
+  } catch (e) {
+    if (!/duplicate column/i.test(e.message || '')) throw e;
+  }
 });
 
 async function get(sql, args = []) {
