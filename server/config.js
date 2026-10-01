@@ -63,6 +63,14 @@ function dailyRecapLimitFor(userId) {
 const AI_MODEL = process.env.AI_MODEL || 'claude-sonnet-5';
 const AI_MAX_OUTPUT_TOKENS = Number(process.env.AI_MAX_OUTPUT_TOKENS) || 1000;
 const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS) || 25000;
+// Only used for the PRIMARY provider's first attempt when a fallback is
+// configured (AI_FALLBACK_PROVIDER) -- with nowhere to fall back to, a
+// request still gets the full AI_TIMEOUT_MS. Default 5000: a short
+// structured-extraction call (not creative writing) on a healthy provider
+// measured well under 2s (535ms / 1.8s on DeepSeek and Anthropic directly);
+// a request still running at 5s is already a sign of real degradation, not
+// normal variance, so handing off to the fallback here isn't premature.
+const AI_PRIMARY_TIMEOUT_MS = Number(process.env.AI_PRIMARY_TIMEOUT_MS) || 5000;
 // Low, not zero: this is faithful extraction (not creative writing), so we
 // want consistent phrasing run-to-run over Anthropic's default. Not fully
 // deterministic (0) because a little natural-language variation in how a
@@ -126,7 +134,7 @@ module.exports = {
   PORT, JWT_SECRET, ADMIN_KEY, DAILY_AI_LIMIT, dailyAiLimitFor,
   WEEKLY_ASK_LIMIT, WEEKLY_ASK_LIMIT_PAID, WEEKLY_ASK_LIMIT_FREE, weeklyAskLimitFor, isPaidUser,
   DAILY_RECAP_LIMIT, dailyRecapLimitFor, MAX_TRANSCRIPT_LENGTH,
-  AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS, AI_TEMPERATURE,
+  AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS, AI_PRIMARY_TIMEOUT_MS, AI_TEMPERATURE,
   OPENAI_API_KEY, ASR_MODEL, ASR_TIMEOUT_MS, MAX_AUDIO_BYTES,
   RESEND_API_KEY, EMAIL_FROM, APP_PUBLIC_URL, RESET_TOKEN_TTL_MS,
   ANTHROPIC_INPUT_USD_PER_MTOK, ANTHROPIC_OUTPUT_USD_PER_MTOK,

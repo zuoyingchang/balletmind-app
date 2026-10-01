@@ -3590,9 +3590,20 @@ function glossaryFlat() {
 // scan by default and the technique cue is an explicit tap away -- same
 // idea as issueCard's expand-on-tap, before any illustration work lands.
 let expandedGlossaryTerms = new Set();
-function toggleGlossaryTerm(key) {
-  if (expandedGlossaryTerms.has(key)) expandedGlossaryTerms.delete(key); else expandedGlossaryTerms.add(key);
+// Opening a term shows 要点 AND the record digest in the same tap -- an
+// earlier version made "看我的 xxx 记录" a second, separate tap inside the
+// expanded row, which just added a click for something that should load
+// alongside the term itself.
+async function toggleGlossaryTerm(key) {
+  if (expandedGlossaryTerms.has(key)) {
+    expandedGlossaryTerms.delete(key);
+    renderGlossaryList();
+    return;
+  }
+  expandedGlossaryTerms.add(key);
   renderGlossaryList();
+  await ensureHistoryRowsLoaded();
+  if (expandedGlossaryTerms.has(key)) renderGlossaryList();
 }
 function glossaryRowHtml(r) {
   const noFrench = r.pron === '—';
@@ -3617,8 +3628,7 @@ function glossaryRowHtml(r) {
     </div>
     ${isOpen ? `<div class="mt-1 pl-8">
       <p class="text-[10px] leading-[1.35] text-[var(--ink-faint)]"><b class="text-[var(--rose-deep)] font-semibold">要点：</b>${escapeHtml(r.desc || '')}</p>
-      <button type="button" onclick="event.stopPropagation(); toggleTermDigest('${key}')" class="mt-1 text-[10px] text-[var(--rose-deep)] font-medium">${termDigestOpen.has(r.fr) ? '收起我的记录 ‹' : `看我的 ${escapeHtml(r.fr)} 记录 ›`}</button>
-      ${termDigestOpen.has(r.fr) ? termDigestHtml(r.fr) : ''}
+      ${termDigestHtml(r.fr)}
     </div>` : ''}
   </div>`;
 }
@@ -3628,19 +3638,8 @@ function glossaryRowHtml(r) {
 // as the AI ask-archive digest, but computed locally from historyRows so
 // it's instant and free. Synonym-aware via expandSearchNeedles (the same
 // alias expansion the plain-text archive search already uses), so e.g.
-// "turnout" also catches lines written as "外开".
-let termDigestOpen = new Set();
-async function toggleTermDigest(term) {
-  if (termDigestOpen.has(term)) {
-    termDigestOpen.delete(term);
-    renderGlossaryList();
-    return;
-  }
-  termDigestOpen.add(term);
-  renderGlossaryList();
-  await ensureHistoryRowsLoaded();
-  if (termDigestOpen.has(term)) renderGlossaryList();
-}
+// "turnout" also catches lines written as "外开". Shown as soon as the term
+// itself is opened (see toggleGlossaryTerm) -- no separate tap needed.
 async function ensureHistoryRowsLoaded() {
   if (historyRows && historyRows.length) return;
   try {

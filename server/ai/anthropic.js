@@ -1,4 +1,4 @@
-const { AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS, AI_TEMPERATURE } = require('../config');
+const { AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS, AI_PRIMARY_TIMEOUT_MS, AI_TEMPERATURE } = require('../config');
 const { fetchWithTimeout, isAbortError } = require('../lib/fetch-timeout');
 const { providerName, fallbackProviderName, fallbackModel, isFallbackEligible, recordFallback } = require('./provider');
 const { callOpenAICompatible } = require('./openai-compat');
@@ -24,15 +24,17 @@ function modelRejectsTemperature(model) {
 
 // Lowest-level call: explicit messages array, explicit tool list/choice.
 // Everything else (review extraction, single-shot ask, the ask-agent's two
-// rounds) is a thin wrapper over this one HTTP shape.
-async function callAnthropicMessagesOnce(systemPrompt, tools, toolChoice, messages, termHint) {
+// rounds) is a thin wrapper over this one HTTP shape. timeoutMs defaults to
+// the full AI_TIMEOUT_MS -- only primaryWithRetry (when a fallback exists)
+// ever passes a shorter one.
+async function callAnthropicMessagesOnce(systemPrompt, tools, toolChoice, messages, termHint, timeoutMs) {
   if (providerName() === 'openai-compatible') {
-    return callOpenAICompatible(systemPrompt, tools, toolChoice, messages, termHint);
+    return callOpenAICompatible(systemPrompt, tools, toolChoice, messages, termHint, timeoutMs);
   }
-  return callAnthropicNative(systemPrompt, tools, toolChoice, messages, termHint, process.env.AI_MODEL || AI_MODEL);
+  return callAnthropicNative(systemPrompt, tools, toolChoice, messages, termHint, process.env.AI_MODEL || AI_MODEL, timeoutMs);
 }
 
-async function callAnthropicNative(systemPrompt, tools, toolChoice, messages, termHint, model) {
+async function callAnthropicNative(systemPrompt, tools, toolChoice, messages, termHint, model, timeoutMs) {
   const body = {
     model,
     max_tokens: AI_MAX_OUTPUT_TOKENS,
@@ -53,16 +55,19 @@ async function callAnthropicNative(systemPrompt, tools, toolChoice, messages, te
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify(body),
-  }, AI_TIMEOUT_MS);
+  }, timeoutMs || AI_TIMEOUT_MS);
 }
 
 // One retry on timeout, network error, 5xx, or 429 (rate limited). Other 4xx are not retried.
-// With a fallback provider configured, a timeout skips the retry (another 25s wait would only make the
-// user wait longer) and goes straight to the fallback.
+// With a fallback provider configured, a timeout skips the retry (another full wait would only make
+// the user wait longer) and goes straight to the fallback -- and the first attempt itself only gets
+// AI_PRIMARY_TIMEOUT_MS (can be shorter than AI_TIMEOUT_MS), so a flaky primary hands off sooner
+// instead of making the user sit through the full timeout before the fallback even starts.
 async function primaryWithRetry(systemPrompt, tools, toolChoice, messages, termHint, hasFallback) {
+  const timeoutMs = hasFallback ? AI_PRIMARY_TIMEOUT_MS : AI_TIMEOUT_MS;
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      const response = await callAnthropicMessagesOnce(systemPrompt, tools, toolChoice, messages, termHint);
+      const response = await callAnthropicMessagesOnce(systemPrompt, tools, toolChoice, messages, termHint, timeoutMs);
       const retryable = response.status >= 500 || response.status === 429;
       if (response.ok || !retryable) return { response, attempt };
       if (attempt === 2) return { response, attempt };

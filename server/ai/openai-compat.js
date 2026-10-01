@@ -96,7 +96,7 @@ function fromOpenAIResponse(data, forcedToolName) {
   };
 }
 
-async function callOpenAICompatible(systemPrompt, tools, toolChoice, messages, termHint) {
+async function callOpenAICompatible(systemPrompt, tools, toolChoice, messages, termHint, timeoutMs) {
   const base = String(process.env.AI_BASE_URL || '').replace(/\/+$/, '');
   const systemText = termHint ? `${systemPrompt}\n\n${termHint}` : systemPrompt;
   const body = {
@@ -113,7 +113,7 @@ async function callOpenAICompatible(systemPrompt, tools, toolChoice, messages, t
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.AI_API_KEY}` },
     body: JSON.stringify(body),
-  }, AI_TIMEOUT_MS);
+  }, timeoutMs || AI_TIMEOUT_MS);
   if (!res.ok) return res; // callers only read ok / status / text() / headers on failures
   const normalized = fromOpenAIResponse(await res.json(), toolChoice && toolChoice.type === 'tool' ? toolChoice.name : null);
   return { ok: true, status: res.status, headers: res.headers, text: async () => JSON.stringify(normalized), json: async () => normalized };
