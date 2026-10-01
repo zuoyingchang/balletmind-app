@@ -1857,12 +1857,14 @@
   .ask-sec-more {
     display: block;
     width: 100%;
-    margin: 2px 0 0;
-    padding: 6px 0 2px;
+    margin: 6px 0 0;
+    padding: 7px 0;
     font-size: 12px;
+    font-weight: 650;
     text-align: center;
     color: var(--rose-deep);
-    background: none;
+    background: var(--blush);
+    border-radius: 999px;
     border: 0;
   }
   .home-week-ribbon {
@@ -2320,12 +2322,14 @@
     z-index: 2;
     display: block;
     width: 100%;
-    margin: 2px 0 0;
-    padding: 6px 0 2px;
+    margin: 6px 0 0;
+    padding: 7px 0;
     font-size: 12px;
+    font-weight: 650;
     text-align: center;
     color: var(--rose-deep);
-    background: none;
+    background: var(--blush);
+    border-radius: 999px;
     border: 0;
     cursor: pointer;
   }
@@ -3110,7 +3114,7 @@
           请先点记录，做成课记。记下的问题会出现在这里。
         </div>
         <div id="issues-list" class="mt-3"></div>
-        <button type="button" id="issues-more-btn" onclick="toggleIssuesShowAll()" class="hidden mt-1 w-full py-2 text-center text-[12px] text-[var(--rose-deep)] tracking-wide"></button>
+        <button type="button" id="issues-more-btn" onclick="toggleIssuesShowAll()" class="hidden mt-1.5 w-full py-[7px] text-center text-[12px] font-semibold text-[var(--rose-deep)] bg-[var(--blush)] rounded-full tracking-wide"></button>
       </section>
       </div>
 
@@ -7036,7 +7040,7 @@ function renderTrendChart(rows) {
   const tabs = document.getElementById('trend-mode-tabs');
   if (!wrap || !tabs) return;
   tabs.innerHTML = [['week', '周'], ['month', '月']].map(([k, l]) =>
-    `<button type="button" data-trend="${k}" class="px-2.5 h-6 rounded-full border border-[var(--border-soft)] text-[10.5px] ${trendMode === k ? 'text-white bg-[var(--cta-pink)] border-transparent' : 'text-[var(--burgundy)] bg-white/70'}">${l}</button>`
+    `<button type="button" data-trend="${k}" class="px-2.5 h-6 rounded-full border border-[var(--border-soft)] text-[10.5px] ${trendMode === k ? 'text-[var(--burgundy)] font-semibold bg-[var(--cta-pink)] border-transparent' : 'text-[var(--burgundy)] bg-white/70'}">${l}</button>`
   ).join('');
   tabs.onclick = (e) => {
     const b = e.target.closest('button[data-trend]');

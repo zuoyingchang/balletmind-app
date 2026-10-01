@@ -163,9 +163,16 @@ const ASK_STOPWORDS = new Set([
   '的', '了', '我', '是', '吗', '呢', '什么', '老', '在', '说', '最近', '上次',
   '这次', '一下', '都', '过', '着', '和', '与', '给', '把', '还', '就', '也', '有',
 ]);
+// strong: a recognized ballet-term alias, or an explicit Latin/digit word the
+// question actually spelled out -- specific enough that a record NOT
+// matching any of these probably isn't what was asked about.
+// weak: generic sliding-bigram tokens -- cheap paraphrase recall, but a
+// high-frequency word like "改进" turns into its own bigram and matches
+// almost every improve_points line, so these must never outweigh a strong
+// token match (see searchRecordsByQuestion).
 function questionTokens(question) {
   const folded = foldBalletText(question);
-  if (!folded) return [];
+  if (!folded) return { strong: [], weak: [] };
   const termTokens = [];
   for (const group of TERM_ALIAS_GROUPS) {
     if (group.some((alias) => folded.includes(foldBalletText(alias)))) {
@@ -189,7 +196,10 @@ function questionTokens(question) {
     if (/\s/.test(pair) || ASK_STOPWORDS.has(pair)) continue;
     bigrams.push(pair);
   }
-  return [...new Set([...termTokens, ...latinWords, ...bigrams])];
+  return {
+    strong: [...new Set([...termTokens, ...latinWords])],
+    weak: [...new Set(bigrams)],
+  };
 }
 function recapFieldIntent(question) {
   const q = foldBalletText(question);
@@ -211,11 +221,19 @@ function recordsForFieldIntent(records, intent, limit) {
 }
 
 function searchRecordsByQuestion(records, question, limit = 3) {
-  const tokens = questionTokens(question);
+  const { strong, weak } = questionTokens(question);
+  // "最近tendu有什么要改进的" used to flood back nearly every improve_points
+  // line in the archive: "改进" alone became a bigram token worth the same
+  // +1 as "tendu", so nothing calling out a term was ever required to
+  // actually be about it. Once the question names a real term (strong is
+  // non-empty), a record MUST match one of those -- weak bigram overlap no
+  // longer counts on its own, only as a tiebreaker alongside a strong hit.
   const scored = (records || [])
     .map((r) => {
       const hay = foldBalletText([r.class_name, r.good_points, r.improve_points, r.next_time_reminder].join('\n'));
-      const score = tokens.reduce((n, t) => n + (hay.includes(t) ? 1 : 0), 0);
+      const strongScore = strong.reduce((n, t) => n + (hay.includes(t) ? 1 : 0), 0);
+      const weakScore = weak.reduce((n, t) => n + (hay.includes(t) ? 1 : 0), 0);
+      const score = strong.length ? (strongScore > 0 ? strongScore * 100 + weakScore : 0) : weakScore;
       return { record: r, score };
     })
     .filter((x) => x.score > 0);

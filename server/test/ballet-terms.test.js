@@ -106,3 +106,27 @@ test('generic 做得好 / 待改进 questions fall back to recent recap fields',
   }), '我的巴特梦做得怎么样', 3);
   assert.equal(battementHits[0].id, 3);
 });
+
+// Real bug report: "最近tendu有什么要改进的" returned almost the whole archive
+// -- "改进" alone became a generic bigram token worth the same +1 as the
+// actual term "tendu", so any unrelated record saying "XX 需要改进" matched
+// too. Naming a real term must narrow results to that term, not just add it
+// to a bag of equally-weighted words.
+test('naming a specific term excludes records that only share a generic word like 改进', () => {
+  const recs = [
+    { id: 1, class_name: '基训', good_points: 'tendu 做得不错', improve_points: 'grand battement 需要改进', next_time_reminder: '', created_at: 3 },
+    { id: 2, class_name: '基训', good_points: '整体感觉不错', improve_points: 'Jeté 需要改进', next_time_reminder: '', created_at: 2 },
+    { id: 3, class_name: '基训', good_points: '', improve_points: 'Relevé 需要改进', next_time_reminder: '', created_at: 1 },
+  ];
+  const hits = searchRecordsByQuestion(recs, '最近tendu有什么要改进的', 8);
+  assert.deepEqual(hits.map((r) => r.id), [1], 'only the record naming tendu should match, not every 需要改进 line');
+});
+
+test('a vague question naming no specific term still falls back to generic word overlap', () => {
+  const recs = [
+    { id: 1, class_name: '基训', good_points: '整体感觉不错', improve_points: '', next_time_reminder: '', created_at: 2 },
+    { id: 2, class_name: '基训', good_points: '', improve_points: 'tendu 没绷直', next_time_reminder: '', created_at: 1 },
+  ];
+  const hits = searchRecordsByQuestion(recs, '整体感觉怎么样', 8);
+  assert.deepEqual(hits.map((r) => r.id), [1]);
+});
