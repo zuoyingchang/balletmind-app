@@ -86,13 +86,35 @@ async function embedTextsOpenAI(texts, { fetchImpl, apiKey, model } = {}) {
   }
 }
 
+function parseStoredEmbedding(raw) {
+  if (!raw) return null;
+  try {
+    const v = JSON.parse(raw);
+    return Array.isArray(v) && v.length ? v : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Records save their embedding once, at creation (routes/records.js, best-
+// effort/fire-and-forget) -- only records missing one (saved before this
+// shipped, or whose background call failed) get re-embedded here. Once a
+// user's whole history is cached, an ask call embeds just the question.
 async function embeddingHits(records, question, { embedTexts, minSim, limit }) {
   if (!records.length) return [];
-  const texts = [question, ...records.map(recordCorpus)];
+  const cached = new Map();
+  const missing = [];
+  for (const r of records) {
+    const vec = parseStoredEmbedding(r.embedding);
+    if (vec) cached.set(r.id, vec);
+    else missing.push(r);
+  }
+  const texts = [question, ...missing.map(recordCorpus)];
   const vectors = await embedTexts(texts);
   const qv = vectors[0];
+  missing.forEach((r, i) => cached.set(r.id, vectors[i + 1]));
   return records
-    .map((record, i) => ({ record, sim: cosineSimilarity(qv, vectors[i + 1]) }))
+    .map((record) => ({ record, sim: cosineSimilarity(qv, cached.get(record.id)) }))
     .filter((x) => x.sim >= minSim)
     .sort((a, b) => b.sim - a.sim || (b.record.created_at || 0) - (a.record.created_at || 0))
     .slice(0, limit);
@@ -163,4 +185,5 @@ module.exports = {
   recordCorpus,
   retrieveAskRecords,
   embedTextsOpenAI,
+  parseStoredEmbedding,
 };

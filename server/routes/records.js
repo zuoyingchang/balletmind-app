@@ -5,9 +5,29 @@ const { logEvent } = require('../events');
 const { sessionIdFromReq, withSession } = require('../lib/text');
 const { processRecordForIssues, removeRecordFromIssues } = require('../issues');
 const { checkMilestone } = require('../milestones');
+const { embedTextsOpenAI, recordCorpus } = require('../ai/ask-retrieve');
 
 const router = express.Router();
 router.use(requireAuth);
+
+// Best-effort, fire-and-forget: cache this record's embedding at save time so
+// 问问我的档案's embedding fallback (ai/ask-retrieve.js embeddingHits) never
+// has to re-embed it live. Never awaited by a caller -- a slow or failed
+// OpenAI call must not delay "save my class" or fail the save; a record
+// without a cached embedding just falls back to being embedded live, same as
+// every record did before this existed.
+// Skipped under the test runner (NODE_TEST_CONTEXT, same signal
+// routes/auth.js already uses): it's an unawaited background call, so it
+// would race every other test's assertions against the shared OpenAI-fetch
+// mock. The caching mechanism itself has its own dedicated tests instead.
+function cacheRecordEmbedding(recordId, record) {
+  if (process.env.NODE_TEST_CONTEXT) return;
+  const corpus = recordCorpus(record);
+  if (!corpus) return;
+  embedTextsOpenAI([corpus])
+    .then(([vector]) => db.run('UPDATE records SET embedding = ? WHERE id = ?', [JSON.stringify(vector), recordId]))
+    .catch(() => {});
+}
 
 router.post('/', async (req, res) => {
   const {
@@ -71,6 +91,9 @@ router.post('/', async (req, res) => {
   await processRecordForIssues(req.userId, info.lastInsertRowid, improve);
   const milestone = await checkMilestone(req.userId, { source: 'recap' });
   res.json({ id: info.lastInsertRowid, milestone });
+  cacheRecordEmbedding(info.lastInsertRowid, {
+    class_name: className || '训练记录', good_points: good, improve_points: improve, next_time_reminder: next_time_reminder || '',
+  });
 });
 
 // Lightweight check-in: trained today, no recording, no AI, no Layer 3 completion.
@@ -95,6 +118,7 @@ router.post('/checkin', async (req, res) => {
   }, sessionIdFromReq(req)));
   const milestone = await checkMilestone(req.userId, { source: 'checkin' });
   res.json({ id: info.lastInsertRowid, milestone });
+  cacheRecordEmbedding(info.lastInsertRowid, { class_name: name });
 });
 
 router.get('/', async (req, res) => {

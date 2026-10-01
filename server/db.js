@@ -147,6 +147,17 @@ const ready = client.batch(
   } catch (e) {
     if (!/duplicate column/i.test(e.message || '')) throw e;
   }
+  try {
+    // Precomputed OpenAI embedding (JSON array of floats), set once at
+    // record creation -- best-effort, fire-and-forget (see routes/records.js).
+    // Lets 问问我的档案's embedding fallback skip re-embedding this record's
+    // text on every question that triggers it; only cache-miss records
+    // (saved before this shipped, or whose background call failed) still get
+    // embedded live, same as before (see ai/ask-retrieve.js embeddingHits).
+    await client.execute('ALTER TABLE records ADD COLUMN embedding TEXT');
+  } catch (e) {
+    if (!/duplicate column/i.test(e.message || '')) throw e;
+  }
 });
 
 async function get(sql, args = []) {

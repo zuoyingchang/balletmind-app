@@ -1561,6 +1561,65 @@ test('/api/progress/ask only searches the caller\'s own records, not another use
   assert.equal(body.answered, false, "user A must not get an answer built from user B's records");
 });
 
+// ---------- record-save embedding cache (fire-and-forget, skipped under NODE_TEST_CONTEXT elsewhere) ----------
+test('a saved record caches its own embedding, and a later ask call reuses it instead of re-embedding', async () => {
+  const { body: { token } } = await registerUser('embed_cache@example.com');
+  const savedWasTestContext = process.env.NODE_TEST_CONTEXT;
+  delete process.env.NODE_TEST_CONTEXT; // opt this one test into the real (normally-skipped) background call
+  try {
+    await withMockAnthropicFetch(
+      async () => fakeAnthropicResponse(),
+      async () => {
+        const saved = await saveRecord(token, { className: '基训', good_points: '转圈比之前有改进' });
+        let row = null;
+        for (let i = 0; i < 20; i++) {
+          row = await db.get('SELECT embedding FROM records WHERE id = ?', [saved.id]);
+          if (row && row.embedding) break;
+          await new Promise((r) => setTimeout(r, 25));
+        }
+        assert.ok(row && row.embedding, 'the background call should have cached an embedding by now');
+        assert.deepEqual(JSON.parse(row.embedding), [0.42, 0.9]);
+      },
+      (opts) => {
+        const input = JSON.parse(opts.body).input;
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ data: input.map((t, i) => ({ index: i, embedding: [0.42, 0.9] })) }),
+        };
+      }
+    );
+
+    // Now ask a sparse-keyword question that must fall through to embedding
+    // retrieval. If the route re-embedded the record's text instead of
+    // reusing the cached vector, this custom embeddingsFn would receive 2
+    // texts (question + record) instead of 1 (question only) -- assert on
+    // that directly rather than just trusting the final answer.
+    let embedInputLengths = [];
+    await withMockAnthropicFetch(
+      async () => fakeAnthropicResponse(),
+      async () => {
+        const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('最近进步大吗')}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        assert.equal(res.status, 200);
+      },
+      (opts) => {
+        const input = JSON.parse(opts.body).input;
+        embedInputLengths.push(input.length);
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ data: input.map((t, i) => ({ index: i, embedding: [0.42, 0.9] })) }),
+        };
+      }
+    );
+    assert.deepEqual(embedInputLengths, [1], 'only the question should be embedded -- the record was already cached');
+  } finally {
+    if (savedWasTestContext) process.env.NODE_TEST_CONTEXT = savedWasTestContext;
+  }
+});
+
 test('/api/progress/ask with a time expression excludes records outside that window', async () => {
   const { body: { token } } = await registerUser('ask_daterange@example.com');
   const recent = await saveRecord(token, { className: '基训', good_points: '转圈进步明显，定点更稳了' });

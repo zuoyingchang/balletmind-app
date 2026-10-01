@@ -180,7 +180,7 @@ router.get('/ask', async (req, res) => {
   if (question.length > 200) return res.status(400).json({ error: '问题太长了，精简一下' });
 
   const allRows = await db.all(
-    'SELECT id, class_name, good_points, improve_points, next_time_reminder, created_at FROM records WHERE user_id = ? ORDER BY created_at DESC',
+    'SELECT id, class_name, good_points, improve_points, next_time_reminder, created_at, embedding FROM records WHERE user_id = ? ORDER BY created_at DESC',
     [req.userId]
   );
   const dateRange = parseAskDateRange(question);

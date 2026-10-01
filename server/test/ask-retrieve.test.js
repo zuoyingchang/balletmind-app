@@ -97,3 +97,60 @@ test('embedding failure falls back to keyword-only', async () => {
   assert.equal(out.retrievalPath, 'keyword');
   assert.equal(out.matches[0].id, 1);
 });
+
+// ---------- cached embeddings (records.js writes record.embedding at save time) ----------
+test('a record with a cached embedding is not re-sent to embedTexts', async () => {
+  const recs = [
+    { id: 1, class_name: '基训', improve_points: '转圈重心不稳', good_points: '', next_time_reminder: '', created_at: 2, embedding: JSON.stringify([1, 0]) },
+    { id: 2, class_name: '基训', improve_points: '单脚站的时候晃', good_points: '', next_time_reminder: '', created_at: 1 },
+  ];
+  const seenTexts = [];
+  const out = await retrieveAskRecords(recs, '感觉站不太住', {
+    mode: 'embedding',
+    minSim: 0.1,
+    embedTexts: async (texts) => {
+      seenTexts.push(...texts);
+      // Only the question and record 2's corpus should ever be sent -- record 1
+      // already has a stored embedding and must be skipped.
+      return texts.map(() => [0.9, 0.1]);
+    },
+  });
+  assert.equal(seenTexts.length, 2, 'only the question + the uncached record should be embedded');
+  assert.equal(seenTexts[0], '感觉站不太住');
+  assert.ok(!seenTexts.some((t) => t.includes('转圈重心不稳')), "record 1's corpus must not be re-embedded");
+  assert.deepEqual(out.matches.map((m) => m.id).sort(), [1, 2]);
+});
+
+test('when every record already has a cached embedding, only the question is embedded', async () => {
+  const recs = [
+    { id: 1, improve_points: 'a', good_points: '', next_time_reminder: '', created_at: 1, embedding: JSON.stringify([1, 0]) },
+    { id: 2, improve_points: 'b', good_points: '', next_time_reminder: '', created_at: 2, embedding: JSON.stringify([0.9, 0.1]) },
+  ];
+  let callTextsLength = null;
+  await retrieveAskRecords(recs, '随便问一句', {
+    mode: 'embedding',
+    minSim: 0,
+    embedTexts: async (texts) => {
+      callTextsLength = texts.length;
+      return texts.map(() => [1, 0]);
+    },
+  });
+  assert.equal(callTextsLength, 1, 'texts sent should be just the question when all records are cached');
+});
+
+test('a malformed stored embedding is treated as missing and re-embedded', async () => {
+  const recs = [
+    { id: 1, improve_points: '转圈重心不稳', good_points: '', next_time_reminder: '', created_at: 1, embedding: 'not valid json' },
+  ];
+  let embedded = false;
+  const out = await retrieveAskRecords(recs, '转圈重心不稳', {
+    mode: 'embedding',
+    minSim: 0.1,
+    embedTexts: async (texts) => {
+      embedded = texts.length === 2;
+      return texts.map(() => [1, 0]);
+    },
+  });
+  assert.ok(embedded, 'a malformed stored embedding should fall back to live embedding, not crash or silently drop');
+  assert.equal(out.matches[0].id, 1);
+});
