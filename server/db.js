@@ -84,6 +84,19 @@ const ready = client.batch(
       user_agent TEXT,
       created_at INTEGER NOT NULL
     )`,
+    // Onboarding-guide step ids this ACCOUNT has seen (see routes/guide.js).
+    // Append-only with a UNIQUE pair so "mark seen" is a single atomic
+    // INSERT OR IGNORE -- a JSON blob on `users` with read-modify-write was
+    // tried first and lost updates under skipGuide()'s ~11 near-simultaneous
+    // calls (classic races: two requests both read the old array, each
+    // writes back missing the other's step).
+    `CREATE TABLE IF NOT EXISTS guide_progress (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      step_id TEXT NOT NULL,
+      created_at INTEGER,
+      UNIQUE(user_id, step_id)
+    )`,
     // Every user-scoped table is queried as "WHERE user_id = ?" on nearly
     // every request — not urgent at MVP scale (measured: a few ms either way
     // with 100 users / 2k records), but free to add now and matters once the
@@ -93,6 +106,7 @@ const ready = client.batch(
     'CREATE INDEX IF NOT EXISTS idx_issues_user ON issues(user_id)',
     'CREATE INDEX IF NOT EXISTS idx_issue_occurrences_issue ON issue_occurrences(issue_id)',
     'CREATE INDEX IF NOT EXISTS idx_term_corrections_user ON term_corrections(user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_guide_progress_user ON guide_progress(user_id)',
   ],
   'write'
 ).then(async () => {

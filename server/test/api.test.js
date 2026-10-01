@@ -1672,6 +1672,70 @@ test('new users default to the free plan, and weeklyAskLimitFor resolves for bot
   assert.equal(paidLimit, freeLimit);
 });
 
+// ---------- onboarding guide: seen-state lives on the account, not localStorage ----------
+test('/api/guide/seen requires auth', async () => {
+  const res = await fetch(`${base}/api/guide/seen`);
+  assert.equal(res.status, 401);
+});
+
+test('a new account has no guide steps seen yet', async () => {
+  const { body: { token } } = await registerUser('guide_new@example.com');
+  const res = await fetch(`${base}/api/guide/seen`, { headers: { Authorization: `Bearer ${token}` } });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.deepEqual(body.seen, []);
+});
+
+test('POST /api/guide/seen marks one step seen, and is idempotent', async () => {
+  const { body: { token } } = await registerUser('guide_mark@example.com');
+  const post = async () => fetch(`${base}/api/guide/seen`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ id: 'recap' }),
+  });
+  const res1 = await post();
+  assert.equal(res1.status, 200);
+  assert.deepEqual((await res1.json()).seen, ['recap']);
+  const res2 = await post();
+  assert.deepEqual((await res2.json()).seen, ['recap'], 'marking the same step twice must not duplicate it');
+
+  const getRes = await fetch(`${base}/api/guide/seen`, { headers: { Authorization: `Bearer ${token}` } });
+  assert.deepEqual((await getRes.json()).seen, ['recap']);
+});
+
+test('POST /api/guide/seen-batch merges into whatever is already seen', async () => {
+  const { body: { token } } = await registerUser('guide_batch@example.com');
+  await fetch(`${base}/api/guide/seen`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ id: 'recap' }),
+  });
+  const res = await fetch(`${base}/api/guide/seen-batch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ ids: ['recap', 'archive', 'progress-back'] }),
+  });
+  assert.equal(res.status, 200);
+  const seen = (await res.json()).seen;
+  assert.equal(seen.length, 3);
+  for (const id of ['recap', 'archive', 'progress-back']) assert.ok(seen.includes(id));
+});
+
+test('guide seen-state is per-account, not shared across users', async () => {
+  const { body: { token: tokenA } } = await registerUser('guide_owner@example.com');
+  const { body: { token: tokenB } } = await registerUser('guide_notowner@example.com');
+  await fetch(`${base}/api/guide/seen`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenA}` },
+    body: JSON.stringify({ id: 'recap' }),
+  });
+  const resB = await fetch(`${base}/api/guide/seen`, { headers: { Authorization: `Bearer ${tokenB}` } });
+  assert.deepEqual((await resB.json()).seen, [], "user B must not see user A's guide progress");
+
+  const resA = await fetch(`${base}/api/guide/seen`, { headers: { Authorization: `Bearer ${tokenA}` } });
+  assert.deepEqual((await resA.json()).seen, ['recap']);
+});
+
 test('问问档案 weekly quota does not count last week\'s asks', async () => {
   const { body: { token, user } } = await registerUser('ask_quota_week@example.com');
   await saveRecord(token, { className: '基训', improve_points: '转圈时重心不稳' });

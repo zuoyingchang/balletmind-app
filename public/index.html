@@ -4154,13 +4154,14 @@ async function submitAuth() {
     document.getElementById('auth-password').value = '';
     document.getElementById('auth-confirm-password').value = '';
     document.getElementById('auth-name').value = '';
+    await loadGuideSeenFromServer();
     goHome();
   } catch (e) {
     errEl.textContent = e.message;
     errEl.classList.remove('hidden');
   }
 }
-function logout() { clearAuth(); setAuthMode('login'); show('screen-auth'); }
+function logout() { clearAuth(); guideSeenServer = null; setAuthMode('login'); show('screen-auth'); }
 
 function showFeedback() { const m = document.getElementById('feedback-modal'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => document.getElementById('feedback-text').focus(), 50); }
 function hideFeedback() { const m = document.getElementById('feedback-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
@@ -4251,6 +4252,7 @@ async function checkAuthAndInit() {
   try {
     const res = await authFetch(`${API}/api/auth/me`);
     if (!res.ok) throw new Error();
+    await loadGuideSeenFromServer();
     goHome();
   } catch (e) {
     showAuthWithCurtain();
@@ -4702,14 +4704,58 @@ function guideStorageKey(id) {
   const base = GUIDE_LEGACY[id] || `bm_guide_${id}`;
   return `${base}:${uid}`;
 }
+// Seen-state lives on the account (server), not this browser -- the one-time
+// guide must run exactly once per account, not once per browser/device, and
+// localStorage doesn't survive a new browser, a cleared app, or the
+// password-reset flow (reset.html -> fresh login -> no memory of the guide).
+// guideSeenServer is null until loadGuideSeenFromServer() resolves; while
+// null, guideSeen() assumes "already seen" (safe default: never flash a
+// stale/starter bubble at a returning user before we actually know).
+let guideSeenServer = null;
 function guideSeen(id) {
-  try { return !!localStorage.getItem(guideStorageKey(id)); } catch (e) { return false; }
+  if (!guideSeenServer) return true;
+  return guideSeenServer.has(id);
 }
 function markGuideSeen(id) {
+  if (guideSeenServer) guideSeenServer.add(id);
   try { localStorage.setItem(guideStorageKey(id), '1'); } catch (e) {}
   const step = GUIDE_STEPS.find((s) => s.id === id);
   const el = step && document.getElementById(step.tip);
   if (el) el.classList.add('hidden');
+  authFetch(`${API}/api/guide/seen`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id }),
+  }).catch(() => {});
+}
+// Called once right after auth succeeds (checkAuthAndInit / submitAuth),
+// before the first paintGuides() of the session. Also bridges a browser's
+// pre-existing localStorage progress up to the server once, so an account
+// that already finished the guide (tracked locally, before this shipped)
+// doesn't replay it just because the server has no record yet.
+async function loadGuideSeenFromServer() {
+  try {
+    const res = await authFetch(`${API}/api/guide/seen`);
+    const data = await res.json();
+    guideSeenServer = new Set(Array.isArray(data.seen) ? data.seen : []);
+  } catch (e) {
+    guideSeenServer = new Set();
+  }
+  const legacyIds = [...GUIDE_STEPS.map((s) => s.id), 'complete'].filter((id) => {
+    if (guideSeenServer.has(id)) return false;
+    try { return !!localStorage.getItem(guideStorageKey(id)); } catch (e2) { return false; }
+  });
+  if (legacyIds.length) {
+    legacyIds.forEach((id) => guideSeenServer.add(id));
+    try {
+      await authFetch(`${API}/api/guide/seen-batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: legacyIds }),
+      });
+    } catch (e) {}
+  }
+  paintGuides();
 }
 function currentScreenKey() {
   const el = document.querySelector('.screen.active');
@@ -4819,7 +4865,7 @@ function skipGuide() {
 // path finishes (or is skipped) and never again -- this app doesn't do
 // a per-feature tour, so there's no later tip to "complete" into.
 function guideCompleteSeen() {
-  try { return !!localStorage.getItem(guideStorageKey('complete')); } catch (e) { return false; }
+  return guideSeen('complete');
 }
 function showGuideCompleteIfDue() {
   if (!getUser() || guideCompleteSeen() || !guideSeen('progress-back')) return;
