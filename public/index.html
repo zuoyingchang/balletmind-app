@@ -6017,6 +6017,16 @@ async function goProgress(tab) {
   if (briefEl) briefEl.innerHTML = '<p class="brief-empty">正在看看你上次留下的话…</p>';
   const reviewEl = document.getElementById('review-content');
   if (reviewEl) reviewEl.innerHTML = '<p class="recap-empty">正在整理汇总…</p>';
+  // Unlike brief/review above, this one is never auto-queried (an AI call
+  // costs quota, so it only runs on an explicit "问" tap) -- but the DIV
+  // still has to be reset to empty+hidden on every visit, or a PREVIOUS
+  // account's last answer (and its record text) stays sitting in the DOM
+  // and visibly renders under a now-different, unrelated account.
+  const askResultEl = document.getElementById('ask-archive-result');
+  if (askResultEl) { askResultEl.innerHTML = ''; askResultEl.classList.add('hidden'); }
+  const askInputEl = document.getElementById('ask-archive-input');
+  if (askInputEl) askInputEl.value = '';
+  lastAskDigest = null;
   loadIssues();
   await loadBrief();
   const scrollMap = {
@@ -7060,7 +7070,7 @@ function renderTrendChart(rows) {
   const tabs = document.getElementById('trend-mode-tabs');
   if (!wrap || !tabs) return;
   tabs.innerHTML = [['week', '周'], ['month', '月']].map(([k, l]) =>
-    `<button type="button" data-trend="${k}" class="px-2.5 h-6 rounded-full border border-[var(--border-soft)] text-[10.5px] ${trendMode === k ? 'text-[var(--burgundy)] font-semibold bg-[var(--cta-pink)] border-transparent' : 'text-[var(--burgundy)] bg-white/70'}">${l}</button>`
+    `<button type="button" data-trend="${k}" class="px-3 h-8 rounded-full border border-[var(--border-soft)] text-[10.5px] ${trendMode === k ? 'text-[var(--burgundy)] font-semibold bg-[var(--cta-pink)] border-transparent' : 'text-[var(--burgundy)] bg-white/70'}">${l}</button>`
   ).join('');
   tabs.onclick = (e) => {
     const b = e.target.closest('button[data-trend]');
