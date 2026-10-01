@@ -863,7 +863,7 @@
   }
   .cal-cell.has-came {
     color: var(--burgundy); font-weight: 600;
-    background: linear-gradient(165deg, #f6f8f5 0%, #e7eee8 100%);
+    background: linear-gradient(165deg, #f8eeec 0%, #eeddd9 100%);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
   }
   .cal-cell.has-record {
@@ -916,9 +916,6 @@
     width: 22px; height: 13px; object-fit: cover; object-position: 50% 8%;
     display: block; flex-shrink: 0;
     filter: brightness(1.03) saturate(1.04) drop-shadow(0 1px 1.5px rgba(130,80,80,.22));
-  }
-  .cal-bow.is-came {
-    filter: hue-rotate(72deg) saturate(.72) brightness(1.05) drop-shadow(0 1px 1.5px rgba(80,110,90,.2));
   }
   @keyframes calMarkPop {
     0% { transform: scale(.45); opacity: .35; }
@@ -7137,7 +7134,6 @@ function calendarCellHtml(key, dayNum, byDate, selectedKey, selectFnName, runCla
   const records = byDate[key] || [];
   const has = records.length > 0;
   const hasFullRecord = records.some((r) => !isCheckinOnly(r));
-  const hasCheckin = records.some(isCheckinOnly);
   const isFuture = key > todayKey;
   const isToday = key === todayKey;
   const isSelected = key === selectedKey;
@@ -7148,10 +7144,8 @@ function calendarCellHtml(key, dayNum, byDate, selectedKey, selectFnName, runCla
   if (hasFullRecord) cls.push('has-record');
   if (isFuture) cls.push('is-future');
   const action = `onclick="${selectFnName}('${key}')"`;
-  const bow = hasFullRecord
-    ? '<img src="/img/bow.png" class="cal-bow" alt="" aria-hidden="true">'
-    : (hasCheckin ? '<img src="/img/bow.png" class="cal-bow is-came" alt="" aria-hidden="true">' : '');
-  const pop = (key === calMarkPopKey && (hasFullRecord || hasCheckin)) ? ' cal-mark-pop' : '';
+  const bow = hasFullRecord ? '<img src="/img/bow.png" class="cal-bow" alt="" aria-hidden="true">' : '';
+  const pop = (key === calMarkPopKey && hasFullRecord) ? ' cal-mark-pop' : '';
   const marks = bow ? `<span class="cal-marks${pop}">${bow}</span>` : '<span class="cal-marks"></span>';
   const colStyle = gridCol ? ` style="grid-column:${gridCol}"` : '';
   return `<button type="button" ${action} class="${cls.join(' ')}"${colStyle}><span class="cal-daynum">${dayNum}</span>${marks}</button>`;
