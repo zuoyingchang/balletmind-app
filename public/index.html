@@ -2902,7 +2902,7 @@
           <div class="pearl-sheen"></div>
           <div class="relative z-10 flex items-center justify-between mb-2">
             <span class="label-editorial text-[12px] text-[var(--rose-deep)]">时长趋势</span>
-            <div id="trend-mode-tabs" class="flex gap-1.5"></div>
+            <div id="trend-mode-tabs" class="flex items-center gap-1 rounded-full p-1" style="background:rgba(244,235,233,.72); box-shadow: inset 0 1px 0 rgba(255,255,255,.7);"></div>
           </div>
           <div id="trend-chart" class="relative z-10"></div>
         </div>
@@ -7070,7 +7070,12 @@ function renderTrendChart(rows) {
   const tabs = document.getElementById('trend-mode-tabs');
   if (!wrap || !tabs) return;
   tabs.innerHTML = [['week', '周'], ['month', '月']].map(([k, l]) =>
-    `<button type="button" data-trend="${k}" class="px-3 h-8 rounded-full border border-[var(--border-soft)] text-[10.5px] ${trendMode === k ? 'text-[var(--burgundy)] font-semibold bg-[var(--cta-pink)] border-transparent' : 'text-[var(--burgundy)] bg-white/70'}">${l}</button>`
+    // Only the active one gets any visual treatment at all (fill + shadow) --
+    // matching every other tab pattern in the app (问AI/按术语查, 问题/回看...).
+    // The inactive one used to keep a visible border while the active one
+    // dropped its border for a flat fill; that read backwards ("the
+    // outlined one looks chosen") and was reported as exactly that confusion.
+    `<button type="button" data-trend="${k}" class="px-3 h-8 rounded-full text-[10.5px] ${trendMode === k ? 'text-[var(--burgundy)] font-semibold bg-[var(--cta-pink)] shadow-[0_4px_10px_-7px_rgba(160,110,120,.5)]' : 'text-[var(--ink-faint)] font-medium'}">${l}</button>`
   ).join('');
   tabs.onclick = (e) => {
     const b = e.target.closest('button[data-trend]');
