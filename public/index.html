@@ -7075,7 +7075,11 @@ function renderTrendChart(rows) {
     // The inactive one used to keep a visible border while the active one
     // dropped its border for a flat fill; that read backwards ("the
     // outlined one looks chosen") and was reported as exactly that confusion.
-    `<button type="button" data-trend="${k}" class="px-3 h-8 rounded-full text-[10.5px] ${trendMode === k ? 'text-[var(--burgundy)] font-semibold bg-[var(--cta-pink)] shadow-[0_4px_10px_-7px_rgba(160,110,120,.5)]' : 'text-[var(--ink-faint)] font-medium'}">${l}</button>`
+    // Matches .class-tag-chip.is-selected exactly (本周/本月/全部 etc.) --
+    // fill alone was too subtle on a real device for a 1-character pill;
+    // that pattern also lifts -1px on selection, a much more noticeable cue
+    // than color contrast alone at this size.
+    `<button type="button" data-trend="${k}" class="px-3 h-8 rounded-full text-[10.5px] transition-transform ${trendMode === k ? 'text-[var(--burgundy)] font-semibold bg-[var(--cta-pink)] shadow-[0_6px_14px_-9px_rgba(160,110,120,.4)] -translate-y-px' : 'text-[var(--ink-faint)] font-medium'}">${l}</button>`
   ).join('');
   tabs.onclick = (e) => {
     const b = e.target.closest('button[data-trend]');
