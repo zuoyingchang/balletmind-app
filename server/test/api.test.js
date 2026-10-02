@@ -1486,13 +1486,14 @@ test('/api/transcribe enforces the shared daily AI quota', async () => {
 });
 
 // ---------- ask-your-archive ----------
-function fakeAskResponse({ answered = true, answer = '', citedRecordIds = [], inputTokens = 90, outputTokens = 40 } = {}) {
+function fakeAskResponse({ answered = true, answer = '', answerPoints, citedRecordIds = [], inputTokens = 90, outputTokens = 40 } = {}) {
+  const points = Array.isArray(answerPoints) ? answerPoints : (answer ? [answer] : []);
   return {
     ok: true,
     status: 200,
     json: async () => ({
       content: [{ type: 'tool_use', name: 'submit_answer', input: {
-        answered, answer_points: answer ? [answer] : [], cited_record_ids: citedRecordIds,
+        answered, answer_points: points, cited_record_ids: citedRecordIds,
       } }],
       usage: {
         input_tokens: inputTokens, output_tokens: outputTokens,
@@ -1830,23 +1831,26 @@ test('core and secondary AI quotas are isolated from each other', async () => {
   assert.notEqual(res.status, 429, 'a maxed-out secondary pool must not block the core pool');
 });
 
-// ---------- ask-your-archive: retrieve then digest (no Claude rewrite) ----------
-test('/api/progress/ask does not call Claude; it digests matched records', async () => {
-  const { body: { token } } = await registerUser('ask_oneround@example.com');
+// ---------- ask-your-archive: retrieve then digest ----------
+test('/api/progress/ask does not call Claude; it returns the cited digest', async () => {
+  const { body: { token } } = await registerUser('ask_skip_synth@example.com');
   await saveRecord(token, { className: '基训', improve_points: '转圈时重心不稳' });
+  await saveRecord(token, { className: '把杆', good_points: '手位更稳', improve_points: '脚背再绷' });
+  await saveRecord(token, { className: '基训', good_points: '定点更稳\n外开比上周清楚', improve_points: '转圈还是晃' });
 
   let calls = 0;
   await withMockAnthropicFetch(
-    async () => { calls++; return fakeAskResponse({ answered: true, answer: '重心不稳。', citedRecordIds: [] }); },
+    async () => { calls++; return fakeAskResponse({ answered: true, answer: 'should not run' }); },
     async () => {
-      const res = await fetch(`${base}/api/progress/ask?q=转圈`, { headers: { Authorization: `Bearer ${token}` } });
-      assert.equal(res.status, 200);
+      const res = await fetch(`${base}/api/progress/ask?q=${encodeURIComponent('最近2周进步')}`, { headers: { Authorization: `Bearer ${token}` } });
       const body = await res.json();
-      assert.equal(body.rounds, 1);
+      assert.equal(res.status, 200);
       assert.equal(body.answered, true);
+      assert.equal(body.aiUsed, false);
+      assert.ok(body.sections.find((s) => s.id === 'good'));
     }
   );
-  assert.equal(calls, 0, 'digest answers must not call Claude');
+  assert.equal(calls, 0);
 });
 
 test('/api/progress/ask lists recent archive lines when the question is 我的档案', async () => {
@@ -1926,7 +1930,7 @@ test('/api/progress/ask uses embedding when keywords miss a paraphrase of the re
     }
   );
   assert.equal(embedCalls, 1, 'sparse keyword must trigger one embedding call');
-  assert.equal(claudeCalls, 0);
+  assert.equal(claudeCalls, 0, 'two cited lines are already a short list, skip the rewrite hop');
 });
 
 test('/api/progress/ask skips embedding when keyword already returned 2+ records', async () => {

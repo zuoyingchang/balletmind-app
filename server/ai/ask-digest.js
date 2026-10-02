@@ -1,5 +1,5 @@
 const { splitLines } = require('../lib/text');
-const { recordMatchesSearch, searchRecordsByQuestion, foldBalletText } = require('../../public/js/ballet-terms');
+const { recordMatchesSearch, searchRecordsByQuestion, foldBalletText, recapFieldIntent, questionTokens } = require('../../public/js/ballet-terms');
 
 function citeDate(ts) {
   const d = new Date(ts);
@@ -29,7 +29,17 @@ function asSearchRecord(issue, occ) {
 }
 
 function wantResolvedSection(question) {
-  return /档案|课记|已解决/.test(String(question || ''));
+  const q = String(question || '');
+  return /档案|已解决/.test(q) || /我的课记|最近课记/.test(q);
+}
+
+function stripAskFillers(q) {
+  return String(q || '')
+    .replace(/有没有|怎么样|如何|怎样|大吗|练得/g, '')
+    .replace(/[吗呢啊呀嘛？?！!。]/g, '')
+    .replace(/我的/g, '')
+    .replace(/\s+/g, '')
+    .trim();
 }
 
 function hayMatchesQuestion(hay, question) {
@@ -57,17 +67,17 @@ function recordHasMatchingLine(record, question) {
   return blobs.some((t) => splitLines(t).some((line) => hayMatchesQuestion(line, q)));
 }
 
-function keepAskLine(line, record, question, hasLineHits) {
+function keepAskLine(line, record, question, hasLineHits, fieldOnly) {
   const q = String(question || '').trim();
-  if (!q || wantResolvedSection(q)) return true;
+  if (!q || wantResolvedSection(q) || fieldOnly) return true;
   if (classIsQuestionTopic(record.class_name, q)) return true;
   if (!hasLineHits) return true;
   return hayMatchesQuestion(line, q);
 }
 
-function pushLines(out, text, record, question, hasLineHits) {
+function pushLines(out, text, record, question, hasLineHits, fieldOnly) {
   for (const line of splitLines(text)) {
-    if (!keepAskLine(line, record, question, hasLineHits)) continue;
+    if (!keepAskLine(line, record, question, hasLineHits, fieldOnly)) continue;
     out.push({
       text: line,
       cite: citeLabel(record.class_name, record.created_at),
@@ -79,16 +89,24 @@ function pushLines(out, text, record, question, hasLineHits) {
 function buildAskDigest({ records, issues, question }) {
   const recs = [...(records || [])].sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
   const q = String(question || '').trim();
+  const intent = recapFieldIntent(q);
+  const fieldOnly = (intent.good !== intent.improve) && (intent.good || intent.improve)
+    && questionTokens(q).strong.length === 0;
+  const skipGood = intent.improve && !intent.good;
+  const skipImprove = intent.good && !intent.improve;
   const good = [];
   const improve = [];
   for (const r of recs) {
     const hasLineHits = recordHasMatchingLine(r, q);
-    pushLines(good, r.good_points, r, q, hasLineHits);
-    pushLines(improve, [r.improve_points, r.next_time_reminder].filter(Boolean).join('\n'), r, q, hasLineHits);
+    if (!skipGood) pushLines(good, r.good_points, r, q, hasLineHits, fieldOnly);
+    if (!skipImprove) {
+      pushLines(improve, [r.improve_points, r.next_time_reminder].filter(Boolean).join('\n'), r, q, hasLineHits, fieldOnly);
+    }
   }
 
   const resolved = [];
   const includeAllResolved = wantResolvedSection(q);
+  if (!skipImprove || includeAllResolved) {
   for (const issue of issues || []) {
     if (issue.status !== 'resolved') continue;
     const occ = (issue.occurrences || [])[(issue.occurrences || []).length - 1];
@@ -103,6 +121,7 @@ function buildAskDigest({ records, issues, question }) {
       cite: citeLabel(occ && occ.className, occ && occ.createdAt),
       recordId: occ && occ.recordId,
     });
+  }
   }
 
   const sections = [];
@@ -119,4 +138,14 @@ function buildAskDigest({ records, issues, question }) {
   return { answered, sections, answerPoints, citedRecordIds };
 }
 
-module.exports = { buildAskDigest, citeLabel, citeDate, wantResolvedSection };
+function digestFactsText(digest) {
+  return (digest.sections || []).map((sec) => {
+    const lines = (sec.lines || []).map((line) => {
+      const id = Number.isInteger(line.recordId) ? ` [#${line.recordId}]` : '';
+      return `- ${line.text}（${line.cite}）${id}`;
+    }).join('\n');
+    return `## ${sec.title}\n${lines}`;
+  }).join('\n\n');
+}
+
+module.exports = { buildAskDigest, citeLabel, citeDate, wantResolvedSection, digestFactsText, stripAskFillers };

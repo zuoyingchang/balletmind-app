@@ -6,7 +6,7 @@ const { splitLines, sessionIdFromReq, withSession, uniqueCompactGoodPoints } = r
 const { logEvent, countAiCallsToday, countSecondaryAiCallsThisWeek, countAiRecapsToday } = require('../events');
 const { dailyAiLimitFor, weeklyAskLimitFor, dailyRecapLimitFor } = require('../config');
 const { retrieveAskRecords, KEYWORD_SPARSE_MAX } = require('../ai/ask-retrieve');
-const { buildAskDigest, wantResolvedSection } = require('../ai/ask-digest');
+const { buildAskDigest, wantResolvedSection, stripAskFillers } = require('../ai/ask-digest');
 const { parseAskDateRange } = require('../ai/ask-daterange');
 const { isIssueBriefExperimentOn } = require('../experiments/issue-brief-gate');
 const { runIssueBriefExperiment } = require('../ai/issue-brief-experiment');
@@ -172,8 +172,9 @@ router.get('/brief', async (req, res) => {
 
 // GET /api/progress/ask?q=... — "问问你的档案".
 // Retrieval is keyword-first. Embedding runs only when keyword hits are
-// 0 or 1 (KEYWORD_SPARSE_MAX). The answer is a digest of those records
-// (做得好的 / 待改进 / 已解决), not a model rewrite.
+// 0 or 1 (KEYWORD_SPARSE_MAX). The answer is the cited digest of those
+// lines (做得好的 / 待改进 / 已解决). A model rewrite of the same lines
+// looked almost identical on screen, so it is not called.
 router.get('/ask', async (req, res) => {
   const question = (req.query.q || '').trim();
   if (!question) return res.status(400).json({ error: '请输入问题' });
@@ -193,7 +194,8 @@ router.get('/ask', async (req, res) => {
   // because "最近十天" was still in the embedded text, diluting the topic
   // signal. Strip it so retrieval runs on "我的进步" alone.
   const searchQuestion = dateRange ? question.replace(dateRange.matchedText, '').trim() : question;
-  const topicless = !!dateRange && !searchQuestion;
+  const topic = stripAskFillers(searchQuestion);
+  const topicless = !!dateRange && !topic;
   const keywordRound = topicless
     ? { matches: [], retrievalPath: 'none', keywordCount: 0, embeddingCount: 0 }
     : await retrieveAskRecords(rows, searchQuestion, { mode: 'keyword', limit: 8 });
@@ -261,11 +263,13 @@ router.get('/ask', async (req, res) => {
     keywordCount: round1.keywordCount,
     embeddingCount: round1.embeddingCount,
     digest: true,
+    aiUsed: false,
   }, sessionId));
 
   const citedIds = new Set(digest.citedRecordIds);
   res.json({
     ...digest,
+    aiUsed: false,
     rounds: 1,
     retrievalPath: round1.retrievalPath,
     matchedRecords: round1Matches

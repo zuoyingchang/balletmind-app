@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { buildAskDigest } = require('../ai/ask-digest');
+const { searchRecordsByQuestion } = require('../../public/js/ballet-terms');
 
 test('ask digest splits good and improve into cited lines', () => {
   const digest = buildAskDigest({
@@ -105,6 +106,73 @@ test('ask digest keeps a retrieved recap when the question is a paraphrase with 
   });
   assert.equal(digest.answered, true);
   assert.match(digest.sections.find((s) => s.id === 'improve').lines.map((l) => l.text).join('\n'), /重心不稳/);
+});
+
+function sampleArchive() {
+  return [
+    {
+      id: 11,
+      class_name: '基训',
+      good_points: '外开已成习惯\n定点比上次稳',
+      improve_points: '转圈的时候重心不稳\n内收肌力量',
+      next_time_reminder: '',
+      created_at: new Date(2026, 8, 12).getTime(),
+    },
+    {
+      id: 12,
+      class_name: '把杆',
+      good_points: '手位更稳',
+      improve_points: '脚背再绷',
+      next_time_reminder: '',
+      created_at: new Date(2026, 8, 18).getTime(),
+    },
+    {
+      id: 13,
+      class_name: '跳跃组合',
+      good_points: '',
+      improve_points: '落地膝盖没对脚趾',
+      next_time_reminder: '小跳先想落地',
+      created_at: new Date(2026, 8, 22).getTime(),
+    },
+    {
+      id: 14,
+      class_name: '基训',
+      good_points: '一位手更开',
+      improve_points: 'pirouette 一圈不稳',
+      next_time_reminder: '',
+      created_at: new Date(2026, 8, 28).getTime(),
+    },
+  ];
+}
+
+function digestAsk(question, records) {
+  return buildAskDigest({
+    question,
+    records: searchRecordsByQuestion(records, question, 8),
+    issues: [],
+  });
+}
+
+test('realistic questions keep only the asked topic, one line per recap item', () => {
+  const records = sampleArchive();
+  const turnout = digestAsk('最近外开怎么样', records);
+  assert.deepEqual(turnout.sections.find((s) => s.id === 'good').lines.map((l) => l.text), ['外开已成习惯']);
+  assert.ok(!turnout.sections.find((s) => s.id === 'improve'));
+
+  const spin = digestAsk('转圈还在晃吗', records);
+  const spinImprove = spin.sections.find((s) => s.id === 'improve').lines.map((l) => l.text);
+  assert.ok(spinImprove.includes('转圈的时候重心不稳'));
+  assert.ok(spinImprove.includes('pirouette 一圈不稳'));
+  assert.ok(!spinImprove.includes('脚背再绷'));
+  assert.ok(!spinImprove.includes('落地膝盖没对脚趾'));
+
+  const barre = digestAsk('把杆课记了什么', records);
+  assert.deepEqual(barre.sections.find((s) => s.id === 'good').lines.map((l) => l.text), ['手位更稳']);
+  assert.deepEqual(barre.sections.find((s) => s.id === 'improve').lines.map((l) => l.text), ['脚背再绷']);
+
+  const jump = digestAsk('跳跃落地怎么样', records);
+  assert.match(jump.sections.find((s) => s.id === 'improve').lines.map((l) => l.text).join('\n'), /落地膝盖没对脚趾/);
+  assert.ok(!jump.sections.find((s) => s.id === 'improve').lines.some((l) => l.text.includes('外开')));
 });
 
 test('ask digest skips unrelated resolved issues on a specific question', () => {

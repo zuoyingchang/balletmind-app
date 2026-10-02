@@ -3148,11 +3148,11 @@
           <button type="button" id="ask-mode-ai-btn" onclick="setAskMode('ai')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium tab-pill-active">问AI</button>
           <button type="button" id="ask-mode-term-btn" onclick="setAskMode('term')" class="flex-1 h-8 rounded-full text-[11.5px] font-medium text-[var(--ink-faint)]">按术语查</button>
         </div>
-        <p id="ask-mode-desc" class="mt-2 text-[11.5px] leading-5 text-[var(--ink-faint)]">可以问得宽泛一些，例如一节课的整体情况、一段时间的进步，AI 会综合档案作答。</p>
+        <p id="ask-mode-desc" class="mt-2 text-[11.5px] leading-5 text-[var(--ink-faint)]">用自己的话问。会按课记列出相关的做得好、待改进，点开能看那堂课。</p>
         <div id="ask-mode-ai-panel" class="ask-sheet card-journal grain relative overflow-hidden mt-3 p-4">
           <div class="pearl-sheen"></div>
           <div class="relative z-10 flex gap-2">
-            <input id="ask-archive-input" type="text" placeholder="比如：这两周基训课有没有进步" class="flex-1 h-10 px-3 rounded-xl border border-[var(--border-soft)] text-[12.5px] bg-white/70" onkeydown="if(event.key==='Enter') askArchive()">
+            <input id="ask-archive-input" type="text" placeholder="比如：外开最近怎么样、转圈还在晃吗" class="flex-1 h-10 px-3 rounded-xl border border-[var(--border-soft)] text-[12.5px] bg-white/70" onkeydown="if(event.key==='Enter') askArchive()">
             <button type="button" onclick="askArchive()" id="ask-archive-btn" class="btn-ribbon shrink-0 h-10 px-4 rounded-full text-[12.5px] font-medium">
               <span class="pearl-sheen"></span><span class="relative z-10">问</span>
             </button>
@@ -6148,7 +6148,7 @@ function setAskMode(mode) {
   document.getElementById('ask-mode-ai-panel').classList.toggle('hidden', !isAi);
   document.getElementById('ask-mode-term-panel').classList.toggle('hidden', isAi);
   document.getElementById('ask-mode-desc').textContent = isAi
-    ? '可以问得宽泛一些，例如一节课的整体情况、一段时间的进步，AI 会综合档案作答。'
+    ? '用自己的话问。会按课记列出相关的做得好、待改进，点开能看那堂课。'
     : '选择一个动作，查看相关的做得好、待改进记录。';
 }
 async function askArchive() {

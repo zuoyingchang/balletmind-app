@@ -92,3 +92,12 @@ test('今年 starts on Jan 1st of the current year', () => {
   assert.equal(r.since, new Date(2026, 0, 1).getTime());
   assert.equal(r.until, NOW);
 });
+
+test('最近几天 is a rolling 7-day window', () => {
+  const r = parseAskDateRange('外开最近几天怎么样', NOW);
+  assert.ok(r);
+  assert.equal(r.label, '最近几天');
+  assert.equal(r.since, NOW - 7 * DAY_MS);
+  assert.equal(r.until, NOW);
+  assert.equal(r.matchedText, '最近几天');
+});

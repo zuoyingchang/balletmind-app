@@ -55,6 +55,11 @@ function parseAskDateRange(question, now = Date.now()) {
     if (n) return { since: now - n * DAY_MS, until: now, label: `最近${n}天`, matchedText: m[0] };
   }
 
+  m = q.match(/最近几天|这几天|近几天/);
+  if (m) {
+    return { since: now - 7 * DAY_MS, until: now, label: '最近几天', matchedText: m[0] };
+  }
+
   m = q.match(new RegExp(`(?:最近|近|这)\\s*${NUM}\\s*周`));
   if (m) {
     const n = parseCount(m[1]);

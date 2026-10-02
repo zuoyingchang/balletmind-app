@@ -20,7 +20,7 @@ const TERM_ALIAS_GROUPS = [
   ['développé', 'developpe', '伸展'],
   ['grand battement', 'battement', '大踢腿', '大踢', '格朗巴特芒', '巴特芒', '巴特梦'],
   ['port de bras', 'portdebras', '手臂动作'],
-  ['pirouette', '单足转'],
+  ['pirouette', '单足转', '转圈'],
   ['chaîné', 'chaine', '链转'],
   ['fouetté', 'fouette', '挥鞭转'],
   ['piqué', 'pique', '点转'],
@@ -203,8 +203,8 @@ function questionTokens(question) {
 }
 function recapFieldIntent(question) {
   const q = foldBalletText(question);
-  const good = /做得好|好的地方|优点/.test(q);
-  const improve = /待改进|还要改|需要改进|改进的地方|做得不好/.test(q);
+  const good = /做得好|好的地方|优点|亮点|进步/.test(q);
+  const improve = /待改进|还要改|需要改进|改进的地方|做得不好|待改善|带改善|要改善|改善|改进|有什么问题|什么问题|待改/.test(q);
   return { good, improve };
 }
 
@@ -220,15 +220,36 @@ function recordsForFieldIntent(records, intent, limit) {
   return pool.slice(0, limit);
 }
 
+function namedClassRecords(records, question) {
+  return (records || []).filter((r) => {
+    const n = foldBalletText(r.class_name).trim();
+    const q = foldBalletText(question).trim();
+    return !!(n && q && n !== '训练记录' && q.includes(n));
+  });
+}
+
 function searchRecordsByQuestion(records, question, limit = 3) {
   const { strong, weak } = questionTokens(question);
+  const intent = recapFieldIntent(question);
+  let pool = records || [];
+  const named = namedClassRecords(pool, question);
+  if (named.length) pool = named;
+  if (intent.good || intent.improve) {
+    const field = recordsForFieldIntent(pool, intent, pool.length);
+    if (field.length) pool = field;
+  }
+  // "进步/待改进" with no named step: return that field, don't require the
+  // word 进步 to appear in the recap (定点更稳 is still a 进步问).
+  if ((intent.good || intent.improve) && strong.length === 0) {
+    return pool.slice(0, limit);
+  }
   // "最近tendu有什么要改进的" used to flood back nearly every improve_points
   // line in the archive: "改进" alone became a bigram token worth the same
   // +1 as "tendu", so nothing calling out a term was ever required to
   // actually be about it. Once the question names a real term (strong is
   // non-empty), a record MUST match one of those -- weak bigram overlap no
   // longer counts on its own, only as a tiebreaker alongside a strong hit.
-  const scored = (records || [])
+  const scored = pool
     .map((r) => {
       const hay = foldBalletText([r.class_name, r.good_points, r.improve_points, r.next_time_reminder].join('\n'));
       const strongScore = strong.reduce((n, t) => n + (hay.includes(t) ? 1 : 0), 0);
@@ -239,8 +260,7 @@ function searchRecordsByQuestion(records, question, limit = 3) {
     .filter((x) => x.score > 0);
   scored.sort((a, b) => b.score - a.score || b.record.created_at - a.record.created_at);
   if (scored.length) return scored.slice(0, limit).map((x) => x.record);
-  const intent = recapFieldIntent(question);
-  if (intent.good || intent.improve) return recordsForFieldIntent(records, intent, limit);
+  if (intent.good || intent.improve) return recordsForFieldIntent(named.length ? named : records, intent, limit);
   return [];
 }
 
@@ -279,6 +299,7 @@ const api = {
   searchRecordsByQuestion,
   compactPhrase,
   stripEvalTails,
+  recapFieldIntent,
 };
 
 if (typeof module !== 'undefined' && module.exports) {
