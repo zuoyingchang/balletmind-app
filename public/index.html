@@ -1516,7 +1516,7 @@
   }
   .story-toc { display: flex; align-items: baseline; gap: 10px; position: relative; }
   .story-toc .name {
-    font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+    font-family: "Songti SC", "STSongti-SC-Regular", "PingFang SC", "Noto Serif SC", serif;
     font-size: 22px; font-weight: 500; letter-spacing: .02em;
   }
   .story-toc .rule {
@@ -1889,6 +1889,53 @@
     background: var(--blush);
     border-radius: 999px;
     border: 0;
+  }
+  .ask-result-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .ask-result-q {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--ink-faint);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ask-result-fold {
+    flex-shrink: 0;
+    padding: 4px 0 4px 6px;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--rose-deep);
+    background: none;
+    border: 0;
+  }
+  .ask-result-unfold {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 12.5px;
+    line-height: 1.45;
+    text-align: left;
+    color: var(--ink-soft);
+    background: rgba(255,252,251,.7);
+    border: 1px solid var(--border-soft);
+  }
+  .ask-result-unfold span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .home-week-ribbon {
     padding: 8px 4px 4px;
@@ -6097,17 +6144,36 @@ async function loadBrief() {
 
 const ASK_SEC_PAGE = 5;
 let lastAskDigest = null;
+let lastAskQuestion = '';
+let askResultFolded = false;
 const askSecVisible = { good: ASK_SEC_PAGE, improve: ASK_SEC_PAGE, resolved: ASK_SEC_PAGE };
 function resetAskSecVisible() {
   askSecVisible.good = ASK_SEC_PAGE;
   askSecVisible.improve = ASK_SEC_PAGE;
   askSecVisible.resolved = ASK_SEC_PAGE;
 }
+function paintAskResult() {
+  const resultEl = document.getElementById('ask-archive-result');
+  if (!resultEl || !lastAskDigest) return;
+  const q = lastAskQuestion ? escapeHtml(lastAskQuestion) : '上次的回答';
+  if (askResultFolded) {
+    resultEl.innerHTML = `<button type="button" class="ask-result-unfold" onclick="unfoldAskResult()"><span>展开：${q}</span><iconify-icon icon="solar:alt-arrow-down-linear" class="shrink-0 text-[15px] text-[var(--rose-deep)]"></iconify-icon></button>`;
+    return;
+  }
+  resultEl.innerHTML = `<div class="ask-result-bar"><p class="ask-result-q">${q}</p><button type="button" class="ask-result-fold" onclick="foldAskResult()">收起</button></div>${renderAskDigest(lastAskDigest)}`;
+}
+function foldAskResult() {
+  askResultFolded = true;
+  paintAskResult();
+}
+function unfoldAskResult() {
+  askResultFolded = false;
+  paintAskResult();
+}
 function loadAskSecMore(id) {
   const key = id === 'good' || id === 'improve' || id === 'resolved' ? id : 'improve';
   askSecVisible[key] = (askSecVisible[key] || ASK_SEC_PAGE) + ASK_SEC_PAGE;
-  const resultEl = document.getElementById('ask-archive-result');
-  if (resultEl && lastAskDigest) resultEl.innerHTML = renderAskDigest(lastAskDigest);
+  paintAskResult();
 }
 
 function renderAskDigest(data) {
@@ -6170,7 +6236,9 @@ async function askArchive() {
     }
     resetAskSecVisible();
     lastAskDigest = data;
-    resultEl.innerHTML = renderAskDigest(data);
+    lastAskQuestion = question;
+    askResultFolded = false;
+    paintAskResult();
     await loadAskQuota();
   } catch (e) {
     resultEl.innerHTML = '<p class="text-[var(--rose-deep)]">查询失败，请再试一次</p>';
