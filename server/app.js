@@ -78,7 +78,13 @@ app.get('/api/health/ai', async (req, res) => {
 // body-parser cannot consume or overwrite the buffer.
 app.use('/api/transcribe', transcribeRoutes);
 app.use(express.json({ limit: '1mb' }));
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(path.join(__dirname, '..', 'public'), {
+  setHeaders(res, filePath) {
+    if (filePath.includes(`${path.sep}fonts${path.sep}`)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  },
+}));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/records', recordsRoutes);
