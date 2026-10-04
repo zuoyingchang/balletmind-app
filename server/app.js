@@ -82,6 +82,8 @@ app.use(express.static(path.join(__dirname, '..', 'public'), {
   setHeaders(res, filePath) {
     if (filePath.includes(`${path.sep}fonts${path.sep}`)) {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else if (filePath.includes(`${path.sep}audio${path.sep}`)) {
+      res.setHeader('Cache-Control', 'public, max-age=2592000');
     }
   },
 }));

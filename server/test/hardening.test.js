@@ -251,3 +251,13 @@ test('/api/health/ai: idle and healthy with no traffic; 503 only when a provider
     console.error = realErr;
   }
 });
+
+test('static fonts and term audio are cached long, html is always revalidated', async () => {
+  const fonts = await fetch(`${base}/fonts/cormorant-garamond-normal.woff2`);
+  assert.equal(fonts.headers.get('cache-control'), 'public, max-age=31536000, immutable');
+  const audio = await fetch(`${base}/audio/terms/plie.m4a`);
+  assert.equal(audio.status, 200);
+  assert.equal(audio.headers.get('cache-control'), 'public, max-age=2592000');
+  const html = await fetch(`${base}/`);
+  assert.equal(html.headers.get('cache-control'), 'public, max-age=0');
+});
