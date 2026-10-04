@@ -38,7 +38,7 @@ const ALLOWED_META = new Set([
   'slotsFilled', 'round', 'rounds', 'matchCount', 'answered',
   'retrievalPath', 'keywordCount', 'embeddingCount',
   'attempts', 'aiUsed', 'embeddingRan',
-  'screen', 'where', 'kind', 'vid', 'platform', 'browser', 'source',
+  'screen', 'where', 'kind', 'vid', 'platform', 'browser', 'source', 'loc', 'fn', 'errName', 'build',
 ]);
 
 const BLOCKED_META = new Set([

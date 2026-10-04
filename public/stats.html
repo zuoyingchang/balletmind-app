@@ -157,8 +157,12 @@
         <thead><tr><th>哪里 / 什么类型</th><th>近 7 天</th><th>全部</th></tr></thead>
         <tbody id="ce-kinds-body"></tbody>
       </table>
+      <table style="margin-top:12px;">
+        <thead><tr><th>出错位置</th><th>函数</th><th>类型</th><th>版本</th><th>次数</th></tr></thead>
+        <tbody id="ce-loc-body"></tbody>
+      </table>
       <p class="muted" id="ce-browsers" style="margin:10px 0 0;"></p>
-      <p class="muted" style="margin:6px 0 0;">network = 手机没连上服务器（如"Load failed"），http_5xx = 服务器出错，exception = 页面脚本出错。同一个错误每次打开页面最多报 1 次、最多 5 条。</p>
+      <p class="muted" style="margin:6px 0 0;">network = 手机没连上服务器（如"Load failed"），http_5xx = 服务器出错，exception = 页面脚本出错。同一个错误每次打开页面最多报 1 次、最多 5 条。出错位置 = 出错的那一行（文件:行:列）、函数名、错误类型，加上当时的代码版本（git 编号）；不记录报错文字，也没有任何用户内容。把这几列发给我，我能直接对到代码里的那一行。</p>
     </div>
   </div>
 
@@ -442,6 +446,10 @@ function render(data) {
   document.getElementById('ce-kinds-body').innerHTML = ceRows.length
     ? ceRows.map((r) => '<tr><td>' + escapeHtml(r.name) + '</td><td>' + (ceWeek.get(r.name) || 0) + '</td><td>' + r.count + '</td></tr>').join('')
     : '<tr><td colspan="3" class="muted">没有报错（或这个功能刚上线）</td></tr>';
+  const ceLocs = ca.byLocation || [];
+  document.getElementById('ce-loc-body').innerHTML = ceLocs.length
+    ? ceLocs.slice(0, 10).map((r) => '<tr><td>' + escapeHtml(r.loc) + '</td><td>' + escapeHtml(r.fn || '-') + '</td><td>' + escapeHtml(r.errName || '-') + '</td><td>' + escapeHtml(r.build || '-') + '</td><td>' + r.count + '</td></tr>').join('')
+    : '<tr><td colspan="5" class="muted">还没有带位置的脚本报错</td></tr>';
   document.getElementById('ce-browsers').textContent = (ca.byBrowser || []).length
     ? '出错的设备/浏览器：' + ca.byBrowser.map((r) => r.name + ' ' + r.count).join(' · ')
     : '';

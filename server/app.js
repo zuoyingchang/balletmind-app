@@ -5,6 +5,7 @@ const { RESEND_API_KEY, EMAIL_FROM, APP_PUBLIC_URL, EXPERIMENT_ISSUE_BRIEF, EXPE
 
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
 const path = require('path');
 
 const authRoutes = require('./routes/auth');
@@ -78,6 +79,26 @@ app.get('/api/health/ai', async (req, res) => {
 // body-parser cannot consume or overwrite the buffer.
 app.use('/api/transcribe', transcribeRoutes);
 app.use(express.json({ limit: '1mb' }));
+// index.html carries the app build (git short sha on Render) so client error locations can be
+// matched to the exact code that was running, even for pages left open across a deploy.
+const INDEX_FILE = path.join(__dirname, '..', 'public', 'index.html');
+const APP_BUILD = String(process.env.RENDER_GIT_COMMIT || '').slice(0, 7).toLowerCase() || 'dev';
+let indexCache = { mtime: 0, html: '' };
+function renderIndex() {
+  const mtime = fs.statSync(INDEX_FILE).mtimeMs;
+  if (mtime !== indexCache.mtime) {
+    indexCache = { mtime, html: fs.readFileSync(INDEX_FILE, 'utf8').replace('__APP_BUILD__', APP_BUILD) };
+  }
+  return indexCache.html;
+}
+app.get(['/', '/index.html'], (req, res, next) => {
+  try {
+    res.set('Cache-Control', 'public, max-age=0');
+    res.type('html').send(renderIndex());
+  } catch (e) {
+    next(e);
+  }
+});
 app.use(express.static(path.join(__dirname, '..', 'public'), {
   setHeaders(res, filePath) {
     if (filePath.includes(`${path.sep}fonts${path.sep}`)) {

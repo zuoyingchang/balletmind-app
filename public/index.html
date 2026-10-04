@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>BalletMind</title>
 <meta name="theme-color" content="#faf7f6">
+<meta name="app-build" content="__APP_BUILD__">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="BalletMind">
@@ -4213,13 +4214,42 @@ function reportVisit() {
 }
 let clientErrorsSent = 0;
 const clientErrorSeen = new Set();
-function reportClientError(where, kind, status) {
+// The git short sha the server stamped into this page; lets an error line number be matched to the
+// exact code that was running (empty when the page is not served by our server).
+const APP_BUILD = (() => {
+  const m = document.querySelector('meta[name="app-build"]');
+  const v = m ? String(m.content || '') : '';
+  return v.includes('__') ? '' : v;
+})();
+// Top stack frame of an error -> function name + "file:line:col" of OUR code. Never the message text.
+function errorFrame(err) {
+  const lines = String((err && err.stack) || '').split('\n');
+  for (const ln of lines) {
+    const m = ln.match(/^\s*at\s+(?:async\s+)?([\w$.<>]+)\s+\((.*?):(\d+):(\d+)\)/)
+      || ln.match(/^\s*at\s+()(.*?):(\d+):(\d+)\s*$/)
+      || ln.match(/^([\w$.<>]*)@(.*?):(\d+):(\d+)/);
+    if (m) return { fn: m[1] || '', file: m[2], line: m[3], col: m[4] };
+  }
+  return null;
+}
+function errorLoc(file, line, col) {
+  if (!line) return '';
+  let name = '';
+  try {
+    const u = new URL(file || location.href, location.href);
+    if (u.origin !== location.origin) return 'ext';
+    name = u.pathname.split('/').pop() || 'index.html';
+  } catch (e) { name = 'index.html'; }
+  return `${name}:${line}${col ? ':' + col : ''}`.slice(0, 60);
+}
+function reportClientError(where, kind, status, extra) {
   if (clientErrorsSent >= 5) return;
-  const key = `${where}|${kind}|${status || ''}`;
+  const x = extra || {};
+  const key = `${where}|${kind}|${status || ''}|${x.loc || ''}`;
   if (clientErrorSeen.has(key)) return;
   clientErrorSeen.add(key);
   clientErrorsSent += 1;
-  telemetryPost('error', { where, kind, status });
+  telemetryPost('error', { where, kind, status, loc: x.loc, fn: x.fn, errName: x.errName, build: APP_BUILD });
 }
 function errorWhereFromUrl(url) {
   const u = String(url || '');
@@ -4235,9 +4265,19 @@ function errorWhereFromUrl(url) {
 window.addEventListener('error', (e) => {
   const msg = String((e && e.message) || '');
   if (/ResizeObserver|Script error/i.test(msg)) return;
-  reportClientError('js', 'exception');
+  const frame = errorFrame(e && e.error);
+  const loc = frame ? errorLoc(frame.file, frame.line, frame.col) : errorLoc(e && e.filename, e && e.lineno, e && e.colno);
+  reportClientError('js', 'exception', undefined, { loc, fn: frame ? frame.fn : '', errName: e && e.error && e.error.name });
 });
-window.addEventListener('unhandledrejection', () => reportClientError('js', 'exception'));
+window.addEventListener('unhandledrejection', (e) => {
+  const reason = e && e.reason;
+  const frame = errorFrame(reason);
+  reportClientError('js', 'exception', undefined, {
+    loc: frame ? errorLoc(frame.file, frame.line, frame.col) : '',
+    fn: frame ? frame.fn : '',
+    errName: reason && reason.name,
+  });
+});
 
 async function authFetch(url, opts = {}) {
   opts.headers = Object.assign({}, opts.headers, { Authorization: 'Bearer ' + getToken() });
@@ -4246,7 +4286,7 @@ async function authFetch(url, opts = {}) {
     res = await fetch(url, opts);
   } catch (e) {
     const where = errorWhereFromUrl(url);
-    if (where) reportClientError(where, e && e.name === 'AbortError' ? 'timeout' : 'network');
+    if (where) reportClientError(where, e && e.name === 'AbortError' ? 'timeout' : 'network', undefined, { errName: e && e.name });
     throw e;
   }
   if (res.status >= 500) {

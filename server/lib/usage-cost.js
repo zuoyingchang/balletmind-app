@@ -207,8 +207,18 @@ function summarizeClientErrors(events, since) {
     const b = `${m.platform || 'other'} · ${m.browser || 'other'}`;
     byBrowser[b] = (byBrowser[b] || 0) + 1;
   }
+  const byLocation = {};
+  for (const e of rows) {
+    const m = e.meta || {};
+    if (!m.loc && !m.fn) continue;
+    const k = JSON.stringify([m.loc || '-', m.fn || '', m.errName || '', m.build || '']);
+    byLocation[k] = (byLocation[k] || 0) + 1;
+  }
   const sorted = (o) => Object.entries(o).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
-  return { total: rows.length, byWhereKind: sorted(byWhereKind), byBrowser: sorted(byBrowser) };
+  const locations = Object.entries(byLocation)
+    .map(([k, count]) => { const [loc, fn, errName, build] = JSON.parse(k); return { loc, fn, errName, build, count }; })
+    .sort((a, b) => b.count - a.count);
+  return { total: rows.length, byWhereKind: sorted(byWhereKind), byBrowser: sorted(byBrowser), byLocation: locations };
 }
 
 // OpenAI embedding spend. Real token counts exist only from the day embedding_call events started

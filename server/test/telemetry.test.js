@@ -12,6 +12,7 @@ const assert = require('node:assert/strict');
 const app = require('../app.js');
 const db = require('../db');
 const { sanitizeVisit, sanitizeClientError } = require('../lib/telemetry');
+const { summarizeClientErrors } = require('../lib/usage-cost');
 const { embedTextsOpenAI } = require('../ai/ask-retrieve');
 
 let server;
@@ -89,4 +90,43 @@ test('embedTextsOpenAI reports the real token usage to onUsage', async () => {
   const out = await embedTextsOpenAI(['x'], { fetchImpl, apiKey: 'k', onUsage: (u) => { seen = u; } });
   assert.deepEqual(out, [[0.1]]);
   assert.deepEqual(seen, { tokens: 42, model: 'text-embedding-3-small' });
+});
+
+test('client error location fields keep only code coordinates and drop anything else', () => {
+  const good = sanitizeClientError({ vid: VID, where: 'js', kind: 'exception', loc: 'index.html:7812:15', fn: 'speakTerm', errName: 'TypeError', build: '3A7B1BA', message: 'secret' });
+  assert.equal(good.loc, 'index.html:7812:15');
+  assert.equal(good.fn, 'speakTerm');
+  assert.equal(good.errName, 'TypeError');
+  assert.equal(good.build, '3a7b1ba');
+  assert.equal(good.message, undefined);
+  assert.equal(sanitizeClientError({ vid: VID, loc: 'ext' }).loc, 'ext');
+  const bad = sanitizeClientError({ vid: VID, loc: '../../etc/passwd:1', fn: 'a b; drop', errName: 'Hacked', build: '__APP_BUILD__' });
+  assert.equal(bad.loc, undefined);
+  assert.equal(bad.fn, undefined);
+  assert.equal(bad.errName, 'other');
+  assert.equal(bad.build, undefined);
+});
+
+test('summarizeClientErrors groups script errors by location, function, type and build', () => {
+  const ev = (meta) => ({ created_at: Date.now(), meta });
+  const s = summarizeClientErrors([
+    ev({ where: 'js', kind: 'exception', loc: 'index.html:10:2', fn: 'f', errName: 'TypeError', build: 'abc1234' }),
+    ev({ where: 'js', kind: 'exception', loc: 'index.html:10:2', fn: 'f', errName: 'TypeError', build: 'abc1234' }),
+    ev({ where: 'js', kind: 'exception', loc: 'index.html:99:1', errName: 'RangeError', build: 'def5678' }),
+    ev({ where: 'api', kind: 'network' }),
+  ]);
+  assert.equal(s.total, 4);
+  assert.deepEqual(s.byLocation[0], { loc: 'index.html:10:2', fn: 'f', errName: 'TypeError', build: 'abc1234', count: 2 });
+  assert.equal(s.byLocation.length, 2);
+});
+
+test('the home page is served with a build id and revalidated on every load', async () => {
+  const res = await fetch(`${base}/`);
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('cache-control'), 'public, max-age=0');
+  const html = await res.text();
+  assert.ok(!html.includes('__APP_BUILD__'), 'placeholder must be replaced');
+  assert.match(html, /<meta name="app-build" content="(dev|[a-f0-9]{7})">/);
+  const alias = await fetch(`${base}/index.html`);
+  assert.equal(alias.status, 200);
 });
