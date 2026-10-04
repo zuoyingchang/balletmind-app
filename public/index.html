@@ -38,8 +38,13 @@
     --border-soft: rgba(196, 176, 174, .55);
     --cta-pink: linear-gradient(135deg, #f8ece9 0%, #ead2d3 55%, #dab6b9 100%);
   }
-  /* svh = viewport with browser toolbars showing. iOS Chrome reports 100dvh/100vh as the toolbar-collapsed height even while its toolbars cover the bottom of the page, which hid the bottom nav / login link. */
-  .app-body { height: 100vh; height: 100svh; }
+  /* Pin the app to the visible viewport instead of sizing it with vh/svh: on iOS the viewport units
+     (and a body taller than the screen) can leave the shell taller than what is actually visible, so
+     the top or bottom of the app slides out of view and the page can be dragged around. position:fixed
+     with all four edges at 0 always matches what is on screen, and overflow/overscroll are locked so
+     there is nothing to drag. */
+  html { height: 100%; overflow: hidden; overscroll-behavior: none; }
+  .app-body { position: fixed; top: 0; right: 0; bottom: 0; left: 0; overscroll-behavior: none; }
   body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif; background: #ddd6d4; color: var(--ink); }
   .font-display { font-family: "Cormorant Garamond", "Noto Serif SC", serif; letter-spacing: .01em; }
   .label-editorial { font-family: "Cormorant Garamond", -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", serif; font-style: italic; font-weight: 500; letter-spacing: .1em; }
