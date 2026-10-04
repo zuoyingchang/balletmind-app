@@ -90,6 +90,17 @@ const ready = client.batch(
     // tried first and lost updates under skipGuide()'s ~11 near-simultaneous
     // calls (classic races: two requests both read the old array, each
     // writes back missing the other's step).
+    `CREATE TABLE IF NOT EXISTS visitors (
+      vid TEXT PRIMARY KEY,
+      first_seen INTEGER NOT NULL,
+      last_seen INTEGER NOT NULL,
+      visits INTEGER NOT NULL DEFAULT 1,
+      platform TEXT,
+      browser TEXT,
+      in_app INTEGER NOT NULL DEFAULT 0,
+      src TEXT,
+      signed_in INTEGER NOT NULL DEFAULT 0
+    )`,
     `CREATE TABLE IF NOT EXISTS guide_progress (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,

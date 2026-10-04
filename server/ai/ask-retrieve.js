@@ -60,7 +60,7 @@ function pathFor({ keywordCount, embeddingRan, embeddingAdded, matchCount }) {
   return 'keyword';
 }
 
-async function embedTextsOpenAI(texts, { fetchImpl, apiKey, model } = {}) {
+async function embedTextsOpenAI(texts, { fetchImpl, apiKey, model, onUsage } = {}) {
   const key = apiKey !== undefined ? apiKey : (process.env.OPENAI_API_KEY || '');
   if (!key) throw new Error('missing_openai_key');
   const fetchFn = fetchImpl || fetch;
@@ -80,6 +80,10 @@ async function embedTextsOpenAI(texts, { fetchImpl, apiKey, model } = {}) {
     const data = await response.json();
     const rows = [...(data.data || [])].sort((a, b) => a.index - b.index);
     if (rows.length !== texts.length) throw new Error('embeddings_count_mismatch');
+    if (typeof onUsage === 'function' && data.usage) {
+      const tokens = Number(data.usage.total_tokens ?? data.usage.prompt_tokens);
+      if (Number.isFinite(tokens)) { try { onUsage({ tokens, model: data.model || model || EMBEDDING_MODEL }); } catch (e) { /* stats only */ } }
+    }
     return rows.map((row) => row.embedding);
   } finally {
     clearTimeout(timer);

@@ -2,10 +2,10 @@ const db = require('./db');
 const { parseJson, latencyStats } = require('./lib/text');
 const {
   ANTHROPIC_INPUT_USD_PER_MTOK, ANTHROPIC_OUTPUT_USD_PER_MTOK,
-  DEEPSEEK_INPUT_USD_PER_MTOK, DEEPSEEK_OUTPUT_USD_PER_MTOK, WHISPER_USD_PER_MIN,
+  DEEPSEEK_INPUT_USD_PER_MTOK, DEEPSEEK_OUTPUT_USD_PER_MTOK, WHISPER_USD_PER_MIN, EMBEDDING_USD_PER_MTOK,
   ANALYTICS_INTERNAL_EMAILS,
 } = require('./config');
-const { collectLlmByProvider, collectWhisperUsage, latencySummary, fallbackSummary, summarizeAsk } = require('./lib/usage-cost');
+const { collectLlmByProvider, collectWhisperUsage, latencySummary, fallbackSummary, summarizeAsk, summarizeEmbedding, summarizeTraffic, summarizeScreens, summarizeClientErrors } = require('./lib/usage-cost');
 const { splitTestUsers } = require('./lib/test-users');
 const { canonicalSessionFunnel, productKpis, splitInternal } = require('./analytics');
 
@@ -270,6 +270,24 @@ async function buildAdminStats() {
     all: summarizeAsk(metas(askWithPath)),
   };
   const userSplit = splitTestUsers(userRows);
+  const embeddingEvents = await db.all("SELECT metadata, created_at FROM events WHERE event_name = 'embedding_call'");
+  const embeddingSince = embeddingEvents.length ? Math.min(...embeddingEvents.map((e) => Number(e.created_at))) : Date.now();
+  const embeddedHistory = await db.get(
+    `SELECT COUNT(*) AS records,
+            COALESCE(SUM(LENGTH(COALESCE(class_name,'') || COALESCE(good_points,'') || COALESCE(improve_points,'') || COALESCE(next_time_reminder,''))), 0) AS chars
+     FROM records WHERE embedding IS NOT NULL AND created_at < ?`,
+    [embeddingSince]
+  );
+  const embeddingUsage = summarizeEmbedding(metas(embeddingEvents), EMBEDDING_USD_PER_MTOK, { records: num(embeddedHistory.records), chars: num(embeddedHistory.chars) });
+  embeddingUsage.trackingSince = embeddingEvents.length ? embeddingSince : null;
+  const visitorRows = await db.all('SELECT first_seen, signed_in, in_app, platform, browser, src FROM visitors');
+  const traffic = summarizeTraffic(visitorRows, Date.now(), WEEK_MS);
+  const telemetryEvents = (await db.all("SELECT user_id, event_name, metadata, created_at FROM events WHERE event_name IN ('screen_view','client_error')"))
+    .map((r) => ({ ...r, meta: parseJson(r.metadata) }));
+  const screenEvents = telemetryEvents.filter((e) => e.event_name === 'screen_view');
+  const errorEvents = telemetryEvents.filter((e) => e.event_name === 'client_error');
+  const screenViews = { last7d: summarizeScreens(screenEvents, weekAgo), all: summarizeScreens(screenEvents) };
+  const clientErrors = { last7d: summarizeClientErrors(errorEvents, weekAgo), all: summarizeClientErrors(errorEvents) };
   const asrLatency = { last7d: latencyOf(inLastWeek(asrSuccessEvents)), all: latencyOf(asrSuccessEvents) };
   const asrLat = latencyStats(metas(asrSuccessEvents).map((m) => m.latencyMs).filter((n) => typeof n === 'number'));
   const whisperUsage = collectWhisperUsage(metas(asrSuccessEvents), WHISPER_USD_PER_MIN);
@@ -360,6 +378,9 @@ async function buildAdminStats() {
       reviewOpenedUniqueUsers: unique('review_opened'),
     },
     userSplit,
+    traffic,
+    screenViews,
+    clientErrors,
     aiUsage: {
       totalInputTokens: aiUsage.totalInputTokens,
       totalOutputTokens: aiUsage.totalOutputTokens,
@@ -371,6 +392,7 @@ async function buildAdminStats() {
       fallback: aiFallback,
       localAskCount,
       askUsage,
+      embedding: embeddingUsage,
       callCount: aiUsage.callCount,
       estimatedUsd: aiUsage.estimatedUsd,
       usdPerSave: saveCount ? Math.round((aiUsage._estimatedUsd / saveCount) * 10000) / 10000 : null,

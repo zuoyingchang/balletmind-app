@@ -101,7 +101,7 @@
         <div class="stat"><strong id="u-asr-lat">-</strong><span>ASR 中位数 / P95（近 7 天）</span></div>
         <div class="stat"><strong id="u-fallback">-</strong><span>备用 Anthropic 接手 / LLM 次数（近 7 天）</span></div>
         <div class="stat"><strong id="u-tokens">-</strong><span>Token 输入 / 输出</span></div>
-        <div class="stat"><strong id="u-usd">-</strong><span>估算总费用（LLM + Whisper）</span></div>
+        <div class="stat"><strong id="u-usd">-</strong><span>估算总费用（LLM + 语音识别 + 向量）</span></div>
         <div class="stat"><strong id="u-per-save">-</strong><span>每次保存估算费用</span></div>
       </div>
       <p class="muted" id="u-slow" style="margin:10px 0 0;"></p>
@@ -122,6 +122,43 @@
         <div class="stat"><strong id="ask-emb">-</strong><span>用了向量检索（OpenAI embedding）</span></div>
       </div>
       <p class="muted" id="ask-note" style="margin:10px 0 0;"></p>
+    </div>
+
+    <div class="card">
+      <h3>访问与设备（匿名，不是账号）</h3>
+      <div class="grid">
+        <div class="stat"><strong id="tr-total">-</strong><span>打开过的浏览器（近 7 天）</span></div>
+        <div class="stat"><strong id="tr-signed">-</strong><span>其中登录/注册过</span></div>
+        <div class="stat"><strong id="tr-never">-</strong><span>点进来但没注册/登录</span></div>
+      </div>
+      <p class="muted" id="tr-all" style="margin:10px 0 0;"></p>
+      <p class="muted" id="tr-platform" style="margin:6px 0 0;"></p>
+      <p class="muted" id="tr-browser" style="margin:6px 0 0;"></p>
+      <p class="muted" id="tr-src" style="margin:6px 0 0;"></p>
+      <p class="muted" style="margin:6px 0 0;">一个"浏览器"= 一台设备上的一个浏览器（随机编号，存在本机）。换浏览器、清缓存会算成新的一个，所以是估计值，不是准确的人数。</p>
+    </div>
+
+    <div class="card">
+      <h3>页面打开排行（登录后）</h3>
+      <table>
+        <thead><tr><th>页面</th><th>近 7 天 次数 / 人数</th><th>全部 次数 / 人数</th></tr></thead>
+        <tbody id="screens-body"></tbody>
+      </table>
+      <p class="muted" style="margin:10px 0 0;">人数 = 登录用户（含测试账号）。切换页面一次算一次；术语表、打卡、手动记是弹层，单独计数。</p>
+    </div>
+
+    <div class="card">
+      <h3>前端报错（用户手机上发生的）</h3>
+      <div class="grid">
+        <div class="stat"><strong id="ce-7d">-</strong><span>近 7 天</span></div>
+        <div class="stat"><strong id="ce-all">-</strong><span>全部时间</span></div>
+      </div>
+      <table style="margin-top:12px;">
+        <thead><tr><th>哪里 / 什么类型</th><th>近 7 天</th><th>全部</th></tr></thead>
+        <tbody id="ce-kinds-body"></tbody>
+      </table>
+      <p class="muted" id="ce-browsers" style="margin:10px 0 0;"></p>
+      <p class="muted" style="margin:6px 0 0;">network = 手机没连上服务器（如"Load failed"），http_5xx = 服务器出错，exception = 页面脚本出错。同一个错误每次打开页面最多报 1 次、最多 5 条。</p>
     </div>
   </div>
 
@@ -371,11 +408,49 @@ function render(data) {
     ? '全部时间：共 ' + aa.total + ' 次，纯本地 ' + aa.local + ' 次，用了向量检索 ' + aa.embedding + ' 次（旧事件没记录是否用了向量，其中 ' + aa.inferred + ' 次按"关键词命中太少"估算）。'
       + '问问我的档案不调用聊天大模型，只有关键词命中 ≤ 1 条时，才会让 OpenAI 把问题转成向量再找。每条课记保存时也会算一次向量，这部分没有单独统计。'
     : '还没有数据。';
+  const SCREEN_LABEL = { home: '首页', record: '记录', history: '档案', progress: '追踪', profile: '我的', review: '复盘结果', detail: '课记详情', processing: '整理中', glossary: '术语表（弹层）', checkin_sheet: '打卡（弹层）', manual_sheet: '手动记（弹层）' };
+  const sv = data.screenViews || {};
+  const svAll = new Map((sv.all || []).map((r) => [r.screen, r]));
+  const svWeek = new Map((sv.last7d || []).map((r) => [r.screen, r]));
+  const screenNames = [...svAll.keys()];
+  document.getElementById('screens-body').innerHTML = screenNames.length
+    ? screenNames.map((n) => {
+        const w = svWeek.get(n) || { views: 0, users: 0 }, a = svAll.get(n);
+        return '<tr><td>' + escapeHtml(SCREEN_LABEL[n] || n) + '</td><td>' + w.views + ' / ' + w.users + '</td><td>' + a.views + ' / ' + a.users + '</td></tr>';
+      }).join('')
+    : '<tr><td colspan="3" class="muted">还没有数据（这个功能刚上线，用户打开页面后才会开始记）</td></tr>';
+
+  const tr = data.traffic || {};
+  const tw = tr.last7d || {}, ta = tr.all || {};
+  document.getElementById('tr-total').textContent = tw.total == null ? '-' : tw.total;
+  document.getElementById('tr-signed').textContent = tw.total == null ? '-' : tw.signedIn;
+  document.getElementById('tr-never').textContent = tw.total == null ? '-' : tw.neverSignedIn;
+  const kv = (o) => Object.entries(o || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => k + ' ' + v).join(' · ') || '-';
+  document.getElementById('tr-all').textContent = ta.total
+    ? '全部时间：' + ta.total + ' 个浏览器，其中登录/注册过 ' + ta.signedIn + '，没注册/登录 ' + ta.neverSignedIn + '，在微信/小红书/QQ 内置浏览器里打开 ' + ta.inApp + '。'
+    : '还没有数据（这个功能刚上线，之后有人打开页面才会开始记）。';
+  document.getElementById('tr-platform').textContent = ta.total ? '系统（全部）：' + kv(ta.byPlatform) : '';
+  document.getElementById('tr-browser').textContent = ta.total ? '浏览器（全部）：' + kv(ta.byBrowser) : '';
+  document.getElementById('tr-src').textContent = ta.total ? '来源（全部）：' + kv(ta.bySrc) : '';
+
+  const ce = data.clientErrors || {};
+  const cw = ce.last7d || {}, ca = ce.all || {};
+  document.getElementById('ce-7d').textContent = cw.total == null ? '-' : cw.total;
+  document.getElementById('ce-all').textContent = ca.total == null ? '-' : ca.total;
+  const ceWeek = new Map((cw.byWhereKind || []).map((r) => [r.name, r.count]));
+  const ceRows = (ca.byWhereKind || []);
+  document.getElementById('ce-kinds-body').innerHTML = ceRows.length
+    ? ceRows.map((r) => '<tr><td>' + escapeHtml(r.name) + '</td><td>' + (ceWeek.get(r.name) || 0) + '</td><td>' + r.count + '</td></tr>').join('')
+    : '<tr><td colspan="3" class="muted">没有报错（或这个功能刚上线）</td></tr>';
+  document.getElementById('ce-browsers').textContent = (ca.byBrowser || []).length
+    ? '出错的设备/浏览器：' + ca.byBrowser.map((r) => r.name + ' ' + r.count).join(' · ')
+    : '';
+
   document.getElementById('u-usd').textContent = (function () {
     const llm = u.estimatedUsd;
     const wh = asr.whisper && asr.whisper.estimatedUsd;
     if (llm == null && wh == null) return '-';
-    const sum = (llm || 0) + (wh || 0);
+    const sum = (llm || 0) + (wh || 0) + ((u.embedding && u.embedding.estimatedUsd) || 0);
     return '$' + (Math.round(sum * 10000) / 10000);
   })();
   document.getElementById('u-per-save').textContent = u.usdPerSave == null ? '-' : '$' + u.usdPerSave;
@@ -396,6 +471,11 @@ function render(data) {
   llmRow('DeepSeek', bp.deepseek);
   llmRow('Anthropic（含备用）', bp.anthropic);
   if (bp.unknown && bp.unknown.callCount) llmRow('未标注（旧事件）', bp.unknown);
+  const emb = u.embedding || {};
+  rows.push('<tr><td>向量检索（OpenAI embedding）</td><td>' + (emb.callCount || 0) + '</td><td>'
+    + (emb.tokens || 0) + ' token（实测）'
+    + (emb.historyRecords ? ' + 约 ' + (emb.historyEstimatedTokens || 0) + ' token（更早的 ' + emb.historyRecords + ' 条课记，估算）' : '')
+    + '</td><td>' + (emb.estimatedUsd === 0 && ((emb.tokens || 0) + (emb.historyEstimatedTokens || 0)) > 0 ? '&lt; $0.0001' : usdCell(emb.estimatedUsd)) + '</td></tr>');
   rows.push('<tr><td>语音识别（OpenAI）</td><td>' + (wh.callCount || 0) + '</td><td>'
     + (wh.estimatedMinutes != null ? wh.estimatedMinutes + ' 分钟' : '-')
     + '（无 token）</td><td>' + usdCell(wh.estimatedUsd) + '</td></tr>');

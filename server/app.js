@@ -92,6 +92,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/records', recordsRoutes);
 app.use('/api/generate', generateRoutes);
 app.use('/api/events', eventsRoutes);
+app.use('/api/telemetry', require('./routes/telemetry'));
 app.use('/api/feedback', require('./routes/feedback'));
 app.use('/api/admin', adminRoutes);
 app.use('/api/issues', issuesRoutes);

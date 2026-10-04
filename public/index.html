@@ -3618,7 +3618,15 @@ function show(id) {
   el.classList.remove('screen-transition-in');
   void el.offsetWidth; // force reflow so the animation replays on repeat visits
   el.classList.add('screen-transition-in');
+  trackScreen(id.replace(/^screen-/, ''));
   paintGuides();
+}
+// Which screens people actually open (logged-in only; logEvent is a no-op without a token).
+let lastScreenViewed = '';
+function trackScreen(name) {
+  if (!name || name === 'auth' || name === lastScreenViewed) return;
+  lastScreenViewed = name;
+  logEvent('screen_view', { screen: name }, 'none');
 }
 function toast(msg, ms = 2200) {
   const t = document.getElementById('toast');
@@ -3891,6 +3899,7 @@ function renderGlossaryList() {
   }).join('');
 }
 function showGlossary() {
+  logEvent('screen_view', { screen: 'glossary' }, 'none');
   renderGlossaryCategoryChips();
   renderGlossaryList();
   const m = document.getElementById('glossary-modal');
@@ -4126,9 +4135,117 @@ function getUser() { try { return JSON.parse(localStorage.getItem('bm_user') || 
 function setAuth(token, user) { localStorage.setItem('bm_token', token); localStorage.setItem('bm_user', JSON.stringify(user)); }
 function clearAuth() { localStorage.removeItem('bm_token'); localStorage.removeItem('bm_user'); }
 
+// ---------- anonymous visit + client error telemetry ----------
+// Only coarse enums leave the device (see server/lib/telemetry.js): a random browser id kept in
+// localStorage, platform/browser bucket, entry source, and error type codes -- no IP stored, no
+// raw user agent, no message text, and the id is never linked to an account.
+const TELEMETRY = (() => {
+  const ua = navigator.userAgent || '';
+  let platform = 'other';
+  if (/iPhone|iPad|iPod/i.test(ua)) platform = 'ios';
+  else if (/Android/i.test(ua)) platform = 'android';
+  else if (/Macintosh|Windows|X11|Linux/i.test(ua)) platform = 'desktop';
+  let browser = 'other';
+  if (/MicroMessenger/i.test(ua)) browser = 'wechat';
+  else if (/xhsdiscover|xiaohongshu|\bdiscover\/\d/i.test(ua)) browser = 'xhs';
+  else if (/\bQQ\/|MQQBrowser/i.test(ua)) browser = 'qq';
+  else if (/MiuiBrowser|XiaoMi/i.test(ua)) browser = 'xiaomi';
+  else if (/HuaweiBrowser|HMSCore/i.test(ua)) browser = 'huawei';
+  else if (/Edg(e|A|iOS)?\//.test(ua)) browser = 'edge';
+  else if (/OPR\/|Opera/.test(ua)) browser = 'opera';
+  else if (/FxiOS|Firefox/i.test(ua)) browser = 'firefox';
+  else if (/CriOS|Chrome\//.test(ua)) browser = 'chrome';
+  else if (/Safari\//.test(ua)) browser = 'safari';
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  };
+  let vid = store.get('bm_vid');
+  if (!vid || !/^[a-z0-9-]{16,40}$/i.test(vid)) {
+    vid = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : ('v' + Date.now().toString(16) + Math.random().toString(16).slice(2, 14).padEnd(12, '0'));
+    store.set('bm_vid', vid);
+  }
+  let src = store.get('bm_src');
+  if (!src) {
+    let q = '';
+    try { q = String(new URLSearchParams(location.search).get('src') || '').toLowerCase(); } catch (e) {}
+    if (/^[a-z0-9_-]{1,24}$/.test(q)) src = q;
+    else {
+      let host = '';
+      try { host = document.referrer ? new URL(document.referrer).hostname : ''; } catch (e) {}
+      if (!host || host === location.hostname) src = 'direct';
+      else if (/xiaohongshu|xhslink/.test(host)) src = 'xhs';
+      else if (/weixin|wechat|qq\.com/.test(host)) src = 'wechat';
+      else if (/google|bing|baidu|sogou|so\.com/.test(host)) src = 'search';
+      else src = 'other';
+    }
+    store.set('bm_src', src);
+  }
+  return { platform, browser, inApp: browser === 'wechat' || browser === 'xhs' || browser === 'qq', vid, src, store };
+})();
+function telemetryPost(path, body, extraHeaders) {
+  try {
+    return fetch(`${API}/api/telemetry/${path}`, {
+      method: 'POST', keepalive: true,
+      headers: Object.assign({ 'Content-Type': 'application/json' }, extraHeaders || {}),
+      body: JSON.stringify(Object.assign({ vid: TELEMETRY.vid, platform: TELEMETRY.platform, browser: TELEMETRY.browser }, body || {})),
+    }).catch(() => null);
+  } catch (e) { return Promise.resolve(null); }
+}
+function markVisitorSignedIn() {
+  const token = getToken();
+  if (!token || TELEMETRY.store.get('bm_vid_signed') === TELEMETRY.vid) return;
+  telemetryPost('signed-in', {}, { Authorization: 'Bearer ' + token }).then((r) => {
+    if (r && r.ok) TELEMETRY.store.set('bm_vid_signed', TELEMETRY.vid);
+  });
+}
+function reportVisit() {
+  telemetryPost('visit', { inApp: TELEMETRY.inApp, src: TELEMETRY.src }).then(() => markVisitorSignedIn());
+}
+let clientErrorsSent = 0;
+const clientErrorSeen = new Set();
+function reportClientError(where, kind, status) {
+  if (clientErrorsSent >= 5) return;
+  const key = `${where}|${kind}|${status || ''}`;
+  if (clientErrorSeen.has(key)) return;
+  clientErrorSeen.add(key);
+  clientErrorsSent += 1;
+  telemetryPost('error', { where, kind, status });
+}
+function errorWhereFromUrl(url) {
+  const u = String(url || '');
+  if (u.includes('/api/telemetry') || u.includes('/api/events')) return null;
+  if (u.includes('/api/generate')) return 'ai_process';
+  if (u.includes('/api/transcribe')) return 'asr';
+  if (u.includes('/api/records')) return 'records';
+  if (u.includes('/api/progress/ask')) return 'ask';
+  if (u.includes('/api/progress')) return 'progress';
+  if (u.includes('/api/auth')) return 'auth';
+  return 'api';
+}
+window.addEventListener('error', (e) => {
+  const msg = String((e && e.message) || '');
+  if (/ResizeObserver|Script error/i.test(msg)) return;
+  reportClientError('js', 'exception');
+});
+window.addEventListener('unhandledrejection', () => reportClientError('js', 'exception'));
+
 async function authFetch(url, opts = {}) {
   opts.headers = Object.assign({}, opts.headers, { Authorization: 'Bearer ' + getToken() });
-  const res = await fetch(url, opts);
+  let res;
+  try {
+    res = await fetch(url, opts);
+  } catch (e) {
+    const where = errorWhereFromUrl(url);
+    if (where) reportClientError(where, e && e.name === 'AbortError' ? 'timeout' : 'network');
+    throw e;
+  }
+  if (res.status >= 500) {
+    const where = errorWhereFromUrl(url);
+    if (where) reportClientError(where, 'http_5xx', res.status);
+  }
   const renewed = res.headers.get('X-New-Token');
   if (renewed) { try { localStorage.setItem('bm_token', renewed); } catch (e) {} }
   if (res.status === 401) { clearAuth(); show('screen-auth'); throw new Error('登录已过期，请重新登录'); }
@@ -4281,6 +4398,7 @@ async function submitAuth() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '操作失败');
     setAuth(data.token, data.user);
+    markVisitorSignedIn();
     resetAccountScopedCaches();
     document.getElementById('auth-email').value = '';
     document.getElementById('auth-password').value = '';
@@ -4289,6 +4407,7 @@ async function submitAuth() {
     await loadGuideSeenFromServer();
     goHome();
   } catch (e) {
+    if (e && e.name === 'TypeError') reportClientError('auth', 'network');
     errEl.textContent = e.message;
     errEl.classList.remove('hidden');
   }
@@ -4303,6 +4422,7 @@ async function submitAuth() {
 // account switch in the same tab can leave a previous account's content
 // sitting in memory for one of those guarded paths to reuse.
 function resetAccountScopedCaches() {
+  lastScreenViewed = '';
   homeRows = [];
   homeRowsLoaded = false;
   historyRows = [];
@@ -4399,6 +4519,7 @@ function showAuthWithCurtain() {
   if (!reduceMotion) document.getElementById('screen-auth').classList.add('curtain-active');
 }
 async function checkAuthAndInit() {
+  reportVisit();
   await loadNotices();
   if (!getToken()) { showAuthWithCurtain(); return; }
   try {
@@ -5101,6 +5222,7 @@ function paintHomeGuides() { paintGuides(); }
 function dismissCheckinTip() { dismissGuide('checkin'); }
 let checkinSheetSource = 'home';
 async function openCheckinSheet(source) {
+  logEvent('screen_view', { screen: 'checkin_sheet' }, 'none');
   if (!allowGuideAction('checkin')) return;
   dismissCheckinTip();
   checkinSheetSource = source === 'history' ? 'history' : 'home';
@@ -5258,6 +5380,7 @@ function resetManualSheet() {
   fillNoteRuled('manual-sheet-improve');
 }
 function openManualSheet(reason) {
+  logEvent('screen_view', { screen: 'manual_sheet' }, 'none');
   markGuideSeen('recap-done');
   lastDraft = { manual: true, transcript: '', durationSec: 0, from: 'manual', result: {} };
   resetManualSheet();

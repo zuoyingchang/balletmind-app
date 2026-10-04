@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
-const { logEvent } = require('../events');
+const { logEvent, logEmbeddingUsage } = require('../events');
 const { sessionIdFromReq, withSession } = require('../lib/text');
 const { processRecordForIssues, removeRecordFromIssues } = require('../issues');
 const { checkMilestone } = require('../milestones');
@@ -20,11 +20,11 @@ router.use(requireAuth);
 // routes/auth.js already uses): it's an unawaited background call, so it
 // would race every other test's assertions against the shared OpenAI-fetch
 // mock. The caching mechanism itself has its own dedicated tests instead.
-function cacheRecordEmbedding(recordId, record) {
+function cacheRecordEmbedding(userId, recordId, record) {
   if (process.env.NODE_TEST_CONTEXT) return;
   const corpus = recordCorpus(record);
   if (!corpus) return;
-  embedTextsOpenAI([corpus])
+  embedTextsOpenAI([corpus], { onUsage: (u) => logEmbeddingUsage(userId, 'save', u) })
     .then(([vector]) => db.run('UPDATE records SET embedding = ? WHERE id = ?', [JSON.stringify(vector), recordId]))
     .catch(() => {});
 }
@@ -91,7 +91,7 @@ router.post('/', async (req, res) => {
   await processRecordForIssues(req.userId, info.lastInsertRowid, improve);
   const milestone = await checkMilestone(req.userId, { source: 'recap' });
   res.json({ id: info.lastInsertRowid, milestone });
-  cacheRecordEmbedding(info.lastInsertRowid, {
+  cacheRecordEmbedding(req.userId, info.lastInsertRowid, {
     class_name: className || '训练记录', good_points: good, improve_points: improve, next_time_reminder: next_time_reminder || '',
   });
 });
@@ -118,7 +118,7 @@ router.post('/checkin', async (req, res) => {
   }, sessionIdFromReq(req)));
   const milestone = await checkMilestone(req.userId, { source: 'checkin' });
   res.json({ id: info.lastInsertRowid, milestone });
-  cacheRecordEmbedding(info.lastInsertRowid, { class_name: name });
+  cacheRecordEmbedding(req.userId, info.lastInsertRowid, { class_name: name });
 });
 
 router.get('/', async (req, res) => {

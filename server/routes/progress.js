@@ -3,7 +3,7 @@ const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { listIssuesWithOccurrences, isSimilar } = require('../issues');
 const { splitLines, sessionIdFromReq, withSession, uniqueCompactGoodPoints } = require('../lib/text');
-const { logEvent, countAiCallsToday, countSecondaryAiCallsThisWeek, countAiRecapsToday } = require('../events');
+const { logEvent, logEmbeddingUsage, countAiCallsToday, countSecondaryAiCallsThisWeek, countAiRecapsToday } = require('../events');
 const { dailyAiLimitFor, weeklyAskLimitFor, dailyRecapLimitFor } = require('../config');
 const { retrieveAskRecords, KEYWORD_SPARSE_MAX } = require('../ai/ask-retrieve');
 const { buildAskDigest, wantResolvedSection, stripAskFillers } = require('../ai/ask-digest');
@@ -231,7 +231,7 @@ router.get('/ask', async (req, res) => {
       await logEvent(req.userId, 'ask_fail', withSession({ reason: 'quota_exceeded' }, sessionId));
       return res.status(429).json({ error: '这周的问问次数已经用完了，下周再问吧' });
     }
-    round1 = await retrieveAskRecords(rows, searchQuestion, { limit: 8 });
+    round1 = await retrieveAskRecords(rows, searchQuestion, { limit: 8, onUsage: (u) => logEmbeddingUsage(req.userId, 'ask', u) });
   }
 
   const round1Matches = round1.matches;

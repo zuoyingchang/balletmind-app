@@ -153,6 +153,93 @@ function summarizeAsk(metas) {
   return out;
 }
 
+function countBy(rows, keyFn) {
+  const out = {};
+  for (const r of rows) {
+    const k = keyFn(r) || 'other';
+    out[k] = (out[k] || 0) + 1;
+  }
+  return out;
+}
+
+// Visitors = anonymous browser ids that opened the app (see lib/telemetry.js); signed_in marks
+// the ones that later logged in or registered.
+function summarizeTraffic(rows, now, weekMs) {
+  const list = rows || [];
+  const recent = list.filter((r) => Number(r.first_seen) >= now - weekMs);
+  const part = (rs) => ({
+    total: rs.length,
+    signedIn: rs.filter((r) => r.signed_in).length,
+    neverSignedIn: rs.filter((r) => !r.signed_in).length,
+    inApp: rs.filter((r) => r.in_app).length,
+    byPlatform: countBy(rs, (r) => r.platform),
+    byBrowser: countBy(rs, (r) => r.browser),
+    bySrc: countBy(rs, (r) => r.src),
+  });
+  return { last7d: part(recent), all: part(list) };
+}
+
+// screen_view events -> per screen: views and distinct logged-in users.
+function summarizeScreens(events, since) {
+  const screens = {};
+  for (const e of events || []) {
+    if (since && Number(e.created_at) < since) continue;
+    const name = e.meta && e.meta.screen;
+    if (!name) continue;
+    screens[name] = screens[name] || { views: 0, users: new Set() };
+    screens[name].views += 1;
+    if (e.user_id != null) screens[name].users.add(e.user_id);
+  }
+  return Object.entries(screens)
+    .map(([screen, v]) => ({ screen, views: v.views, users: v.users.size }))
+    .sort((a, b) => b.views - a.views);
+}
+
+// client_error events -> "where / kind" counts plus which browsers they came from.
+function summarizeClientErrors(events, since) {
+  const rows = (events || []).filter((e) => !since || Number(e.created_at) >= since);
+  const byWhereKind = {};
+  const byBrowser = {};
+  for (const e of rows) {
+    const m = e.meta || {};
+    const k = `${m.where || 'api'} / ${m.kind || 'other'}`;
+    byWhereKind[k] = (byWhereKind[k] || 0) + 1;
+    const b = `${m.platform || 'other'} · ${m.browser || 'other'}`;
+    byBrowser[b] = (byBrowser[b] || 0) + 1;
+  }
+  const sorted = (o) => Object.entries(o).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+  return { total: rows.length, byWhereKind: sorted(byWhereKind), byBrowser: sorted(byBrowser) };
+}
+
+// OpenAI embedding spend. Real token counts exist only from the day embedding_call events started
+// being logged; earlier saved records that already hold a cached vector are priced as an estimate
+// (about 1.2 tokens per character of the text that was embedded).
+const TOKENS_PER_CHAR_ESTIMATE = 1.2;
+function summarizeEmbedding(metas, usdPerMTok, history) {
+  let tokens = 0;
+  const bySource = { save: 0, ask: 0 };
+  for (const m of metas || []) {
+    if (typeof m.inputTokens === 'number') tokens += m.inputTokens;
+    const src = m.source === 'ask' ? 'ask' : 'save';
+    bySource[src] += 1;
+  }
+  const measuredUsd = (tokens / 1e6) * usdPerMTok;
+  const h = history || { records: 0, chars: 0 };
+  const estimatedTokens = Math.round((h.chars || 0) * TOKENS_PER_CHAR_ESTIMATE);
+  const historyUsd = (estimatedTokens / 1e6) * usdPerMTok;
+  return {
+    callCount: (metas || []).length,
+    tokens,
+    bySource,
+    measuredUsd: roundUsd(measuredUsd),
+    historyRecords: h.records || 0,
+    historyEstimatedTokens: estimatedTokens,
+    historyEstimatedUsd: roundUsd(historyUsd),
+    estimatedUsd: roundUsd(measuredUsd + historyUsd),
+    usdPerMTok,
+  };
+}
+
 function isWhisperModel(model) {
   const m = String(model || '').toLowerCase();
   return !m || m.includes('whisper') || m.includes('transcribe');
@@ -191,6 +278,10 @@ module.exports = {
   fallbackSummary,
   summarizeAsk,
   askUsedEmbedding,
+  summarizeEmbedding,
+  summarizeTraffic,
+  summarizeScreens,
+  summarizeClientErrors,
   classifyLlmProvider,
   collectLlmByProvider,
   collectWhisperUsage,

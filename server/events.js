@@ -46,6 +46,12 @@ async function logEvent(userId, eventName, metadata) {
   return true;
 }
 
+// Embedding calls are cheap but not free; keep the real token counts so the stats page can price them.
+function logEmbeddingUsage(userId, source, usage) {
+  if (!usage || !Number.isFinite(usage.tokens)) return Promise.resolve(false);
+  return logEvent(userId, 'embedding_call', { source, model: usage.model, inputTokens: usage.tokens }).catch(() => false);
+}
+
 async function countEventsSince(userId, eventNames, sinceMs) {
   const placeholders = eventNames.map(() => '?').join(', ');
   const row = await db.get(
@@ -91,6 +97,7 @@ async function countAiRecapsToday(userId) {
 }
 
 module.exports = {
+  logEmbeddingUsage,
   logEvent, KNOWN_EVENTS, countAiCallsToday, countSecondaryAiCallsThisWeek, countAiRecapsToday,
   startOfLocalWeekMs,
 };

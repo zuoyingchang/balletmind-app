@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { classifyLlmProvider, collectLlmByProvider, collectWhisperUsage, latencySummary, fallbackSummary, summarizeAsk } = require('../lib/usage-cost');
+const { classifyLlmProvider, collectLlmByProvider, collectWhisperUsage, latencySummary, fallbackSummary, summarizeAsk, summarizeEmbedding, summarizeTraffic } = require('../lib/usage-cost');
 const { isTestAccountEmail, splitTestUsers } = require('../lib/test-users');
 
 test('classifyLlmProvider uses provider, fallback flag, then model name', () => {
@@ -86,4 +86,35 @@ test('test accounts are recognised by reserved domains and test-style qq address
     (({ registered, test, real }) => ({ registered, test, real }))(splitTestUsers([{ email: 'a@qq.com' }, { email: 'test@qq.com' }, { email: 'q@example.com' }])),
     { registered: 3, test: 2, real: 1 }
   );
+});
+
+test('summarizeEmbedding prices measured tokens and estimates earlier cached vectors separately', () => {
+  const e = summarizeEmbedding(
+    [{ source: 'save', inputTokens: 500000 }, { source: 'ask', inputTokens: 500000 }, { inputTokens: 0 }],
+    0.02,
+    { records: 10, chars: 1000000 }
+  );
+  assert.equal(e.callCount, 3);
+  assert.equal(e.tokens, 1000000);
+  assert.deepEqual(e.bySource, { save: 2, ask: 1 });
+  assert.equal(e.measuredUsd, 0.02);
+  assert.equal(e.historyEstimatedTokens, 1200000);
+  assert.equal(e.historyEstimatedUsd, 0.024);
+  assert.equal(e.estimatedUsd, 0.044);
+});
+
+test('summarizeTraffic splits visitors into signed-in and never-signed-in, all time and last 7 days', () => {
+  const now = Date.now();
+  const day = 24 * 60 * 60 * 1000;
+  const t = summarizeTraffic([
+    { first_seen: now - day, signed_in: 1, platform: 'ios', browser: 'safari', src: 'xhs', in_app: 0 },
+    { first_seen: now - 2 * day, signed_in: 0, platform: 'android', browser: 'xiaomi', src: 'xhs', in_app: 0 },
+    { first_seen: now - 20 * day, signed_in: 0, platform: 'ios', browser: 'wechat', src: 'direct', in_app: 1 },
+  ], now, 7 * day);
+  assert.equal(t.all.total, 3);
+  assert.equal(t.all.neverSignedIn, 2);
+  assert.equal(t.last7d.total, 2);
+  assert.equal(t.last7d.neverSignedIn, 1);
+  assert.equal(t.all.inApp, 1);
+  assert.deepEqual(t.all.bySrc, { xhs: 2, direct: 1 });
 });

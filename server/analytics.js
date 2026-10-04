@@ -38,6 +38,7 @@ const ALLOWED_META = new Set([
   'slotsFilled', 'round', 'rounds', 'matchCount', 'answered',
   'retrievalPath', 'keywordCount', 'embeddingCount',
   'attempts', 'aiUsed', 'embeddingRan',
+  'screen', 'where', 'kind', 'vid', 'platform', 'browser', 'source',
 ]);
 
 const BLOCKED_META = new Set([
@@ -58,6 +59,7 @@ function knownEventNames() {
     'history_open', 'history_opened', 'history_session_opened',
     'progress_open', 'progress_opened',
     'share_card_downloaded', 'month_share_card_downloaded',
+    'screen_view', 'client_error', 'embedding_call',
   ]);
 }
 
