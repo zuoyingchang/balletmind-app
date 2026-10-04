@@ -131,6 +131,28 @@ function fallbackSummary(metas) {
   };
 }
 
+// 问问我的档案 never calls a chat model; the only AI it can touch is an embedding lookup (OpenAI),
+// which runs when keyword hits are sparse. Newer events record embeddingRan; for older ones we
+// infer it from the retrieval path / keyword count and report how many were inferred.
+function askUsedEmbedding(m) {
+  if (typeof m.embeddingRan === 'boolean') return { used: m.embeddingRan, inferred: false };
+  const path = m.retrievalPath;
+  if (path === 'embedding' || path === 'hybrid') return { used: true, inferred: true };
+  if (path === 'keyword' && typeof m.keywordCount === 'number' && m.keywordCount <= 1) return { used: true, inferred: true };
+  return { used: false, inferred: true };
+}
+
+function summarizeAsk(metas) {
+  const out = { total: 0, embedding: 0, local: 0, inferred: 0 };
+  for (const m of metas || []) {
+    const r = askUsedEmbedding(m || {});
+    out.total += 1;
+    if (r.used) out.embedding += 1; else out.local += 1;
+    if (r.inferred) out.inferred += 1;
+  }
+  return out;
+}
+
 function isWhisperModel(model) {
   const m = String(model || '').toLowerCase();
   return !m || m.includes('whisper') || m.includes('transcribe');
@@ -167,6 +189,8 @@ module.exports = {
   SLOW_CALL_MS,
   latencySummary,
   fallbackSummary,
+  summarizeAsk,
+  askUsedEmbedding,
   classifyLlmProvider,
   collectLlmByProvider,
   collectWhisperUsage,

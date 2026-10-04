@@ -173,6 +173,7 @@ async function retrieveAskRecords(records, question, opts = {}) {
     keywordCount,
     embeddingCount: embeddingList.length,
     embeddingAdded,
+    embeddingRan: embeddingRan && mode !== 'keyword',
   };
 }
 

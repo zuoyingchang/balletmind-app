@@ -262,6 +262,7 @@ router.get('/ask', async (req, res) => {
     retrievalPath: round1.retrievalPath,
     keywordCount: round1.keywordCount,
     embeddingCount: round1.embeddingCount,
+    embeddingRan: Boolean(round1.embeddingRan),
     digest: true,
     aiUsed: false,
   }, sessionId));

@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { classifyLlmProvider, collectLlmByProvider, collectWhisperUsage, latencySummary, fallbackSummary } = require('../lib/usage-cost');
+const { classifyLlmProvider, collectLlmByProvider, collectWhisperUsage, latencySummary, fallbackSummary, summarizeAsk } = require('../lib/usage-cost');
+const { isTestAccountEmail, splitTestUsers } = require('../lib/test-users');
 
 test('classifyLlmProvider uses provider, fallback flag, then model name', () => {
   assert.equal(classifyLlmProvider({ fellBack: true, provider: 'deepseek' }), 'anthropic');
@@ -65,4 +66,24 @@ test('latencySummary ignores 0 ms entries (events that never made a round trip)'
   const s = latencySummary([0, 0, 0, 2000, 4000]);
   assert.equal(s.count, 2);
   assert.equal(s.p50Ms, 2000);
+});
+
+test('summarizeAsk counts embedding lookups separately, using the recorded flag when present', () => {
+  const s = summarizeAsk([
+    { retrievalPath: 'keyword', keywordCount: 5, embeddingRan: false },
+    { retrievalPath: 'keyword', keywordCount: 0, embeddingRan: true },
+    { retrievalPath: 'keyword', keywordCount: 4 },
+    { retrievalPath: 'keyword', keywordCount: 1 },
+    { retrievalPath: 'hybrid', keywordCount: 3 },
+  ]);
+  assert.deepEqual(s, { total: 5, embedding: 3, local: 2, inferred: 3 });
+});
+
+test('test accounts are recognised by reserved domains and test-style qq addresses only', () => {
+  ['a@test.local', 'x@example.com', 'x@Example.ORG', 'test@qq.com', 'test1@qq.com', 'tes2t@qq.com', 'TEST3@qq.com'].forEach((e) => assert.ok(isTestAccountEmail(e), e));
+  ['1123106531@qq.com', 'old_zuo@163.com', 'testing.person@qq.com', 'contest@qq.com', 'teacher@gmail.com', '', null].forEach((e) => assert.ok(!isTestAccountEmail(e), String(e)));
+  assert.deepEqual(
+    (({ registered, test, real }) => ({ registered, test, real }))(splitTestUsers([{ email: 'a@qq.com' }, { email: 'test@qq.com' }, { email: 'q@example.com' }])),
+    { registered: 3, test: 2, real: 1 }
+  );
 });

@@ -5,7 +5,8 @@ const {
   DEEPSEEK_INPUT_USD_PER_MTOK, DEEPSEEK_OUTPUT_USD_PER_MTOK, WHISPER_USD_PER_MIN,
   ANALYTICS_INTERNAL_EMAILS,
 } = require('./config');
-const { collectLlmByProvider, collectWhisperUsage, latencySummary, fallbackSummary } = require('./lib/usage-cost');
+const { collectLlmByProvider, collectWhisperUsage, latencySummary, fallbackSummary, summarizeAsk } = require('./lib/usage-cost');
+const { splitTestUsers } = require('./lib/test-users');
 const { canonicalSessionFunnel, productKpis, splitInternal } = require('./analytics');
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -55,8 +56,21 @@ function utcDay(ts) {
   return new Date(Number(ts)).toISOString().slice(0, 10);
 }
 
+// Before the provider tags existed (and before the 2026-09-27 switch to DeepSeek) Anthropic was
+// the only model in use, so untagged events from that period are Anthropic calls.
+const LEGACY_ANTHROPIC_BEFORE_MS = Date.UTC(2026, 8, 27);
+function llmMetas(rows) {
+  return rows.map((r) => {
+    const m = parseJson(r.metadata);
+    if (!m.provider && !m.model && m.fellBack !== true && Number(r.created_at) < LEGACY_ANTHROPIC_BEFORE_MS) {
+      return { ...m, provider: 'anthropic' };
+    }
+    return m;
+  });
+}
+
 function collectAiUsage(successEvents) {
-  const packed = collectLlmByProvider(metas(successEvents), {
+  const packed = collectLlmByProvider(llmMetas(successEvents), {
     deepseek: { input: DEEPSEEK_INPUT_USD_PER_MTOK, output: DEEPSEEK_OUTPUT_USD_PER_MTOK },
     anthropic: { input: ANTHROPIC_INPUT_USD_PER_MTOK, output: ANTHROPIC_OUTPUT_USD_PER_MTOK },
   });
@@ -250,6 +264,12 @@ async function buildAdminStats() {
   const latencyOf = (rows) => latencySummary(metas(rows).map((m) => m.latencyMs));
   const aiLatency = { last7d: latencyOf(inLastWeek(llmEvents)), all: latencyOf(llmEvents) };
   const aiFallback = { last7d: fallbackSummary(metas(inLastWeek(llmEvents))), all: fallbackSummary(metas(llmEvents)) };
+  const askWithPath = askSuccessEvents.filter((r) => parseJson(r.metadata).retrievalPath);
+  const askUsage = {
+    last7d: summarizeAsk(metas(inLastWeek(askWithPath))),
+    all: summarizeAsk(metas(askWithPath)),
+  };
+  const userSplit = splitTestUsers(userRows);
   const asrLatency = { last7d: latencyOf(inLastWeek(asrSuccessEvents)), all: latencyOf(asrSuccessEvents) };
   const asrLat = latencyStats(metas(asrSuccessEvents).map((m) => m.latencyMs).filter((n) => typeof n === 'number'));
   const whisperUsage = collectWhisperUsage(metas(asrSuccessEvents), WHISPER_USD_PER_MIN);
@@ -339,6 +359,7 @@ async function buildAdminStats() {
       reviewOpenedCount: click('review_opened'),
       reviewOpenedUniqueUsers: unique('review_opened'),
     },
+    userSplit,
     aiUsage: {
       totalInputTokens: aiUsage.totalInputTokens,
       totalOutputTokens: aiUsage.totalOutputTokens,
@@ -349,6 +370,7 @@ async function buildAdminStats() {
       latency: aiLatency,
       fallback: aiFallback,
       localAskCount,
+      askUsage,
       callCount: aiUsage.callCount,
       estimatedUsd: aiUsage.estimatedUsd,
       usdPerSave: saveCount ? Math.round((aiUsage._estimatedUsd / saveCount) * 10000) / 10000 : null,

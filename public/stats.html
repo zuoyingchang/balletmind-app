@@ -113,6 +113,16 @@
         <tbody id="cost-by-provider-body"></tbody>
       </table>
     </div>
+
+    <div class="card">
+      <h3>问问我的档案（不调大模型）</h3>
+      <div class="grid">
+        <div class="stat"><strong id="ask-total">-</strong><span>问的次数（近 7 天）</span></div>
+        <div class="stat"><strong id="ask-local">-</strong><span>纯本地关键词（没用 AI）</span></div>
+        <div class="stat"><strong id="ask-emb">-</strong><span>用了向量检索（OpenAI embedding）</span></div>
+      </div>
+      <p class="muted" id="ask-note" style="margin:10px 0 0;"></p>
+    </div>
   </div>
 
   <div class="layer" id="layer3">
@@ -125,12 +135,15 @@
       <h3>规模（含自测，先看账号不要只看次数）</h3>
       <div class="grid">
         <div class="stat"><strong id="t-users">-</strong><span>注册账号</span></div>
+        <div class="stat"><strong id="t-test">-</strong><span>其中测试账号</span></div>
+        <div class="stat"><strong id="t-real">-</strong><span>真实用户（注册 − 测试）</span></div>
         <div class="stat"><strong id="t-activated">-</strong><span>至少保存过 1 条</span></div>
         <div class="stat"><strong id="m-activation">-</strong><span>Activation</span></div>
         <div class="stat"><strong id="t-never">-</strong><span>只注册没保存</span></div>
         <div class="stat"><strong id="t-records">-</strong><span>训练记录总数</span></div>
         <div class="stat"><strong id="m-avg-rec">-</strong><span>激活用户人均条数</span></div>
       </div>
+      <p class="muted" id="t-split-note" style="margin:10px 0 0;"></p>
       <div class="grid" style="margin-top:12px;">
         <div class="stat"><strong id="w-records">-</strong><span>近 7 天新保存</span></div>
         <div class="stat"><strong id="w-savers">-</strong><span>近 7 天保存过的账号</span></div>
@@ -345,6 +358,19 @@ function render(data) {
       + '；全部时间 ' + fba.fellBack + ' / ' + fba.total + '（' + fba.rate + '%）。只统计成功的调用；主服务和备用都失败的不在这里。'
     : '';
   if (u.localAskCount) document.getElementById('u-fallback-note').textContent += (document.getElementById('u-fallback-note').textContent ? ' ' : '') + '问问我的档案现在是本地检索、不调大模型：' + u.localAskCount + ' 次，没有计入上面的 LLM 次数和速度。';
+  const sp = data.userSplit || {};
+  document.getElementById('t-test').textContent = sp.test == null ? '-' : sp.test;
+  document.getElementById('t-real').textContent = sp.real == null ? '-' : sp.real;
+  document.getElementById('t-split-note').textContent = sp.rule ? sp.rule + '。你自己的账号算真实用户。' : '';
+  const ask = u.askUsage || {};
+  const aw = ask.last7d || {}, aa = ask.all || {};
+  document.getElementById('ask-total').textContent = aw.total == null ? '-' : aw.total;
+  document.getElementById('ask-local').textContent = aw.total ? aw.local : '-';
+  document.getElementById('ask-emb').textContent = aw.total ? aw.embedding : '-';
+  document.getElementById('ask-note').textContent = aa.total
+    ? '全部时间：共 ' + aa.total + ' 次，纯本地 ' + aa.local + ' 次，用了向量检索 ' + aa.embedding + ' 次（旧事件没记录是否用了向量，其中 ' + aa.inferred + ' 次按"关键词命中太少"估算）。'
+      + '问问我的档案不调用聊天大模型，只有关键词命中 ≤ 1 条时，才会让 OpenAI 把问题转成向量再找。每条课记保存时也会算一次向量，这部分没有单独统计。'
+    : '还没有数据。';
   document.getElementById('u-usd').textContent = (function () {
     const llm = u.estimatedUsd;
     const wh = asr.whisper && asr.whisper.estimatedUsd;
@@ -370,7 +396,7 @@ function render(data) {
   llmRow('DeepSeek', bp.deepseek);
   llmRow('Anthropic（含备用）', bp.anthropic);
   if (bp.unknown && bp.unknown.callCount) llmRow('未标注（旧事件）', bp.unknown);
-  rows.push('<tr><td>Whisper</td><td>' + (wh.callCount || 0) + '</td><td>'
+  rows.push('<tr><td>语音识别（OpenAI）</td><td>' + (wh.callCount || 0) + '</td><td>'
     + (wh.estimatedMinutes != null ? wh.estimatedMinutes + ' 分钟' : '-')
     + '（无 token）</td><td>' + usdCell(wh.estimatedUsd) + '</td></tr>');
   document.getElementById('cost-by-provider-body').innerHTML = rows.join('');
