@@ -3668,6 +3668,8 @@ let expandedGlossaryTerms = new Set();
 async function toggleGlossaryTerm(key) {
   if (expandedGlossaryTerms.has(key)) {
     expandedGlossaryTerms.delete(key);
+    delete termSectionShown[`${key}|good`];
+    delete termSectionShown[`${key}|improve`];
     renderGlossaryList();
     return;
   }
@@ -3737,6 +3739,19 @@ function termRecordCount(term) {
   });
   return count;
 }
+// Each digest section starts at TERM_SECTION_PAGE newest lines; the rest
+// stays folded behind a "再看 N 条" button that reveals one more page per tap.
+const TERM_SECTION_PAGE = 5;
+let termSectionShown = {};
+function collapseTermLines(term, kind) {
+  delete termSectionShown[`${term}|${kind}`];
+  renderGlossaryList();
+}
+function showMoreTermLines(term, kind) {
+  const k = `${term}|${kind}`;
+  termSectionShown[k] = (termSectionShown[k] || TERM_SECTION_PAGE) + TERM_SECTION_PAGE;
+  renderGlossaryList();
+}
 function termDigestHtml(term) {
   if (!historyRows) return `<p class="mt-2 text-[10px] text-[var(--ink-faint)]">正在翻你的课记…</p>`;
   const needles = expandSearchNeedles(term);
@@ -3746,19 +3761,36 @@ function termDigestHtml(term) {
     if (isCheckinOnly(r)) return;
     const cite = `${classNameOf(r)} ${fmtDay(r.created_at)}`;
     noteLines(r.good_points).forEach((line) => {
-      if (lineNeedleMatch(line, needles)) good.push({ text: line, cite });
+      if (lineNeedleMatch(line, needles)) good.push({ text: line, cite, at: r.created_at });
     });
     noteLines(joinImproveAndNext(r.improve_points, r.next_time_reminder)).forEach((line) => {
-      if (lineNeedleMatch(line, needles)) improve.push({ text: line, cite });
+      if (lineNeedleMatch(line, needles)) improve.push({ text: line, cite, at: r.created_at });
     });
   });
   if (!good.length && !improve.length) {
     return `<p class="mt-2 text-[10px] text-[var(--ink-faint)]">还没有跟 ${escapeHtml(term)} 相关的课记</p>`;
   }
-  const sec = (label, items) => !items.length ? '' : `
-      <p class="mt-2 text-[10px] font-semibold text-[var(--rose-deep)]">${label}<span class="text-[var(--ink-faint)] font-normal"> ${items.length}</span></p>
-      <ul class="mt-0.5 space-y-1 list-disc pl-3.5">${items.map((it) => `<li class="text-[10px] leading-[1.4] text-[var(--ink-soft)]">${escapeHtml(it.text)}<span class="text-[var(--ink-faint)]">（${escapeHtml(it.cite)}）</span></li>`).join('')}</ul>`;
-  return sec('做得好的', good) + sec('待改进', improve);
+  const termKey = term.replace(/'/g, "\\'");
+  const sec = (label, kind, items) => {
+    if (!items.length) return '';
+    const sorted = items.slice().sort((a, b) => (Number(b.at) || 0) - (Number(a.at) || 0));
+    const shown = termSectionShown[`${term}|${kind}`] || TERM_SECTION_PAGE;
+    const visible = sorted.slice(0, shown);
+    const rest = sorted.length - visible.length;
+    const pill = 'text-[10px] font-medium text-[var(--rose-deep)] rounded-full px-2.5 py-1';
+    const pillBg = 'background:rgba(210,155,162,.2)';
+    const moreBtn = rest > 0
+      ? `<button type="button" onclick="event.stopPropagation(); showMoreTermLines('${termKey}', '${kind}')" class="${pill}" style="${pillBg}">${rest > TERM_SECTION_PAGE ? `再看 ${TERM_SECTION_PAGE} 条（还有 ${rest} 条）` : `看剩下的 ${rest} 条`}</button>`
+      : '';
+    const lessBtn = shown > TERM_SECTION_PAGE && sorted.length > TERM_SECTION_PAGE
+      ? `<button type="button" onclick="event.stopPropagation(); collapseTermLines('${termKey}', '${kind}')" class="${pill}" style="${pillBg}">收起</button>`
+      : '';
+    const moreRow = (moreBtn || lessBtn) ? `<div class="mt-1.5 flex items-center gap-2">${moreBtn}${lessBtn}</div>` : '';
+    return `
+      <p class="mt-2 text-[10px] font-semibold text-[var(--rose-deep)]">${label}<span class="text-[var(--ink-faint)] font-normal"> ${sorted.length}</span></p>
+      <ul class="mt-0.5 space-y-1 list-disc pl-3.5">${visible.map((it) => `<li class="text-[10px] leading-[1.4] text-[var(--ink-soft)]">${escapeHtml(it.text)}<span class="text-[var(--ink-faint)]">（${escapeHtml(it.cite)}）</span></li>`).join('')}</ul>${moreRow}`;
+  };
+  return sec('做得好的', 'good', good) + sec('待改进', 'improve', improve);
 }
 function openGlossaryTerm(term) {
   const folded = foldBalletText(term).replace(/[()\s.-]/g, '');
@@ -4247,6 +4279,7 @@ function resetAccountScopedCaches() {
   historyRows = [];
   glossaryFlatTerms = null;
   expandedGlossaryTerms = new Set();
+  termSectionShown = {};
   lastAskDigest = null;
   currentIssues = [];
   lastDraft = null;
