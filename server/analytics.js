@@ -37,7 +37,7 @@ const ALLOWED_META = new Set([
   'model', 'provider', 'fellBack', 'promptVersion', 'confidence_level', 'chars', 'bytes', 'from',
   'slotsFilled', 'round', 'rounds', 'matchCount', 'answered',
   'retrievalPath', 'keywordCount', 'embeddingCount',
-  'attempts',
+  'attempts', 'aiUsed',
 ]);
 
 const BLOCKED_META = new Set([

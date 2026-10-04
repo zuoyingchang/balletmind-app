@@ -1,5 +1,8 @@
 // Internal stats only. Not a billing API. Classify usage events and apply list-price estimates.
 
+// A single call this slow is a hang (provider stall / lost connection), not normal latency.
+const SLOW_CALL_MS = 60000;
+
 function roundUsd(n) {
   return Math.round(n * 10000) / 10000;
 }
@@ -100,6 +103,34 @@ function collectLlmByProvider(metas, rates) {
   };
 }
 
+// Median / P95 plus how many calls were hangs. Average and P95 alone get dragged around by a
+// handful of multi-minute stalls, so the page leads with the median and flags the slow ones.
+function latencySummary(nums, slowMs = SLOW_CALL_MS) {
+  // A 0 ms latency is a missing measurement, not a fast call.
+  const sorted = (nums || []).filter((n) => typeof n === 'number' && n > 0).sort((a, b) => a - b);
+  const pick = (p) => (sorted.length ? sorted[Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1)] : null);
+  return {
+    count: sorted.length,
+    avgMs: sorted.length ? Math.round(sorted.reduce((a, b) => a + b, 0) / sorted.length) : null,
+    p50Ms: pick(50),
+    p95Ms: pick(95),
+    maxMs: sorted.length ? sorted[sorted.length - 1] : null,
+    slowCount: sorted.filter((n) => n >= slowMs).length,
+    slowThresholdMs: slowMs,
+  };
+}
+
+// How often the primary provider failed and the backup (Anthropic) answered instead.
+function fallbackSummary(metas) {
+  const list = metas || [];
+  const fellBack = list.filter((m) => m && m.fellBack === true).length;
+  return {
+    total: list.length,
+    fellBack,
+    rate: list.length ? Math.round((fellBack / list.length) * 1000) / 10 : null,
+  };
+}
+
 function isWhisperModel(model) {
   const m = String(model || '').toLowerCase();
   return !m || m.includes('whisper') || m.includes('transcribe');
@@ -133,6 +164,9 @@ function collectWhisperUsage(metas, usdPerMin) {
 }
 
 module.exports = {
+  SLOW_CALL_MS,
+  latencySummary,
+  fallbackSummary,
   classifyLlmProvider,
   collectLlmByProvider,
   collectWhisperUsage,

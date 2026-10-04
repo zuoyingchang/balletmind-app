@@ -96,14 +96,17 @@
     <div class="card">
       <h3>速度与成本（估算，不是账单）</h3>
       <div class="grid">
-        <div class="stat"><strong id="u-calls">-</strong><span>LLM 次数（整理 + 问问档案）</span></div>
-        <div class="stat"><strong id="u-latency">-</strong><span>AI 平均 / P95</span></div>
-        <div class="stat"><strong id="u-asr-lat">-</strong><span>ASR 平均 / P95</span></div>
+        <div class="stat"><strong id="u-calls">-</strong><span>LLM 次数（整理为主，不含本地检索的问档案）</span></div>
+        <div class="stat"><strong id="u-latency">-</strong><span>AI 中位数 / P95（近 7 天）</span></div>
+        <div class="stat"><strong id="u-asr-lat">-</strong><span>ASR 中位数 / P95（近 7 天）</span></div>
+        <div class="stat"><strong id="u-fallback">-</strong><span>备用 Anthropic 接手 / LLM 次数（近 7 天）</span></div>
         <div class="stat"><strong id="u-tokens">-</strong><span>Token 输入 / 输出</span></div>
         <div class="stat"><strong id="u-usd">-</strong><span>估算总费用（LLM + Whisper）</span></div>
         <div class="stat"><strong id="u-per-save">-</strong><span>每次保存估算费用</span></div>
       </div>
-      <p class="muted" id="u-note" style="margin:10px 0 0;"></p>
+      <p class="muted" id="u-slow" style="margin:10px 0 0;"></p>
+      <p class="muted" id="u-fallback-note" style="margin:6px 0 0;"></p>
+      <p class="muted" id="u-note" style="margin:6px 0 0;"></p>
       <p class="muted" id="u-conf" style="margin:6px 0 0;"></p>
       <table style="margin-top:12px;">
         <thead><tr><th>服务</th><th>次数</th><th>用量</th><th>估算 $</th></tr></thead>
@@ -318,10 +321,30 @@ function render(data) {
 
   document.getElementById('u-calls').textContent = u.callCount;
   document.getElementById('u-tokens').textContent = u.totalInputTokens + ' / ' + u.totalOutputTokens;
-  document.getElementById('u-latency').textContent = (u.avgLatencyMs == null ? '-' : (u.avgLatencyMs / 1000).toFixed(1) + 's')
-    + ' / ' + (u.p95LatencyMs == null ? '-' : (u.p95LatencyMs / 1000).toFixed(1) + 's');
-  document.getElementById('u-asr-lat').textContent = (asr.avgLatencyMs == null ? '-' : (asr.avgLatencyMs / 1000).toFixed(1) + 's')
-    + ' / ' + (asr.p95LatencyMs == null ? '-' : (asr.p95LatencyMs / 1000).toFixed(1) + 's');
+  function secs(ms) { return ms == null ? '-' : (ms / 1000).toFixed(1) + 's'; }
+  function mid(l) { return l && l.count ? secs(l.p50Ms) + ' / ' + secs(l.p95Ms) + (l.slowCount ? ' ⚠' : '') : '-'; }
+  const uLat = u.latency || {};
+  const aLat = asr.latency || {};
+  document.getElementById('u-latency').textContent = mid(uLat.last7d);
+  document.getElementById('u-asr-lat').textContent = mid(aLat.last7d);
+  const slowLine = (label, l) => {
+    if (!l || !l.all || !l.all.count) return '';
+    const sec = Math.round((l.slowThresholdMs || 60000) / 1000);
+    const w = l.last7d, a = l.all;
+    return label + '：近 7 天 ' + (w && w.count ? (w.slowCount ? '⚠ ' + w.slowCount + ' 次超过 ' + sec + ' 秒（最长 ' + secs(w.maxMs) + '）' : '没有超过 ' + sec + ' 秒的') : '无调用')
+      + '；全部时间 ' + (a.slowCount ? a.slowCount + ' 次超过 ' + sec + ' 秒（最长 ' + secs(a.maxMs) + '）' : '没有');
+  };
+  const slowEl = document.getElementById('u-slow');
+  slowEl.innerHTML = escapeHtml([slowLine('AI 卡住', uLat), slowLine('ASR 卡住', aLat)].filter(Boolean).join(' · '))
+    + ' <span class="muted">（超过 60 秒按"卡住"算，不是正常速度；中位数 = 一半调用比它快。）</span>';
+  const fb = u.fallback || {};
+  const fbw = fb.last7d || {}, fba = fb.all || {};
+  document.getElementById('u-fallback').textContent = fbw.total ? (fbw.fellBack + ' / ' + fbw.total) : '-';
+  document.getElementById('u-fallback-note').textContent = fba.total
+    ? '备用 Anthropic 接手：近 7 天 ' + (fbw.total ? fbw.fellBack + ' / ' + fbw.total + '（' + fbw.rate + '%）' : '无调用')
+      + '；全部时间 ' + fba.fellBack + ' / ' + fba.total + '（' + fba.rate + '%）。只统计成功的调用；主服务和备用都失败的不在这里。'
+    : '';
+  if (u.localAskCount) document.getElementById('u-fallback-note').textContent += (document.getElementById('u-fallback-note').textContent ? ' ' : '') + '问问我的档案现在是本地检索、不调大模型：' + u.localAskCount + ' 次，没有计入上面的 LLM 次数和速度。';
   document.getElementById('u-usd').textContent = (function () {
     const llm = u.estimatedUsd;
     const wh = asr.whisper && asr.whisper.estimatedUsd;
@@ -345,7 +368,7 @@ function render(data) {
       + usdCell(block.estimatedUsd) + '</td></tr>');
   }
   llmRow('DeepSeek', bp.deepseek);
-  llmRow('Anthropic', bp.anthropic);
+  llmRow('Anthropic（含备用）', bp.anthropic);
   if (bp.unknown && bp.unknown.callCount) llmRow('未标注（旧事件）', bp.unknown);
   rows.push('<tr><td>Whisper</td><td>' + (wh.callCount || 0) + '</td><td>'
     + (wh.estimatedMinutes != null ? wh.estimatedMinutes + ' 分钟' : '-')

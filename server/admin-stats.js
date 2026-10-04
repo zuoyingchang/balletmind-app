@@ -5,7 +5,7 @@ const {
   DEEPSEEK_INPUT_USD_PER_MTOK, DEEPSEEK_OUTPUT_USD_PER_MTOK, WHISPER_USD_PER_MIN,
   ANALYTICS_INTERNAL_EMAILS,
 } = require('./config');
-const { collectLlmByProvider, collectWhisperUsage } = require('./lib/usage-cost');
+const { collectLlmByProvider, collectWhisperUsage, latencySummary, fallbackSummary } = require('./lib/usage-cost');
 const { canonicalSessionFunnel, productKpis, splitInternal } = require('./analytics');
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -220,9 +220,9 @@ async function buildAdminStats() {
 
   const [editEvents, successEvents, askSuccessEvents, asrSuccessEvents, failEvents, asrFailEvents, totalsBundle, recentEvents, allEvents, userRows] = await Promise.all([
     db.all("SELECT metadata FROM events WHERE event_name = 'user_edit_ai_result'"),
-    db.all("SELECT metadata FROM events WHERE event_name = 'ai_process_success'"),
-    db.all("SELECT metadata FROM events WHERE event_name = 'ask_success'"),
-    db.all("SELECT metadata FROM events WHERE event_name = 'asr_success'"),
+    db.all("SELECT metadata, created_at FROM events WHERE event_name = 'ai_process_success'"),
+    db.all("SELECT metadata, created_at FROM events WHERE event_name = 'ask_success'"),
+    db.all("SELECT metadata, created_at FROM events WHERE event_name = 'asr_success'"),
     db.all("SELECT metadata FROM events WHERE event_name = 'ai_process_fail'"),
     db.all("SELECT metadata FROM events WHERE event_name = 'asr_fail'"),
     loadTotals(weekAgo),
@@ -236,7 +236,21 @@ async function buildAdminStats() {
     db.all('SELECT id, email FROM users'),
   ]);
 
-  const aiUsage = collectAiUsage([...successEvents, ...askSuccessEvents]);
+  // Ask-archive answers are served from local retrieval now (aiUsed: false, ~0 ms): not LLM calls.
+  // Older events lost aiUsed to the metadata whitelist, so also treat "no model, no tokens, ~0 ms" as local.
+  const isLocalAsk = (r) => {
+    const m = parseJson(r.metadata);
+    if (m.aiUsed === false) return true;
+    return !m.model && !m.provider && typeof m.inputTokens !== 'number' && typeof m.latencyMs === 'number' && m.latencyMs < 50;
+  };
+  const localAskCount = askSuccessEvents.filter(isLocalAsk).length;
+  const llmEvents = [...successEvents, ...askSuccessEvents.filter((r) => !isLocalAsk(r))];
+  const aiUsage = collectAiUsage(llmEvents);
+  const inLastWeek = (rows) => rows.filter((r) => Number(r.created_at) >= weekAgo);
+  const latencyOf = (rows) => latencySummary(metas(rows).map((m) => m.latencyMs));
+  const aiLatency = { last7d: latencyOf(inLastWeek(llmEvents)), all: latencyOf(llmEvents) };
+  const aiFallback = { last7d: fallbackSummary(metas(inLastWeek(llmEvents))), all: fallbackSummary(metas(llmEvents)) };
+  const asrLatency = { last7d: latencyOf(inLastWeek(asrSuccessEvents)), all: latencyOf(asrSuccessEvents) };
   const asrLat = latencyStats(metas(asrSuccessEvents).map((m) => m.latencyMs).filter((n) => typeof n === 'number'));
   const whisperUsage = collectWhisperUsage(metas(asrSuccessEvents), WHISPER_USD_PER_MIN);
   const whisperLat = latencyStats(whisperUsage.latencies);
@@ -332,6 +346,9 @@ async function buildAdminStats() {
       cacheCreationTokens: aiUsage.cacheCreationTokens,
       avgLatencyMs: aiUsage.avgLatencyMs,
       p95LatencyMs: aiUsage.p95LatencyMs,
+      latency: aiLatency,
+      fallback: aiFallback,
+      localAskCount,
       callCount: aiUsage.callCount,
       estimatedUsd: aiUsage.estimatedUsd,
       usdPerSave: saveCount ? Math.round((aiUsage._estimatedUsd / saveCount) * 10000) / 10000 : null,
@@ -347,6 +364,7 @@ async function buildAdminStats() {
       uniqueUsers: unique('asr_success'),
       avgLatencyMs: asrLat.avgMs,
       p95LatencyMs: asrLat.p95Ms,
+      latency: asrLatency,
       failReasons: reasonCounts(asrFailEvents),
       whisper: {
         callCount: whisperUsage.callCount,
