@@ -3637,15 +3637,42 @@ function hideAbout() { const m = document.getElementById('about-modal'); m.class
 // Some entries (turnout, spotting, alignment) are English ballet-classroom
 // terms with no single canonical French word -- pron is '—' for those, and
 // tapping speaks the English spelling instead of French.
-function speakTerm(text, lang) {
+// System speech first (more natural on iPhone). Browsers with no speechSynthesis
+// (e.g. many Android-vendor browsers), no voice for the language, or a stub that
+// never starts get the pre-recorded /audio/terms/<slug>.m4a instead; if even that
+// fails the button just stays silent -- no error toast.
+let termAudioEl = null;
+let speakSeq = 0;
+function playTermAudio(text) {
   try {
-    if (!window.speechSynthesis) { toast('这台设备不支持朗读'); return; }
-    window.speechSynthesis.cancel();
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (termAudioEl) termAudioEl.pause();
+    termAudioEl = new Audio(`/audio/terms/${termAudioSlug(text)}.m4a`);
+    const p = termAudioEl.play();
+    if (p && p.catch) p.catch(() => {});
+  } catch (e) {}
+}
+function speakTerm(text, lang) {
+  const seq = ++speakSeq;
+  try {
+    const synth = window.speechSynthesis;
+    if (!synth || typeof SpeechSynthesisUtterance === 'undefined') { playTermAudio(text); return; }
+    const want = String(lang || 'fr-FR').slice(0, 2).toLowerCase();
+    const voices = synth.getVoices ? synth.getVoices() : [];
+    if (voices.length && !voices.some((v) => String(v.lang).toLowerCase().startsWith(want))) { playTermAudio(text); return; }
+    if (termAudioEl) termAudioEl.pause();
+    synth.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = lang || 'fr-FR';
     utter.rate = 0.85;
-    window.speechSynthesis.speak(utter);
-  } catch (e) {}
+    let started = false;
+    utter.onstart = () => { started = true; };
+    utter.onerror = (e) => {
+      if (!started && seq === speakSeq && e.error !== 'interrupted' && e.error !== 'canceled') playTermAudio(text);
+    };
+    synth.speak(utter);
+    setTimeout(() => { if (!started && seq === speakSeq && !synth.speaking) playTermAudio(text); }, 1500);
+  } catch (e) { playTermAudio(text); }
 }
 let glossaryFlatTerms = null;
 let glossaryGroupFilter = '';

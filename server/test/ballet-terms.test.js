@@ -6,7 +6,11 @@ const {
   recordMatchesSearch,
   searchRecordsByQuestion,
   compactPhrase,
+  TERM_GLOSSARY,
+  termAudioSlug,
 } = require('../../public/js/ballet-terms');
+const fs = require('node:fs');
+const path = require('node:path');
 
 test('plie / plié / 蹲 / pli.e belong to the same search group', () => {
   assert.equal(foldBalletText('plié'), 'plie');
@@ -129,4 +133,18 @@ test('a vague question naming no specific term still falls back to generic word 
   ];
   const hits = searchRecordsByQuestion(recs, '整体感觉怎么样', 8);
   assert.deepEqual(hits.map((r) => r.id), [1]);
+});
+
+test('every glossary term has a pre-recorded pronunciation file under a unique name', () => {
+  const dir = path.join(__dirname, '..', '..', 'public', 'audio', 'terms');
+  const seen = new Set();
+  TERM_GLOSSARY.forEach((section) => section.rows.forEach((row) => {
+    const spoken = row.pron === '\u2014' ? row.en : row.fr;
+    const slug = termAudioSlug(spoken);
+    assert.ok(slug, `empty slug for ${spoken}`);
+    assert.ok(!seen.has(slug), `duplicate audio name ${slug}`);
+    seen.add(slug);
+    const file = path.join(dir, `${slug}.m4a`);
+    assert.ok(fs.existsSync(file) && fs.statSync(file).size > 1000, `missing or empty audio for ${spoken}: ${slug}.m4a`);
+  }));
 });

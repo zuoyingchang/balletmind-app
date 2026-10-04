@@ -288,7 +288,16 @@ function compactPhrase(s, maxLen = 28) {
   return t.trim();
 }
 
+// Pre-recorded pronunciation file for a glossary term (public/audio/terms/<slug>.m4a),
+// the fallback for browsers with no speechSynthesis. Same function names the files.
+function termAudioSlug(text) {
+  return String(text || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
 const api = {
+  termAudioSlug,
   foldBalletText,
   TERM_ALIAS_GROUPS,
   HISTORY_SEARCH_CHIPS,
