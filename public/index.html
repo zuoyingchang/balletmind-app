@@ -4285,8 +4285,10 @@ async function authFetch(url, opts = {}) {
   try {
     res = await fetch(url, opts);
   } catch (e) {
+    // A request the user cancelled on purpose (e.g. 取消 on the 整理中 screen) is not an error.
+    const userCancelled = e && e.name === 'AbortError' && opts.signal && opts.signal.aborted;
     const where = errorWhereFromUrl(url);
-    if (where) reportClientError(where, e && e.name === 'AbortError' ? 'timeout' : 'network', undefined, { errName: e && e.name });
+    if (where && !userCancelled) reportClientError(where, e && e.name === 'AbortError' ? 'timeout' : 'network', undefined, { errName: e && e.name });
     throw e;
   }
   if (res.status >= 500) {
