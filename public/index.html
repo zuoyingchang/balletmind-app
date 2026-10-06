@@ -1815,6 +1815,8 @@
     letter-spacing: 0;
     color: var(--ink-soft);
   }
+  #screen-record .rec-browser-note { margin-top: 8px; padding: 0 20px; font-size: 10.5px; line-height: 1.5; color: var(--ink-faint); }
+  #screen-record .rec-browser-note.is-failure { font-size: 12px; line-height: 1.6; font-weight: 500; color: var(--rose-deep); }
   #screen-record .rec-limit {
     display: inline-flex;
     margin-top: 8px;
@@ -2694,7 +2696,7 @@
         </div>
         <p class="relative z-10" id="rec-state">点一下开始</p>
         <p class="relative z-10 rec-limit">≤两段 · 各约一分钟</p>
-        <p class="hidden relative z-10 mt-2 px-5 text-[10.5px] leading-[1.5] text-[var(--ink-faint)]" id="rec-browser-note"></p>
+        <p class="hidden relative z-10 rec-browser-note" id="rec-browser-note"></p>
         <p class="relative z-10 mt-1 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="rec-live-text"></p>
       </section>
 
@@ -7916,7 +7918,7 @@ let timerInterval = null;
 let currentSegSeconds = 0;
 // Xiaohongshu / WeChat in-app browsers often block the microphone; nudge people to a real browser.
 const inAppBrowser = /MicroMessenger|xhsdiscover|xiaohongshu|\bdiscover\/\d/i.test(navigator.userAgent);
-const IN_APP_MIC_TIP = '请点右上角「···」，选「在浏览器打开」。也可以先打字。';
+const IN_APP_MIC_TIP = '如果不能录音，请点右上角「···」，选「在浏览器打开」再录音；也可以在下面打字';
 let recorderSupported = typeof MediaRecorder !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
 
 let aiUnavailable = false;
@@ -7986,6 +7988,10 @@ function pickRecorderMime() {
 
 function initSpeech() {
   document.getElementById('manual-input').addEventListener('input', updateGenerateBtn);
+  document.getElementById('manual-input').addEventListener('input', () => {
+    const n = document.getElementById('rec-browser-note');
+    if (n && n.classList.contains('is-failure')) paintRecBrowserNote();
+  });
   if (inAppBrowser) {
     document.getElementById('home-in-app-tip')?.classList.remove('hidden');
     document.getElementById('in-app-browser-tip')?.classList.remove('hidden');
@@ -8036,8 +8042,18 @@ function paintRecBrowserNote() {
   const el = document.getElementById('rec-browser-note');
   if (!el) return;
   const show = recBrowserUncertain();
+  el.classList.remove('is-failure');
   el.classList.toggle('hidden', !show);
-  el.textContent = show ? REC_BROWSER_NOTE : '';
+  el.textContent = show ? (inAppBrowser ? IN_APP_MIC_TIP : REC_BROWSER_NOTE) : '';
+}
+// After the microphone could not be opened, say why right under the mic (no vanishing toast) and keep it
+// there until the person starts typing, records successfully, or leaves and comes back.
+function showMicFailure(code) {
+  const el = document.getElementById('rec-browser-note');
+  if (!el) { toast(micHelpText(code), 6000); return; }
+  el.textContent = micHelpText(code);
+  el.classList.add('is-failure');
+  el.classList.remove('hidden');
 }
 function micHelpText(code) {
   if (inAppBrowser) return IN_APP_MIC_TIP;
@@ -8059,9 +8075,10 @@ async function startRecording() {
   } catch (e) {
     const code = micErrorCode(e);
     logEvent('asr_fail', { error: code, platform: TELEMETRY.platform, browser: TELEMETRY.browser });
-    toast(micHelpText(code), 6000);
+    showMicFailure(code);
     return;
   }
+  paintRecBrowserNote();
   const mime = pickRecorderMime();
   try {
     mediaRecorder = mime ? new MediaRecorder(mediaStream, { mimeType: mime }) : new MediaRecorder(mediaStream);
