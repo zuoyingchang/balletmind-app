@@ -8029,13 +8029,13 @@ function paintRecBrowserNote() {
   if (!el) return;
   const risky = recBrowserCannotRecord();
   el.classList.toggle('hidden', !risky);
-  el.textContent = risky ? '这个浏览器可能不能录音。建议用 Safari 或 Chrome 打开；也可以在下面打字，点键盘上的麦克风就能语音输入。' : '';
+  el.textContent = risky ? '这个浏览器可能不能录音。建议用 Safari、Firefox 或其他浏览器打开；也可以在下面打字，点键盘上的麦克风也可以语音输入。' : '';
 }
 function micHelpText(code) {
   if (inAppBrowser) return IN_APP_MIC_TIP;
   const iosNonStandard = TELEMETRY.platform === 'ios' && !['safari', 'chrome', 'firefox', 'edge'].includes(TELEMETRY.browser);
   if (code === 'unsupported' || code === 'blocked' || iosNonStandard) {
-    return '这个浏览器可能不支持录音。请用 Safari 或 Chrome 打开；也可以在下面打字，点键盘上的麦克风就能语音输入。';
+    return '这个浏览器可能不能录音。建议用 Safari、Firefox 或其他浏览器打开；也可以在下面打字，点键盘上的麦克风也可以语音输入。';
   }
   if (code === 'no-device') return '没有找到麦克风。可以先在下面打字。';
   if (code === 'device-busy') return '麦克风正被别的 App 占用，关掉后再试，也可以先在下面打字。';
