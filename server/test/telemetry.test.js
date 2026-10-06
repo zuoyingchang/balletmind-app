@@ -130,3 +130,19 @@ test('the home page is served with a build id and revalidated on every load', as
   const alias = await fetch(`${base}/index.html`);
   assert.equal(alias.status, 200);
 });
+
+test('ASR failures keep the real microphone reason and the device it happened on', async () => {
+  const reg = await post('/api/auth/register', { email: 'mic-user@example.com', password: 'secret123', privacyAccepted: true });
+  const { token } = await reg.json();
+  const auth = { Authorization: `Bearer ${token}` };
+  const send = (meta) => post('/api/events', { event: 'asr_fail', metadata: meta }, auth);
+  assert.equal((await send({ error: 'unsupported', platform: 'ios', browser: 'other' })).status, 200);
+  assert.equal((await send({ error: 'unsupported', platform: 'ios', browser: 'other' })).status, 200);
+  assert.equal((await send({ error: 'not-allowed', platform: 'android', browser: 'chrome' })).status, 200);
+  assert.equal((await send({ error: 'not-allowed' })).status, 200);
+  const stats = await (await fetch(`${base}/api/admin/stats`, { headers: { 'x-admin-key': 'test-admin-key' } })).json();
+  const byDevice = Object.fromEntries(stats.asrUsage.failByDevice.map((r) => [r.name, r.count]));
+  assert.equal(byDevice['unsupported \u00b7 ios \u00b7 other'], 2);
+  assert.equal(byDevice['not-allowed \u00b7 android \u00b7 chrome'], 1);
+  assert.equal(byDevice['not-allowed'], 1, 'older events without a device stay as plain reasons');
+});

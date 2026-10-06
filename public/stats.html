@@ -91,6 +91,7 @@
         <thead><tr><th>来源</th><th>原因</th><th>次数</th></tr></thead>
         <tbody id="fail-reasons-body"></tbody>
       </table>
+      <p class="muted" id="asr-fail-device" style="margin:10px 0 0;"></p>
     </div>
 
     <div class="card">
@@ -370,6 +371,11 @@ function render(data) {
   }
   const u = data.aiUsage || {};
   const asr = data.asrUsage || {};
+  const failDev = (asr.failByDevice || []).filter((r) => r.name.includes(' · '));
+  document.getElementById('asr-fail-device').textContent = failDev.length
+    ? '语音失败按设备（只含新版本记录）：' + failDev.map((r) => r.name + ' ×' + r.count).join('；')
+      + '。not-allowed = 用户或浏览器拒绝；unsupported = 浏览器不支持录音；no-device = 没有麦克风；device-busy = 被别的 App 占用。'
+    : '';
   document.getElementById('fail-reasons-body').innerHTML =
     reasonRows('AI', u.failReasons) + reasonRows('ASR', asr.failReasons);
 

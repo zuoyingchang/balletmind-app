@@ -2694,6 +2694,7 @@
         </div>
         <p class="relative z-10" id="rec-state">点一下开始</p>
         <p class="relative z-10 rec-limit">≤两段 · 各约一分钟</p>
+        <p class="hidden relative z-10 mt-2 px-4 text-[11.5px] leading-5 text-[var(--rose-deep)]" id="rec-browser-note"></p>
         <p class="relative z-10 mt-1 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="rec-live-text"></p>
       </section>
 
@@ -4653,6 +4654,7 @@ async function goRecord() {
   }
   enableAiEntry();
   show('screen-record');
+  paintRecBrowserNote();
   if (remaining != null) paintRecapQuotaNote(remaining);
   else loadRecordQuota();
 }
@@ -8004,6 +8006,42 @@ function toggleRecording() {
   if (!recognizing) startRecording(); else stopRecording();
 }
 
+// Why the microphone could not be opened. "not-allowed" used to cover every failure; now: the user (or
+// the browser's saved choice) said no, the browser has no recording API at all, no mic, or mic busy.
+function micErrorCode(e) {
+  if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return 'unsupported';
+  const name = e && e.name;
+  if (name === 'NotAllowedError' || name === 'PermissionDeniedError') return 'not-allowed';
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'no-device';
+  if (name === 'NotReadableError' || name === 'AbortError') return 'device-busy';
+  if (name === 'SecurityError') return 'blocked';
+  if (name === 'TypeError') return 'unsupported';
+  return 'other';
+}
+// Browsers that cannot record (no recording API, or a non-Safari/Chrome iPhone browser such as UC)
+// should hear it on the record screen, before they tap the mic.
+function recBrowserCannotRecord() {
+  if (!recorderSupported) return true;
+  return TELEMETRY.platform === 'ios' && !['safari', 'chrome', 'firefox', 'edge'].includes(TELEMETRY.browser) && !inAppBrowser;
+}
+function paintRecBrowserNote() {
+  const el = document.getElementById('rec-browser-note');
+  if (!el) return;
+  const risky = recBrowserCannotRecord();
+  el.classList.toggle('hidden', !risky);
+  el.textContent = risky ? '这个浏览器可能不能录音。建议用 Safari 或 Chrome 打开；也可以在下面打字，点键盘上的麦克风就能语音输入。' : '';
+}
+function micHelpText(code) {
+  if (inAppBrowser) return IN_APP_MIC_TIP;
+  const iosNonStandard = TELEMETRY.platform === 'ios' && !['safari', 'chrome', 'firefox', 'edge'].includes(TELEMETRY.browser);
+  if (code === 'unsupported' || code === 'blocked' || iosNonStandard) {
+    return '这个浏览器可能不支持录音。请用 Safari 或 Chrome 打开；也可以在下面打字，点键盘上的麦克风就能语音输入。';
+  }
+  if (code === 'no-device') return '没有找到麦克风。可以先在下面打字。';
+  if (code === 'device-busy') return '麦克风正被别的 App 占用，关掉后再试，也可以先在下面打字。';
+  return '麦克风没有打开。请在浏览器设置里允许本网站使用麦克风，也可以先在下面打字。';
+}
+
 async function startRecording() {
   if (segments.length >= MAX_REC_SEGMENTS) { toast('最多两段'); return; }
   ensureCaptureSession();
@@ -8012,9 +8050,9 @@ async function startRecording() {
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch (e) {
-    logEvent('asr_fail', { error: 'not-allowed' });
-    if (inAppBrowser) toast(IN_APP_MIC_TIP, 5000);
-    else toast('请允许使用麦克风，或在下面打字');
+    const code = micErrorCode(e);
+    logEvent('asr_fail', { error: code, platform: TELEMETRY.platform, browser: TELEMETRY.browser });
+    toast(micHelpText(code), 6000);
     return;
   }
   const mime = pickRecorderMime();

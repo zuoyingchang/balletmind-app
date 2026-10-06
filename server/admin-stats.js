@@ -52,6 +52,18 @@ function reasonCounts(rows) {
   return map;
 }
 
+// Which device/browser each failure came from (only events that carry platform/browser, i.e. newer ones).
+function failByDevice(rows) {
+  const map = {};
+  for (const m of metas(rows)) {
+    const reason = m.reason || m.error || 'unknown';
+    const device = m.platform || m.browser ? ` · ${m.platform || '?'} · ${m.browser || '?'}` : '';
+    const key = reason + device;
+    map[key] = (map[key] || 0) + 1;
+  }
+  return Object.entries(map).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+}
+
 function utcDay(ts) {
   return new Date(Number(ts)).toISOString().slice(0, 10);
 }
@@ -410,6 +422,7 @@ async function buildAdminStats() {
       p95LatencyMs: asrLat.p95Ms,
       latency: asrLatency,
       failReasons: reasonCounts(asrFailEvents),
+      failByDevice: failByDevice(asrFailEvents),
       whisper: {
         callCount: whisperUsage.callCount,
         estimatedMinutes: whisperUsage.estimatedMinutes,
