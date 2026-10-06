@@ -2694,7 +2694,7 @@
         </div>
         <p class="relative z-10" id="rec-state">点一下开始</p>
         <p class="relative z-10 rec-limit">≤两段 · 各约一分钟</p>
-        <p class="hidden relative z-10 mt-2 px-4 text-[11.5px] leading-5 text-[var(--rose-deep)]" id="rec-browser-note"></p>
+        <p class="hidden relative z-10 mt-2 px-5 text-[10.5px] leading-[1.5] text-[var(--ink-faint)]" id="rec-browser-note"></p>
         <p class="relative z-10 mt-1 text-[12.5px] leading-6 text-[var(--ink-soft)]" id="rec-live-text"></p>
       </section>
 
@@ -8018,23 +8018,30 @@ function micErrorCode(e) {
   if (name === 'TypeError') return 'unsupported';
   return 'other';
 }
-// Browsers that cannot record (no recording API, or a non-Safari/Chrome iPhone browser such as UC)
-// should hear it on the record screen, before they tap the mic.
-function recBrowserCannotRecord() {
+// Browsers we know record fine, per platform. Anything else -- no recording API, an unfamiliar browser
+// (UC, Quark, Baidu...) or an in-app browser (WeChat / Xiaohongshu / QQ) -- gets a small, conditional
+// "if your browser cannot record" line on the record screen before the first tap.
+const RECORD_OK_BROWSERS = {
+  ios: ['safari', 'chrome', 'firefox', 'edge'],
+  android: ['chrome', 'firefox', 'edge', 'opera', 'xiaomi', 'huawei'],
+  desktop: ['chrome', 'safari', 'firefox', 'edge', 'opera'],
+};
+const REC_BROWSER_NOTE = '如果浏览器不能录音，建议用 Safari、Firefox 或其他浏览器打开；也可以在下面打字，点键盘上的麦克风也可以语音输入。';
+function recBrowserUncertain() {
   if (!recorderSupported) return true;
-  return TELEMETRY.platform === 'ios' && !['safari', 'chrome', 'firefox', 'edge'].includes(TELEMETRY.browser) && !inAppBrowser;
+  const ok = RECORD_OK_BROWSERS[TELEMETRY.platform];
+  return !ok || !ok.includes(TELEMETRY.browser);
 }
 function paintRecBrowserNote() {
   const el = document.getElementById('rec-browser-note');
   if (!el) return;
-  const risky = recBrowserCannotRecord();
-  el.classList.toggle('hidden', !risky);
-  el.textContent = risky ? '这个浏览器可能不能录音。建议用 Safari、Firefox 或其他浏览器打开；也可以在下面打字，点键盘上的麦克风也可以语音输入。' : '';
+  const show = recBrowserUncertain();
+  el.classList.toggle('hidden', !show);
+  el.textContent = show ? REC_BROWSER_NOTE : '';
 }
 function micHelpText(code) {
   if (inAppBrowser) return IN_APP_MIC_TIP;
-  const iosNonStandard = TELEMETRY.platform === 'ios' && !['safari', 'chrome', 'firefox', 'edge'].includes(TELEMETRY.browser);
-  if (code === 'unsupported' || code === 'blocked' || iosNonStandard) {
+  if (code === 'unsupported' || code === 'blocked' || recBrowserUncertain()) {
     return '这个浏览器可能不能录音。建议用 Safari、Firefox 或其他浏览器打开；也可以在下面打字，点键盘上的麦克风也可以语音输入。';
   }
   if (code === 'no-device') return '没有找到麦克风。可以先在下面打字。';
