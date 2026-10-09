@@ -3,10 +3,10 @@ flowchart TB
   subgraph CAPTURE["1 Capture 录入"]
     direction LR
     A[登录] --> B[首页]
-    B --> C[复盘今天 / 再记一笔]
+    B --> C[记录今天 / 再记一节]
     C --> D{能录音?}
-    D -->|能| E[1–3 段 × 60s]
-    D -->|否| F[手打]
+    D -->|能| E[1–2 段 · 各约 1 分钟]
+    D -->|否| F[手动记]
     E --> G[Whisper]
     G --> I[转写可改]
     F --> I
@@ -14,17 +14,17 @@ flowchart TB
 
   subgraph STRUCT["2 Structure 抽取"]
     direction LR
-    L{配额?} -->|尽| M[禁用生成]
-    L -->|够| N[完成并生成 · 吸底]
+    L{今天额度?} -->|尽| M[打开手动记]
+    L -->|够| N[完成并生成]
     N --> N1[正在整理你说过的话]
-    N1 --> O[Claude · Prompt 1.7]
+    N1 --> O[LLM · Prompt 2.2]
     O --> P{schema OK?}
     P -->|否| Q[不展示假结果]
   end
 
   subgraph HITL["3 Review 人审"]
     direction LR
-    S[默认三段 + 确认保存] --> S1[还可以记下]
+    S[两段事实 + 确认保存] --> S1[课程芯片 / 时长心情]
     S1 --> T{确认?}
     T -->|否| U[Draft 不入库]
     T -->|是| V[保存]
@@ -33,8 +33,8 @@ flowchart TB
   subgraph MEM["4 Archive · Progress"]
     direction LR
     W[训练档案] --> X[反复问题]
-    W --> Y[History · 术语可点]
-    W --> Z[课前规则卡 / 问问档案 / 7天 / 5次]
+    W --> Y[统计 / 列表]
+    W --> Z[课前 / 问档案 / 7天 / 5次]
   end
 
   CAPTURE --> STRUCT --> HITL --> MEM

@@ -48,7 +48,7 @@ AI_MODEL=claude-sonnet-5 npm run eval
 AI_MODEL=claude-sonnet-4-6 npm run eval   # 对照
 ```
 
-- Prompt 版本：`PROMPT_VERSION`（当前 **1.7**），在 `server/ai/review-prompt.js`。评测对照报告里写的 1.5 是当时冻结版本。  
+- Prompt 版本：`PROMPT_VERSION`（当前 **2.2**），在 `server/ai/review-prompt.js`。评测对照报告里写的 1.5 是当时冻结版本。  
 - Case：约 35 条，`server/eval/cases.js`。  
 - 结果 JSON：`server/eval/results/<model>.json`。  
 - Sonnet 5 **请求里不传 temperature**；终端若写 `temperature=omitted` 是正常的。

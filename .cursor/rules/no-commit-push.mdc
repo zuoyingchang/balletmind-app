@@ -1,0 +1,9 @@
+---
+alwaysApply: true
+---
+# 不要自己 commit / push
+
+现在有真实用户在用（push 到 main 会触发 Render 自动部署）。
+
+- 任何改动都**只改本地文件**，不要 `git commit`、不要 `git push`，也不要建分支/PR 去触发部署。
+- 改完告诉用户改了什么、怎么验证，等用户明确说「push」/「提交」再做。

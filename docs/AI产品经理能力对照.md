@@ -63,7 +63,7 @@
 | # | 能力 | 岗位在考什么 | 我们 | 版本 |
 |---|---|---|---|---|
 | A1 | 任务适不适合 LLM | 抽取 vs 诊断 vs 创作 | **已做且是亮点**：单次笔记用模型；「有没有进步」不用模型 | V0.1–V0.2 |
-| A2 | Prompt vs RAG vs 微调 vs 规则 | 说得出依据 | **已做判断**：抽取用 Prompt；跨次进步用规则；问问档案用 RAG + Agent | 全程 |
+| A2 | Prompt vs RAG vs 微调 vs 规则 | 说得出依据 | **已做判断**：抽取用 Prompt；跨次进步用规则；问问档案用 RAG + 原文 digest | 全程 |
 | A3 | ASR / 多模态选型 | 术语、隐私、成本 | **已做** Whisper + 术语 prompt；未做 Deepgram/Azure 词表 A/B | ASR 升级 |
 | A4 | Token / 上下文 / 延迟 | 账单进方案 | **已做** 日配额、长度上限、超时、token 日志 | V0.1 硬化 |
 
@@ -73,11 +73,11 @@
 |---|---|---|---|---|
 | P1 | 模型选型 | 质量 / 贵 / 慢 | **已做** 35 条对照：Sonnet 5 胜出（质量打平、更便宜更快）；不换 Haiku | `docs/Eval_Model_Selection_Report.md` |
 | P2 | temperature / max_tokens / timeout | 抽取用低温度 | **已做** 4.6 默认 0.2；**Sonnet 5 不传 temperature**（API 会 400） | anthropic.js |
-| P3 | System Prompt + few-shot + 版本 | 改过几版、每版修什么 | **已做** Spec V1.1 → 护栏 1.5 → 代码 `PROMPT_VERSION=1.7`（含 `session_tips`） | V0.1 |
+| P3 | System Prompt + few-shot + 版本 | 改过几版、每版修什么 | **已做** Spec V1.1 → 护栏 1.5 → 代码 `PROMPT_VERSION=2.2`（两段事实） | V0.1 |
 | P4 | 结构化输出 | JSON 崩了怎么办 | **已做** Anthropic tool-use | V0.1 |
 | P5 | 领域词表 | 术语怎么进模型 | **已做** 芭蕾词表 + 用户纠错写回 prompt；ASR 同样喂术语 | V0.1 / ASR |
 | P6 | Prompt 注入 | 口述里带「忽略指令」 | **已做** `<transcript>` 当数据；eval 有注入 case | V0.1 + 本次评测 |
-| P7 | Agent / 工具编排 | 工作流产品 | **已做** 问问档案单 Agent（硬顶两轮）。多 Agent 课前卡 Experiment 已接线、默认关 | 问问你的档案；课前卡实验 |
+| P7 | Agent / 工具编排 | 工作流产品 | **抽取**用 tool schema。问问档案现网是检索+digest，不是双轮 Agent。多 Agent 课前卡 Experiment 默认关 | 问问你的档案；课前卡实验 |
 
 换模型怎么判定更好：改 `.env` 的 `AI_MODEL` 或 `AI_TEMPERATURE`，`cd server && npm run eval`。同一套 30+ 条 case，看五维质量、Schema、延迟、估算费用。线上再看 Edit Rate、延迟、token。**一次只改一个变量。**
 
@@ -138,7 +138,7 @@
 
 - **抽取**：Prompt + schema。没有大规模标注的「正确复盘」，所以不微调。
 - **跨课次进步**：规则匹配 + 用户改状态。
-- **问问档案**：RAG 先关键词、命中 ≤1 再 Embedding；Agent 据此回答，对比两个时间段时可再检索一次。
+- **问问档案**：RAG 先关键词、命中 ≤1 再 Embedding；列出课记原文，不二次写作。
 - **不写 AI 周报、不当教练。**
 
 ---
@@ -160,5 +160,5 @@
 ## 7. 一句话履历
 
 传统 PM：Brief、PRD、原型、优先级、埋点、异常、隐私账号、导出，按真产品走过。  
-AI PM：Prompt 有版本和 30+ 条评测；参数与模型可配；幻觉靠规则 + HITL；问问档案用关键词优先的 RAG、必要时 Embedding，Agent 作答。  
+AI PM：Prompt 有版本和 30+ 条评测；参数与模型可配；幻觉靠规则 + HITL；问问档案用关键词优先的 RAG、必要时 Embedding，列出原文而不是再写一段。  
 下一步：**本地跑一遍 `npm run eval` 记下 Baseline**，以及 **3–6 人试用把 Edit Rate 跑出来**。

@@ -1,15 +1,18 @@
 %%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#F7E8E8','primaryTextColor':'#3D2C2C','primaryBorderColor':'#C9A3A3','lineColor':'#8B6B6B','secondaryColor':'#F3EFE8','tertiaryColor':'#FFF8F5','fontFamily':'PingFang SC, Noto Sans SC, sans-serif','fontSize':'14px'}}}%%
 flowchart TD
-  Q[用户提问] --> KW[关键词检索]
+  Q[用户提问] --> RANGE[可选：解析日期范围]
+  RANGE --> KW[关键词检索已确认课记]
   KW --> SPARSE{命中条数 ≤ 1?}
   SPARSE -->|否，已有 ≥2 条| HIT{找到相关记录?}
   SPARSE -->|是| EMB[Embedding 补检索]
   EMB --> HIT
   HIT -->|否| NO[告诉用户没有相关记录]
-  HIT -->|是| AGENT[Agent：根据这些课记作答]
-  AGENT --> NEED{现有记录够不够回答?}
-  NEED -->|够| ANS[submit_answer<br/>并列引用 · 不宣布进步]
-  NEED -->|要对比另一个时间段| SEARCH[再检索一次<br/>同一套规则 + 日期范围]
-  SEARCH --> ANS2[给出最终回答]
-  ANS --> CITE[引用可点回课次]
-  ANS2 --> CITE
+  HIT -->|是| DIG[服务端归纳原文<br/>做得好的 / 待改进]
+  DIG --> ARCH{问的是档案/已解决?}
+  ARCH -->|是| RES[加一栏已解决]
+  ARCH -->|否| PAGE[每栏最多先列 5 条]
+  RES --> PAGE
+  PAGE --> MORE[还可再加载 5 条]
+  PAGE --> CITE[一行一条 · 课名+日期 · 可点回课次]
+  MORE --> CITE
+  DIG --> FOLD[可收起：左边是问题，右边收起]

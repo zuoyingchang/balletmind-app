@@ -1,7 +1,7 @@
 # BalletMind｜Offline Eval + 双轨道（停扩功能）
 
 > **冻结于 V0.1（2026-09）**：当时决定先把抽取评测做扎实，Ask My Training 后置。  
-> **现网（2026-09-13）**：问问你的档案已上线（RAG 检索已确认课记，Agent 据此回答）。下面表格是当时的判断，不要当成当前范围。  
+> **现网（2026-10-03）**：查查我的档案已上线（RAG 检索已确认课记，列出原文，不二次写作）。下面表格是当时的判断，不要当成当前范围。  
 > 近期仍优先：Eval Set → Baseline → Model Selection → Bad Case / Prompt → Guardrails → 埋点 → 3–6 人试用。
 
 面试和日常对照用这一份操作说明：[`docs/Metrics_Runbook.md`](Metrics_Runbook.md)（怎么跑、怎么看、每层现有指标）。
