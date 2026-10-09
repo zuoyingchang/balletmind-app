@@ -96,8 +96,48 @@ async function countAiRecapsToday(userId) {
   return units.size;
 }
 
+// Guest trial (no account): events are stored with user_id NULL and tagged
+// { source: 'guest', vid } in metadata, so both the per-browser and the
+// site-wide caps can be counted from the same table as everyone else's calls.
+// vid is already sanitized to [a-z0-9-] before it gets here, so it is safe
+// inside the LIKE pattern.
+async function guestEventRowsToday(eventNames, vid) {
+  const placeholders = eventNames.map(() => '?').join(', ');
+  const args = [...eventNames, startOfLocalDayMs(), '%"source":"guest"%'];
+  let sql = `SELECT id, metadata FROM events
+     WHERE user_id IS NULL AND event_name IN (${placeholders}) AND created_at >= ? AND metadata LIKE ?`;
+  if (vid) {
+    sql += ' AND metadata LIKE ?';
+    args.push(`%"vid":"${vid}"%`);
+  }
+  return db.all(sql, args);
+}
+
+async function countGuestAsrToday(vid) {
+  return (await guestEventRowsToday(['asr_success', 'asr_fail'], vid)).length;
+}
+
+// Same "one recap = one sessionId" rule as countAiRecapsToday, so 重新生成
+// on the same draft does not use up a guest's second try.
+async function countGuestRecapsToday(vid) {
+  const rows = await guestEventRowsToday(RECAP_QUOTA_EVENTS, vid);
+  const units = new Set();
+  for (const row of rows) {
+    let sessionId = '';
+    try { sessionId = JSON.parse(row.metadata || '{}').sessionId || ''; } catch (e) {}
+    units.add(sessionId ? `s:${sessionId}` : `e:${row.id}`);
+  }
+  return units.size;
+}
+
+// Site-wide spend guard counts raw calls, not recaps: this is about cost.
+async function countAllGuestAiCallsToday() {
+  return (await guestEventRowsToday(CORE_QUOTA_EVENTS)).length;
+}
+
 module.exports = {
   logEmbeddingUsage,
   logEvent, KNOWN_EVENTS, countAiCallsToday, countSecondaryAiCallsThisWeek, countAiRecapsToday,
+  countGuestAsrToday, countGuestRecapsToday, countAllGuestAiCallsToday,
   startOfLocalWeekMs,
 };

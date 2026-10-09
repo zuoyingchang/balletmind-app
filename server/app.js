@@ -120,6 +120,7 @@ app.use('/api/issues', issuesRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/terms', termsRoutes);
 app.use('/api/guide', guideRoutes);
+app.use('/api/cards', require('./routes/cards'));
 
 // Last resort for anything a route did not handle itself.
 app.use((err, req, res, next) => {

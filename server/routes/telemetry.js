@@ -41,4 +41,15 @@ router.post('/error', errorLimiter, async (req, res) => {
   res.json({ ok: true });
 });
 
+// Public: try-before-signup funnel steps (opened the trial → got a recap → hit the
+// save gate → registered → draft saved). Carries no recording or text content.
+const GUEST_TRIAL_STEPS = new Set(['start', 'asr_ok', 'review', 'save_gate', 'registered', 'saved']);
+router.post('/guest', visitLimiter, async (req, res) => {
+  const vid = sanitizeVid(req.body && req.body.vid);
+  const kind = req.body && req.body.kind;
+  if (!vid || !GUEST_TRIAL_STEPS.has(kind)) return res.status(400).json({ error: '参数不对' });
+  await logEvent(null, 'guest_trial', { vid, kind });
+  res.json({ ok: true });
+});
+
 module.exports = router;

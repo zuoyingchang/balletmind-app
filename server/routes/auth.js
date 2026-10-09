@@ -165,7 +165,7 @@ router.post('/reset-password', resetLimiter, async (req, res) => {
 router.get('/export', requireAuth, async (req, res) => {
   const user = await db.get('SELECT id, email, display_name, created_at FROM users WHERE id = ?', [req.userId]);
   if (!user) return res.status(404).json({ error: '用户不存在' });
-  const [records, issues, occurrences, corrections] = await Promise.all([
+  const [records, issues, occurrences, corrections, cards, usages] = await Promise.all([
     db.all('SELECT * FROM records WHERE user_id = ? ORDER BY created_at ASC', [req.userId]),
     db.all('SELECT * FROM issues WHERE user_id = ? ORDER BY created_at ASC', [req.userId]),
     db.all(
@@ -174,9 +174,14 @@ router.get('/export', requireAuth, async (req, res) => {
       [req.userId]
     ),
     db.all('SELECT * FROM term_corrections WHERE user_id = ?', [req.userId]),
+    db.all('SELECT * FROM class_cards WHERE user_id = ? ORDER BY created_at ASC', [req.userId]),
+    db.all('SELECT * FROM card_usages WHERE user_id = ? ORDER BY used_at ASC', [req.userId]),
   ]);
   res.set('Content-Disposition', 'attachment; filename="balletmind-export.json"');
-  res.json({ exportedAt: Date.now(), user, records, issues, issueOccurrences: occurrences, termCorrections: corrections });
+  res.json({
+    exportedAt: Date.now(), user, records, issues, issueOccurrences: occurrences, termCorrections: corrections,
+    classCards: cards, cardUsages: usages,
+  });
 });
 
 router.delete('/account', requireAuth, deleteAccountLimiter, async (req, res) => {
@@ -198,6 +203,8 @@ router.delete('/account', requireAuth, deleteAccountLimiter, async (req, res) =>
   );
   await db.run('DELETE FROM issues WHERE user_id = ?', [uid]);
   await db.run('DELETE FROM records WHERE user_id = ?', [uid]);
+  await db.run('DELETE FROM card_usages WHERE user_id = ?', [uid]);
+  await db.run('DELETE FROM class_cards WHERE user_id = ?', [uid]);
   await db.run('DELETE FROM term_corrections WHERE user_id = ?', [uid]);
   await db.run('DELETE FROM events WHERE user_id = ?', [uid]);
   await db.run('DELETE FROM password_reset_tokens WHERE user_id = ?', [uid]);

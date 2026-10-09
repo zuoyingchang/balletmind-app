@@ -2464,6 +2464,11 @@
         <p id="auth-in-app-tip" class="hidden mt-3 rounded-[12px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]">请用 Safari 打开这一页，录音会更顺利。</p>
       </div>
 
+      <div id="auth-guest-banner" class="hidden relative z-10 mt-4 shrink-0 rounded-[16px] bg-white/80 border border-[var(--border-soft)] px-3.5 py-3">
+        <p class="text-[12.5px] leading-5 text-[var(--ink)]" id="auth-guest-banner-text"></p>
+        <button type="button" id="auth-guest-back-btn" onclick="backToGuestDraft()" class="hidden mt-1.5 text-[11.5px] text-[var(--rose-deep)]">回去再看看草稿 ›</button>
+      </div>
+
       <div class="relative z-10 mt-5 space-y-3 shrink-0">
         <div id="auth-name-wrap" class="relative z-10 hidden">
           <input id="auth-name" placeholder="昵称（可选）" class="auth-field">
@@ -2497,6 +2502,11 @@
         <span class="pearl-sheen"></span>
         <span class="relative z-10" id="auth-submit-label">登录</span>
       </button>
+      <div id="auth-guest-btn" class="relative z-10 shrink-0">
+        <button type="button" onclick="startGuestTrial()" class="mt-3 w-full h-12 rounded-full border border-[var(--rose-deep)]/35 bg-white/55 flex items-center justify-center gap-1.5 text-[13.5px] font-semibold text-[var(--rose-deep)]">
+          <iconify-icon icon="solar:microphone-3-linear" class="text-[17px]"></iconify-icon>
+          不用注册，先录一段试试
+        </button>      </div>
       <button type="button" onclick="showForgotPassword()" class="relative z-10 shrink-0 mt-3 text-[12px] text-[var(--ink-faint)]" id="auth-forgot-btn">忘记密码？</button>
 
       <div class="relative z-10 shrink-0 mt-auto pt-4 text-center">
@@ -2588,6 +2598,11 @@
       </section>
 
       <p id="home-in-app-tip" class="hidden mt-3 rounded-[12px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]">请用 Safari 打开这一页，录音会更顺利。</p>
+      <button type="button" id="home-card-alert" onclick="goCards('home')" class="hidden mt-3 w-full flex items-center gap-2.5 rounded-[14px] bg-white/70 border border-[var(--border-soft)] px-3.5 py-2.5 text-left">
+        <iconify-icon icon="solar:ticket-linear" class="shrink-0 text-[17px] text-[var(--rose-deep)]"></iconify-icon>
+        <span class="flex-1 min-w-0 text-[12px] leading-5 text-[var(--ink-soft)]" id="home-card-alert-text"></span>
+        <iconify-icon icon="solar:alt-arrow-right-linear" class="shrink-0 text-[14px] text-[var(--ink-faint)]"></iconify-icon>
+      </button>
 
       <section class="mt-5" id="home-archive-block">
         <div class="flex items-center justify-between gap-2 cursor-pointer" onclick="goHistory()" role="button">
@@ -2819,6 +2834,10 @@
             <button type="button" onclick="selectDuration(90)" data-min="90" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">1.5小时</button>
             <button type="button" onclick="selectDuration(120)" data-min="120" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">2小时+</button>
           </div>
+          <div id="review-card-wrap" class="hidden">
+            <p class="mt-3 text-[11.5px] text-[var(--ink)] mb-2">扣课卡<span class="field-optional">可选</span></p>
+            <div class="flex gap-2 flex-wrap" id="review-card-chips"></div>
+          </div>
         </div>
       </div>
       <div id="review-note" class="hidden mb-4 text-[11px] text-[var(--ink-faint)] border border-dashed border-[var(--border-soft)] rounded-xl p-3"></div>
@@ -2884,7 +2903,7 @@
     </main>
     <div class="sticky-actions shrink-0 px-6 pt-3 flex gap-3">
       <button type="button" id="review-retry-btn" onclick="retryGenerate()" class="flex-1 h-11 rounded-2xl border border-[var(--border-soft)] text-[12.5px] text-[var(--mauve)] font-medium">重新生成</button>
-      <button type="button" id="review-save-btn" onclick="confirmSave()" class="btn-ribbon flex-1 h-11 rounded-full text-[12.5px] font-semibold"><span class="pearl-sheen"></span><span class="relative z-10">确认保存</span></button>
+      <button type="button" id="review-save-btn" onclick="confirmSave()" class="btn-ribbon flex-1 h-11 rounded-full text-[12.5px] font-semibold"><span class="pearl-sheen"></span><span class="relative z-10" id="review-save-label">确认保存</span></button>
     </div>
     <div id="review-save-tip" class="coach-tip hidden">不用急，看过可以保存<br>不想存，返回就行</div>
   </div>
@@ -3093,6 +3112,18 @@
       </section>
 
       <section class="mt-7">
+        <h2 class="font-display text-[21px] font-semibold tracking-[-0.01em]">课卡</h2>
+        <div class="card-journal grain relative mt-3 overflow-hidden rounded-[24px]">
+          <div class="pearl-sheen"></div>
+          <button onclick="goCards('profile')" class="relative z-10 w-full flex items-center gap-3 px-4 py-3.5 text-left">
+            <span class="row-icon is-hours"><iconify-icon icon="solar:ticket-linear"></iconify-icon></span>
+            <span class="flex-1 text-[13px]">我的课卡</span>
+            <span class="text-[11px] text-[var(--ink-faint)]" id="profile-cards-sub">剩几节、哪天到期</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="mt-7">
         <h2 class="font-display text-[21px] font-semibold tracking-[-0.01em]">帮助</h2>
         <div class="card-journal grain relative mt-3 overflow-hidden rounded-[24px] divide-y divide-[var(--border-soft)]">
           <div class="pearl-sheen"></div>
@@ -3139,6 +3170,28 @@
       <button onclick="goHistory()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><iconify-icon icon="solar:book-2-linear" class="text-[22px]"></iconify-icon><span class="text-[10px]">档案</span></button>
       <button onclick="goProgress()" class="flex flex-col items-center gap-1 text-[var(--ink-faint)]"><span class="relative"><iconify-icon icon="solar:graph-up-linear" class="text-[22px]"></iconify-icon><span class="nav-progress-dot hidden absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[var(--rose-deep)] ring-2 ring-[var(--paper)]"></span></span><span class="text-[10px]">追踪</span></button>
     </nav>
+  </div>
+
+  <!-- ============ CLASS CARDS ============ -->
+  <div class="screen flex-col w-full h-full wash-cream" id="screen-cards">
+    <header class="relative shrink-0 px-6 pt-7 pb-4">
+      <div class="flex items-center gap-4">
+      <button onclick="backFromCards()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
+      <div>
+        <p class="label-editorial text-[13px] text-[var(--rose-deep)]">买过的课，别浪费</p>
+        <h1 class="page-title mt-0.5">我的课卡</h1>
+      </div>
+      </div>
+    </header>
+    <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-8">
+      <p id="cards-empty" class="hidden mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]">把买的次卡、月卡记在这里。记课或打卡时顺手扣一节，就知道还剩几节、哪天到期、每节课多少钱。</p>
+      <div id="cards-active" class="space-y-3"></div>
+      <button type="button" onclick="openCardSheet()" class="btn-ribbon relative mt-4 w-full h-11 rounded-full text-[13px] font-medium"><span class="pearl-sheen"></span><span class="relative z-10">添加课卡</span></button>
+      <section id="cards-ended-wrap" class="hidden mt-7">
+        <h2 class="font-display text-[19px] font-semibold tracking-[-0.01em]">用完 / 到期的</h2>
+        <div id="cards-ended" class="mt-3 space-y-2.5"></div>
+      </section>
+    </main>
   </div>
 
   <!-- ============ PROGRESS (Recurring Issues / Training Review / Pre-Class Brief) ============ -->
@@ -3370,6 +3423,47 @@
   </div>
 </div>
 
+<div id="guest-save-modal" class="hidden fixed inset-0 z-[60] items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideGuestSaveModal()">
+  <div class="relative w-full max-w-[340px] rounded-[24px] bg-[var(--paper)] p-6 text-center" onclick="event.stopPropagation()">
+    <img src="/img/pack-shoes-pink.png" alt="" aria-hidden="true" class="mx-auto w-[72px] h-auto">
+    <h2 class="font-display mt-2 text-[20px] font-semibold">注册一下，就能存好</h2>
+    <p class="mt-2 text-[12.5px] leading-6 text-[var(--ink-soft)]">这条课记已经帮你留着了。用邮箱注册（不到一分钟），注册完会自动保存，下次上课前还会提醒你这次要注意的点。</p>
+    <button type="button" onclick="goGuestAuth('register')" class="btn-ribbon relative mt-5 w-full h-12 rounded-full text-[13.5px] font-semibold"><span class="pearl-sheen"></span><span class="relative z-10">注册并保存</span></button>
+    <button type="button" onclick="goGuestAuth('login')" class="mt-3 w-full h-11 rounded-full border border-[var(--rose-deep)]/35 bg-white/55 text-[13px] font-medium text-[var(--rose-deep)]">已有账号，登录后保存</button>
+    <button type="button" onclick="hideGuestSaveModal()" class="mt-2 w-full h-10 text-[12px] text-[var(--ink-faint)]">再看看</button>
+  </div>
+</div>
+
+<div id="card-modal" class="hidden fixed inset-0 z-[60] items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideCardSheet()">
+  <div class="relative w-full max-w-[340px] max-h-[90vh] overflow-y-auto rounded-[24px] bg-[var(--paper)] p-6" onclick="event.stopPropagation()">
+    <button type="button" onclick="hideCardSheet()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></button>
+    <h2 class="font-display pr-8 text-[19px] font-semibold" id="card-modal-title">添加课卡</h2>
+    <p class="mt-3 text-[11.5px] text-[var(--ink)] mb-1.5">名字</p>
+    <input id="card-name" maxlength="40" placeholder="如：XX 舞蹈 20 次卡" class="w-full rounded-[12px] border border-[var(--border-soft)] bg-white/70 px-3 py-2.5 text-[13px] outline-none">
+    <p class="mt-3 text-[11.5px] text-[var(--ink)] mb-1.5">类型</p>
+    <div class="flex gap-2">
+      <button type="button" data-kind="count" onclick="selectCardKind('count')" class="card-kind-chip duration-chip flex-1 py-2 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">次卡（按节数）</button>
+      <button type="button" data-kind="period" onclick="selectCardKind('period')" class="card-kind-chip duration-chip flex-1 py-2 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">期限卡（不限次）</button>
+    </div>
+    <div id="card-count-wrap">
+      <p class="mt-3 text-[11.5px] text-[var(--ink)] mb-1.5">一共几节</p>
+      <input id="card-total" type="number" inputmode="numeric" min="1" max="500" placeholder="如：20" class="w-full rounded-[12px] border border-[var(--border-soft)] bg-white/70 px-3 py-2.5 text-[13px] outline-none">
+    </div>
+    <p class="mt-3 text-[11.5px] text-[var(--ink)] mb-1.5">到期日<span class="field-optional" id="card-expire-optional">可选</span></p>
+    <input id="card-expire" type="date" class="w-full rounded-[12px] border border-[var(--border-soft)] bg-white/70 px-3 py-2.5 text-[13px] outline-none">
+    <p class="mt-3 text-[11.5px] text-[var(--ink)] mb-1.5">花了多少钱<span class="field-optional">可选</span></p>
+    <input id="card-price" type="number" inputmode="decimal" min="0" placeholder="元，填了能算每节课多少钱" class="w-full rounded-[12px] border border-[var(--border-soft)] bg-white/70 px-3 py-2.5 text-[13px] outline-none">
+    <p class="mt-3 text-[11.5px] text-[var(--ink)] mb-1.5" id="card-used-label">之前已经上了几节<span class="field-optional">可选</span></p>
+    <input id="card-used-before" type="number" inputmode="numeric" min="0" placeholder="新卡就空着" class="w-full rounded-[12px] border border-[var(--border-soft)] bg-white/70 px-3 py-2.5 text-[13px] outline-none">
+    <p id="card-modal-err" class="hidden mt-3 text-[11.5px] text-[var(--rose-deep)]"></p>
+    <button type="button" id="card-modal-save" onclick="submitCardSheet()" class="mt-4 w-full rounded-[12px] bg-[var(--rose-deep)] py-3 text-[13px] text-white">保存</button>
+    <div id="card-modal-extra" class="hidden mt-2 flex gap-2">
+      <button type="button" id="card-modal-archive" onclick="toggleCardArchived()" class="flex-1 py-2.5 text-[11.5px] text-[var(--ink-faint)]">收起这张卡</button>
+      <button type="button" onclick="deleteCard()" class="flex-1 py-2.5 text-[11.5px] text-[var(--rose-deep)]">删除这张卡</button>
+    </div>
+  </div>
+</div>
+
 <div id="delete-account-modal" class="hidden fixed inset-0 z-[60] items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideDeleteAccount()">
   <div class="relative w-full max-w-[340px] rounded-[24px] bg-[var(--paper)] p-6" onclick="event.stopPropagation()">
     <button type="button" onclick="hideDeleteAccount()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></button>
@@ -3454,6 +3548,10 @@
       <input id="checkin-classname" maxlength="40" oninput="updateClassNameHint('checkin-classname','checkin-classname-hint')" placeholder="如：基训、把杆、跳跃组合" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] bg-white/70 text-[12.5px]">
       <p id="checkin-classname-hint" class="mt-1.5 text-[10.5px] text-[var(--ink-faint)]">记下课程/组合，以后能按这个筛选</p>
       <div id="checkin-class-chips" class="mt-2 flex gap-2 flex-wrap"></div>
+    </div>
+    <div class="checkin-sheet-field hidden" id="checkin-card-wrap">
+      <p class="checkin-sheet-k">扣课卡<span class="field-optional">可选</span></p>
+      <div class="flex gap-2 flex-wrap" id="checkin-card-chips"></div>
     </div>
     <div class="checkin-sheet-field">
       <p class="checkin-sheet-k">时长<span class="field-optional">可选</span></p>
@@ -4382,6 +4480,7 @@ function setAuthMode(mode) {
   document.getElementById('auth-confirm-wrap').classList.toggle('hidden', !isRegister);
   document.getElementById('auth-privacy-wrap').classList.toggle('hidden', !isRegister);
   document.getElementById('auth-forgot-btn').classList.toggle('hidden', isForgot);
+  document.getElementById('auth-guest-btn').classList.toggle('hidden', isForgot || !!pendingGuestDraft());
   document.getElementById('auth-subtitle').innerHTML = isLogin
     ? '下课后说几句，AI 帮你复盘，回来查收问题和进步。'
     : isRegister ? '用邮箱注册。课记会留在你的档案里。' : '请输入注册邮箱，我们会寄重置链接。';
@@ -4449,6 +4548,7 @@ async function submitAuth() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '操作失败');
+    const isNewAccount = authMode === 'register';
     setAuth(data.token, data.user);
     markVisitorSignedIn();
     resetAccountScopedCaches();
@@ -4457,7 +4557,7 @@ async function submitAuth() {
     document.getElementById('auth-confirm-password').value = '';
     document.getElementById('auth-name').value = '';
     await loadGuideSeenFromServer();
-    goHome();
+    await finishSignInWithGuestDraft(isNewAccount);
   } catch (e) {
     if (e && e.name === 'TypeError') reportClientError('auth', 'network');
     errEl.textContent = e.message;
@@ -4484,8 +4584,126 @@ function resetAccountScopedCaches() {
   lastAskDigest = null;
   currentIssues = [];
   lastDraft = null;
+  myCards = null;
 }
-function logout() { clearAuth(); guideSeenServer = null; resetAccountScopedCaches(); setAuthMode('login'); show('screen-auth'); }
+function logout() { clearAuth(); guideSeenServer = null; resetAccountScopedCaches(); setAuthMode('login'); show('screen-auth'); paintGuestAuthBanner(); }
+
+// ---------- try before signup ----------
+// A visitor can record and get one AI recap without an account (server: the
+// /guest endpoints, capped per browser / IP / site-wide). Saving is the gate:
+// the finished draft waits in localStorage and is saved right after they
+// register or log in. Nothing of the draft is kept on the server until then.
+let guestMode = false;
+const GUEST_DRAFT_KEY = 'bm_guest_draft';
+const GUEST_DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
+function isGuest() { return guestMode && !getToken(); }
+function guestTrialStep(kind) { telemetryPost('guest', { kind }); }
+function pendingGuestDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem(GUEST_DRAFT_KEY) || 'null');
+    if (d && d.body && Date.now() - Number(d.savedAt) < GUEST_DRAFT_TTL_MS) return d;
+  } catch (e) {}
+  clearGuestDraft();
+  return null;
+}
+function clearGuestDraft() { try { localStorage.removeItem(GUEST_DRAFT_KEY); } catch (e) {} }
+function captureFetch(path, opts = {}) {
+  if (!isGuest()) return authFetch(`${API}${path}`, opts);
+  opts.headers = Object.assign({}, opts.headers, { 'X-Guest-Vid': TELEMETRY.vid });
+  return fetch(`${API}${path}/guest`, opts);
+}
+function startGuestTrial() {
+  guestMode = true;
+  guestTrialStep('start');
+  resetRecordScreen();
+  enableAiEntry();
+  document.getElementById('manual-entry-btn').classList.add('hidden');
+  document.getElementById('rec-quota-note').textContent = '先试一次，不用注册；想保存时再注册';
+  show('screen-record');
+  paintRecBrowserNote();
+}
+function endGuestTrial() {
+  guestMode = false;
+  document.getElementById('manual-entry-btn').classList.remove('hidden');
+}
+function paintGuestAuthBanner(message) {
+  const banner = document.getElementById('auth-guest-banner');
+  if (!banner) return;
+  const draft = pendingGuestDraft();
+  const text = message || (draft ? '整理好了！注册（或登录）后这条课记会自动保存，下次上课前还会提醒你这次要注意的点。' : '');
+  document.getElementById('auth-guest-banner-text').textContent = text;
+  banner.classList.toggle('hidden', !text);
+  const canGoBack = guestMode && lastDraft && lastDraft.result;
+  document.getElementById('auth-guest-back-btn').classList.toggle('hidden', !canGoBack);
+  document.getElementById('auth-guest-btn').classList.toggle('hidden', authMode === 'forgot' || !!draft);
+}
+function showGuestAuth(mode, message) {
+  setAuthMode(mode);
+  show('screen-auth');
+  paintGuestAuthBanner(message);
+}
+function backToGuestDraft() {
+  if (lastDraft && lastDraft.result) show('screen-review');
+}
+function openGuestSaveGate(body) {
+  try {
+    localStorage.setItem(GUEST_DRAFT_KEY, JSON.stringify({ body, savedAt: Date.now() }));
+  } catch (e) {
+    toast('浏览器不让暂存草稿，请先注册再记一次');
+    return;
+  }
+  guestTrialStep('save_gate');
+  const m = document.getElementById('guest-save-modal');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+}
+function hideGuestSaveModal() {
+  const m = document.getElementById('guest-save-modal');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+function goGuestAuth(mode) {
+  hideGuestSaveModal();
+  showGuestAuth(mode === 'login' ? 'login' : 'register');
+}
+function guestQuotaGone(message) {
+  showGuestAuth('register', (message || '今天的试用次数用完了') + '。注册后每天都能用 AI 整理。');
+}
+// Right after register/login: save the draft the visitor made before signing up.
+// Returns the save response, or null when there was nothing (or it failed).
+async function savePendingGuestDraft() {
+  const draft = pendingGuestDraft();
+  if (!draft || !getToken()) return null;
+  try {
+    const res = await authFetch(`${API}/api/records`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft.body),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (res.status < 500) clearGuestDraft();
+      toast(result.error || '刚才的课记没存上，请再记一次');
+      return null;
+    }
+    clearGuestDraft();
+    guestTrialStep('saved');
+    rememberClassName(draft.body.className);
+    calMarkPopKey = dateKey(new Date());
+    return result;
+  } catch (e) {
+    return null;
+  }
+}
+async function finishSignInWithGuestDraft(isNewAccount) {
+  const hadDraft = !!pendingGuestDraft();
+  if (hadDraft && isNewAccount) guestTrialStep('registered');
+  const saved = hadDraft ? await savePendingGuestDraft() : null;
+  endGuestTrial();
+  lastDraft = null;
+  captureSessionId = '';
+  paintGuestAuthBanner();
+  await goHome();
+  if (saved) showSaveCeremony(saved.milestone);
+}
 
 function showFeedback() { const m = document.getElementById('feedback-modal'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => document.getElementById('feedback-text').focus(), 50); }
 function hideFeedback() { const m = document.getElementById('feedback-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
@@ -4573,19 +4791,30 @@ function showAuthWithCurtain() {
 async function checkAuthAndInit() {
   reportVisit();
   await loadNotices();
-  if (!getToken()) { showAuthWithCurtain(); return; }
+  if (!getToken()) {
+    showAuthWithCurtain();
+    if (pendingGuestDraft()) setAuthMode('register');
+    paintGuestAuthBanner();
+    return;
+  }
   try {
     const res = await authFetch(`${API}/api/auth/me`);
     if (!res.ok) throw new Error();
     await loadGuideSeenFromServer();
-    goHome();
+    await finishSignInWithGuestDraft(false);
   } catch (e) {
     showAuthWithCurtain();
+    paintGuestAuthBanner();
   }
 }
 
 // ---------- navigation ----------
 async function goHome() {
+  if (!getToken()) {
+    show('screen-auth');
+    paintGuestAuthBanner();
+    return;
+  }
   const step = currentGuideStepForScreen();
   if (step && step.action === 'back') markGuideSeen(step.id);
   else if (step && step.action !== 'back' && step.screen !== 'home' && step.screen !== 'record' && step.screen !== 'review') {
@@ -4731,6 +4960,311 @@ async function goProfile() {
   } catch (e) {}
 
   show('screen-profile');
+  paintProfileCardsSub();
+}
+
+// ---------- 课卡 ----------
+// Plain bookkeeping, no AI: how many classes are left on each pack, when it
+// runs out, and what a class actually cost. Deducting is always the user's
+// pick (review / 打卡 chips, or 扣一次 here), never automatic.
+let myCards = null;
+let cardsLoadedAt = 0;
+const cardPick = { review: null, checkin: null };
+const cardPickTouched = { review: false, checkin: false };
+let cardsBackTarget = 'profile';
+let editingCardId = null;
+let editingCardKind = 'count';
+
+async function loadCards(force) {
+  if (!getToken()) return [];
+  if (!force && myCards && Date.now() - cardsLoadedAt < 60000) return myCards;
+  try {
+    const res = await authFetch(`${API}/api/cards`);
+    if (res.ok) {
+      myCards = await res.json();
+      cardsLoadedAt = Date.now();
+    }
+  } catch (e) {}
+  return myCards || [];
+}
+function daysUntil(ymd) {
+  if (!ymd) return null;
+  const [y, m, d] = ymd.split('-').map(Number);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((new Date(y, m - 1, d) - today) / 86400000);
+}
+function cardStatus(c) {
+  if (c.archived) return 'archived';
+  const days = daysUntil(c.expireDate);
+  if (days !== null && days < 0) return 'expired';
+  if (c.kind === 'count' && c.remaining <= 0) return 'used_up';
+  return 'active';
+}
+function usableCards(cards) { return (cards || []).filter((c) => cardStatus(c) === 'active'); }
+function fmtYuan(n) { return String(n >= 100 ? Math.round(n) : Math.round(n * 10) / 10); }
+function fmtYmd(ymd) { const [, m, d] = ymd.split('-').map(Number); return `${m}月${d}日`; }
+function perClassCost(c) {
+  if (!c.price) return null;
+  if (c.kind === 'count') return c.price / c.totalCount;
+  return c.usedCount ? c.price / c.usedCount : null;
+}
+// Classes per week still needed to use up a count card before it expires.
+function weeklyPaceNeeded(c) {
+  const days = daysUntil(c.expireDate);
+  if (c.kind !== 'count' || days === null || days < 0 || c.remaining <= 0) return null;
+  return Math.ceil(c.remaining / Math.max(1, (days + 1) / 7));
+}
+function cardAlertText(c) {
+  const days = daysUntil(c.expireDate);
+  const when = days === 0 ? '今天' : `${days} 天后`;
+  if (c.kind === 'count' && days !== null && days <= 14 && c.remaining > 0) {
+    return `「${c.name}」还剩 ${c.remaining} 节，${when}到期，每周要上 ${weeklyPaceNeeded(c)} 节才用得完`;
+  }
+  if (c.kind === 'count' && c.remaining <= 2) return `「${c.name}」只剩 ${c.remaining} 节了`;
+  if (c.kind === 'period' && days !== null && days <= 7) return `「${c.name}」${when}到期`;
+  return '';
+}
+async function paintHomeCardAlert() {
+  const btn = document.getElementById('home-card-alert');
+  if (!btn) return;
+  const cards = usableCards(await loadCards());
+  const alerts = cards
+    .map((c) => ({ text: cardAlertText(c), days: daysUntil(c.expireDate) ?? 9999 }))
+    .filter((a) => a.text)
+    .sort((a, b) => a.days - b.days);
+  btn.classList.toggle('hidden', !alerts.length);
+  if (alerts.length) document.getElementById('home-card-alert-text').textContent = alerts[0].text;
+}
+async function paintProfileCardsSub() {
+  const el = document.getElementById('profile-cards-sub');
+  if (!el) return;
+  const cards = usableCards(await loadCards());
+  const counted = cards.filter((c) => c.kind === 'count');
+  if (!cards.length) el.textContent = '剩几节、哪天到期';
+  else if (counted.length) el.textContent = `还剩 ${counted.reduce((a, c) => a + c.remaining, 0)} 节`;
+  else el.textContent = `${cards.length} 张在用`;
+}
+
+async function goCards(from) {
+  cardsBackTarget = from === 'home' ? 'home' : 'profile';
+  show('screen-cards');
+  renderCards(await loadCards(true));
+}
+function backFromCards() {
+  if (cardsBackTarget === 'home') goHome();
+  else goProfile();
+}
+function cardActiveHtml(c) {
+  const days = daysUntil(c.expireDate);
+  const cost = perClassCost(c);
+  const facts = [];
+  if (c.expireDate) facts.push(days === 0 ? '今天到期' : `${fmtYmd(c.expireDate)}到期 · 还有 ${days} 天`);
+  if (cost) facts.push(c.kind === 'count' ? `每节约 ¥${fmtYuan(cost)}` : `目前平均每节 ¥${fmtYuan(cost)}`);
+  const pace = days !== null && days <= 30 ? weeklyPaceNeeded(c) : null;
+  const last = c.lastUsedAt
+    ? `上次扣课 ${fmtDate(c.lastUsedAt)}${c.lastClassName ? ` · ${escapeHtml(c.lastClassName)}` : ''}`
+    : '还没扣过';
+  const lastUsage = c.recentUsages && c.recentUsages[0];
+  return `
+    <div class="card-journal grain relative overflow-hidden rounded-[20px] px-4 py-3.5">
+      <div class="pearl-sheen"></div>
+      <div class="relative z-10">
+        <div class="flex items-start justify-between gap-3">
+          <p class="text-[13.5px] font-medium text-[var(--ink)] min-w-0 break-words">${escapeHtml(c.name)}</p>
+          <p class="shrink-0 text-right">${c.kind === 'count'
+            ? `<span class="font-display text-[24px] font-semibold text-[var(--burgundy)]">${c.remaining}</span><span class="text-[11px] text-[var(--ink-faint)]"> / ${c.totalCount} 节</span>`
+            : `<span class="text-[12px] text-[var(--burgundy)]">期限卡 · 已上 ${c.usedCount} 节</span>`}</p>
+        </div>
+        ${facts.length ? `<p class="mt-1 text-[11.5px] leading-5 text-[var(--ink-soft)]">${facts.join(' · ')}</p>` : ''}
+        ${pace ? `<p class="mt-0.5 text-[11.5px] leading-5 text-[var(--rose-deep)]">每周要上 ${pace} 节才用得完</p>` : ''}
+        <p class="mt-0.5 text-[11px] leading-5 text-[var(--ink-faint)]">${last}</p>
+        <div class="mt-2.5 flex gap-2">
+          <button type="button" onclick="useCardOnce(${c.id})" class="flex-1 h-9 rounded-full bg-[var(--rose-deep)] text-[12px] text-white">扣一节</button>
+          ${lastUsage ? `<button type="button" onclick="undoCardUsage(${lastUsage.id})" class="flex-1 h-9 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--mauve)]">撤销上次</button>` : ''}
+          <button type="button" onclick="openCardSheet(${c.id})" class="flex-1 h-9 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--mauve)]">编辑</button>
+        </div>
+      </div>
+    </div>`;
+}
+function cardEndedHtml(c) {
+  const status = cardStatus(c);
+  const cost = perClassCost(c);
+  let line;
+  if (status === 'expired' && c.kind === 'count' && c.remaining > 0) {
+    line = `过期没上的 ${c.remaining} 节${c.price ? `，约 ¥${fmtYuan(c.price / c.totalCount * c.remaining)}` : ''}`;
+  } else if (status === 'used_up') {
+    line = `${c.totalCount} 节都上完了${cost ? ` · 每节 ¥${fmtYuan(cost)}` : ''}`;
+  } else {
+    line = `一共上了 ${c.usedCount} 节${c.price && c.usedCount ? ` · 平均每节 ¥${fmtYuan(c.price / c.usedCount)}` : ''}`;
+  }
+  const tag = status === 'archived' ? '已收起' : status === 'used_up' ? '用完了' : '已到期';
+  return `
+    <button type="button" onclick="openCardSheet(${c.id})" class="w-full text-left rounded-[16px] bg-white/60 border border-[var(--border-soft)] px-3.5 py-2.5">
+      <span class="flex items-center justify-between gap-2">
+        <span class="text-[12.5px] text-[var(--ink)] min-w-0 truncate">${escapeHtml(c.name)}</span>
+        <span class="shrink-0 text-[10.5px] text-[var(--ink-faint)]">${tag}</span>
+      </span>
+      <span class="block mt-0.5 text-[11px] leading-5 text-[var(--ink-soft)]">${line}</span>
+    </button>`;
+}
+function renderCards(cards) {
+  const active = (cards || []).filter((c) => cardStatus(c) === 'active');
+  const ended = (cards || []).filter((c) => cardStatus(c) !== 'active');
+  document.getElementById('cards-empty').classList.toggle('hidden', !!(cards && cards.length));
+  document.getElementById('cards-active').innerHTML = active.map(cardActiveHtml).join('');
+  document.getElementById('cards-ended-wrap').classList.toggle('hidden', !ended.length);
+  document.getElementById('cards-ended').innerHTML = ended.map(cardEndedHtml).join('');
+}
+async function useCardOnce(id) {
+  try {
+    const res = await authFetch(`${API}/api/cards/${id}/use`, { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { toast(data.error || '没扣上，请重试'); return; }
+    const c = data.card;
+    toast(c.kind === 'count' ? `扣了一节，还剩 ${c.remaining} 节` : '记了一节');
+    renderCards(await loadCards(true));
+  } catch (e) { toast('没扣上，请重试'); }
+}
+async function undoCardUsage(usageId) {
+  if (!confirm('撤销上一次扣课？')) return;
+  try {
+    const res = await authFetch(`${API}/api/cards/usages/${usageId}`, { method: 'DELETE' });
+    if (!res.ok) { toast('撤销失败，请重试'); return; }
+    toast('已撤销');
+    renderCards(await loadCards(true));
+  } catch (e) { toast('撤销失败，请重试'); }
+}
+
+function selectCardKind(kind) {
+  editingCardKind = kind === 'period' ? 'period' : 'count';
+  document.querySelectorAll('.card-kind-chip').forEach((b) => b.classList.toggle('is-selected', b.dataset.kind === editingCardKind));
+  document.getElementById('card-count-wrap').classList.toggle('hidden', editingCardKind !== 'count');
+  document.getElementById('card-expire-optional').classList.toggle('hidden', editingCardKind === 'period');
+}
+function openCardSheet(id) {
+  const card = id ? (myCards || []).find((c) => c.id === id) : null;
+  editingCardId = card ? card.id : null;
+  document.getElementById('card-modal-title').textContent = card ? '编辑课卡' : '添加课卡';
+  document.getElementById('card-name').value = card ? card.name : '';
+  document.getElementById('card-total').value = card && card.totalCount ? card.totalCount : '';
+  document.getElementById('card-expire').value = card && card.expireDate ? card.expireDate : '';
+  document.getElementById('card-price').value = card && card.price != null ? card.price : '';
+  document.getElementById('card-used-before').value = '';
+  document.getElementById('card-used-label').classList.toggle('hidden', !!card);
+  document.getElementById('card-used-before').classList.toggle('hidden', !!card);
+  document.getElementById('card-modal-extra').classList.toggle('hidden', !card);
+  document.getElementById('card-modal-archive').textContent = card && card.archived ? '恢复这张卡' : '收起这张卡';
+  document.getElementById('card-modal-err').classList.add('hidden');
+  selectCardKind(card ? card.kind : 'count');
+  const m = document.getElementById('card-modal');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+}
+function hideCardSheet() {
+  const m = document.getElementById('card-modal');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+async function cardRequest(method, path, body) {
+  const res = await authFetch(`${API}/api/cards${path}`, {
+    method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || '保存失败，请重试');
+  return data;
+}
+async function submitCardSheet() {
+  const err = document.getElementById('card-modal-err');
+  err.classList.add('hidden');
+  const body = {
+    name: document.getElementById('card-name').value.trim(),
+    kind: editingCardKind,
+    totalCount: editingCardKind === 'count' ? document.getElementById('card-total').value.trim() : null,
+    expireDate: document.getElementById('card-expire').value || null,
+    price: document.getElementById('card-price').value.trim(),
+  };
+  if (!editingCardId) body.usedBefore = Number(document.getElementById('card-used-before').value) || 0;
+  const btn = document.getElementById('card-modal-save');
+  btn.disabled = true;
+  try {
+    if (editingCardId) await cardRequest('PATCH', `/${editingCardId}`, body);
+    else await cardRequest('POST', '', body);
+    hideCardSheet();
+    renderCards(await loadCards(true));
+  } catch (e) {
+    err.textContent = e.message;
+    err.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+  }
+}
+async function toggleCardArchived() {
+  const card = (myCards || []).find((c) => c.id === editingCardId);
+  if (!card) return;
+  try {
+    await cardRequest('PATCH', `/${card.id}`, { archived: !card.archived });
+    hideCardSheet();
+    renderCards(await loadCards(true));
+  } catch (e) { toast(e.message); }
+}
+async function deleteCard() {
+  if (!editingCardId || !confirm('删除这张卡和它的扣课记录？课记本身不受影响。')) return;
+  try {
+    await cardRequest('DELETE', `/${editingCardId}`);
+    hideCardSheet();
+    renderCards(await loadCards(true));
+  } catch (e) { toast(e.message); }
+}
+
+// 扣课卡 chips on the review screen and the 打卡 sheet. Preselects the card last
+// used for the same 课程/组合; otherwise defaults to 不扣.
+function renderCardChips(where) {
+  const box = document.getElementById(`${where}-card-chips`);
+  if (!box) return;
+  const chip = (id, label, selected) => `<button type="button" data-card="${id}" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]${selected ? ' is-selected' : ''}">${label}</button>`;
+  box.innerHTML = chip('', '不扣', !cardPick[where]) + usableCards(myCards).map((c) =>
+    chip(c.id, escapeHtml(c.name) + (c.kind === 'count' ? `（剩 ${c.remaining}）` : ''), cardPick[where] === c.id)
+  ).join('');
+  box.onclick = (e) => {
+    const b = e.target.closest('button[data-card]');
+    if (!b) return;
+    cardPick[where] = Number(b.dataset.card) || null;
+    cardPickTouched[where] = true;
+    renderCardChips(where);
+  };
+}
+function guessCardPick(where, className) {
+  const wrap = document.getElementById(`${where}-card-wrap`);
+  if (cardPickTouched[where] || !wrap || wrap.classList.contains('hidden')) return;
+  const cards = usableCards(myCards);
+  const name = (className || '').trim();
+  let pick = name ? cards.find((c) => (c.lastClassName || '').trim() === name) : null;
+  if (!pick && cards.length === 1 && cards[0].lastUsedAt) pick = cards[0];
+  cardPick[where] = pick ? pick.id : null;
+  renderCardChips(where);
+}
+async function paintCardPicker(where) {
+  const wrap = document.getElementById(`${where}-card-wrap`);
+  cardPick[where] = null;
+  cardPickTouched[where] = false;
+  if (!wrap) return;
+  wrap.classList.add('hidden');
+  if (isGuest() || !getToken()) return;
+  const cards = usableCards(await loadCards());
+  if (!cards.length) return;
+  wrap.classList.remove('hidden');
+  guessCardPick(where, document.getElementById(`${where}-classname`)?.value);
+}
+function noteCardResult(result) {
+  if (!result || (!result.cardUsage && !result.cardError)) return;
+  myCards = null;
+  if (result.cardError) {
+    toast(`已保存，但课卡没扣上：${result.cardError}`, 3200);
+    return;
+  }
+  const c = result.cardUsage.card;
+  toast(c.kind === 'count' ? `「${c.name}」扣了一节，还剩 ${c.remaining} 节` : `「${c.name}」记了一节`, 2800);
 }
 
 // ---------- badge wall ----------
@@ -4866,6 +5400,8 @@ function updateClassNameHint(inputId, hintId) {
   const hint = document.getElementById(hintId);
   if (!input || !hint) return;
   hint.classList.toggle('hidden', !!input.value.trim());
+  if (inputId === 'review-classname') guessCardPick('review', input.value);
+  else if (inputId === 'checkin-classname') guessCardPick('checkin', input.value);
 }
 function paintTodayClassSummary(rows) {
   const el = document.getElementById('home-today-summary');
@@ -4959,6 +5495,7 @@ async function loadHome() {
   renderHomeCalendar();
   paintTodayClassSummary(homeRows);
   renderCheckinStatus(homeRows);
+  paintHomeCardAlert();
 }
 // Daily streak, purely client-side from records already loaded for the home
 // calendar — no new endpoint. Counts backward from today; if today has no
@@ -5050,6 +5587,7 @@ function markGuideSeenLocal(id) {
   if (el) el.classList.add('hidden');
 }
 function markGuideSeen(id) {
+  if (!getToken()) return;
   markGuideSeenLocal(id);
   authFetch(`${API}/api/guide/seen`, {
     method: 'POST',
@@ -5295,6 +5833,7 @@ async function openCheckinSheet(source) {
     sum.textContent = todayText ? `今天已经记下 ${todayText}` : '';
   }
   fillClassNameChips('checkin-class-chips', 'checkin-classname', rowsForSheet);
+  paintCardPicker('checkin', '');
   const m = document.getElementById('checkin-sheet-mask');
   m.classList.remove('is-leaving');
   m.classList.remove('hidden');
@@ -5381,10 +5920,12 @@ async function submitCheckin() {
         tzOffsetMin: new Date().getTimezoneOffset(),
         trainingDurationMin: checkinDurationMin,
         mood: checkinMood,
+        ...(cardPick.checkin ? { cardId: cardPick.checkin } : {}),
       }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { toast(data.error || '打卡失败，请重试'); return; }
+    noteCardResult(data);
     if (className) rememberClassName(className);
     pendingShareMilestone = data.milestone || null;
     pendingCalMarkPop = dateKey(new Date());
@@ -7895,8 +8436,11 @@ async function deleteEntry() {
   // Unlike everything else on this screen, deletion is irreversible — this
   // is the one place that should have more friction, not less.
   if (!confirm('确定要删除这条记录吗？删除后无法恢复。')) return;
-  await authFetch(`${API}/api/records/${detailId}`, { method: 'DELETE' });
-  toast('已删除');
+  const res = await authFetch(`${API}/api/records/${detailId}`, { method: 'DELETE' });
+  const data = await res.json().catch(() => ({}));
+  const returned = Number(data.cardClassesReturned) || 0;
+  if (returned) myCards = null;
+  toast(returned ? `已删除，扣掉的 ${returned} 节课也退回课卡了` : '已删除');
   goHome();
 }
 
@@ -8144,7 +8688,7 @@ async function transcribeSegment(blob, duration) {
   document.getElementById('rec-btn').disabled = true;
   updateGenerateBtn();
   try {
-    const res = await authFetch(`${API}/api/transcribe`, {
+    const res = await captureFetch('/api/transcribe', {
       method: 'POST',
       headers: Object.assign(
         { 'Content-Type': blob.type || 'audio/webm' },
@@ -8162,6 +8706,7 @@ async function transcribeSegment(blob, duration) {
     const text = (data.text || '').trim();
     if (text) {
       segments.push({ text, duration });
+      if (isGuest() && segments.length === 1) guestTrialStep('asr_ok');
       logEvent('record_voice_complete', { durationSec: duration, asr: true });
       document.getElementById('rec-live-text').textContent = text;
     } else {
@@ -8169,7 +8714,8 @@ async function transcribeSegment(blob, duration) {
     }
   renderSegments();
   } catch (e) {
-    if (e.status === 429) disableAiEntry(e.message);
+    if (e.status === 429 && isGuest()) guestQuotaGone(e.message);
+    else if (e.status === 429) disableAiEntry(e.message);
     else {
       logEvent('asr_fail', { error: asrFailCode(e) });
       toast((e.message || '识别失败') + '。可以重试，或在下面打字');
@@ -8281,7 +8827,7 @@ async function generateReview() {
   generateAbort = new AbortController();
   show('screen-processing');
   try {
-    const res = await authFetch(`${API}/api/generate`, {
+    const res = await captureFetch('/api/generate', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ transcript, sessionId: captureSessionId, from: captureInputFrom() }),
       signal: generateAbort.signal,
@@ -8292,8 +8838,13 @@ async function generateReview() {
     setReviewAiSectionsVisible(true);
     renderReview();
     show('screen-review');
+    if (isGuest()) guestTrialStep('review');
   } catch (e) {
     if (isAbortError(e)) { show('screen-record'); return; }
+    if (e.status === 429 && isGuest()) {
+      guestQuotaGone(e.message);
+      return;
+    }
     if (e.status === 429) {
       openManualBecauseQuotaGone(e.message || '今天的AI复盘额度用完了，请手动记');
       return;
@@ -8320,7 +8871,7 @@ async function retryGenerate() {
   generateAbort = new AbortController();
   show('screen-processing');
   try {
-    const res = await authFetch(`${API}/api/generate`, {
+    const res = await captureFetch('/api/generate', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ transcript: lastDraft.transcript, sessionId: captureSessionId, from: lastDraft.from || captureInputFrom() }),
       signal: generateAbort.signal,
@@ -8333,6 +8884,7 @@ async function retryGenerate() {
   } catch (e) {
     if (isAbortError(e)) { show('screen-review'); return; }
     show('screen-review');
+    if (e.status === 429 && isGuest()) { guestQuotaGone(e.message); return; }
     if (e.status === 429) { disableAiEntry(e.message); return; }
     const wrap = document.getElementById('review-error-wrap');
     if (wrap) {
@@ -8441,6 +8993,10 @@ function renderReview(isFreshDraft = true) {
   const noteEl = document.getElementById('review-note');
   if (r.note) { noteEl.classList.remove('hidden'); noteEl.textContent = r.note; }
   else noteEl.classList.add('hidden');
+  const guest = isGuest();
+  if (guest) document.getElementById('review-term-correction-sec')?.classList.add('hidden');
+  document.getElementById('review-save-label').textContent = guest ? '注册后保存' : '确认保存';
+  if (isFreshDraft) paintCardPicker('review', '');
   fitReviewAreas();
   requestAnimationFrame(fitReviewAreas);
 }
@@ -8651,9 +9207,12 @@ async function confirmSave() {
     sessionId: captureSessionId,
     from: lastDraft.from || (lastDraft.durationSec > 0 ? 'voice' : 'typed'),
   };
+  if (isGuest()) { openGuestSaveGate(body); return; }
+  if (cardPick.review) body.cardId = cardPick.review;
   const res = await authFetch(`${API}/api/records`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
   const result = await res.json();
   if (!res.ok) { toast(result.error || '保存失败'); return; }
+  noteCardResult(result);
   markGuideSeen('recap-done');
   markGuideSeen('review-save');
   rememberClassName(body.className);

@@ -60,6 +60,8 @@ function knownEventNames() {
     'progress_open', 'progress_opened',
     'share_card_downloaded', 'month_share_card_downloaded',
     'screen_view', 'client_error', 'embedding_call',
+    'guest_trial',
+    'card_used',
   ]);
 }
 

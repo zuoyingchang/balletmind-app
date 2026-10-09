@@ -31,6 +31,16 @@ const MAX_TRANSCRIPT_LENGTH = Number(process.env.MAX_TRANSCRIPT_LENGTH) || 4000;
 // good/improve points directly) instead of a dead end.
 const DAILY_RECAP_LIMIT = Number(process.env.DAILY_RECAP_LIMIT) || 2;
 
+// Try-before-signup (no account). Every guest call costs real ASR/LLM money with
+// nobody to bill, so there are three caps: per browser id, per IP (in-memory,
+// see routes/guest-limits.js) and one site-wide daily budget across all guests.
+const GUEST_RECAPS_PER_DAY = Number(process.env.GUEST_RECAPS_PER_DAY) || 2;
+const GUEST_ASR_PER_DAY = Number(process.env.GUEST_ASR_PER_DAY) || 6;
+const GUEST_IP_CALLS_PER_DAY = Number(process.env.GUEST_IP_CALLS_PER_DAY) || 30;
+const GUEST_SITE_AI_CALLS_PER_DAY = Number(process.env.GUEST_SITE_AI_CALLS_PER_DAY) || 600;
+const GUEST_MAX_TRANSCRIPT_LENGTH = Number(process.env.GUEST_MAX_TRANSCRIPT_LENGTH) || 1500;
+const GUEST_MAX_AUDIO_BYTES = Number(process.env.GUEST_MAX_AUDIO_BYTES) || 3 * 1024 * 1024;
+
 // Same allowlist shape as experiments/issue-brief-gate.js: a higher limit for a short list of
 // user IDs (e.g. the builder's own account doing real-device testing), everyone else unaffected.
 // Applies to both pools (core and secondary) for whoever is on the allowlist.
@@ -136,6 +146,8 @@ module.exports = {
   PORT, JWT_SECRET, ADMIN_KEY, DAILY_AI_LIMIT, dailyAiLimitFor,
   WEEKLY_ASK_LIMIT, WEEKLY_ASK_LIMIT_PAID, WEEKLY_ASK_LIMIT_FREE, weeklyAskLimitFor, isPaidUser,
   DAILY_RECAP_LIMIT, dailyRecapLimitFor, MAX_TRANSCRIPT_LENGTH,
+  GUEST_RECAPS_PER_DAY, GUEST_ASR_PER_DAY, GUEST_IP_CALLS_PER_DAY, GUEST_SITE_AI_CALLS_PER_DAY,
+  GUEST_MAX_TRANSCRIPT_LENGTH, GUEST_MAX_AUDIO_BYTES,
   AI_MODEL, AI_MAX_OUTPUT_TOKENS, AI_TIMEOUT_MS, AI_PRIMARY_TIMEOUT_MS, AI_TEMPERATURE,
   OPENAI_API_KEY, ASR_MODEL, ASR_TIMEOUT_MS, MAX_AUDIO_BYTES,
   RESEND_API_KEY, EMAIL_FROM, APP_PUBLIC_URL, RESET_TOKEN_TTL_MS,

@@ -108,6 +108,32 @@ const ready = client.batch(
       created_at INTEGER,
       UNIQUE(user_id, step_id)
     )`,
+    // 课卡: a pack of classes bought from a studio. kind 'count' = N classes
+    // (total_count required), 'period' = unlimited until expire_date. Dates are
+    // the user's local calendar day as YYYY-MM-DD; price is in yuan.
+    `CREATE TABLE IF NOT EXISTS class_cards (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'count',
+      total_count INTEGER,
+      price REAL,
+      start_date TEXT,
+      expire_date TEXT,
+      archived INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER,
+      updated_at INTEGER
+    )`,
+    // One row per class deducted from a card. record_id links it to the 课记 /
+    // 打卡 it was deducted with (NULL for a manual 扣一次).
+    `CREATE TABLE IF NOT EXISTS card_usages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      card_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      record_id INTEGER,
+      used_at INTEGER NOT NULL,
+      created_at INTEGER
+    )`,
     // Every user-scoped table is queried as "WHERE user_id = ?" on nearly
     // every request — not urgent at MVP scale (measured: a few ms either way
     // with 100 users / 2k records), but free to add now and matters once the
@@ -118,6 +144,9 @@ const ready = client.batch(
     'CREATE INDEX IF NOT EXISTS idx_issue_occurrences_issue ON issue_occurrences(issue_id)',
     'CREATE INDEX IF NOT EXISTS idx_term_corrections_user ON term_corrections(user_id)',
     'CREATE INDEX IF NOT EXISTS idx_guide_progress_user ON guide_progress(user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_class_cards_user ON class_cards(user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_card_usages_card ON card_usages(card_id)',
+    'CREATE INDEX IF NOT EXISTS idx_card_usages_record ON card_usages(record_id)',
   ],
   'write'
 ).then(async () => {

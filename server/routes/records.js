@@ -6,9 +6,26 @@ const { sessionIdFromReq, withSession } = require('../lib/text');
 const { processRecordForIssues, removeRecordFromIssues } = require('../issues');
 const { checkMilestone } = require('../milestones');
 const { embedTextsOpenAI, recordCorpus } = require('../ai/ask-retrieve');
+const { useCard, releaseRecordUsages, CardError } = require('../lib/cards');
 
 const router = express.Router();
 router.use(requireAuth);
+
+// Optional 扣课卡 on save. The record is already saved by the time this runs, so a
+// card problem (used up, deleted meanwhile) is reported next to the id instead of
+// failing the save.
+async function deductCardWithRecord(req, recordId, from) {
+  const cardId = req.body && req.body.cardId;
+  if (cardId === undefined || cardId === null || cardId === '') return {};
+  try {
+    const { usageId, card } = await useCard(req.userId, cardId, { recordId: Number(recordId) });
+    await logEvent(req.userId, 'card_used', { from });
+    return { cardUsage: { usageId, card } };
+  } catch (e) {
+    if (e instanceof CardError) return { cardError: e.message };
+    throw e;
+  }
+}
 
 // Best-effort, fire-and-forget: cache this record's embedding at save time so
 // 问问我的档案's embedding fallback (ai/ask-retrieve.js embeddingHits) never
@@ -90,7 +107,8 @@ router.post('/', async (req, res) => {
   }
   await processRecordForIssues(req.userId, info.lastInsertRowid, improve);
   const milestone = await checkMilestone(req.userId, { source: 'recap' });
-  res.json({ id: info.lastInsertRowid, milestone });
+  const card = await deductCardWithRecord(req, info.lastInsertRowid, 'recap');
+  res.json({ id: info.lastInsertRowid, milestone, ...card });
   cacheRecordEmbedding(req.userId, info.lastInsertRowid, {
     class_name: className || '训练记录', good_points: good, improve_points: improve, next_time_reminder: next_time_reminder || '',
   });
@@ -117,7 +135,8 @@ router.post('/checkin', async (req, res) => {
     recordId: info.lastInsertRowid, from: 'checkin', slotsFilled: 0,
   }, sessionIdFromReq(req)));
   const milestone = await checkMilestone(req.userId, { source: 'checkin' });
-  res.json({ id: info.lastInsertRowid, milestone });
+  const card = await deductCardWithRecord(req, info.lastInsertRowid, 'checkin');
+  res.json({ id: info.lastInsertRowid, milestone, ...card });
   cacheRecordEmbedding(req.userId, info.lastInsertRowid, { class_name: name });
 });
 
@@ -134,11 +153,13 @@ router.get('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   const mine = await db.get('SELECT id FROM records WHERE id = ? AND user_id = ?', [req.params.id, req.userId]);
+  let cardClassesReturned = 0;
   if (mine) {
     await removeRecordFromIssues(req.userId, mine.id);
+    cardClassesReturned = await releaseRecordUsages(req.userId, mine.id);
     await db.run('DELETE FROM records WHERE id = ? AND user_id = ?', [mine.id, req.userId]);
   }
-  res.json({ ok: true });
+  res.json({ ok: true, cardClassesReturned });
 });
 
 module.exports = router;

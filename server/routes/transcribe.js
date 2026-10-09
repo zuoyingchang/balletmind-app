@@ -1,9 +1,13 @@
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
-const { logEvent, countAiCallsToday } = require('../events');
+const {
+  guestIdentity, guestIpLimiter, guestSiteBudget, tagActor, GUEST_QUOTA_MESSAGE,
+} = require('../middleware/guest');
+const { logEvent, countAiCallsToday, countGuestAsrToday } = require('../events');
 const { logUpstreamFailure, logQuota } = require('../lib/log');
 const {
   dailyAiLimitFor, OPENAI_API_KEY, ASR_MODEL, ASR_TIMEOUT_MS, MAX_AUDIO_BYTES,
+  GUEST_ASR_PER_DAY, GUEST_MAX_AUDIO_BYTES,
 } = require('../config');
 const { WHISPER_PROMPT } = require('../ballet-glossary');
 const { fetchWithTimeout, isAbortError } = require('../lib/fetch-timeout');
@@ -13,6 +17,10 @@ const { prepareForTencentAsr } = require('../lib/audio-convert');
 const { sessionIdFromReq, withSession } = require('../lib/text');
 
 const router = express.Router();
+
+function eventMeta(req, meta) {
+  return tagActor(req, withSession(meta, sessionIdFromReq(req)));
+}
 
 function extensionFor(contentType) {
   const type = (contentType || '').split(';')[0].trim().toLowerCase();
@@ -28,7 +36,26 @@ router.get('/status', requireAuth, (req, res) => {
   res.json({ configured: Boolean(OPENAI_API_KEY), model: OPENAI_API_KEY ? ASR_MODEL : null });
 });
 
-router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), async (req, res) => {
+// Returns true when the request was answered with a 429.
+async function quotaBlocked(req, res) {
+  if (req.guestVid) {
+    if ((await countGuestAsrToday(req.guestVid)) < GUEST_ASR_PER_DAY) return false;
+    logQuota('guest transcribe blocked', req.guestVid);
+    res.status(429).json({ error: GUEST_QUOTA_MESSAGE, code: 'guest_quota' });
+    return true;
+  }
+  if ((await countAiCallsToday(req.userId)) < dailyAiLimitFor(req.userId)) return false;
+  logQuota('transcribe blocked', req.userId);
+  await logEvent(req.userId, 'asr_fail', eventMeta(req, { reason: 'quota_exceeded', model: ASR_MODEL }));
+  res.status(429).json({ error: '今天的AI次数已经用完了，可以先手动记录内容' });
+  return true;
+}
+
+const rawAudio = express.raw({ type: () => true, limit: '12mb' });
+router.post('/', requireAuth, rawAudio, transcribe);
+router.post('/guest', guestIdentity, guestIpLimiter, rawAudio, guestSiteBudget, transcribe);
+
+async function transcribe(req, res) {
   if (!OPENAI_API_KEY) {
     console.error('[ALERT][config] OPENAI_API_KEY is not set');
     return res.status(503).json({ error: '语音识别暂时不可用，请手动输入复盘内容' });
@@ -37,14 +64,10 @@ router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), 
   if (!Buffer.isBuffer(audio) || audio.length === 0) {
     return res.status(400).json({ error: '没有收到录音' });
   }
-  if (audio.length > MAX_AUDIO_BYTES) {
+  if (audio.length > (req.guestVid ? GUEST_MAX_AUDIO_BYTES : MAX_AUDIO_BYTES)) {
     return res.status(400).json({ error: '这段录音太长了，请录短一点再试' });
   }
-  if ((await countAiCallsToday(req.userId)) >= dailyAiLimitFor(req.userId)) {
-    logQuota('transcribe blocked', req.userId);
-    await logEvent(req.userId, 'asr_fail', withSession({ reason: 'quota_exceeded', model: ASR_MODEL }, sessionIdFromReq(req)));
-    return res.status(429).json({ error: '今天的AI次数已经用完了，可以先手动记录内容' });
-  }
+  if (await quotaBlocked(req, res)) return;
 
   const durationHeader = Number(req.headers['x-audio-duration-sec']);
   const durationSec = Number.isFinite(durationHeader) && durationHeader > 0
@@ -84,34 +107,34 @@ router.post('/', requireAuth, express.raw({ type: () => true, limit: '12mb' }), 
       logUpstreamFailure('openai/whisper', response.status, detail);
       const fell = await tryTencentFallback(req, audio, contentType, startedAt, durationSec);
       if (fell) return res.json(fell);
-      await logEvent(req.userId, 'asr_fail', withSession({ reason: 'api_error', status: response.status, latencyMs, model: ASR_MODEL }, sessionIdFromReq(req)));
+      await logEvent(req.userId, 'asr_fail', eventMeta(req, { reason: 'api_error', status: response.status, latencyMs, model: ASR_MODEL }));
       return res.status(502).json({ error: '语音识别失败，请重试或改用手动输入' });
     }
     const data = await response.json();
     const text = (data.text || '').trim();
-    await logEvent(req.userId, 'asr_success', withSession({
+    await logEvent(req.userId, 'asr_success', eventMeta(req, {
       latencyMs,
       model: ASR_MODEL,
       chars: text.length,
       bytes: audio.length,
       ...(durationSec ? { durationSec } : {}),
-    }, sessionIdFromReq(req)));
+    }));
     res.json({ text, model: ASR_MODEL });
   } catch (e) {
     const timedOut = isAbortError(e);
     console.error(`[whisper] ${timedOut ? 'timeout' : 'exception'}`, timedOut ? '' : e);
     const fell = await tryTencentFallback(req, audio, contentType, startedAt, durationSec);
     if (fell) return res.json(fell);
-    await logEvent(req.userId, 'asr_fail', withSession({
+    await logEvent(req.userId, 'asr_fail', eventMeta(req, {
       reason: timedOut ? 'timeout' : 'exception',
       error: timedOut ? 'timeout' : 'exception',
       latencyMs: Date.now() - startedAt,
       model: ASR_MODEL,
-    }, sessionIdFromReq(req)));
+    }));
     const msg = timedOut ? '语音识别超时，请重试或改用手动输入' : '语音识别失败，请重试或改用手动输入';
     res.status(timedOut ? 504 : 500).json({ error: msg });
   }
-});
+}
 
 
 // Whisper failed (any reason). If a domestic fallback is configured, remux the same audio and try
@@ -126,10 +149,10 @@ async function tryTencentFallback(req, audio, contentType, startedAt, durationSe
     recordAsrFallback();
     const latencyMs = Date.now() - startedAt;
     console.error(`[ALERT][fallback] Whisper failed; transcribed via Tencent instead (${latencyMs}ms)`);
-    await logEvent(req.userId, 'asr_success', withSession({
+    await logEvent(req.userId, 'asr_success', eventMeta(req, {
       latencyMs, model: 'tencent-sentence-recognition', chars: text.length, bytes: audio.length, fellBack: true,
       ...(durationSec ? { durationSec } : {}),
-    }, sessionIdFromReq(req)));
+    }));
     return { text, model: 'tencent-sentence-recognition' };
   } catch (e) {
     console.error('[ALERT][fallback] Tencent ASR fallback also failed:', e.message, e.detail ? String(e.detail).slice(0, 300) : '');
