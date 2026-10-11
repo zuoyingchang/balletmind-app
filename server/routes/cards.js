@@ -42,9 +42,9 @@ router.post('/', async (req, res) => {
   }
   const now = Date.now();
   const info = await db.run(
-    `INSERT INTO class_cards (user_id, name, kind, total_count, price, start_date, expire_date, archived, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
-    [req.userId, fields.name, fields.kind, fields.total_count, fields.price, fields.start_date, fields.expire_date, now, now]
+    `INSERT INTO class_cards (user_id, studio, name, kind, total_count, price, start_date, expire_date, archived, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+    [req.userId, fields.studio, fields.name, fields.kind, fields.total_count, fields.price, fields.start_date, fields.expire_date, now, now]
   );
   const cardId = Number(info.lastInsertRowid);
   for (let i = 0; i < usedBefore; i++) {

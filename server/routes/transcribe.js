@@ -10,6 +10,8 @@ const {
   GUEST_ASR_PER_DAY, GUEST_MAX_AUDIO_BYTES,
 } = require('../config');
 const { WHISPER_PROMPT } = require('../ballet-glossary');
+const { PILATES_WHISPER_PROMPT } = require('../pilates-glossary');
+const { practiceFromReq } = require('../lib/practice');
 const { fetchWithTimeout, isAbortError } = require('../lib/fetch-timeout');
 const { asrFallbackProviderName, recordAsrFallback } = require('../ai/asr-provider');
 const { transcribeWithTencent } = require('../ai/asr-tencent');
@@ -80,7 +82,7 @@ async function transcribe(req, res) {
   const form = new FormData();
   form.append('file', new Blob([audio], { type: contentType.split(';')[0] }), `clip.${ext}`);
   form.append('model', ASR_MODEL);
-  form.append('prompt', WHISPER_PROMPT);
+  form.append('prompt', practiceFromReq(req) === 'pilates' ? PILATES_WHISPER_PROMPT : WHISPER_PROMPT);
   form.append('response_format', 'json');
 
   try {

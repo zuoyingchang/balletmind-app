@@ -15,7 +15,8 @@ const {
 const { llmUsageMeta } = require('../lib/llm-event-meta');
 const { sessionIdFromReq, withSession } = require('../lib/text');
 const { correctionsAsPromptHint } = require('../terms');
-const { PROMPT_VERSION, SYSTEM_PROMPT, REVIEW_TOOL } = require('../ai/review-prompt');
+const { PROMPT_VERSION, SYSTEM_PROMPT, REVIEW_TOOL, reviewPromptFor } = require('../ai/review-prompt');
+const { practiceFromReq } = require('../lib/practice');
 const {
   callAnthropicOnce,
   callAnthropicWithRetry,
@@ -30,9 +31,17 @@ function inputFrom(req) {
   return (from === 'voice' || from === 'typed' || from === 'mixed') ? from : undefined;
 }
 
+function practiceMeta(req) {
+  const practice = practiceFromReq(req);
+  return {
+    promptVersion: reviewPromptFor(practice).version,
+    ...(practice === 'ballet' ? {} : { practice }),
+  };
+}
+
 function failMeta(req, extra) {
   const from = inputFrom(req);
-  return tagActor(req, withSession({ promptVersion: PROMPT_VERSION, ...(from ? { from } : {}), ...extra }, sessionIdFromReq(req)));
+  return tagActor(req, withSession({ ...practiceMeta(req), ...(from ? { from } : {}), ...extra }, sessionIdFromReq(req)));
 }
 
 router.post('/', requireAuth, generate);
@@ -70,7 +79,7 @@ async function generate(req, res) {
   const startedAt = Date.now();
   try {
     const termHint = req.guestVid ? '' : await correctionsAsPromptHint(req.userId);
-    const { response, error, attempt, fellBack } = await callAnthropicWithRetry(termHint, transcript);
+    const { response, error, attempt, fellBack } = await callAnthropicWithRetry(termHint, transcript, reviewPromptFor(practiceFromReq(req)));
     const latencyMs = Date.now() - startedAt;
 
     if (error) {
@@ -105,7 +114,7 @@ async function generate(req, res) {
         latencyMs,
         chars: transcript.length,
         from: inputFrom(req),
-        promptVersion: PROMPT_VERSION,
+        ...practiceMeta(req),
       },
     }), sessionIdFromReq(req))));
     res.json(reviewFromToolInput(input));

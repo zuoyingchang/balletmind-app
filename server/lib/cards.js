@@ -29,10 +29,13 @@ function cardFieldsFrom(body, existing) {
   const out = {};
   const has = (k) => Object.prototype.hasOwnProperty.call(b, k);
 
+  if (!partial || has('studio')) {
+    const studio = String(b.studio || '').trim().slice(0, 40);
+    if (!studio) throw new CardError(400, '先填一下机构，比如「XX 舞蹈工作室」');
+    out.studio = studio;
+  }
   if (!partial || has('name')) {
-    const name = String(b.name || '').trim().slice(0, 40);
-    if (!name) throw new CardError(400, '给这张卡起个名字，比如「XX 舞蹈 20 次卡」');
-    out.name = name;
+    out.name = String(b.name || '').trim().slice(0, 40);
   }
   if (!partial || has('kind')) {
     const kind = b.kind === 'period' ? 'period' : (b.kind === 'count' || b.kind === undefined ? 'count' : null);
@@ -122,6 +125,7 @@ async function cardSummary(card) {
   );
   return {
     id: card.id,
+    studio: card.studio || '',
     name: card.name,
     kind: card.kind,
     totalCount: card.total_count,

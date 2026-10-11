@@ -163,6 +163,50 @@ test('a user can create and list their own records', async () => {
   assert.equal(rows[0].transcript, '今天练了tendu');
 });
 
+test('补记: classAt files a 课记 / 打卡 (and its 课卡 deduction) under an earlier day; future or >30 days back is rejected', async () => {
+  const { body: { token } } = await registerUser('backfill@example.com');
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  const DAY = 24 * 60 * 60 * 1000;
+  const post = async (path, body) => {
+    const res = await fetch(`${base}${path}`, { method: 'POST', headers, body: JSON.stringify(body) });
+    return { status: res.status, body: await res.json() };
+  };
+  const recap = { className: '基训', good_points: 'tendu 稳', improve_points: '脚背' };
+
+  const yesterday = Date.now() - DAY;
+  const card = await (await fetch(`${base}/api/cards`, { method: 'POST', headers, body: JSON.stringify({ studio: '天鹅舞蹈', name: '10 次卡', kind: 'count', totalCount: 10 }) })).json();
+  const saved = await post('/api/records', { ...recap, classAt: yesterday, cardId: card.id });
+  assert.equal(saved.status, 200);
+  assert.ok(saved.body.cardUsage, 'card deducted');
+  const checkin = await post('/api/records/checkin', { className: '把杆', classAt: Date.now() - 3 * DAY });
+  assert.equal(checkin.status, 200);
+  const today = await post('/api/records', recap);
+  assert.equal(today.status, 200);
+
+  const rows = await (await fetch(`${base}/api/records`, { headers })).json();
+  const byId = Object.fromEntries(rows.map((r) => [r.id, Number(r.created_at)]));
+  assert.equal(byId[saved.body.id], yesterday);
+  assert.ok(Math.abs(byId[checkin.body.id] - (Date.now() - 3 * DAY)) < 60000);
+  assert.ok(Math.abs(byId[today.body.id] - Date.now()) < 60000, 'no classAt = now');
+  assert.equal(rows[0].id, today.body.id, 'list stays newest-class-first');
+
+  const usage = await db.get('SELECT used_at FROM card_usages WHERE record_id = ?', [saved.body.id]);
+  assert.equal(Number(usage.used_at), yesterday, '课卡 used on the class day');
+
+  const ev = await db.get("SELECT metadata FROM events WHERE event_name = 'save_record' AND json_extract(metadata, '$.recordId') = ?", [saved.body.id]);
+  assert.equal(JSON.parse(ev.metadata).backfillDays, 1);
+
+  const future = await post('/api/records', { ...recap, classAt: Date.now() + 2 * 60 * 60 * 1000 });
+  assert.equal(future.status, 400);
+  assert.match(future.body.error, /以后/);
+  const tooOld = await post('/api/records/checkin', { className: '基训', classAt: Date.now() - 40 * DAY });
+  assert.equal(tooOld.status, 400);
+  assert.match(tooOld.body.error, /30 天/);
+  assert.equal((await post('/api/records', { ...recap, classAt: 'abc' })).status, 400);
+  const skew = await post('/api/records', { ...recap, classAt: Date.now() + 60 * 1000 });
+  assert.equal(skew.status, 200, 'small clock skew is clamped to now');
+});
+
 test('check-in works without a recap, stores optional mood/duration, requires class, skips the capture funnel, and allows several sessions in one day', async () => {
   const { body: { token, user } } = await registerUser('checkin-flow@example.com');
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };

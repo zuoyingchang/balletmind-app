@@ -7,18 +7,39 @@ const { processRecordForIssues, removeRecordFromIssues } = require('../issues');
 const { checkMilestone } = require('../milestones');
 const { embedTextsOpenAI, recordCorpus } = require('../ai/ask-retrieve');
 const { useCard, releaseRecordUsages, CardError } = require('../lib/cards');
+const { normalizePractice, DEFAULT_PRACTICE } = require('../lib/practice');
+
+function recordPractice(req) {
+  return normalizePractice(req.body && req.body.practice) || DEFAULT_PRACTICE;
+}
 
 const router = express.Router();
 router.use(requireAuth);
 
+// 补记：client may send classAt (ms) to file the record under an earlier day.
+// Missing = now. A few minutes of clock skew into the future is clamped to now.
+const DAY_MS = 24 * 60 * 60 * 1000;
+const BACKFILL_MAX_DAYS = 30;
+const FUTURE_SKEW_MS = 10 * 60 * 1000;
+function classAtFromReq(req) {
+  const raw = req.body && req.body.classAt;
+  const now = Date.now();
+  if (raw === undefined || raw === null || raw === '') return { at: now };
+  const at = Number(raw);
+  if (!Number.isFinite(at) || at <= 0) return { error: '上课日期不对，请重新选一下' };
+  if (at > now + FUTURE_SKEW_MS) return { error: '上课日期不能选以后的日子' };
+  if (at < now - (BACKFILL_MAX_DAYS + 1) * DAY_MS) return { error: `只能补记最近 ${BACKFILL_MAX_DAYS} 天的课` };
+  return { at: Math.min(at, now), backfillDays: Math.floor((now - at) / DAY_MS) };
+}
+
 // Optional 扣课卡 on save. The record is already saved by the time this runs, so a
 // card problem (used up, deleted meanwhile) is reported next to the id instead of
 // failing the save.
-async function deductCardWithRecord(req, recordId, from) {
+async function deductCardWithRecord(req, recordId, from, usedAt) {
   const cardId = req.body && req.body.cardId;
   if (cardId === undefined || cardId === null || cardId === '') return {};
   try {
-    const { usageId, card } = await useCard(req.userId, cardId, { recordId: Number(recordId) });
+    const { usageId, card } = await useCard(req.userId, cardId, { recordId: Number(recordId), usedAt });
     await logEvent(req.userId, 'card_used', { from });
     return { cardUsage: { usageId, card } };
   } catch (e) {
@@ -78,13 +99,16 @@ router.post('/', async (req, res) => {
   const improve = String(improve_points || '').trim();
   if (!good) return res.status(400).json({ error: '「做得好的」是必选，先写一句' });
   if (!improve) return res.status(400).json({ error: '「还要改的」是必选，先写一句' });
+  const classAt = classAtFromReq(req);
+  if (classAt.error) return res.status(400).json({ error: classAt.error });
   const info = await db.run(
     `INSERT INTO records
-      (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, session_tips, confidence_level, note, duration_sec, created_at, training_duration_min, mood, is_checkin_only)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+      (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, session_tips, confidence_level, note, duration_sec, created_at, training_duration_min, mood, is_checkin_only, practice)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
     [
       req.userId, className || '训练记录', transcript || '', good, improve,
-      next_time_reminder || '', session_tips || '', confidence_level || '', note || '', durationSec || 0, Date.now(), trainingMin, moodValue,
+      next_time_reminder || '', session_tips || '', confidence_level || '', note || '', durationSec || 0, classAt.at, trainingMin, moodValue,
+      recordPractice(req),
     ]
   );
   await logEvent(req.userId, 'save_record', withSession({
@@ -92,6 +116,7 @@ router.post('/', async (req, res) => {
     from,
     slotsFilled,
     durationSec: Number(durationSec) || 0,
+    ...(classAt.backfillDays !== undefined ? { backfillDays: classAt.backfillDays } : {}),
   }, sessionId));
   await logEvent(req.userId, 'session_confirmed', withSession({
     recordId: info.lastInsertRowid,
@@ -107,7 +132,7 @@ router.post('/', async (req, res) => {
   }
   await processRecordForIssues(req.userId, info.lastInsertRowid, improve);
   const milestone = await checkMilestone(req.userId, { source: 'recap' });
-  const card = await deductCardWithRecord(req, info.lastInsertRowid, 'recap');
+  const card = await deductCardWithRecord(req, info.lastInsertRowid, 'recap', classAt.at);
   res.json({ id: info.lastInsertRowid, milestone, ...card });
   cacheRecordEmbedding(req.userId, info.lastInsertRowid, {
     class_name: className || '训练记录', good_points: good, improve_points: improve, next_time_reminder: next_time_reminder || '',
@@ -125,17 +150,20 @@ router.post('/checkin', async (req, res) => {
   const moodValue = MOOD_VALUES.has(mood) ? mood : null;
   const name = String(className || '').trim().slice(0, 40);
   if (!name) return res.status(400).json({ error: '「课程/组合」是必选，先填一下' });
+  const classAt = classAtFromReq(req);
+  if (classAt.error) return res.status(400).json({ error: classAt.error });
   const info = await db.run(
     `INSERT INTO records
-      (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, session_tips, confidence_level, note, duration_sec, created_at, training_duration_min, mood, is_checkin_only)
-    VALUES (?, ?, '', '', '', '', '', '', '', 0, ?, ?, ?, 1)`,
-    [req.userId, name, Date.now(), trainingMin, moodValue]
+      (user_id, class_name, transcript, good_points, improve_points, next_time_reminder, session_tips, confidence_level, note, duration_sec, created_at, training_duration_min, mood, is_checkin_only, practice)
+    VALUES (?, ?, '', '', '', '', '', '', '', 0, ?, ?, ?, 1, ?)`,
+    [req.userId, name, classAt.at, trainingMin, moodValue, recordPractice(req)]
   );
   await logEvent(req.userId, 'checkin_saved', withSession({
     recordId: info.lastInsertRowid, from: 'checkin', slotsFilled: 0,
+    ...(classAt.backfillDays !== undefined ? { backfillDays: classAt.backfillDays } : {}),
   }, sessionIdFromReq(req)));
   const milestone = await checkMilestone(req.userId, { source: 'checkin' });
-  const card = await deductCardWithRecord(req, info.lastInsertRowid, 'checkin');
+  const card = await deductCardWithRecord(req, info.lastInsertRowid, 'checkin', classAt.at);
   res.json({ id: info.lastInsertRowid, milestone, ...card });
   cacheRecordEmbedding(req.userId, info.lastInsertRowid, { class_name: name });
 });

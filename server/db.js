@@ -198,6 +198,30 @@ const ready = client.batch(
   } catch (e) {
     if (!/duplicate column/i.test(e.message || '')) throw e;
   }
+  try {
+    // Comma-separated: 'ballet', 'pilates' or 'ballet,pilates' (see lib/practice.js).
+    await client.execute("ALTER TABLE users ADD COLUMN practices TEXT NOT NULL DEFAULT 'ballet'");
+  } catch (e) {
+    if (!/duplicate column/i.test(e.message || '')) throw e;
+  }
+  try {
+    // The one the app is currently in (one of practices); NULL means the first of practices.
+    await client.execute('ALTER TABLE users ADD COLUMN active_practice TEXT');
+  } catch (e) {
+    if (!/duplicate column/i.test(e.message || '')) throw e;
+  }
+  try {
+    // Which practice the record was taken under; NULL on older rows means ballet.
+    await client.execute('ALTER TABLE records ADD COLUMN practice TEXT');
+  } catch (e) {
+    if (!/duplicate column/i.test(e.message || '')) throw e;
+  }
+  try {
+    // 课卡的机构（必填）；name 变成可选的课程/卡名。旧卡这里是空串，名字照旧显示。
+    await client.execute("ALTER TABLE class_cards ADD COLUMN studio TEXT NOT NULL DEFAULT ''");
+  } catch (e) {
+    if (!/duplicate column/i.test(e.message || '')) throw e;
+  }
 });
 
 async function get(sql, args = []) {

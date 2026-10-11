@@ -749,6 +749,11 @@
     box-shadow: 0 8px 16px -10px rgba(140,100,100,.5), inset 0 1px 0 rgba(255,255,255,.5);
     transform: translateY(-2px);
   }
+  .class-date-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .class-date-row .cd-k { font-size: 11.5px; color: var(--ink-soft); margin-right: 2px; }
+  .cd-pick { display: inline-flex; align-items: center; gap: 4px; }
+  #card-studio::-webkit-calendar-picker-indicator { display: none !important; opacity: 0; }
+  #class-date-cal-grid .cal-cell.is-off { opacity: .28; pointer-events: none; }
   .class-tag-chip { transition: background .15s ease, color .15s ease, border-color .15s ease, transform .18s ease, box-shadow .18s ease; }
   .class-tag-chip.is-selected {
     background: var(--cta-pink);
@@ -2437,6 +2442,35 @@
     font-weight: 600;
     letter-spacing: .02em;
   }
+
+  /* Pilates: same pink family, nudged a touch cooler; the clear cue is the
+     practice tag in page headers. Set on <html> by setActivePractice(). */
+  html.theme-pilates {
+    --blush: #f4eaed;
+    --blush-deep: #eadde2;
+    --rose: #c5a7b1;
+    --rose-deep: #9f7a87;
+    --mauve: #8e7380;
+    --burgundy: #68525e;
+    --gold: #b799a3;
+    --border-soft: rgba(198, 174, 182, .55);
+    --cta-pink: linear-gradient(135deg, #f8ecf0 0%, #ebd2db 55%, #dab5c3 100%);
+  }
+  html.theme-pilates .deco-photo,
+  html.theme-pilates .rec-stage-shoe { display: none; }
+  .practice-tag {
+    display: none;
+    align-self: center;
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--border-soft);
+    background: rgba(255,255,255,.7);
+    font-size: 11px; font-weight: 600; letter-spacing: .04em;
+    color: var(--rose-deep);
+    font-family: inherit;
+  }
+  html.theme-pilates .practice-tag,
+  html.multi-practice .practice-tag { display: inline-flex; }
 </style>
 </head>
 <body class="app-body w-full m-0 overflow-hidden flex items-center justify-center text-[var(--ink)]">
@@ -2520,7 +2554,10 @@
     <header class="relative z-20 shrink-0 px-6 pt-7 pb-4 flex items-center justify-between">
       <div>
         <p class="label-editorial text-[12px] text-[var(--rose-deep)]" id="home-kicker">写给今天的你</p>
-        <h1 class="page-title mt-0.5" id="home-title">首页</h1>
+        <div class="flex items-center gap-2">
+          <h1 class="page-title mt-0.5" id="home-title">首页</h1>
+          <span class="practice-tag" data-practice-tag>芭蕾</span>
+        </div>
       </div>
       <div class="flex items-center gap-2">
         <button type="button" onclick="openNotices()" class="relative w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="通知">
@@ -2689,9 +2726,13 @@
       <button id="record-back-btn" onclick="goHome()" class="w-11 h-11 rounded-full chip flex items-center justify-center" aria-label="返回"><iconify-icon icon="solar:arrow-left-linear" class="text-[21px] text-[var(--rose-deep)]"></iconify-icon></button>
       <div>
         <p class="label-editorial text-[13px] text-[var(--rose-deep)]">说给你自己听</p>
-        <h1 class="page-title mt-0.5">记录</h1>
+        <div class="flex items-center gap-2">
+          <h1 class="page-title mt-0.5">记录</h1>
+          <span class="practice-tag" data-practice-tag>芭蕾</span>
+        </div>
       </div>
       </div>
+      <div class="class-date-row mt-3" data-class-date data-label="上课日期"></div>
     </header>
     <main class="relative flex-1 min-h-0 overflow-y-auto px-6 pb-4">
         <p class="hidden relative z-10 mb-3 rounded-[12px] bg-white/70 px-3 py-2 text-[11.5px] leading-5 text-[var(--ink-soft)]" id="in-app-browser-tip">请点右上角「···」，选「在浏览器打开」，录音会更顺利。</p>
@@ -2719,7 +2760,7 @@
 
       <div class="rec-write grain relative">
         <div class="pearl-sheen"></div>
-        <textarea id="manual-input" placeholder="也可以打字，比如：今天 pirouette 能转一圈，视线定点比上次稳。"
+        <textarea id="manual-input" data-pcopy-ph="recPlaceholder" placeholder="也可以打字，比如：今天 pirouette 能转一圈，视线定点比上次稳。"
           class="relative z-10 w-full p-1.5 text-[13px] leading-6 text-[var(--ink)] outline-none"></textarea>
         <details class="rec-prompts relative z-10">
           <summary class="flex items-center gap-1 text-[12px] text-[var(--ink-faint)]">
@@ -2727,24 +2768,24 @@
             需要提示时，可以看这里
           </summary>
           <div class="mt-2.5 grid grid-cols-2 gap-2">
-            <button type="button" onclick="insertPrompt('今天身体：肩膀有点紧，胯还算轻松。')" class="rec-prompt is-body text-left rounded-[22px] bg-[var(--paper)] px-3 py-2.5">
+            <button type="button" data-rec-prompt="body" onclick="insertRecPrompt('body')" class="rec-prompt is-body text-left rounded-[22px] bg-[var(--paper)] px-3 py-2.5">
               <span class="rec-prompt-title block text-[12.5px] font-medium">身体状态</span>
-              <span class="block mt-0.5 text-[10.5px] leading-4 text-[var(--ink-faint)]">今天肩膀有点紧，胯还算轻松。</span>
+              <span class="rec-prompt-sample block mt-0.5 text-[10.5px] leading-4 text-[var(--ink-faint)]">今天肩膀有点紧，胯还算轻松。</span>
             </button>
-            <button type="button" onclick="insertPrompt('今天做得好的：pirouette 能转一圈，视线定点比上次稳。')" class="rec-prompt is-good text-left rounded-[22px] bg-[var(--paper)] px-3 py-2.5">
+            <button type="button" data-rec-prompt="good" onclick="insertRecPrompt('good')" class="rec-prompt is-good text-left rounded-[22px] bg-[var(--paper)] px-3 py-2.5">
               <span class="rec-prompt-title block text-[12.5px] font-medium">做得好的</span>
-              <span class="block mt-0.5 text-[10.5px] leading-4 text-[var(--ink-faint)]">pirouette 能转一圈，定点比上次稳。</span>
+              <span class="rec-prompt-sample block mt-0.5 text-[10.5px] leading-4 text-[var(--ink-faint)]">pirouette 能转一圈，定点比上次稳。</span>
             </button>
-            <button type="button" onclick="insertPrompt('老师提醒：grand battement 时胯不要掉。')" class="rec-prompt is-tip text-left rounded-[22px] bg-[var(--paper)] px-3 py-2.5">
+            <button type="button" data-rec-prompt="tip" onclick="insertRecPrompt('tip')" class="rec-prompt is-tip text-left rounded-[22px] bg-[var(--paper)] px-3 py-2.5">
               <span class="rec-prompt-title block text-[12.5px] font-medium">老师提醒</span>
-              <span class="block mt-0.5 text-[10.5px] leading-4 text-[var(--ink-faint)]">grand battement 时胯不要掉。</span>
+              <span class="rec-prompt-sample block mt-0.5 text-[10.5px] leading-4 text-[var(--ink-faint)]">grand battement 时胯不要掉。</span>
             </button>
-            <button type="button" onclick="insertPrompt('下次想练：把杆后多练一次 spotting。')" class="rec-prompt is-next text-left rounded-[22px] bg-[var(--paper)] px-3 py-2.5">
+            <button type="button" data-rec-prompt="next" onclick="insertRecPrompt('next')" class="rec-prompt is-next text-left rounded-[22px] bg-[var(--paper)] px-3 py-2.5">
               <span class="rec-prompt-title block text-[12.5px] font-medium">下次想练</span>
-              <span class="block mt-0.5 text-[10.5px] leading-4 text-[var(--ink-faint)]">把杆后多练一次 spotting。</span>
+              <span class="rec-prompt-sample block mt-0.5 text-[10.5px] leading-4 text-[var(--ink-faint)]">把杆后多练一次 spotting。</span>
             </button>
           </div>
-          <button type="button" onclick="showGlossary()" class="mt-2 w-full text-center text-[11px] text-[var(--rose-deep)]">不确定怎么说，查一下芭蕾术语 ›</button>
+          <button type="button" onclick="showGlossary()" data-pcopy="glossaryLink" class="mt-2 w-full text-center text-[11px] text-[var(--rose-deep)]">不确定怎么说，查一下芭蕾术语 ›</button>
         </details>
       </div>
     </main>
@@ -2823,8 +2864,10 @@
       <div class="card-journal grain relative overflow-hidden mb-4 px-4 py-3.5" style="border-radius:18px">
         <div class="pearl-sheen"></div>
         <div class="relative z-10">
+          <p class="text-[11.5px] text-[var(--ink)] mb-2">上课日期</p>
+          <div class="class-date-row mb-3" data-class-date></div>
           <p class="text-[11.5px] text-[var(--ink)] mb-2">课程/组合<span class="field-optional">可选</span></p>
-          <input id="review-classname" oninput="updateClassNameHint('review-classname','review-classname-hint')" placeholder="如：基训、把杆、跳跃组合" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] text-[12.5px]">
+          <input id="review-classname" oninput="updateClassNameHint('review-classname','review-classname-hint')" data-pcopy-ph="classPlaceholder" placeholder="如：基训、把杆、跳跃组合" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] text-[12.5px]">
           <p id="review-classname-hint" class="mt-1.5 text-[10.5px] text-[var(--ink-faint)]">填一下的话，以后能按课程/组合筛选</p>
           <div id="review-class-chips" class="mt-2 flex gap-2 flex-wrap"></div>
           <p class="mt-3 text-[11.5px] text-[var(--ink)] mb-2">时长<span class="field-optional">可选</span></p>
@@ -2938,7 +2981,7 @@
         <div class="card-journal grain relative flex items-center gap-2 rounded-[18px] px-4 h-12 mb-3">
           <div class="pearl-sheen"></div>
           <span class="row-icon is-ask relative z-10"><iconify-icon icon="solar:magnifer-linear"></iconify-icon></span>
-          <input id="history-search" oninput="filterHistory()" placeholder="搜索全部记录（plie / 蹲 / plié 都可以）" class="relative z-10 flex-1 bg-transparent outline-none text-[12.5px] placeholder:text-[var(--ink-faint)]">
+          <input id="history-search" oninput="filterHistory()" data-pcopy-ph="historySearchPlaceholder" placeholder="搜索全部记录（plie / 蹲 / plié 都可以）" class="relative z-10 flex-1 bg-transparent outline-none text-[12.5px] placeholder:text-[var(--ink-faint)]">
         </div>
         <div id="history-term-filter-block" class="hidden">
           <p class="text-[10.5px] text-[var(--ink-faint)] mb-1">动作</p>
@@ -3112,6 +3155,15 @@
       </section>
 
       <section class="mt-7">
+        <div class="flex items-end justify-between gap-3">
+          <h2 class="font-display text-[21px] font-semibold tracking-[-0.01em]">我练的是</h2>
+          <button type="button" onclick="openPracticePicker()" class="shrink-0 text-[12px] text-[var(--rose-deep)]">修改</button>
+        </div>
+        <div class="mt-3 flex gap-2" id="profile-practice-chips"></div>
+        <p class="mt-1.5 text-[10.5px] text-[var(--ink-faint)]" id="profile-practice-hint"></p>
+      </section>
+
+      <section class="mt-7">
         <h2 class="font-display text-[21px] font-semibold tracking-[-0.01em]">课卡</h2>
         <div class="card-journal grain relative mt-3 overflow-hidden rounded-[24px]">
           <div class="pearl-sheen"></div>
@@ -3134,8 +3186,8 @@
           </button>
           <button onclick="showGlossary()" class="relative z-10 w-full flex items-center gap-3 px-4 py-3.5 text-left">
             <span class="row-icon is-recap"><iconify-icon icon="solar:notebook-bookmark-linear"></iconify-icon></span>
-            <span class="flex-1 text-[13px]">芭蕾术语</span>
-            <span class="text-[11px] text-[var(--ink-faint)]">中英法</span>
+            <span class="flex-1 text-[13px]" data-pcopy="glossaryName">芭蕾术语</span>
+            <span class="text-[11px] text-[var(--ink-faint)]" data-pcopy="glossaryLangs">中英法</span>
           </button>
           <button onclick="showFeedback()" class="relative z-10 w-full flex items-center gap-3 px-4 py-3.5 text-left">
             <span class="row-icon is-ask"><iconify-icon icon="solar:chat-round-linear"></iconify-icon></span>
@@ -3378,6 +3430,39 @@
   </div>
 </div>
 
+<div id="practice-pick-modal" class="hidden absolute inset-0 z-[70] items-center justify-center bg-black/40 px-8">
+  <div class="card-journal card-satin grain relative w-full max-w-[300px] px-5 pt-6 pb-5" style="border-radius:24px">
+    <div class="pearl-sheen"></div>
+    <h2 class="relative z-10 font-display text-center text-[20px] font-semibold text-[var(--ink)]" id="practice-pick-title">我练的项目</h2>
+    <p class="relative z-10 mt-1 text-center text-[11.5px] text-[var(--ink-faint)]" id="practice-pick-hint">可以多选，AI 会按项目整理课记</p>
+    <div class="relative z-10 mt-4 space-y-2.5">
+      <button type="button" data-practice="ballet" onclick="togglePracticePick('ballet')" class="practice-pick-option duration-chip w-full flex items-center gap-3 px-4 py-3 rounded-[18px] border border-[var(--border-soft)] text-left">
+        <span class="flex-1">
+          <span class="block text-[14px] font-semibold">芭蕾</span>
+          <span class="block mt-0.5 text-[11px] opacity-80">把杆、中间、跳跃，记技术要点</span>
+        </span>
+        <span class="practice-pick-check hidden text-[15px] font-bold">✓</span>
+      </button>
+      <button type="button" data-practice="pilates" onclick="togglePracticePick('pilates')" class="practice-pick-option duration-chip w-full flex items-center gap-3 px-4 py-3 rounded-[18px] border border-[var(--border-soft)] text-left">
+        <span class="flex-1">
+          <span class="block text-[14px] font-semibold">普拉提</span>
+          <span class="block mt-0.5 text-[11px] opacity-80">器械、垫上，记教练提醒和身体感受</span>
+        </span>
+        <span class="practice-pick-check hidden text-[15px] font-bold">✓</span>
+      </button>
+    </div>
+    <div id="practice-pick-active-wrap" class="hidden relative z-10 mt-4">
+      <p class="text-[11.5px] text-[var(--ink-soft)] mb-1.5">先从哪个开始？</p>
+      <div class="flex gap-2">
+        <button type="button" data-practice="ballet" onclick="choosePracticePickActive('ballet')" class="duration-chip flex-1 h-9 rounded-full border border-[var(--border-soft)] text-[12.5px] text-[var(--ink-soft)]">芭蕾</button>
+        <button type="button" data-practice="pilates" onclick="choosePracticePickActive('pilates')" class="duration-chip flex-1 h-9 rounded-full border border-[var(--border-soft)] text-[12.5px] text-[var(--ink-soft)]">普拉提</button>
+      </div>
+    </div>
+    <button type="button" onclick="closePracticePicker(true)" class="btn-ribbon relative z-10 mt-5 w-full h-11 rounded-full text-[13px] font-semibold"><span class="pearl-sheen"></span><span class="relative z-10">好了</span></button>
+    <button type="button" id="practice-pick-cancel" onclick="closePracticePicker(false)" class="relative z-10 mt-2 w-full text-center text-[12px] text-[var(--ink-faint)]">取消</button>
+  </div>
+</div>
+
 <div id="guide-complete-modal" class="hidden absolute inset-0 z-[70] items-center justify-center bg-black/40 px-8" onclick="if(event.target===this) hideGuideComplete()">
   <div class="card-journal card-satin grain relative w-full max-w-[300px] px-6 pt-6 pb-6 text-center" style="border-radius:24px" onclick="event.stopPropagation()">
     <div class="pearl-sheen"></div>
@@ -3387,7 +3472,7 @@
       <iconify-icon icon="mdi:shoe-ballet" class="relative z-10 text-[22px] text-[var(--burgundy)]"></iconify-icon>
     </div>
     <p class="relative z-10 mt-3 font-display text-[20px] font-semibold text-[var(--ink)]">引导完成</p>
-    <p class="relative z-10 mt-2 text-[13px] leading-6 text-[var(--ink-soft)]">欢迎踏上你的芭蕾复盘之旅<br>剩下的，慢慢来就好</p>
+    <p class="relative z-10 mt-2 text-[13px] leading-6 text-[var(--ink-soft)]"><span data-pcopy="guideDoneLine">欢迎踏上你的芭蕾复盘之旅</span><br>剩下的，慢慢来就好</p>
     <button type="button" onclick="hideGuideComplete()" class="btn-ribbon relative z-10 mt-5 w-full h-11 rounded-full text-[13px] font-semibold"><span class="pearl-sheen"></span><span class="relative z-10">好的</span></button>
   </div>
 </div>
@@ -3438,8 +3523,11 @@
   <div class="relative w-full max-w-[340px] max-h-[90vh] overflow-y-auto rounded-[24px] bg-[var(--paper)] p-6" onclick="event.stopPropagation()">
     <button type="button" onclick="hideCardSheet()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[18px] text-[var(--rose-deep)]"></iconify-icon></button>
     <h2 class="font-display pr-8 text-[19px] font-semibold" id="card-modal-title">添加课卡</h2>
-    <p class="mt-3 text-[11.5px] text-[var(--ink)] mb-1.5">名字</p>
-    <input id="card-name" maxlength="40" placeholder="如：XX 舞蹈 20 次卡" class="w-full rounded-[12px] border border-[var(--border-soft)] bg-white/70 px-3 py-2.5 text-[13px] outline-none">
+    <p class="mt-3 text-[11.5px] text-[var(--ink)] mb-1.5">机构</p>
+    <input id="card-studio" maxlength="40" list="card-studio-list" placeholder="如：XX 舞蹈工作室" class="w-full rounded-[12px] border border-[var(--border-soft)] bg-white/70 px-3 py-2.5 text-[13px] outline-none">
+    <datalist id="card-studio-list"></datalist>
+    <p class="mt-3 text-[11.5px] text-[var(--ink)] mb-1.5">课程/卡名<span class="field-optional">可选</span></p>
+    <input id="card-name" maxlength="40" placeholder="如：芭蕾基训 20 次卡" class="w-full rounded-[12px] border border-[var(--border-soft)] bg-white/70 px-3 py-2.5 text-[13px] outline-none">
     <p class="mt-3 text-[11.5px] text-[var(--ink)] mb-1.5">类型</p>
     <div class="flex gap-2">
       <button type="button" data-kind="count" onclick="selectCardKind('count')" class="card-kind-chip duration-chip flex-1 py-2 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]">次卡（按节数）</button>
@@ -3518,12 +3606,29 @@
   </div>
 </div>
 
+<div id="class-date-modal" style="z-index:80" class="hidden fixed inset-0 items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideClassDatePicker()">
+  <div id="class-date-modal-card" class="relative w-full max-w-[360px] flex flex-col rounded-[24px] bg-[var(--paper)] p-4" onclick="event.stopPropagation()">
+    <button type="button" onclick="hideClassDatePicker()" class="absolute right-3.5 top-3.5 w-7 h-7 rounded-full bg-[var(--blush)]/60 flex items-center justify-center" aria-label="关闭"><iconify-icon icon="solar:close-circle-linear" class="text-[17px] text-[var(--rose-deep)]"></iconify-icon></button>
+    <h2 class="shrink-0 font-display pr-8 text-[18px] font-semibold">选择上课日期</h2>
+    <p class="mt-1 text-[11px] text-[var(--ink-faint)]">可以补记最近 30 天的课</p>
+    <div class="mt-3 flex items-center justify-between">
+      <button type="button" id="class-date-prev" onclick="shiftClassDateMonth(-1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)] disabled:opacity-40" aria-label="上个月"><iconify-icon icon="solar:alt-arrow-left-linear" class="text-[16px]"></iconify-icon></button>
+      <span id="class-date-month-label" class="text-[13px] font-medium"></span>
+      <button type="button" id="class-date-next" onclick="shiftClassDateMonth(1)" class="w-8 h-8 rounded-full chip flex items-center justify-center text-[var(--rose-deep)] disabled:opacity-40" aria-label="下个月"><iconify-icon icon="solar:alt-arrow-right-linear" class="text-[16px]"></iconify-icon></button>
+    </div>
+    <div class="mt-1 cal-grid text-center text-[11px] tracking-[0.06em] text-[var(--ink-faint)]">
+      <span class="py-0.5">日</span><span class="py-0.5">一</span><span class="py-0.5">二</span><span class="py-0.5">三</span><span class="py-0.5">四</span><span class="py-0.5">五</span><span class="py-0.5">六</span>
+    </div>
+    <div class="cal-grid" id="class-date-cal-grid"></div>
+  </div>
+</div>
+
 <div id="glossary-modal" class="hidden fixed inset-0 z-[60] items-center justify-center bg-black/40 px-6" onclick="if(event.target===this) hideGlossary()">
   <div id="glossary-modal-card" class="relative w-full max-w-[360px] max-h-[82vh] flex flex-col rounded-[24px] bg-[var(--paper)] p-4" onclick="event.stopPropagation()">
     <button type="button" onclick="hideGlossary()" class="absolute right-3.5 top-3.5 w-7 h-7 rounded-full bg-[var(--blush)]/60 flex items-center justify-center"><iconify-icon icon="solar:close-circle-linear" class="text-[17px] text-[var(--rose-deep)]"></iconify-icon></button>
-    <h2 class="shrink-0 font-display pr-8 text-[18px] font-semibold">芭蕾术语</h2>
+    <h2 class="shrink-0 font-display pr-8 text-[18px] font-semibold" data-pcopy="glossaryName">芭蕾术语</h2>
     <p class="shrink-0 mt-0.5 text-[10.5px] text-[var(--ink-faint)]">点开一个术语，除了要点，还能看你自己写过的相关记录</p>
-    <input id="glossary-search" oninput="renderGlossaryList()" placeholder="搜索术语，中英法都可以" class="shrink-0 mt-2 w-full h-8 px-3 rounded-xl border border-[var(--border-soft)] text-[11.5px] bg-white/70">
+    <input id="glossary-search" oninput="renderGlossaryList()" data-pcopy-ph="glossarySearchPlaceholder" placeholder="搜索术语，中英法都可以" class="shrink-0 mt-2 w-full h-8 px-3 rounded-xl border border-[var(--border-soft)] text-[11.5px] bg-white/70">
     <div id="glossary-category-chips" class="shrink-0 mt-2 flex gap-1.5 overflow-x-auto" style="scrollbar-width:none"></div>
     <div id="glossary-list" class="mt-2 min-h-0 flex-1 overflow-y-auto pr-1"></div>
   </div>
@@ -3537,15 +3642,19 @@
     <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--rose-deep)]/25"></div>
     <div class="checkin-sheet-head">
       <p class="label-editorial text-[11px] text-[var(--rose-deep)]">BalletMind</p>
-      <h2 class="font-display mt-1 text-[24px] font-semibold tracking-wide">今天练过了</h2>
+      <h2 id="checkin-sheet-title" class="font-display mt-1 text-[24px] font-semibold tracking-wide">今天练过了</h2>
       <p class="mt-1 text-[11.5px] leading-5 text-[var(--ink-faint)]">时长和心情都可以先空着</p>
       <p id="checkin-today-summary" class="hidden text-[10.5px] leading-4 text-[var(--burgundy)]"></p>
       <div class="checkin-sheet-rule" aria-hidden="true"><i></i></div>
     </div>
     <div class="checkin-sheet-fields">
     <div class="checkin-sheet-field">
+      <p class="checkin-sheet-k">上课日期</p>
+      <div class="class-date-row" data-class-date></div>
+    </div>
+    <div class="checkin-sheet-field">
       <p class="checkin-sheet-k">课程/组合</p>
-      <input id="checkin-classname" maxlength="40" oninput="updateClassNameHint('checkin-classname','checkin-classname-hint')" placeholder="如：基训、把杆、跳跃组合" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] bg-white/70 text-[12.5px]">
+      <input id="checkin-classname" maxlength="40" oninput="updateClassNameHint('checkin-classname','checkin-classname-hint')" data-pcopy-ph="classPlaceholder" placeholder="如：基训、把杆、跳跃组合" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] bg-white/70 text-[12.5px]">
       <p id="checkin-classname-hint" class="mt-1.5 text-[10.5px] text-[var(--ink-faint)]">记下课程/组合，以后能按这个筛选</p>
       <div id="checkin-class-chips" class="mt-2 flex gap-2 flex-wrap"></div>
     </div>
@@ -3627,8 +3736,12 @@
       </div>
     </div>
     <div class="checkin-sheet-field">
+      <p class="checkin-sheet-k">上课日期</p>
+      <div class="class-date-row" data-class-date></div>
+    </div>
+    <div class="checkin-sheet-field">
       <p class="checkin-sheet-k">课程/组合<span class="field-optional">可选</span></p>
-      <input id="manual-sheet-classname" maxlength="40" oninput="updateClassNameHint('manual-sheet-classname','manual-sheet-classname-hint')" placeholder="如：基训、把杆、跳跃组合" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] bg-white/70 text-[12.5px]">
+      <input id="manual-sheet-classname" maxlength="40" oninput="updateClassNameHint('manual-sheet-classname','manual-sheet-classname-hint')" data-pcopy-ph="classPlaceholder" placeholder="如：基训、把杆、跳跃组合" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] bg-white/70 text-[12.5px]">
       <p id="manual-sheet-classname-hint" class="mt-1.5 text-[10.5px] text-[var(--ink-faint)]">填一下的话，以后能按课程/组合筛选</p>
       <div id="manual-sheet-class-chips" class="mt-2 flex gap-2 flex-wrap"></div>
     </div>
@@ -3712,6 +3825,7 @@
 <div id="toast" class="hidden rounded-full bg-[var(--burgundy)] text-[#faf6f3] px-4 py-2 text-[11px]"></div>
 
 <script src="/js/ballet-terms.js"></script>
+<script src="/js/pilates-terms.js"></script>
 <script>
 const API = ''; // same-origin; server serves this file too
 const calBowImg = new Image();
@@ -3796,7 +3910,7 @@ let glossaryGroupFilter = '';
 function glossaryFlat() {
   if (!glossaryFlatTerms) {
     glossaryFlatTerms = [];
-    TERM_GLOSSARY.forEach((section) => {
+    activeGlossary().forEach((section) => {
       section.rows.forEach((r) => glossaryFlatTerms.push({ ...r, group: section.group }));
     });
   }
@@ -3839,7 +3953,7 @@ function glossaryRowHtml(r) {
       </button>
       <span class="min-w-0 flex-1">
         <span class="font-medium text-[12px] text-[var(--ink)]">${escapeHtml(r.fr)}</span>
-        <span class="ml-1 text-[9.5px] text-[var(--ink-faint)]">${escapeHtml(r.en)}</span>
+        ${foldBalletText(r.en) === foldBalletText(r.fr) ? '' : `<span class="ml-1 text-[9.5px] text-[var(--ink-faint)]">${escapeHtml(r.en)}</span>`}
       </span>
       <span class="shrink-0 text-[11px] font-medium text-[var(--mauve)]">${escapeHtml(r.zh)}</span>
       ${badge}
@@ -3967,7 +4081,7 @@ function openGlossaryTerm(term) {
 function renderGlossaryCategoryChips() {
   const wrap = document.getElementById('glossary-category-chips');
   if (!wrap || wrap.dataset.ready) return;
-  const groups = TERM_GLOSSARY.map((s) => s.group);
+  const groups = activeGlossary().map((s) => s.group);
   const chip = (name, label) => `<button type="button" data-group="${escapeHtml(name)}" class="class-tag-chip px-3 py-1 rounded-full border border-[var(--border-soft)] text-[10.5px] text-[var(--burgundy)] bg-white/70 shrink-0${glossaryGroupFilter === name ? ' is-selected' : ''}">${escapeHtml(label)}</button>`;
   wrap.innerHTML = [chip('', '全部'), ...groups.map((g) => chip(g, g))].join('');
   wrap.dataset.ready = '1';
@@ -4482,7 +4596,7 @@ function setAuthMode(mode) {
   document.getElementById('auth-forgot-btn').classList.toggle('hidden', isForgot);
   document.getElementById('auth-guest-btn').classList.toggle('hidden', isForgot || !!pendingGuestDraft());
   document.getElementById('auth-subtitle').innerHTML = isLogin
-    ? '下课后说几句，AI 帮你复盘，回来查收问题和进步。'
+    ? practiceCopy().authSubtitle
     : isRegister ? '用邮箱注册。课记会留在你的档案里。' : '请输入注册邮箱，我们会寄重置链接。';
   document.getElementById('auth-submit-label').textContent = isLogin ? '登录' : isRegister ? '注册' : '发送重置链接';
   document.getElementById('auth-toggle-btn').textContent = isLogin ? '还没有账号？去注册' : '已经有账号？去登录';
@@ -4550,6 +4664,12 @@ async function submitAuth() {
     if (!res.ok) throw new Error(data.error || '操作失败');
     const isNewAccount = authMode === 'register';
     setAuth(data.token, data.user);
+    if (isNewAccount) {
+      linkPractice = null;
+      await openPracticePicker({ fromSignup: true });
+    } else {
+      adoptAccountPractices(data.user);
+    }
     markVisitorSignedIn();
     resetAccountScopedCaches();
     document.getElementById('auth-email').value = '';
@@ -4588,6 +4708,227 @@ function resetAccountScopedCaches() {
 }
 function logout() { clearAuth(); guideSeenServer = null; resetAccountScopedCaches(); setAuthMode('login'); show('screen-auth'); paintGuestAuthBanner(); }
 
+// ---------- practice: ballet / pilates ----------
+// Picks the recap prompt (X-Practice header on capture calls), the glossary,
+// class-name chips and example copy. Stored per browser, and on the account
+// once signed in; a ?practice= link (e.g. from a pilates post) wins.
+const PRACTICE_KEY = 'bm_practice';
+const PRACTICE_COPY = {
+  ballet: {
+    authSubtitle: '下课后说几句，AI 帮你复盘，回来查收问题和进步。',
+    recPlaceholder: '也可以打字，比如：今天 pirouette 能转一圈，视线定点比上次稳。',
+    glossaryLink: '不确定怎么说，查一下芭蕾术语 ›',
+    classPlaceholder: '如：基训、把杆、跳跃组合',
+    historySearchPlaceholder: '搜索全部记录（plie / 蹲 / plié 都可以）',
+    glossaryName: '芭蕾术语',
+    glossaryLangs: '中英法',
+    glossarySearchPlaceholder: '搜索术语，中英法都可以',
+    guideDoneLine: '欢迎踏上你的芭蕾复盘之旅',
+    monthShareText: '我的芭蕾月度总结',
+    classTags: ['基训', '把杆', '拉伸软开', 'PBT', '跳跃组合'],
+    prompts: {
+      body: { title: '身体状态', sample: '今天肩膀有点紧，胯还算轻松。', text: '今天身体：肩膀有点紧，胯还算轻松。' },
+      good: { title: '做得好的', sample: 'pirouette 能转一圈，定点比上次稳。', text: '今天做得好的：pirouette 能转一圈，视线定点比上次稳。' },
+      tip: { title: '老师提醒', sample: 'grand battement 时胯不要掉。', text: '老师提醒：grand battement 时胯不要掉。' },
+      next: { title: '下次想练', sample: '把杆后多练一次 spotting。', text: '下次想练：把杆后多练一次 spotting。' },
+    },
+  },
+  pilates: {
+    authSubtitle: '普拉提下课说几句，AI 帮你记下教练提醒、身体感受和进步。',
+    recPlaceholder: '也可以打字，比如：Footwork 两红一蓝，Hundred 脖子酸，教练说肋骨收住。',
+    glossaryLink: '不确定怎么说，查一下普拉提动作和器械 ›',
+    classPlaceholder: '如：Reformer 私教、垫上团课',
+    historySearchPlaceholder: '搜索全部记录（Hundred / 百次拍击 / 弹簧 都可以）',
+    glossaryName: '普拉提词典',
+    glossaryLangs: '动作 · 器械',
+    glossarySearchPlaceholder: '搜索动作或器械，中英文都可以',
+    guideDoneLine: '欢迎开始你的普拉提课记',
+    monthShareText: '我的普拉提月度总结',
+    classTags: ['Reformer', '垫上', '私教', '小班课', 'Cadillac'],
+    prompts: {
+      body: { title: '身体感受', sample: '腰有点紧，右肩老是耸。', text: '今天身体：腰有点紧，右肩老是耸。' },
+      good: { title: '进步了', sample: 'Long Stretch 从两红换一红也能撑住。', text: '今天进步的：Long Stretch 从两红换一红也能撑住。' },
+      tip: { title: '教练提醒', sample: 'Hundred 下巴别往前顶，肋骨收住。', text: '教练提醒：Hundred 下巴别往前顶，肋骨收住。' },
+      next: { title: '下次注意', sample: 'Roll Up 一节一节起，不靠甩。', text: '下次注意：Roll Up 一节一节起，不靠甩。' },
+    },
+  },
+};
+// myPractices: what the user does (picked right after sign-up, several allowed).
+// currentPractice: the one the app is in -- drives the AI prompt, copy and
+// colour theme. Both live on the account; switching is done in 我的.
+const PRACTICE_LIST_KEY = 'bm_practices';
+const PRACTICE_ORDER = ['ballet', 'pilates'];
+const PRACTICE_LABEL = { ballet: '芭蕾', pilates: '普拉提' };
+let currentPractice = 'ballet';
+let myPractices = ['ballet'];
+let linkPractice = null;
+function normalizePractice(p) { return p === 'pilates' || p === 'ballet' ? p : null; }
+function normalizePracticeList(list) {
+  const picked = new Set((Array.isArray(list) ? list : []).map(normalizePractice).filter(Boolean));
+  return PRACTICE_ORDER.filter((p) => picked.has(p));
+}
+function isPilates() { return currentPractice === 'pilates'; }
+function practiceCopy() { return PRACTICE_COPY[currentPractice]; }
+function initPractice() {
+  try { linkPractice = normalizePractice(new URLSearchParams(location.search).get('practice')); } catch (e) {}
+  let storedList = [];
+  let storedActive = null;
+  try {
+    storedList = normalizePracticeList(JSON.parse(localStorage.getItem(PRACTICE_LIST_KEY) || '[]'));
+    storedActive = normalizePractice(localStorage.getItem(PRACTICE_KEY));
+  } catch (e) {}
+  const active = linkPractice || storedActive || storedList[0] || 'ballet';
+  myPractices = normalizePracticeList([...storedList, active]);
+  setActivePractice(active, { sync: false });
+}
+function syncPractices(body) {
+  if (!getToken()) return;
+  authFetch(`${API}/api/auth/practices`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).catch(() => {});
+}
+function setActivePractice(practice, { sync = true } = {}) {
+  const p = normalizePractice(practice) || 'ballet';
+  if (p !== currentPractice) {
+    glossaryFlatTerms = null;
+    glossaryGroupFilter = '';
+    expandedGlossaryTerms = new Set();
+    const chips = document.getElementById('glossary-category-chips');
+    if (chips) delete chips.dataset.ready;
+  }
+  currentPractice = p;
+  try { localStorage.setItem(PRACTICE_KEY, p); } catch (e) {}
+  document.documentElement.classList.toggle('theme-pilates', p === 'pilates');
+  applyPracticeCopy();
+  if (sync) syncPractices({ activePractice: p });
+}
+function setMyPractices(list, active, { sync = true } = {}) {
+  const clean = normalizePracticeList(list);
+  if (!clean.length) return;
+  myPractices = clean;
+  try { localStorage.setItem(PRACTICE_LIST_KEY, JSON.stringify(clean)); } catch (e) {}
+  const next = clean.includes(active) ? active : (clean.includes(currentPractice) ? currentPractice : clean[0]);
+  setActivePractice(next, { sync: false });
+  if (sync) syncPractices({ practices: clean, activePractice: next });
+}
+// The account wins on sign-in; a ?practice= link this visit adds to it and opens it.
+function adoptAccountPractices(user) {
+  const fromAccount = normalizePracticeList(user && user.practices);
+  if (!fromAccount.length) return;
+  const link = linkPractice;
+  linkPractice = null;
+  if (link && (!fromAccount.includes(link) || user.activePractice !== link)) {
+    setMyPractices([...fromAccount, link], link);
+    return;
+  }
+  setMyPractices(fromAccount, user.activePractice, { sync: false });
+}
+// 我的: switch among the practices they picked; 「+ 添加项目」 reopens the picker.
+function switchPractice(practice) {
+  if (practice === currentPractice || !myPractices.includes(practice)) return;
+  setActivePractice(practice);
+  toast(`已切到${PRACTICE_LABEL[practice]}，之后的课记按${PRACTICE_LABEL[practice]}整理`);
+}
+function paintProfilePractices() {
+  const wrap = document.getElementById('profile-practice-chips');
+  if (!wrap) return;
+  const chip = 'duration-chip flex-1 py-2 rounded-full border text-[12.5px] text-[var(--ink-soft)]';
+  const canAdd = myPractices.length < PRACTICE_ORDER.length;
+  wrap.innerHTML = myPractices.map((p) => `<button type="button" onclick="switchPractice('${p}')" class="${chip} border-[var(--border-soft)]${p === currentPractice ? ' is-selected' : ''}">${PRACTICE_LABEL[p]}</button>`).join('')
+    + (canAdd ? `<button type="button" onclick="openPracticePicker()" class="${chip} border-dashed border-[var(--border-soft)]">+ 添加项目</button>` : '');
+  const hint = document.getElementById('profile-practice-hint');
+  if (hint) {
+    hint.textContent = myPractices.length > 1
+      ? '点一下切换，AI 会按选中的项目整理课记'
+      : `现在按${PRACTICE_LABEL[currentPractice]}整理课记；也练别的，点「+ 添加项目」重新选`;
+  }
+}
+
+// Picker: right after sign-up (resolves once they tap 好了), and from 我的 to re-pick.
+let practicePickSel = new Set();
+let practicePickActive = 'ballet';
+let practicePickDone = null;
+function openPracticePicker({ fromSignup = false } = {}) {
+  practicePickSel = new Set(fromSignup ? [currentPractice] : myPractices);
+  practicePickActive = currentPractice;
+  document.getElementById('practice-pick-title').textContent = fromSignup ? '你练的是？' : '我练的项目';
+  document.getElementById('practice-pick-hint').textContent = fromSignup
+    ? '可以多选，AI 会按项目整理课记。之后在「我的」里也能改'
+    : '可以多选，AI 会按项目整理课记';
+  document.getElementById('practice-pick-cancel').classList.toggle('hidden', fromSignup);
+  paintPracticePicker();
+  const m = document.getElementById('practice-pick-modal');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+  return new Promise((resolve) => { practicePickDone = resolve; });
+}
+function togglePracticePick(practice) {
+  if (practicePickSel.has(practice)) {
+    if (practicePickSel.size === 1) return;
+    practicePickSel.delete(practice);
+  } else {
+    practicePickSel.add(practice);
+  }
+  if (!practicePickSel.has(practicePickActive)) practicePickActive = normalizePracticeList([...practicePickSel])[0];
+  paintPracticePicker();
+}
+function choosePracticePickActive(practice) { practicePickActive = practice; paintPracticePicker(); }
+function paintPracticePicker() {
+  document.querySelectorAll('#practice-pick-modal .practice-pick-option').forEach((b) => {
+    const on = practicePickSel.has(b.dataset.practice);
+    b.classList.toggle('is-selected', on);
+    b.querySelector('.practice-pick-check').classList.toggle('hidden', !on);
+  });
+  document.documentElement.classList.toggle('theme-pilates', practicePickActive === 'pilates');
+  const both = practicePickSel.size > 1;
+  document.getElementById('practice-pick-active-wrap').classList.toggle('hidden', !both);
+  document.querySelectorAll('#practice-pick-active-wrap button[data-practice]').forEach((b) => {
+    b.classList.toggle('is-selected', b.dataset.practice === practicePickActive);
+  });
+}
+function closePracticePicker(save) {
+  const m = document.getElementById('practice-pick-modal');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+  if (save) setMyPractices([...practicePickSel], practicePickActive);
+  else setActivePractice(currentPractice, { sync: false });
+  const done = practicePickDone;
+  practicePickDone = null;
+  if (done) done();
+}
+function paintAuthSubtitle() {
+  const el = document.getElementById('auth-subtitle');
+  if (el && authMode === 'login') el.textContent = practiceCopy().authSubtitle;
+}
+function applyPracticeCopy() {
+  const copy = practiceCopy();
+  document.querySelectorAll('[data-pcopy]').forEach((el) => {
+    const v = copy[el.dataset.pcopy];
+    if (v != null) el.textContent = v;
+  });
+  document.querySelectorAll('[data-pcopy-ph]').forEach((el) => {
+    const v = copy[el.dataset.pcopyPh];
+    if (v != null && !el.disabled) el.placeholder = v;
+  });
+  document.querySelectorAll('[data-rec-prompt]').forEach((el) => {
+    const p = copy.prompts[el.dataset.recPrompt];
+    if (!p) return;
+    el.querySelector('.rec-prompt-title').textContent = p.title;
+    el.querySelector('.rec-prompt-sample').textContent = p.sample;
+  });
+  document.querySelectorAll('[data-practice-tag]').forEach((el) => { el.textContent = PRACTICE_LABEL[currentPractice]; });
+  document.documentElement.classList.toggle('multi-practice', myPractices.length > 1);
+  paintProfilePractices();
+  paintAuthSubtitle();
+}
+function insertRecPrompt(kind) {
+  const p = practiceCopy().prompts[kind];
+  if (p) insertPrompt(p.text);
+}
+function activeGlossary() { return isPilates() ? PILATES_GLOSSARY : TERM_GLOSSARY; }
+function activeSearchChips() { return isPilates() ? PILATES_SEARCH_CHIPS : HISTORY_SEARCH_CHIPS; }
+
 // ---------- try before signup ----------
 // A visitor can record and get one AI recap without an account (server: the
 // /guest endpoints, capped per browser / IP / site-wide). Saving is the gate:
@@ -4608,8 +4949,9 @@ function pendingGuestDraft() {
 }
 function clearGuestDraft() { try { localStorage.removeItem(GUEST_DRAFT_KEY); } catch (e) {} }
 function captureFetch(path, opts = {}) {
+  opts.headers = Object.assign({}, opts.headers, { 'X-Practice': currentPractice });
   if (!isGuest()) return authFetch(`${API}${path}`, opts);
-  opts.headers = Object.assign({}, opts.headers, { 'X-Guest-Vid': TELEMETRY.vid });
+  opts.headers['X-Guest-Vid'] = TELEMETRY.vid;
   return fetch(`${API}${path}/guest`, opts);
 }
 function startGuestTrial() {
@@ -4687,7 +5029,7 @@ async function savePendingGuestDraft() {
     clearGuestDraft();
     guestTrialStep('saved');
     rememberClassName(draft.body.className);
-    calMarkPopKey = dateKey(new Date());
+    calMarkPopKey = dateKey(draft.body.classAt ? new Date(draft.body.classAt) : new Date());
     return result;
   } catch (e) {
     return null;
@@ -4789,6 +5131,7 @@ function showAuthWithCurtain() {
   if (!reduceMotion) document.getElementById('screen-auth').classList.add('curtain-active');
 }
 async function checkAuthAndInit() {
+  initPractice();
   reportVisit();
   await loadNotices();
   if (!getToken()) {
@@ -4800,6 +5143,7 @@ async function checkAuthAndInit() {
   try {
     const res = await authFetch(`${API}/api/auth/me`);
     if (!res.ok) throw new Error();
+    adoptAccountPractices(await res.json());
     await loadGuideSeenFromServer();
     await finishSignInWithGuestDraft(false);
   } catch (e) {
@@ -4831,7 +5175,110 @@ function setRecTimer(sec) {
   if (!el) return;
   el.innerHTML = `<span class="rec-timer-num">${Number(sec) || 0}</span><span class="rec-timer-unit">秒</span>`;
 }
+// 上课日期：null = 今天。补记最多回到 30 天前（和服务端 BACKFILL_MAX_DAYS 一致）。
+// 选了别的日子，记录按「那天 + 现在的钟点」存，档案、日历、连续天数都算那天。
+const CLASS_DATE_MAX_BACK = 30;
+let classDateKey = null;
+function dayKeyBack(n) { const d = new Date(); d.setDate(d.getDate() - n); return dateKey(d); }
+function classDateLabel(key) {
+  if (!key || key === dayKeyBack(0)) return '今天';
+  if (key === dayKeyBack(1)) return '昨天';
+  const [, m, d] = key.split('-').map(Number);
+  return `${m}月${d}日`;
+}
+function classDateBody() {
+  if (!classDateKey) return {};
+  const [y, m, d] = classDateKey.split('-').map(Number);
+  const now = new Date();
+  return { classAt: new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()).getTime() };
+}
+function classDateSavedKey() { return classDateKey || dateKey(new Date()); }
+function setClassDate(key) {
+  const today = dayKeyBack(0);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(key || '')) || key > today) key = today;
+  if (key < dayKeyBack(CLASS_DATE_MAX_BACK)) { toast(`只能补记最近 ${CLASS_DATE_MAX_BACK} 天的课`); key = dayKeyBack(CLASS_DATE_MAX_BACK); }
+  classDateKey = key === today ? null : key;
+  paintClassDateRows();
+}
+function classDateRowHtml(label) {
+  const cur = classDateKey || dayKeyBack(0);
+  const chip = 'duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]';
+  const quick = [0, 1].map((n) => {
+    const key = dayKeyBack(n);
+    return `<button type="button" class="${chip}${key === cur ? ' is-selected' : ''}" onclick="setClassDate('${key}')">${['今天', '昨天'][n]}</button>`;
+  }).join('');
+  const custom = cur !== dayKeyBack(0) && cur !== dayKeyBack(1);
+  return `${label ? `<span class="cd-k">${label}</span>` : ''}${quick}`
+    + `<button type="button" class="cd-pick ${chip}${custom ? ' is-selected' : ''}" onclick="openClassDatePicker()">`
+    + `<iconify-icon icon="solar:calendar-linear" class="text-[13px]"></iconify-icon>${custom ? classDateLabel(cur) : '其它日期'}</button>`;
+}
+let classDatePickerCursor = new Date();
+function openClassDatePicker() {
+  const cur = classDateKey || dayKeyBack(0);
+  const [y, m] = cur.split('-').map(Number);
+  classDatePickerCursor = new Date(y, m - 1, 1);
+  renderClassDatePicker();
+  const modal = document.getElementById('class-date-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  const card = document.getElementById('class-date-modal-card');
+  card.classList.remove('ceremony-card-in'); void card.offsetWidth; card.classList.add('ceremony-card-in');
+}
+function hideClassDatePicker() {
+  const modal = document.getElementById('class-date-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+function shiftClassDateMonth(delta) {
+  classDatePickerCursor = new Date(classDatePickerCursor.getFullYear(), classDatePickerCursor.getMonth() + delta, 1);
+  renderClassDatePicker();
+}
+function renderClassDatePicker() {
+  const year = classDatePickerCursor.getFullYear(), month = classDatePickerCursor.getMonth();
+  const today = dayKeyBack(0);
+  const minKey = dayKeyBack(CLASS_DATE_MAX_BACK);
+  const cur = classDateKey || today;
+  document.getElementById('class-date-month-label').textContent = `${year} 年 ${month + 1} 月`;
+  const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+  document.getElementById('class-date-prev').disabled = monthKey <= minKey.slice(0, 7);
+  document.getElementById('class-date-next').disabled = monthKey >= today.slice(0, 7);
+  const startWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  let html = '';
+  for (let i = 0; i < startWeekday; i++) html += '<div class="cal-cell is-empty"></div>';
+  for (let day = 1; day <= daysInMonth; day++) {
+    const key = `${monthKey}-${String(day).padStart(2, '0')}`;
+    const cls = ['cal-cell'];
+    if (key === today) cls.push('is-today');
+    if (key === cur) cls.push('is-selected');
+    if (key > today || key < minKey) cls.push('is-off');
+    html += `<button type="button" onclick="pickClassDate('${key}')" class="${cls.join(' ')}"><span class="cal-daynum">${day}</span><span class="cal-marks"></span></button>`;
+  }
+  document.getElementById('class-date-cal-grid').innerHTML = html;
+}
+function pickClassDate(key) {
+  setClassDate(key);
+  hideClassDatePicker();
+}
+function paintClassDateRows() {
+  document.querySelectorAll('[data-class-date]').forEach((el) => { el.innerHTML = classDateRowHtml(el.dataset.label || ''); });
+  paintCheckinDay();
+}
+let checkinRowsForSheet = [];
+function paintCheckinDay() {
+  const label = classDateLabel(classDateKey);
+  const title = document.getElementById('checkin-sheet-title');
+  if (title) title.textContent = `${label}练过了`;
+  const sum = document.getElementById('checkin-today-summary');
+  if (!sum) return;
+  const text = formatSessionSummary(classSessionCounts(checkinRowsForSheet, classDateSavedKey()));
+  sum.classList.toggle('hidden', !text);
+  sum.textContent = text ? `${label}已经记下 ${text}` : '';
+}
+
 function resetRecordScreen() {
+  classDateKey = null;
+  paintClassDateRows();
   segments = []; renderSegments();
   document.getElementById('manual-input').value='';
   document.getElementById('generate-btn').disabled = true;
@@ -5015,14 +5462,22 @@ function weeklyPaceNeeded(c) {
   if (c.kind !== 'count' || days === null || days < 0 || c.remaining <= 0) return null;
   return Math.ceil(c.remaining / Math.max(1, (days + 1) / 7));
 }
+// 「机构 · 课程/卡名」；课程名可选，旧卡没有机构就只显示名字。
+function cardTitle(c) {
+  const studio = (c.studio || '').trim();
+  const name = (c.name || '').trim();
+  if (studio && name) return `${studio} · ${name}`;
+  return studio || name || '课卡';
+}
 function cardAlertText(c) {
   const days = daysUntil(c.expireDate);
   const when = days === 0 ? '今天' : `${days} 天后`;
+  const t = cardTitle(c);
   if (c.kind === 'count' && days !== null && days <= 14 && c.remaining > 0) {
-    return `「${c.name}」还剩 ${c.remaining} 节，${when}到期，每周要上 ${weeklyPaceNeeded(c)} 节才用得完`;
+    return `「${t}」还剩 ${c.remaining} 节，${when}到期，每周要上 ${weeklyPaceNeeded(c)} 节才用得完`;
   }
-  if (c.kind === 'count' && c.remaining <= 2) return `「${c.name}」只剩 ${c.remaining} 节了`;
-  if (c.kind === 'period' && days !== null && days <= 7) return `「${c.name}」${when}到期`;
+  if (c.kind === 'count' && c.remaining <= 2) return `「${t}」只剩 ${c.remaining} 节了`;
+  if (c.kind === 'period' && days !== null && days <= 7) return `「${t}」${when}到期`;
   return '';
 }
 async function paintHomeCardAlert() {
@@ -5071,7 +5526,7 @@ function cardActiveHtml(c) {
       <div class="pearl-sheen"></div>
       <div class="relative z-10">
         <div class="flex items-start justify-between gap-3">
-          <p class="text-[13.5px] font-medium text-[var(--ink)] min-w-0 break-words">${escapeHtml(c.name)}</p>
+          <p class="min-w-0 break-words"><span class="block text-[13.5px] font-medium text-[var(--ink)]">${escapeHtml((c.studio || '').trim() || c.name || '课卡')}</span>${(c.studio || '').trim() && (c.name || '').trim() ? `<span class="block mt-0.5 text-[11.5px] text-[var(--ink-soft)]">${escapeHtml(c.name)}</span>` : ''}</p>
           <p class="shrink-0 text-right">${c.kind === 'count'
             ? `<span class="font-display text-[24px] font-semibold text-[var(--burgundy)]">${c.remaining}</span><span class="text-[11px] text-[var(--ink-faint)]"> / ${c.totalCount} 节</span>`
             : `<span class="text-[12px] text-[var(--burgundy)]">期限卡 · 已上 ${c.usedCount} 节</span>`}</p>
@@ -5102,7 +5557,7 @@ function cardEndedHtml(c) {
   return `
     <button type="button" onclick="openCardSheet(${c.id})" class="w-full text-left rounded-[16px] bg-white/60 border border-[var(--border-soft)] px-3.5 py-2.5">
       <span class="flex items-center justify-between gap-2">
-        <span class="text-[12.5px] text-[var(--ink)] min-w-0 truncate">${escapeHtml(c.name)}</span>
+        <span class="text-[12.5px] text-[var(--ink)] min-w-0 truncate">${escapeHtml(cardTitle(c))}</span>
         <span class="shrink-0 text-[10.5px] text-[var(--ink-faint)]">${tag}</span>
       </span>
       <span class="block mt-0.5 text-[11px] leading-5 text-[var(--ink-soft)]">${line}</span>
@@ -5146,7 +5601,10 @@ function openCardSheet(id) {
   const card = id ? (myCards || []).find((c) => c.id === id) : null;
   editingCardId = card ? card.id : null;
   document.getElementById('card-modal-title').textContent = card ? '编辑课卡' : '添加课卡';
+  document.getElementById('card-studio').value = card ? (card.studio || '') : '';
   document.getElementById('card-name').value = card ? card.name : '';
+  const studios = [...new Set((myCards || []).map((c) => (c.studio || '').trim()).filter(Boolean))];
+  document.getElementById('card-studio-list').innerHTML = studios.map((s) => `<option value="${escapeHtml(s)}"></option>`).join('');
   document.getElementById('card-total').value = card && card.totalCount ? card.totalCount : '';
   document.getElementById('card-expire').value = card && card.expireDate ? card.expireDate : '';
   document.getElementById('card-price').value = card && card.price != null ? card.price : '';
@@ -5178,12 +5636,19 @@ async function submitCardSheet() {
   const err = document.getElementById('card-modal-err');
   err.classList.add('hidden');
   const body = {
+    studio: document.getElementById('card-studio').value.trim(),
     name: document.getElementById('card-name').value.trim(),
     kind: editingCardKind,
     totalCount: editingCardKind === 'count' ? document.getElementById('card-total').value.trim() : null,
     expireDate: document.getElementById('card-expire').value || null,
     price: document.getElementById('card-price').value.trim(),
   };
+  if (!body.studio) {
+    err.textContent = '先填一下机构，比如「XX 舞蹈工作室」';
+    err.classList.remove('hidden');
+    document.getElementById('card-studio').focus();
+    return;
+  }
   if (!editingCardId) body.usedBefore = Number(document.getElementById('card-used-before').value) || 0;
   const btn = document.getElementById('card-modal-save');
   btn.disabled = true;
@@ -5224,7 +5689,7 @@ function renderCardChips(where) {
   if (!box) return;
   const chip = (id, label, selected) => `<button type="button" data-card="${id}" class="duration-chip px-3 py-1.5 rounded-full border border-[var(--border-soft)] text-[12px] text-[var(--ink-soft)]${selected ? ' is-selected' : ''}">${label}</button>`;
   box.innerHTML = chip('', '不扣', !cardPick[where]) + usableCards(myCards).map((c) =>
-    chip(c.id, escapeHtml(c.name) + (c.kind === 'count' ? `（剩 ${c.remaining}）` : ''), cardPick[where] === c.id)
+    chip(c.id, escapeHtml(cardTitle(c)) + (c.kind === 'count' ? `（剩 ${c.remaining}）` : ''), cardPick[where] === c.id)
   ).join('');
   box.onclick = (e) => {
     const b = e.target.closest('button[data-card]');
@@ -5264,7 +5729,7 @@ function noteCardResult(result) {
     return;
   }
   const c = result.cardUsage.card;
-  toast(c.kind === 'count' ? `「${c.name}」扣了一节，还剩 ${c.remaining} 节` : `「${c.name}」记了一节`, 2800);
+  toast(c.kind === 'count' ? `「${cardTitle(c)}」扣了一节，还剩 ${c.remaining} 节` : `「${cardTitle(c)}」记了一节`, 2800);
 }
 
 // ---------- badge wall ----------
@@ -5358,11 +5823,10 @@ function recentClassNames(rows) {
   });
   return seen.slice(0, CLASS_CHIP_MAX);
 }
-const DEFAULT_CLASS_TAGS = ['基训', '把杆', '拉伸软开', 'PBT', '跳跃组合'];
 function classChipNames(rows) {
   const seen = new Set();
   const names = [];
-  for (const n of [...DEFAULT_CLASS_TAGS, ...recentClassNames(rows)]) {
+  for (const n of [...practiceCopy().classTags, ...recentClassNames(rows)]) {
     const name = String(n || '').trim();
     if (!name || seen.has(name)) continue;
     seen.add(name);
@@ -5826,12 +6290,9 @@ async function openCheckinSheet(source) {
   const rowsForSheet = (homeRows && homeRows.length) ? homeRows : (historyRows || []);
   const nameInput = document.getElementById('checkin-classname');
   if (nameInput) nameInput.value = '';
-  const sum = document.getElementById('checkin-today-summary');
-  const todayText = formatSessionSummary(classSessionCounts(rowsForSheet, dateKey(new Date())));
-  if (sum) {
-    sum.classList.toggle('hidden', !todayText);
-    sum.textContent = todayText ? `今天已经记下 ${todayText}` : '';
-  }
+  checkinRowsForSheet = rowsForSheet;
+  classDateKey = null;
+  paintClassDateRows();
   fillClassNameChips('checkin-class-chips', 'checkin-classname', rowsForSheet);
   paintCardPicker('checkin', '');
   const m = document.getElementById('checkin-sheet-mask');
@@ -5917,9 +6378,11 @@ async function submitCheckin() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         className,
+        practice: currentPractice,
         tzOffsetMin: new Date().getTimezoneOffset(),
         trainingDurationMin: checkinDurationMin,
         mood: checkinMood,
+        ...classDateBody(),
         ...(cardPick.checkin ? { cardId: cardPick.checkin } : {}),
       }),
     });
@@ -5928,7 +6391,7 @@ async function submitCheckin() {
     noteCardResult(data);
     if (className) rememberClassName(className);
     pendingShareMilestone = data.milestone || null;
-    pendingCalMarkPop = dateKey(new Date());
+    pendingCalMarkPop = classDateSavedKey();
     await dismissCheckinSheet();
     await loadHome();
     if (checkinSheetSource === 'history') {
@@ -5978,6 +6441,7 @@ function openManualSheet(reason) {
   markGuideSeen('recap-done');
   lastDraft = { manual: true, transcript: '', durationSec: 0, from: 'manual', result: {} };
   resetManualSheet();
+  paintClassDateRows();
   const sub = document.getElementById('manual-sheet-sub');
   if (sub) {
     sub.textContent = reason === 'quota'
@@ -6052,6 +6516,7 @@ async function submitManualSheet() {
     const className = (document.getElementById('manual-sheet-classname')?.value || '').trim() || defaultClassName();
     const body = {
       className,
+      practice: currentPractice,
       transcript: '',
       good_points: good,
       improve_points: improve,
@@ -6066,6 +6531,7 @@ async function submitManualSheet() {
       editedFields: [],
       sessionId: captureSessionId,
       from: 'manual',
+      ...classDateBody(),
     };
     const res = await authFetch(`${API}/api/records`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const result = await res.json();
@@ -6074,7 +6540,7 @@ async function submitManualSheet() {
     markGuideSeen('review-save');
     rememberClassName(body.className);
     captureSessionId = '';
-    calMarkPopKey = dateKey(new Date());
+    calMarkPopKey = classDateSavedKey();
     await dismissManualSheet();
     showSaveCeremony(result.milestone);
   } catch (e) {
@@ -6594,7 +7060,7 @@ function monthShareBlob() {
 async function shareMonthFile(file) {
   if (typeof navigator.share !== 'function') return false;
   if (navigator.canShare && !navigator.canShare({ files: [file] })) return false;
-  await navigator.share({ files: [file], title: 'BalletMind', text: '我的芭蕾月度总结' });
+  await navigator.share({ files: [file], title: 'BalletMind', text: practiceCopy().monthShareText });
   return true;
 }
 async function downloadMonthCard() {
@@ -7552,7 +8018,7 @@ function renderHistoryTermChips() {
   }
   if (block) block.classList.remove('hidden');
   const needles = expandSearchNeedles(document.getElementById('history-search').value);
-  wrap.innerHTML = HISTORY_SEARCH_CHIPS.map((term) => {
+  wrap.innerHTML = activeSearchChips().map((term) => {
     const on = needles.includes(foldBalletText(term));
     return `<button type="button" data-term="${escapeHtml(term)}" aria-pressed="${on ? 'true' : 'false'}" class="term-chip ${on ? 'is-on' : ''}">${escapeHtml(term)}</button>`;
   }).join('');
@@ -8480,9 +8946,7 @@ function setAiRecapTypingEnabled(on) {
   const prompts = document.querySelector('#screen-record .rec-prompts');
   if (el) {
     el.disabled = !on;
-    el.placeholder = on
-      ? '也可以打字，比如：今天 pirouette 能转一圈，视线定点比上次稳。'
-      : '额度用完了，请点下面「去手动记」';
+    el.placeholder = on ? practiceCopy().recPlaceholder : '额度用完了，请点下面「去手动记」';
   }
   if (wrap) wrap.classList.toggle('is-disabled', !on);
   if (prompts) {
@@ -8956,6 +9420,7 @@ function selectMood(mood) {
 // not silently wipe them — only a genuinely new recording resets those.
 function renderReview(isFreshDraft = true) {
   logEvent('review_opened');
+  paintClassDateRows();
   const errWrap = document.getElementById('review-error-wrap');
   if (errWrap) errWrap.innerHTML = '';
   if (isFreshDraft) {
@@ -9192,6 +9657,7 @@ async function confirmSave() {
   const edited = editedFields.length > 0;
   const body = {
     className: document.getElementById('review-classname').value.trim() || defaultClassName(),
+    practice: currentPractice,
     transcript: lastDraft.transcript,
     good_points: good,
     improve_points: improve,
@@ -9206,6 +9672,7 @@ async function confirmSave() {
     editedFields,
     sessionId: captureSessionId,
     from: lastDraft.from || (lastDraft.durationSec > 0 ? 'voice' : 'typed'),
+    ...classDateBody(),
   };
   if (isGuest()) { openGuestSaveGate(body); return; }
   if (cardPick.review) body.cardId = cardPick.review;
@@ -9217,7 +9684,7 @@ async function confirmSave() {
   markGuideSeen('review-save');
   rememberClassName(body.className);
   captureSessionId = '';
-  calMarkPopKey = dateKey(new Date());
+  calMarkPopKey = classDateSavedKey();
   showSaveCeremony(result.milestone);
   } catch (e) {
     toast('保存失败：' + (e.message || '请重试'));

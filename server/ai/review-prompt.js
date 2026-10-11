@@ -96,4 +96,12 @@ const REVIEW_TOOL = {
   },
 };
 
-module.exports = { PROMPT_VERSION, SYSTEM_PROMPT, REVIEW_TOOL };
+function reviewPromptFor(practice) {
+  if (practice === 'pilates') {
+    const { PILATES_PROMPT_VERSION, PILATES_SYSTEM_PROMPT, PILATES_REVIEW_TOOL } = require('./pilates-review-prompt');
+    return { version: PILATES_PROMPT_VERSION, system: PILATES_SYSTEM_PROMPT, tool: PILATES_REVIEW_TOOL };
+  }
+  return { version: PROMPT_VERSION, system: SYSTEM_PROMPT, tool: REVIEW_TOOL };
+}
+
+module.exports = { PROMPT_VERSION, SYSTEM_PROMPT, REVIEW_TOOL, reviewPromptFor };

@@ -177,12 +177,18 @@ test('guest funnel telemetry accepts known steps only', async () => {
 
 test('cards: create validates count vs period cards', async () => {
   const token = await register('cards_validate@example.com');
-  assert.equal((await authed(token, 'POST', '/api/cards', { name: '', kind: 'count', totalCount: 10 })).status, 400);
-  assert.equal((await authed(token, 'POST', '/api/cards', { name: '次卡', kind: 'count' })).status, 400);
-  assert.equal((await authed(token, 'POST', '/api/cards', { name: '月卡', kind: 'period' })).status, 400);
-  assert.equal((await authed(token, 'POST', '/api/cards', { name: '月卡', kind: 'period', expireDate: '2026-02-30' })).status, 400);
+  const noStudio = await authed(token, 'POST', '/api/cards', { name: '20 次卡', kind: 'count', totalCount: 10 });
+  assert.equal(noStudio.status, 400, '机构必填');
+  assert.match((await noStudio.json()).error, /机构/);
+  assert.equal((await authed(token, 'POST', '/api/cards', { studio: '  ', kind: 'count', totalCount: 10 })).status, 400);
+  const studioOnly = await (await authed(token, 'POST', '/api/cards', { studio: '天鹅舞蹈', kind: 'count', totalCount: 10 })).json();
+  assert.equal(studioOnly.studio, '天鹅舞蹈');
+  assert.equal(studioOnly.name, '', '课程名可选');
+  assert.equal((await authed(token, 'POST', '/api/cards', { studio: '天鹅舞蹈', name: '次卡', kind: 'count' })).status, 400);
+  assert.equal((await authed(token, 'POST', '/api/cards', { studio: '天鹅舞蹈', name: '月卡', kind: 'period' })).status, 400);
+  assert.equal((await authed(token, 'POST', '/api/cards', { studio: '天鹅舞蹈', name: '月卡', kind: 'period', expireDate: '2026-02-30' })).status, 400);
   const res = await authed(token, 'POST', '/api/cards', {
-    name: '月卡', kind: 'period', startDate: '2026-10-01', expireDate: '2026-10-31', price: 899,
+    studio: '天鹅舞蹈', name: '月卡', kind: 'period', startDate: '2026-10-01', expireDate: '2026-10-31', price: 899,
   });
   assert.equal(res.status, 200);
   const card = await res.json();
@@ -194,7 +200,7 @@ test('cards: create validates count vs period cards', async () => {
 test('cards: deduct manually, run out, undo, and only the owner can touch a card', async () => {
   const token = await register('cards_flow@example.com');
   const other = await register('cards_other@example.com');
-  const card = await (await authed(token, 'POST', '/api/cards', { name: '芭蕾 2 次卡', kind: 'count', totalCount: 2, price: 360 })).json();
+  const card = await (await authed(token, 'POST', '/api/cards', { studio: '天鹅舞蹈', name: '芭蕾 2 次卡', kind: 'count', totalCount: 2, price: 360 })).json();
   assert.equal(card.remaining, 2);
 
   const first = await (await authed(token, 'POST', `/api/cards/${card.id}/use`)).json();
@@ -216,7 +222,7 @@ test('cards: deduct manually, run out, undo, and only the owner can touch a card
 
 test('cards: saving a 课记 or 打卡 with cardId deducts, and deleting the record gives the class back', async () => {
   const token = await register('cards_records@example.com');
-  const card = await (await authed(token, 'POST', '/api/cards', { name: '舞蹈 10 次卡', kind: 'count', totalCount: 10 })).json();
+  const card = await (await authed(token, 'POST', '/api/cards', { studio: '天鹅舞蹈', name: '舞蹈 10 次卡', kind: 'count', totalCount: 10 })).json();
 
   const saved = await (await authed(token, 'POST', '/api/records', {
     className: '芭蕾基训', good_points: '手臂', improve_points: '重心', cardId: card.id,
@@ -235,17 +241,17 @@ test('cards: saving a 课记 or 打卡 with cardId deducts, and deleting the rec
 
 test('cards: a half-used card can be entered with the classes already taken', async () => {
   const token = await register('cards_usedbefore@example.com');
-  const card = await (await authed(token, 'POST', '/api/cards', { name: '老卡', kind: 'count', totalCount: 10, usedBefore: 4 })).json();
+  const card = await (await authed(token, 'POST', '/api/cards', { studio: '天鹅舞蹈', name: '老卡', kind: 'count', totalCount: 10, usedBefore: 4 })).json();
   assert.equal(card.remaining, 6);
   assert.equal(card.lastUsedAt, null);
   assert.deepEqual(card.recentUsages, []);
-  const tooMany = await authed(token, 'POST', '/api/cards', { name: '老卡2', kind: 'count', totalCount: 3, usedBefore: 4 });
+  const tooMany = await authed(token, 'POST', '/api/cards', { studio: '天鹅舞蹈', name: '老卡2', kind: 'count', totalCount: 3, usedBefore: 4 });
   assert.equal(tooMany.status, 400);
 });
 
 test('cards: a card problem on save does not lose the record', async () => {
   const token = await register('cards_saveerr@example.com');
-  const card = await (await authed(token, 'POST', '/api/cards', { name: '1 次卡', kind: 'count', totalCount: 1 })).json();
+  const card = await (await authed(token, 'POST', '/api/cards', { studio: '天鹅舞蹈', name: '1 次卡', kind: 'count', totalCount: 1 })).json();
   await authed(token, 'POST', `/api/cards/${card.id}/use`);
   const res = await authed(token, 'POST', '/api/records/checkin', { className: '现代舞', cardId: card.id });
   assert.equal(res.status, 200);
@@ -259,9 +265,11 @@ test('cards: a card problem on save does not lose the record', async () => {
 
 test('cards: edit, archive blocks deduction, delete removes usages, account export includes cards', async () => {
   const token = await register('cards_edit@example.com');
-  const card = await (await authed(token, 'POST', '/api/cards', { name: '旧名字', kind: 'count', totalCount: 5 })).json();
+  const card = await (await authed(token, 'POST', '/api/cards', { studio: '天鹅舞蹈', name: '旧名字', kind: 'count', totalCount: 5 })).json();
   const edited = await (await authed(token, 'PATCH', `/api/cards/${card.id}`, { name: '新名字', totalCount: 8 })).json();
   assert.equal(edited.name, '新名字');
+  assert.equal(edited.studio, '天鹅舞蹈', 'PATCH without studio keeps it');
+  assert.equal((await authed(token, 'PATCH', `/api/cards/${card.id}`, { studio: '' })).status, 400);
   assert.equal(edited.remaining, 8);
   await authed(token, 'POST', `/api/cards/${card.id}/use`);
 

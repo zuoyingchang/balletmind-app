@@ -10,6 +10,9 @@ const { logAuth } = require('../lib/log');
 const { loginLimiter, registerLimiter, forgotLimiter, resetLimiter, deleteAccountLimiter } = require('../middleware/rate-limit');
 const { normalizeEmail, isValidEmail } = require('../lib/email-format');
 const { passwordRuleError } = require('../lib/password-format');
+const {
+  normalizePractice, normalizePractices, practicesFromRow, activeFromRow, DEFAULT_PRACTICE,
+} = require('../lib/practice');
 
 const router = express.Router();
 
@@ -22,7 +25,13 @@ function userPublic(user, email, displayName) {
     id: user.id,
     email: email ?? user.email,
     displayName: displayName ?? user.display_name,
+    ...practiceFields(user),
   };
+}
+
+function practiceFields(user) {
+  const practices = practicesFromRow(user.practices);
+  return { practices, activePractice: activeFromRow(practices, user.active_practice) };
 }
 
 function canExposeResetUrl() {
@@ -60,7 +69,7 @@ async function sendResetEmail(to, resetUrl) {
 }
 
 router.post('/register', registerLimiter, async (req, res) => {
-  const { email, password, displayName, privacyAccepted } = req.body || {};
+  const { email, password, displayName, privacyAccepted, practices } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: '请填写邮箱和密码' });
   if (!isValidEmail(email)) return res.status(400).json({ error: '邮箱格式不对' });
   const registerPwErr = passwordRuleError(password);
@@ -71,13 +80,17 @@ router.post('/register', registerLimiter, async (req, res) => {
   if (existing) return res.status(409).json({ error: '这个邮箱已经注册过了' });
   const name = displayName || email.split('@')[0];
   const passwordHash = await bcrypt.hash(password, 10);
+  const userPractices = normalizePractices(practices) || [DEFAULT_PRACTICE];
   const info = await db.run(
-    'INSERT INTO users (email, password_hash, display_name, created_at) VALUES (?, ?, ?, ?)',
-    [normalized, passwordHash, name, Date.now()]
+    'INSERT INTO users (email, password_hash, display_name, created_at, practices) VALUES (?, ?, ?, ?, ?)',
+    [normalized, passwordHash, name, Date.now(), userPractices.join(',')]
   );
   const id = info.lastInsertRowid;
   logAuth('register', { user: id });
-  res.json({ token: signToken(id), user: { id, email: normalized, displayName: name } });
+  res.json({
+    token: signToken(id),
+    user: { id, email: normalized, displayName: name, practices: userPractices, activePractice: userPractices[0] },
+  });
 });
 
 router.post('/login', loginLimiter, async (req, res) => {
@@ -92,9 +105,32 @@ router.post('/login', loginLimiter, async (req, res) => {
 });
 
 router.get('/me', requireAuth, async (req, res) => {
-  const user = await db.get('SELECT id, email, display_name, created_at FROM users WHERE id = ?', [req.userId]);
+  const user = await db.get('SELECT id, email, display_name, created_at, practices, active_practice FROM users WHERE id = ?', [req.userId]);
   if (!user) return res.status(404).json({ error: '用户不存在' });
-  res.json({ id: user.id, email: user.email, display_name: user.display_name, displayName: user.display_name, createdAt: user.created_at });
+  res.json({
+    id: user.id, email: user.email, display_name: user.display_name, displayName: user.display_name,
+    createdAt: user.created_at, ...practiceFields(user),
+  });
+});
+
+// Body: { practices?: [...], activePractice?: '...' } -- either or both.
+router.patch('/practices', requireAuth, async (req, res) => {
+  const body = req.body || {};
+  const user = await db.get('SELECT practices, active_practice FROM users WHERE id = ?', [req.userId]);
+  if (!user) return res.status(404).json({ error: '用户不存在' });
+  let practices = practicesFromRow(user.practices);
+  if (body.practices !== undefined) {
+    practices = normalizePractices(body.practices);
+    if (!practices) return res.status(400).json({ error: '至少选一项' });
+  }
+  let active = user.active_practice;
+  if (body.activePractice !== undefined) {
+    active = normalizePractice(body.activePractice);
+    if (!active || !practices.includes(active)) return res.status(400).json({ error: '先把这个项目加到「我练的」里' });
+  }
+  active = activeFromRow(practices, active);
+  await db.run('UPDATE users SET practices = ?, active_practice = ? WHERE id = ?', [practices.join(','), active, req.userId]);
+  res.json({ practices, activePractice: active });
 });
 
 // Always 200 with the same message so we don't leak whether an email is registered.

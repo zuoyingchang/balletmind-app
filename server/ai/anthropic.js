@@ -116,8 +116,10 @@ async function callAnthropicOnce(termHint, transcript) {
   );
 }
 
-async function callAnthropicWithRetry(termHint, transcript) {
-  return callAnthropicToolWithRetry(SYSTEM_PROMPT, REVIEW_TOOL, userTranscriptMessage(transcript), termHint);
+async function callAnthropicWithRetry(termHint, transcript, prompt) {
+  const system = prompt ? prompt.system : SYSTEM_PROMPT;
+  const tool = prompt ? prompt.tool : REVIEW_TOOL;
+  return callAnthropicToolWithRetry(system, tool, userTranscriptMessage(transcript), termHint);
 }
 
 // Round 1 of ask-your-archive: model sees the first (free, keyword-search)

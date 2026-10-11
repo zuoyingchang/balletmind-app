@@ -34,10 +34,10 @@ const ALLOWED_META = new Set([
   'sessionId', 'field_name', 'recordId', 'edited', 'editedFields',
   'durationSec', 'asr', 'error', 'reason', 'status', 'latencyMs',
   'attempt', 'inputTokens', 'outputTokens', 'cacheReadTokens', 'cacheCreationTokens',
-  'model', 'provider', 'fellBack', 'promptVersion', 'confidence_level', 'chars', 'bytes', 'from',
+  'model', 'provider', 'fellBack', 'promptVersion', 'practice', 'confidence_level', 'chars', 'bytes', 'from',
   'slotsFilled', 'round', 'rounds', 'matchCount', 'answered',
   'retrievalPath', 'keywordCount', 'embeddingCount',
-  'attempts', 'aiUsed', 'embeddingRan',
+  'attempts', 'aiUsed', 'embeddingRan', 'backfillDays',
   'screen', 'where', 'kind', 'vid', 'platform', 'browser', 'source', 'loc', 'fn', 'errName', 'build',
 ]);
 
@@ -80,7 +80,7 @@ function sanitizeEventMetadata(metadata) {
       || key === 'inputTokens' || key === 'outputTokens' || key === 'cacheReadTokens'
       || key === 'cacheCreationTokens' || key === 'chars' || key === 'bytes'
       || key === 'durationSec' || key === 'status' || key === 'slotsFilled'
-      || key === 'keywordCount' || key === 'embeddingCount') {
+      || key === 'keywordCount' || key === 'embeddingCount' || key === 'backfillDays') {
       const n = Number(value);
       if (!Number.isFinite(n)) continue;
       if (key === 'slotsFilled') {
