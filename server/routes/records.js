@@ -97,8 +97,6 @@ router.post('/', async (req, res) => {
     : (Number(durationSec) > 0 ? 'voice' : 'typed');
   const good = String(good_points || '').trim();
   const improve = String(improve_points || '').trim();
-  if (!good) return res.status(400).json({ error: '「做得好的」是必选，先写一句' });
-  if (!improve) return res.status(400).json({ error: '「还要改的」是必选，先写一句' });
   const classAt = classAtFromReq(req);
   if (classAt.error) return res.status(400).json({ error: classAt.error });
   const info = await db.run(

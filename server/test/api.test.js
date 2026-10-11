@@ -259,19 +259,24 @@ test('check-in without 课程/组合 is rejected', async () => {
   assert.match(body.error, /课程\/组合/);
 });
 
-test('saving a recap without 做得好的 or 还要改的 is rejected', async () => {
+test('做得好的 / 还要改的 are optional when saving a recap', async () => {
   const { body: { token } } = await registerUser('recap-need-points@example.com');
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
   const noGood = await fetch(`${base}/api/records`, {
     method: 'POST', headers,
     body: JSON.stringify({ className: '基训', improve_points: '胯不要掉' }),
   });
-  assert.equal(noGood.status, 400);
+  assert.equal(noGood.status, 200);
   const noImprove = await fetch(`${base}/api/records`, {
     method: 'POST', headers,
     body: JSON.stringify({ className: '基训', good_points: '定点比上次稳' }),
   });
-  assert.equal(noImprove.status, 400);
+  assert.equal(noImprove.status, 200);
+  const neither = await fetch(`${base}/api/records`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ className: '基训', from: 'manual' }),
+  });
+  assert.equal(neither.status, 200);
 });
 
 test('check-in does not re-fire recap-count milestones', async () => {

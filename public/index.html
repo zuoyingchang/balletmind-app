@@ -3709,7 +3709,7 @@
     <div class="checkin-sheet-head">
       <p class="label-editorial text-[11px] text-[var(--rose-deep)]">BalletMind</p>
       <h2 class="font-display mt-1 text-[24px] font-semibold tracking-wide">手动记</h2>
-      <p id="manual-sheet-sub" class="mt-1 text-[11.5px] leading-5 text-[var(--ink-faint)]">不用AI，自己写几句。课程、时长、心情都可以先空着。</p>
+      <p id="manual-sheet-sub" class="mt-1 text-[11.5px] leading-5 text-[var(--ink-faint)]">不用AI，自己写几句。每一项都可以先空着。</p>
       <div class="checkin-sheet-rule" aria-hidden="true"><i></i></div>
     </div>
     <div class="checkin-sheet-fields">
@@ -3744,6 +3744,10 @@
       <input id="manual-sheet-classname" maxlength="40" oninput="updateClassNameHint('manual-sheet-classname','manual-sheet-classname-hint')" data-pcopy-ph="classPlaceholder" placeholder="如：基训、把杆、跳跃组合" class="w-full px-4 py-2.5 rounded-xl border border-[var(--border-soft)] bg-white/70 text-[12.5px]">
       <p id="manual-sheet-classname-hint" class="mt-1.5 text-[10.5px] text-[var(--ink-faint)]">填一下的话，以后能按课程/组合筛选</p>
       <div id="manual-sheet-class-chips" class="mt-2 flex gap-2 flex-wrap"></div>
+    </div>
+    <div class="checkin-sheet-field hidden" id="manual-sheet-card-wrap">
+      <p class="checkin-sheet-k">扣课卡<span class="field-optional">可选</span></p>
+      <div class="flex gap-2 flex-wrap" id="manual-sheet-card-chips"></div>
     </div>
     <div class="checkin-sheet-field">
       <p class="checkin-sheet-k">时长<span class="field-optional">可选</span></p>
@@ -5416,8 +5420,8 @@ async function goProfile() {
 // pick (review / 打卡 chips, or 扣一次 here), never automatic.
 let myCards = null;
 let cardsLoadedAt = 0;
-const cardPick = { review: null, checkin: null };
-const cardPickTouched = { review: false, checkin: false };
+const cardPick = { review: null, checkin: null, 'manual-sheet': null };
+const cardPickTouched = { review: false, checkin: false, 'manual-sheet': false };
 let cardsBackTarget = 'profile';
 let editingCardId = null;
 let editingCardKind = 'count';
@@ -5682,7 +5686,7 @@ async function deleteCard() {
   } catch (e) { toast(e.message); }
 }
 
-// 扣课卡 chips on the review screen and the 打卡 sheet. Preselects the card last
+// 扣课卡 chips on the review screen, the 打卡 sheet and the 手动记 sheet. Preselects the card last
 // used for the same 课程/组合; otherwise defaults to 不扣.
 function renderCardChips(where) {
   const box = document.getElementById(`${where}-card-chips`);
@@ -5866,6 +5870,7 @@ function updateClassNameHint(inputId, hintId) {
   hint.classList.toggle('hidden', !!input.value.trim());
   if (inputId === 'review-classname') guessCardPick('review', input.value);
   else if (inputId === 'checkin-classname') guessCardPick('checkin', input.value);
+  else if (inputId === 'manual-sheet-classname') guessCardPick('manual-sheet', input.value);
 }
 function paintTodayClassSummary(rows) {
   const el = document.getElementById('home-today-summary');
@@ -6442,11 +6447,12 @@ function openManualSheet(reason) {
   lastDraft = { manual: true, transcript: '', durationSec: 0, from: 'manual', result: {} };
   resetManualSheet();
   paintClassDateRows();
+  paintCardPicker('manual-sheet');
   const sub = document.getElementById('manual-sheet-sub');
   if (sub) {
     sub.textContent = reason === 'quota'
       ? '今天的AI复盘额度用完了，自己写几句就好。'
-      : '不用AI，自己写几句。课程、时长、心情都可以先空着。';
+      : '不用AI，自己写几句。每一项都可以先空着。';
   }
   const m = document.getElementById('manual-sheet-mask');
   if (!m) return;
@@ -6507,7 +6513,6 @@ async function submitManualSheet() {
   syncNoteRuled('manual-sheet-improve');
   const good = (document.getElementById('manual-sheet-good')?.value || '').trim();
   const improve = (document.getElementById('manual-sheet-improve')?.value || '').trim();
-  if (!good || !improve) { toast('「做得好的」和「还要改的」是必选，先写一句'); return; }
   if (savingRecord) return;
   savingRecord = true;
   const saveBtn = document.getElementById('manual-sheet-save-btn');
@@ -6532,10 +6537,12 @@ async function submitManualSheet() {
       sessionId: captureSessionId,
       from: 'manual',
       ...classDateBody(),
+      ...(cardPick['manual-sheet'] ? { cardId: cardPick['manual-sheet'] } : {}),
     };
     const res = await authFetch(`${API}/api/records`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const result = await res.json();
     if (!res.ok) { toast(result.error || '保存失败'); return; }
+    noteCardResult(result);
     markGuideSeen('recap-done');
     markGuideSeen('review-save');
     rememberClassName(body.className);
@@ -9637,8 +9644,6 @@ async function confirmSave() {
   syncNoteRuled('review-improve');
   const good = document.getElementById('review-good').value.trim();
   const improve = document.getElementById('review-improve').value.trim();
-  if (!good) { toast('「做得好的」是必选，先写一句'); return; }
-  if (!improve) { toast('「还要改的」是必选，先写一句'); return; }
   savingRecord = true;
   const saveBtn = document.getElementById('review-save-btn');
   if (saveBtn) saveBtn.disabled = true;
