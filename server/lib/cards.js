@@ -1,7 +1,9 @@
 const db = require('../db');
+const { DEFAULT_PRACTICE, practiceWhere } = require('./practice');
 
 // 课卡管家: plain bookkeeping, no AI. A card is a pack of classes bought from a
-// studio; each card_usages row is one class deducted from it.
+// studio; each card_usages row is one class deducted from it. Cards belong to
+// one practice, like records.
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_TOTAL_COUNT = 500;
@@ -82,10 +84,12 @@ function cardFieldsFrom(body, existing) {
   return out;
 }
 
-async function ownedCard(userId, cardId) {
+// With `practice`, a card from the other practice counts as not found.
+async function ownedCard(userId, cardId, practice) {
   const id = Number(cardId);
   if (!Number.isInteger(id) || id <= 0) return null;
-  return db.get('SELECT * FROM class_cards WHERE id = ? AND user_id = ?', [id, userId]);
+  if (!practice) return db.get('SELECT * FROM class_cards WHERE id = ? AND user_id = ?', [id, userId]);
+  return db.get(`SELECT * FROM class_cards WHERE id = ? AND user_id = ? AND ${practiceWhere()}`, [id, userId, practice]);
 }
 
 async function usedCount(cardId) {
@@ -94,8 +98,8 @@ async function usedCount(cardId) {
 }
 
 // Deducts one class. recordId optional (the 课记/打卡 it came with).
-async function useCard(userId, cardId, { recordId = null, usedAt = Date.now() } = {}) {
-  const card = await ownedCard(userId, cardId);
+async function useCard(userId, cardId, { recordId = null, usedAt = Date.now(), practice = DEFAULT_PRACTICE } = {}) {
+  const card = await ownedCard(userId, cardId, practice);
   if (!card) throw new CardError(404, '没找到这张卡');
   if (card.archived) throw new CardError(400, '这张卡已经收起来了，先恢复再扣', 'card_archived');
   if (card.kind === 'count' && (await usedCount(card.id)) >= card.total_count) {
@@ -144,10 +148,10 @@ async function cardSummary(card) {
   };
 }
 
-async function listCards(userId) {
+async function listCards(userId, practice = DEFAULT_PRACTICE) {
   const cards = await db.all(
-    'SELECT * FROM class_cards WHERE user_id = ? ORDER BY archived ASC, created_at DESC',
-    [userId]
+    `SELECT * FROM class_cards WHERE user_id = ? AND ${practiceWhere()} ORDER BY archived ASC, created_at DESC`,
+    [userId, practice]
   );
   return Promise.all(cards.map(cardSummary));
 }

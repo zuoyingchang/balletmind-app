@@ -199,7 +199,7 @@ router.post('/reset-password', resetLimiter, async (req, res) => {
 
 // Data portability: everything the user wrote, as one JSON file.
 router.get('/export', requireAuth, async (req, res) => {
-  const user = await db.get('SELECT id, email, display_name, created_at FROM users WHERE id = ?', [req.userId]);
+  const user = await db.get('SELECT id, email, display_name, created_at, practices, active_practice FROM users WHERE id = ?', [req.userId]);
   if (!user) return res.status(404).json({ error: '用户不存在' });
   const [records, issues, occurrences, corrections, cards, usages] = await Promise.all([
     db.all('SELECT * FROM records WHERE user_id = ? ORDER BY created_at ASC', [req.userId]),

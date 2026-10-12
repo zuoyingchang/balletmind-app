@@ -7,7 +7,7 @@ const { processRecordForIssues, removeRecordFromIssues } = require('../issues');
 const { checkMilestone } = require('../milestones');
 const { embedTextsOpenAI, recordCorpus } = require('../ai/ask-retrieve');
 const { useCard, releaseRecordUsages, CardError } = require('../lib/cards');
-const { normalizePractice, DEFAULT_PRACTICE } = require('../lib/practice');
+const { normalizePractice, DEFAULT_PRACTICE, practiceFromReq, practiceWhere } = require('../lib/practice');
 
 function recordPractice(req) {
   return normalizePractice(req.body && req.body.practice) || DEFAULT_PRACTICE;
@@ -39,7 +39,7 @@ async function deductCardWithRecord(req, recordId, from, usedAt) {
   const cardId = req.body && req.body.cardId;
   if (cardId === undefined || cardId === null || cardId === '') return {};
   try {
-    const { usageId, card } = await useCard(req.userId, cardId, { recordId: Number(recordId), usedAt });
+    const { usageId, card } = await useCard(req.userId, cardId, { recordId: Number(recordId), usedAt, practice: recordPractice(req) });
     await logEvent(req.userId, 'card_used', { from });
     return { cardUsage: { usageId, card } };
   } catch (e) {
@@ -128,8 +128,8 @@ router.post('/', async (req, res) => {
   for (const field_name of fields) {
     await logEvent(req.userId, 'field_edited', withSession({ field_name }, sessionId));
   }
-  await processRecordForIssues(req.userId, info.lastInsertRowid, improve);
-  const milestone = await checkMilestone(req.userId, { source: 'recap' });
+  await processRecordForIssues(req.userId, info.lastInsertRowid, improve, recordPractice(req));
+  const milestone = await checkMilestone(req.userId, { source: 'recap', practice: recordPractice(req) });
   const card = await deductCardWithRecord(req, info.lastInsertRowid, 'recap', classAt.at);
   res.json({ id: info.lastInsertRowid, milestone, ...card });
   cacheRecordEmbedding(req.userId, info.lastInsertRowid, {
@@ -160,14 +160,17 @@ router.post('/checkin', async (req, res) => {
     recordId: info.lastInsertRowid, from: 'checkin', slotsFilled: 0,
     ...(classAt.backfillDays !== undefined ? { backfillDays: classAt.backfillDays } : {}),
   }, sessionIdFromReq(req)));
-  const milestone = await checkMilestone(req.userId, { source: 'checkin' });
+  const milestone = await checkMilestone(req.userId, { source: 'checkin', practice: recordPractice(req) });
   const card = await deductCardWithRecord(req, info.lastInsertRowid, 'checkin', classAt.at);
   res.json({ id: info.lastInsertRowid, milestone, ...card });
   cacheRecordEmbedding(req.userId, info.lastInsertRowid, { class_name: name });
 });
 
 router.get('/', async (req, res) => {
-  const rows = await db.all('SELECT * FROM records WHERE user_id = ? ORDER BY created_at DESC', [req.userId]);
+  const rows = await db.all(
+    `SELECT * FROM records WHERE user_id = ? AND ${practiceWhere()} ORDER BY created_at DESC`,
+    [req.userId, practiceFromReq(req)]
+  );
   res.json(rows);
 });
 

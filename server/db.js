@@ -222,6 +222,23 @@ const ready = client.batch(
   } catch (e) {
     if (!/duplicate column/i.test(e.message || '')) throw e;
   }
+  try {
+    // Practice the issue is tracked under; NULL means ballet. Filled once from
+    // the record that opened it.
+    await client.execute('ALTER TABLE issues ADD COLUMN practice TEXT');
+    await client.execute(`UPDATE issues SET practice = (
+      SELECT r.practice FROM records r WHERE r.id = issues.first_record_id
+    ) WHERE practice IS NULL`);
+  } catch (e) {
+    if (!/duplicate column/i.test(e.message || '')) throw e;
+  }
+  try {
+    // Practice the card belongs to; NULL means ballet (every card from before
+    // this column is a ballet card).
+    await client.execute('ALTER TABLE class_cards ADD COLUMN practice TEXT');
+  } catch (e) {
+    if (!/duplicate column/i.test(e.message || '')) throw e;
+  }
 });
 
 async function get(sql, args = []) {

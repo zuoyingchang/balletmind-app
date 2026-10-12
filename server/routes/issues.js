@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { listIssuesWithOccurrences, isSimilar } = require('../issues');
+const { practiceFromReq, practiceWhere, DEFAULT_PRACTICE } = require('../lib/practice');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -13,7 +14,7 @@ const VALID_STATUSES = new Set(['open', 'improving', 'resolved']);
 // Resolved items stay in the database for the 7-day recap, but they leave
 // this list so the tracking page does not accumulate closed cards.
 router.get('/', async (req, res) => {
-  const issues = await listIssuesWithOccurrences(req.userId);
+  const issues = await listIssuesWithOccurrences(req.userId, practiceFromReq(req));
   res.json(issues.filter((issue) => issue.status !== 'resolved'));
 });
 
@@ -23,11 +24,13 @@ router.get('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   const { status } = req.body || {};
   if (!VALID_STATUSES.has(status)) return res.status(400).json({ error: '状态不合法' });
-  const issue = await db.get('SELECT id, text, status FROM issues WHERE id = ? AND user_id = ?', [req.params.id, req.userId]);
+  const issue = await db.get('SELECT id, text, status, practice FROM issues WHERE id = ? AND user_id = ?', [req.params.id, req.userId]);
   if (!issue) return res.status(404).json({ error: '未找到该问题' });
+  // Similar issues share a card on 追踪, so they move together -- but only
+  // within the issue's own practice.
   const siblings = await db.all(
-    "SELECT id, text FROM issues WHERE user_id = ? AND status != 'resolved'",
-    [req.userId]
+    `SELECT id, text FROM issues WHERE user_id = ? AND status != 'resolved' AND ${practiceWhere()}`,
+    [req.userId, issue.practice || DEFAULT_PRACTICE]
   );
   const ids = siblings
     .filter((row) => row.id === issue.id || isSimilar(issue.text, row.text) || isSimilar(row.text, issue.text))

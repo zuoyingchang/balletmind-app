@@ -8,6 +8,7 @@ const { dailyAiLimitFor, weeklyAskLimitFor, dailyRecapLimitFor } = require('../c
 const { retrieveAskRecords, KEYWORD_SPARSE_MAX } = require('../ai/ask-retrieve');
 const { buildAskDigest, wantResolvedSection, stripAskFillers } = require('../ai/ask-digest');
 const { parseAskDateRange } = require('../ai/ask-daterange');
+const { practiceFromReq, practiceWhere } = require('../lib/practice');
 const { isIssueBriefExperimentOn } = require('../experiments/issue-brief-gate');
 const { runIssueBriefExperiment } = require('../ai/issue-brief-experiment');
 
@@ -37,12 +38,13 @@ router.get('/review', async (req, res) => {
   // OF THAT COURSE (filtered in SQL before the LIMIT), not the last 5
   // sessions overall with a near-empty result after filtering.
   const classFilter = String(req.query.class || '').trim().slice(0, 40);
+  const practice = practiceFromReq(req);
 
   let records;
   let since;
   if (useLast) {
-    const params = [req.userId];
-    let sql = 'SELECT id, class_name, good_points, improve_points, next_time_reminder, created_at FROM records WHERE user_id = ?';
+    const params = [req.userId, practice];
+    let sql = `SELECT id, class_name, good_points, improve_points, next_time_reminder, created_at FROM records WHERE user_id = ? AND ${practiceWhere()}`;
     if (classFilter) { sql += ' AND TRIM(class_name) = ?'; params.push(classFilter); }
     sql += ' ORDER BY created_at DESC LIMIT ?';
     params.push(lastCount);
@@ -51,14 +53,14 @@ router.get('/review', async (req, res) => {
     since = records.length ? records[0].created_at : Date.now();
   } else {
     since = Date.now() - days * DAY_MS;
-    const params = [req.userId, since];
-    let sql = 'SELECT id, class_name, good_points, improve_points, next_time_reminder, created_at FROM records WHERE user_id = ? AND created_at >= ?';
+    const params = [req.userId, practice, since];
+    let sql = `SELECT id, class_name, good_points, improve_points, next_time_reminder, created_at FROM records WHERE user_id = ? AND ${practiceWhere()} AND created_at >= ?`;
     if (classFilter) { sql += ' AND TRIM(class_name) = ?'; params.push(classFilter); }
     sql += ' ORDER BY created_at ASC';
     records = await db.all(sql, params);
   }
 
-  const issues = await listIssuesWithOccurrences(req.userId);
+  const issues = await listIssuesWithOccurrences(req.userId, practice);
   const openIssues = issues.filter((i) => i.status !== 'resolved');
   let resolvedInPeriod = issues.filter((i) => i.status === 'resolved' && i.updated_at >= since);
   if (classFilter) {
@@ -96,14 +98,15 @@ router.get('/brief', async (req, res) => {
   // other -- this used to be 3 sequential DB round-trips when it's really
   // only 2 deep. Running them in parallel is the main latency win here,
   // since listIssuesWithOccurrences itself still does 2 queries in series.
+  const practice = practiceFromReq(req);
   const [issues, recaps] = await Promise.all([
-    listIssuesWithOccurrences(req.userId),
+    listIssuesWithOccurrences(req.userId, practice),
     db.all(
       `SELECT class_name, next_time_reminder, improve_points, session_tips, good_points, created_at
        FROM records
-       WHERE user_id = ? AND COALESCE(is_checkin_only, 0) = 0
+       WHERE user_id = ? AND COALESCE(is_checkin_only, 0) = 0 AND ${practiceWhere()}
        ORDER BY created_at DESC LIMIT 12`,
-      [req.userId]
+      [req.userId, practice]
     ),
   ]);
   const topIssues = issues
@@ -180,9 +183,10 @@ router.get('/ask', async (req, res) => {
   if (!question) return res.status(400).json({ error: '请输入问题' });
   if (question.length > 200) return res.status(400).json({ error: '问题太长了，精简一下' });
 
+  const practice = practiceFromReq(req);
   const allRows = await db.all(
-    'SELECT id, class_name, good_points, improve_points, next_time_reminder, created_at, embedding FROM records WHERE user_id = ? ORDER BY created_at DESC',
-    [req.userId]
+    `SELECT id, class_name, good_points, improve_points, next_time_reminder, created_at, embedding FROM records WHERE user_id = ? AND ${practiceWhere()} ORDER BY created_at DESC`,
+    [req.userId, practice]
   );
   const dateRange = parseAskDateRange(question);
   const rows = dateRange
@@ -215,7 +219,7 @@ router.get('/ask', async (req, res) => {
   } else if (keywordRound.keywordCount <= KEYWORD_SPARSE_MAX) {
     if (overQuota) {
       if (keywordRound.matches.length === 0) {
-        const issuesEmpty = await listIssuesWithOccurrences(req.userId);
+        const issuesEmpty = await listIssuesWithOccurrences(req.userId, practice);
         const emptyDigest = buildAskDigest({ records: [], issues: issuesEmpty, question: searchQuestion });
         if (!emptyDigest.answered) {
           return res.json({
@@ -235,7 +239,7 @@ router.get('/ask', async (req, res) => {
   }
 
   const round1Matches = round1.matches;
-  const issues = await listIssuesWithOccurrences(req.userId);
+  const issues = await listIssuesWithOccurrences(req.userId, practice);
   const digest = buildAskDigest({ records: round1Matches, issues, question: searchQuestion });
   if (!digest.answered) {
     return res.json({
@@ -302,10 +306,12 @@ router.get('/quota', async (req, res) => {
 // check-in card? Backs the one-off "分享过" badge (V0.1 of a share-reward
 // loop -- see product discussion: try the cheapest version first and see if
 // sharing even happens before building a real referral-code system).
+// Per practice; older share events carry no practice and count as ballet.
 router.get('/share-badge', async (req, res) => {
   const row = await db.get(
-    "SELECT 1 AS ok FROM events WHERE user_id = ? AND event_name = 'share_card_downloaded' LIMIT 1",
-    [req.userId]
+    `SELECT 1 AS ok FROM events WHERE user_id = ? AND event_name = 'share_card_downloaded'
+       AND COALESCE(json_extract(metadata, '$.practice'), 'ballet') = ? LIMIT 1`,
+    [req.userId, practiceFromReq(req)]
   );
   res.json({ earned: !!row });
 });

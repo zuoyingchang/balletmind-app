@@ -126,6 +126,62 @@ test('records and check-ins are tagged with the practice they were saved under',
   assert.equal((await row(checkin.id)).practice, 'pilates');
 });
 
+test('首页 / 档案 / 追踪 / milestones are kept apart per practice (X-Practice), missing header = ballet', async () => {
+  const { token } = await register('pilates-split@example.com', ['ballet', 'pilates']);
+  const P = { 'X-Practice': 'pilates' };
+  const b1 = await (await authed(token, 'POST', '/api/records', {
+    className: '基训', good_points: 'tendu', improve_points: '重心后坐', practice: 'ballet',
+  })).json();
+  assert.equal(b1.milestone.value, 1);
+  const p1 = await (await authed(token, 'POST', '/api/records', {
+    className: 'Reformer', good_points: 'Footwork 稳', improve_points: '重心后坐', practice: 'pilates',
+  })).json();
+  assert.equal(p1.milestone.value, 1, 'pilates counts its own 第一条课记');
+  await authed(token, 'POST', '/api/records/checkin', { className: '垫上', practice: 'pilates' });
+
+  const ballet = await (await authed(token, 'GET', '/api/records')).json();
+  const pilates = await (await authed(token, 'GET', '/api/records', undefined, P)).json();
+  assert.deepEqual(ballet.map((r) => r.class_name), ['基训']);
+  assert.deepEqual(pilates.map((r) => r.class_name).sort(), ['Reformer', '垫上']);
+
+  // Same wording in both practices still makes two separate issues.
+  const bIssues = await (await authed(token, 'GET', '/api/issues')).json();
+  const pIssues = await (await authed(token, 'GET', '/api/issues', undefined, P)).json();
+  assert.equal(bIssues.length, 1);
+  assert.equal(pIssues.length, 1);
+  assert.notEqual(bIssues[0].id, pIssues[0].id);
+  assert.deepEqual(pIssues[0].occurrences.map((o) => o.className), ['Reformer']);
+  await authed(token, 'PATCH', `/api/issues/${pIssues[0].id}`, { status: 'resolved' });
+  assert.equal((await (await authed(token, 'GET', '/api/issues')).json()).length, 1, 'resolving the pilates one leaves ballet open');
+
+  const brief = await (await authed(token, 'GET', '/api/progress/brief', undefined, P)).json();
+  assert.equal(brief.lastRecord.className, 'Reformer');
+  const review = await (await authed(token, 'GET', '/api/progress/review?days=7')).json();
+  assert.deepEqual(review.records.map((r) => r.className), ['基训']);
+  const ask = await (await authed(token, 'GET', `/api/progress/ask?q=${encodeURIComponent('最近做得好的')}`, undefined, P)).json();
+  assert.ok(!(ask.matchedRecords || []).some((r) => r.className === '基训'));
+});
+
+test('课卡 and the 分享过 badge are per practice too; a card cannot be used from the other practice', async () => {
+  const { token } = await register('pilates-split-cards@example.com', ['ballet', 'pilates']);
+  const P = { 'X-Practice': 'pilates' };
+  const bCard = await (await authed(token, 'POST', '/api/cards', { studio: '天鹅舞蹈', kind: 'count', totalCount: 10 })).json();
+  const pCard = await (await authed(token, 'POST', '/api/cards', { studio: '静心普拉提', kind: 'count', totalCount: 10 }, P)).json();
+  assert.deepEqual((await (await authed(token, 'GET', '/api/cards')).json()).map((c) => c.studio), ['天鹅舞蹈']);
+  assert.deepEqual((await (await authed(token, 'GET', '/api/cards', undefined, P)).json()).map((c) => c.studio), ['静心普拉提']);
+
+  const wrong = await (await authed(token, 'POST', '/api/records/checkin', { className: '垫上', practice: 'pilates', cardId: bCard.id })).json();
+  assert.ok(wrong.cardError, 'ballet card is not usable for a pilates 打卡');
+  const right = await (await authed(token, 'POST', '/api/records/checkin', { className: '垫上', practice: 'pilates', cardId: pCard.id })).json();
+  assert.equal(right.cardUsage.card.remaining, 9);
+  assert.equal((await authed(token, 'POST', `/api/cards/${bCard.id}/use`, {}, P)).status, 404);
+  assert.equal((await authed(token, 'POST', `/api/cards/${bCard.id}/use`, {})).status, 200);
+
+  await authed(token, 'POST', '/api/events', { event: 'share_card_downloaded', metadata: { practice: 'pilates' } });
+  assert.equal((await (await authed(token, 'GET', '/api/progress/share-badge', undefined, P)).json()).earned, true);
+  assert.equal((await (await authed(token, 'GET', '/api/progress/share-badge')).json()).earned, false);
+});
+
 test('generate with X-Practice: pilates uses the pilates prompt and logs its version', async () => {
   const { token, user } = await register('pilates-gen@example.com', ['pilates']);
   const res = await authed(token, 'POST', '/api/generate', { transcript: 'Footwork 两红一蓝，Hundred 脖子酸' }, { 'X-Practice': 'pilates' });

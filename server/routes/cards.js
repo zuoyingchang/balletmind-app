@@ -5,6 +5,7 @@ const { logEvent } = require('../events');
 const {
   CardError, cardFieldsFrom, ownedCard, useCard, cardSummary, listCards,
 } = require('../lib/cards');
+const { practiceFromReq } = require('../lib/practice');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -19,7 +20,7 @@ function sendCardError(res, e) {
 }
 
 router.get('/', async (req, res) => {
-  res.json(await listCards(req.userId));
+  res.json(await listCards(req.userId, practiceFromReq(req)));
 });
 
 router.post('/', async (req, res) => {
@@ -42,9 +43,9 @@ router.post('/', async (req, res) => {
   }
   const now = Date.now();
   const info = await db.run(
-    `INSERT INTO class_cards (user_id, studio, name, kind, total_count, price, start_date, expire_date, archived, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
-    [req.userId, fields.studio, fields.name, fields.kind, fields.total_count, fields.price, fields.start_date, fields.expire_date, now, now]
+    `INSERT INTO class_cards (user_id, studio, name, kind, total_count, price, start_date, expire_date, archived, created_at, updated_at, practice)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`,
+    [req.userId, fields.studio, fields.name, fields.kind, fields.total_count, fields.price, fields.start_date, fields.expire_date, now, now, practiceFromReq(req)]
   );
   const cardId = Number(info.lastInsertRowid);
   for (let i = 0; i < usedBefore; i++) {
@@ -88,7 +89,7 @@ router.delete('/:id', async (req, res) => {
 // Manual 扣一次 (a class that has no 课记 in the app).
 router.post('/:id/use', async (req, res) => {
   try {
-    const result = await useCard(req.userId, req.params.id);
+    const result = await useCard(req.userId, req.params.id, { practice: practiceFromReq(req) });
     await logEvent(req.userId, 'card_used', { from: 'manual' });
     res.json(result);
   } catch (e) {

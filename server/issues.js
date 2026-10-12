@@ -2,6 +2,7 @@ const db = require('./db');
 const { splitLines, compactGoodPoint, uniqueCompactGoodPoints, foldLabelKey } = require('./lib/text');
 const { BALLET_TERMS } = require('./ballet-glossary');
 const { TERM_ALIAS_GROUPS, foldBalletText } = require('../public/js/ballet-terms');
+const { DEFAULT_PRACTICE, practiceWhere } = require('./lib/practice');
 
 // Recurring Issue Tracking (V0.2 PRD #1) — deliberately NOT AI-based. Matching
 // a new "improve_points" line against existing open issues is plain text
@@ -162,13 +163,13 @@ function isSimilar(existingText, newLine) {
 // this user's open (non-resolved) issues; bumps the count on a match, opens a
 // new issue otherwise. Every match/create is also logged in issue_occurrences
 // so the UI can link each issue back to the specific records it came from.
-async function processRecordForIssues(userId, recordId, improvePointsText) {
+async function processRecordForIssues(userId, recordId, improvePointsText, practice = DEFAULT_PRACTICE) {
   const lines = uniqueCompactGoodPoints(splitLines(improvePointsText));
   if (lines.length === 0) return;
 
   const openIssues = await db.all(
-    "SELECT * FROM issues WHERE user_id = ? AND status != 'resolved'",
-    [userId]
+    `SELECT * FROM issues WHERE user_id = ? AND status != 'resolved' AND ${practiceWhere()}`,
+    [userId, practice]
   );
 
   for (const line of lines) {
@@ -193,9 +194,9 @@ async function processRecordForIssues(userId, recordId, improvePointsText) {
       match.occurrence_count += 1; // keep in-memory list consistent within this loop
     } else {
       const info = await db.run(
-        `INSERT INTO issues (user_id, text, status, occurrence_count, first_record_id, last_record_id, created_at, updated_at)
-         VALUES (?, ?, 'open', 1, ?, ?, ?, ?)`,
-        [userId, stored, recordId, recordId, now, now]
+        `INSERT INTO issues (user_id, text, status, occurrence_count, first_record_id, last_record_id, created_at, updated_at, practice)
+         VALUES (?, ?, 'open', 1, ?, ?, ?, ?, ?)`,
+        [userId, stored, recordId, recordId, now, now, practice]
       );
       await db.run(
         'INSERT INTO issue_occurrences (issue_id, record_id, created_at) VALUES (?, ?, ?)',
@@ -241,10 +242,10 @@ async function removeRecordFromIssues(userId, recordId) {
 }
 
 // Issues + the record dates/ids they trace back to (evidence linking).
-async function listIssuesWithOccurrences(userId) {
+async function listIssuesWithOccurrences(userId, practice = DEFAULT_PRACTICE) {
   const issues = await db.all(
-    'SELECT * FROM issues WHERE user_id = ? ORDER BY occurrence_count DESC, updated_at DESC',
-    [userId]
+    `SELECT * FROM issues WHERE user_id = ? AND ${practiceWhere()} ORDER BY occurrence_count DESC, updated_at DESC`,
+    [userId, practice]
   );
   if (issues.length === 0) return [];
 
@@ -252,9 +253,9 @@ async function listIssuesWithOccurrences(userId) {
     `SELECT io.issue_id, io.record_id, r.created_at, r.class_name
      FROM issue_occurrences io
      JOIN records r ON r.id = io.record_id
-     WHERE io.issue_id IN (${issues.map(() => '?').join(',')})
+     WHERE io.issue_id IN (${issues.map(() => '?').join(',')}) AND ${practiceWhere('r')}
      ORDER BY r.created_at ASC`,
-    issues.map((i) => i.id)
+    [...issues.map((i) => i.id), practice]
   );
 
   const withOcc = issues.map((issue) => ({

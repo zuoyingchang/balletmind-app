@@ -1,4 +1,5 @@
 const db = require('./db');
+const { DEFAULT_PRACTICE, practiceWhere } = require('./lib/practice');
 
 // Two ledgers (do not merge into one “成就”):
 //   写下了 — recap rows only. Home「复盘 N 次」, badges「记录 N 次」,
@@ -7,6 +8,7 @@ const db = require('./db');
 //             home/share daily streak, hours, week badges/milestones.
 // Daily streak (days) ≠ week badges (weeks). Streak toast only on the first
 // visit of a week, copy says 来过, never 「记下了 N 次」.
+// Both ledgers are per practice, like the rest of 首页 / 档案.
 const COUNT_MILESTONES = new Set([1, 3, 5]);
 const STREAK_MILESTONES = new Set([2, 4, 8, 12, 26, 52]);
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -19,8 +21,8 @@ function mondayOf(ts) {
   return d.getTime();
 }
 
-async function computeWeekStreak(userId) {
-  const rows = await db.all('SELECT created_at FROM records WHERE user_id = ?', [userId]);
+async function computeWeekStreak(userId, practice = DEFAULT_PRACTICE) {
+  const rows = await db.all(`SELECT created_at FROM records WHERE user_id = ? AND ${practiceWhere()}`, [userId, practice]);
   const weekSet = new Set(rows.map((r) => mondayOf(r.created_at)));
   let streak = 0;
   let cursor = mondayOf(Date.now());
@@ -36,11 +38,12 @@ async function computeWeekStreak(userId) {
 // visit of a week, so sitting on a nice number doesn't repeat the toast.
 async function checkMilestone(userId, opts = {}) {
   const fromCheckin = opts.source === 'checkin';
+  const practice = opts.practice || DEFAULT_PRACTICE;
 
   if (!fromCheckin) {
     const { c: totalCount } = await db.get(
-      'SELECT COUNT(*) AS c FROM records WHERE user_id = ? AND COALESCE(is_checkin_only, 0) = 0',
-      [userId]
+      `SELECT COUNT(*) AS c FROM records WHERE user_id = ? AND COALESCE(is_checkin_only, 0) = 0 AND ${practiceWhere()}`,
+      [userId, practice]
     );
 
     if (COUNT_MILESTONES.has(totalCount) || (totalCount >= 10 && totalCount % 5 === 0)) {
@@ -48,7 +51,7 @@ async function checkMilestone(userId, opts = {}) {
     }
   }
 
-  const rows = await db.all('SELECT created_at FROM records WHERE user_id = ?', [userId]);
+  const rows = await db.all(`SELECT created_at FROM records WHERE user_id = ? AND ${practiceWhere()}`, [userId, practice]);
   if (!rows.length) return null;
   const thisWeek = mondayOf(Date.now());
   const firstVisitThisWeek = rows.filter((r) => mondayOf(r.created_at) === thisWeek).length === 1;

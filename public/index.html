@@ -4499,7 +4499,8 @@ window.addEventListener('unhandledrejection', (e) => {
 });
 
 async function authFetch(url, opts = {}) {
-  opts.headers = Object.assign({}, opts.headers, { Authorization: 'Bearer ' + getToken() });
+  // Records, issues and milestones are per practice on the server.
+  opts.headers = Object.assign({ 'X-Practice': currentPractice }, opts.headers, { Authorization: 'Bearer ' + getToken() });
   let res;
   try {
     res = await fetch(url, opts);
@@ -4710,6 +4711,17 @@ function resetAccountScopedCaches() {
   lastDraft = null;
   myCards = null;
 }
+// 首页 / 档案 / 追踪 belong to one practice; switching must not show the other's.
+function resetPracticeScopedCaches() {
+  homeRows = [];
+  historyRows = [];
+  termSectionShown = {};
+  lastAskDigest = null;
+  currentIssues = [];
+  progressLookLoaded = false;
+  myCards = null;
+  cardsLoadedAt = 0;
+}
 function logout() { clearAuth(); guideSeenServer = null; resetAccountScopedCaches(); setAuthMode('login'); show('screen-auth'); paintGuestAuthBanner(); }
 
 // ---------- practice: ballet / pilates ----------
@@ -4800,6 +4812,7 @@ function setActivePractice(practice, { sync = true } = {}) {
     expandedGlossaryTerms = new Set();
     const chips = document.getElementById('glossary-category-chips');
     if (chips) delete chips.dataset.ready;
+    resetPracticeScopedCaches();
   }
   currentPractice = p;
   try { localStorage.setItem(PRACTICE_KEY, p); } catch (e) {}
@@ -6843,7 +6856,7 @@ async function downloadCheckinCard() {
   drawCheckinCard();
   const blob = await checkinShareBlob();
   if (!blob) { toast('生成图片失败'); return; }
-  logEvent('share_card_downloaded', {}, 'none');
+  logEvent('share_card_downloaded', { practice: currentPractice }, 'none');
   const fileName = `balletmind-checkin-${dateKey(new Date())}.png`;
   const file = new File([blob], fileName, { type: 'image/png' });
   if (isAppleTouch()) {
