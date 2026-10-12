@@ -177,7 +177,7 @@ test('课卡 and the 分享过 badge are per practice too; a card cannot be used
   assert.equal((await authed(token, 'POST', `/api/cards/${bCard.id}/use`, {}, P)).status, 404);
   assert.equal((await authed(token, 'POST', `/api/cards/${bCard.id}/use`, {})).status, 200);
 
-  await authed(token, 'POST', '/api/events', { event: 'share_card_downloaded', metadata: { practice: 'pilates' } });
+  await authed(token, 'POST', '/api/events', { event: 'share_card_downloaded' }, P);
   assert.equal((await (await authed(token, 'GET', '/api/progress/share-badge', undefined, P)).json()).earned, true);
   assert.equal((await (await authed(token, 'GET', '/api/progress/share-badge')).json()).earned, false);
 });
@@ -200,7 +200,35 @@ test('generate without the header keeps the ballet prompt', async () => {
   assert.match(lastAnthropicBody.system[0].text, /芭蕾训练笔记整理助手/);
   const meta = await lastEvent(user.id, 'ai_process_success');
   assert.equal(meta.promptVersion, PROMPT_VERSION);
-  assert.equal(meta.practice, undefined);
+  assert.equal(meta.practice, 'ballet');
+});
+
+test('every event carries the practice, and admin stats split 芭蕾 / 普拉提', async () => {
+  const { token, user } = await register('pilates-events@example.com', ['ballet', 'pilates']);
+  const P = { 'X-Practice': 'pilates' };
+  await authed(token, 'POST', '/api/events', { event: 'screen_view', metadata: { screen: 'home' } }, P);
+  assert.equal((await lastEvent(user.id, 'screen_view')).practice, 'pilates');
+  await authed(token, 'POST', '/api/events', { event: 'screen_view', metadata: { screen: 'home' } });
+  assert.equal((await lastEvent(user.id, 'screen_view')).practice, 'ballet');
+
+  const card = await (await authed(token, 'POST', '/api/cards', { studio: '核心馆', kind: 'count', totalCount: 5 }, P)).json();
+  await authed(token, 'POST', '/api/records', {
+    className: 'Reformer', good_points: 'Footwork', improve_points: '', practice: 'pilates', from: 'manual', cardId: card.id,
+  }, P);
+  assert.equal((await lastEvent(user.id, 'save_record')).practice, 'pilates');
+  assert.equal((await lastEvent(user.id, 'session_confirmed')).practice, 'pilates');
+  assert.equal((await lastEvent(user.id, 'card_used')).practice, 'pilates');
+  await authed(token, 'POST', '/api/records/checkin', { className: '基训' });
+  assert.equal((await lastEvent(user.id, 'checkin_saved')).practice, 'ballet');
+
+  const { buildAdminStats } = require('../admin-stats');
+  const bp = (await buildAdminStats()).byPractice;
+  assert.ok(bp.pilates.recaps >= 1);
+  assert.ok(bp.pilates.cards >= 1);
+  assert.ok(bp.pilates.usersPicked >= 1);
+  assert.ok(bp.pilates.events.save_record.count >= 1);
+  assert.ok(bp.ballet.events.checkin_saved.count >= 1);
+  assert.equal(typeof bp.untagged.save_record, 'number');
 });
 
 test('transcribe with X-Practice: pilates sends the pilates vocabulary to Whisper', async () => {

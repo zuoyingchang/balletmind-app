@@ -40,7 +40,7 @@ async function deductCardWithRecord(req, recordId, from, usedAt) {
   if (cardId === undefined || cardId === null || cardId === '') return {};
   try {
     const { usageId, card } = await useCard(req.userId, cardId, { recordId: Number(recordId), usedAt, practice: recordPractice(req) });
-    await logEvent(req.userId, 'card_used', { from });
+    await logEvent(req.userId, 'card_used', { from, practice: recordPractice(req) });
     return { cardUsage: { usageId, card } };
   } catch (e) {
     if (e instanceof CardError) return { cardError: e.message };
@@ -112,6 +112,7 @@ router.post('/', async (req, res) => {
   await logEvent(req.userId, 'save_record', withSession({
     recordId: info.lastInsertRowid,
     from,
+    practice: recordPractice(req),
     slotsFilled,
     durationSec: Number(durationSec) || 0,
     ...(classAt.backfillDays !== undefined ? { backfillDays: classAt.backfillDays } : {}),
@@ -119,14 +120,16 @@ router.post('/', async (req, res) => {
   await logEvent(req.userId, 'session_confirmed', withSession({
     recordId: info.lastInsertRowid,
     from,
+    practice: recordPractice(req),
     slotsFilled,
   }, sessionId));
   await logEvent(req.userId, 'user_edit_ai_result', withSession({
     edited: !!edited,
     editedFields: fields,
+    practice: recordPractice(req),
   }, sessionId));
   for (const field_name of fields) {
-    await logEvent(req.userId, 'field_edited', withSession({ field_name }, sessionId));
+    await logEvent(req.userId, 'field_edited', withSession({ field_name, practice: recordPractice(req) }, sessionId));
   }
   await processRecordForIssues(req.userId, info.lastInsertRowid, improve, recordPractice(req));
   const milestone = await checkMilestone(req.userId, { source: 'recap', practice: recordPractice(req) });
@@ -157,7 +160,7 @@ router.post('/checkin', async (req, res) => {
     [req.userId, name, classAt.at, trainingMin, moodValue, recordPractice(req)]
   );
   await logEvent(req.userId, 'checkin_saved', withSession({
-    recordId: info.lastInsertRowid, from: 'checkin', slotsFilled: 0,
+    recordId: info.lastInsertRowid, from: 'checkin', slotsFilled: 0, practice: recordPractice(req),
     ...(classAt.backfillDays !== undefined ? { backfillDays: classAt.backfillDays } : {}),
   }, sessionIdFromReq(req)));
   const milestone = await checkMilestone(req.userId, { source: 'checkin', practice: recordPractice(req) });

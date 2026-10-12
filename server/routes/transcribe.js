@@ -21,7 +21,7 @@ const { sessionIdFromReq, withSession } = require('../lib/text');
 const router = express.Router();
 
 function eventMeta(req, meta) {
-  return tagActor(req, withSession(meta, sessionIdFromReq(req)));
+  return tagActor(req, withSession({ ...meta, practice: practiceFromReq(req) }, sessionIdFromReq(req)));
 }
 
 function extensionFor(contentType) {

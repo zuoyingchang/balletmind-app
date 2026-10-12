@@ -1,6 +1,7 @@
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
 const { logEvent, KNOWN_EVENTS } = require('../events');
+const { practiceFromReq } = require('../lib/practice');
 
 const router = express.Router();
 
@@ -12,7 +13,8 @@ const router = express.Router();
 router.post('/', requireAuth, async (req, res) => {
   const { event, metadata } = req.body || {};
   if (!KNOWN_EVENTS.has(event)) return res.status(400).json({ error: '未知事件类型' });
-  await logEvent(req.userId, event, metadata);
+  const meta = metadata && typeof metadata === 'object' && !Array.isArray(metadata) ? metadata : {};
+  await logEvent(req.userId, event, { ...meta, practice: practiceFromReq(req) });
   res.json({ ok: true });
 });
 

@@ -224,6 +224,69 @@ async function loadTotals(weekAgo) {
   };
 }
 
+const PRACTICE_KEYS = ['ballet', 'pilates'];
+const PRACTICE_EVENTS = [
+  'record_voice_start', 'asr_success', 'ai_process_success', 'review_opened',
+  'save_record', 'checkin_saved', 'card_used', 'ask_success', 'screen_view',
+];
+
+// 芭蕾 vs 普拉提. Records/cards/users come straight from their tables (NULL
+// practice = ballet). Events only carry practice since it was added to every
+// event; older ones are counted under `untagged`, never guessed.
+async function practiceBreakdown(allEvents, weekAgo) {
+  const [recordRows, cardRows, userRows] = await Promise.all([
+    db.all(`SELECT COALESCE(practice, 'ballet') AS p, COALESCE(is_checkin_only, 0) AS checkin,
+              COUNT(*) AS c, COUNT(DISTINCT user_id) AS u,
+              SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS w
+            FROM records GROUP BY 1, 2`, [weekAgo]),
+    db.all("SELECT COALESCE(practice, 'ballet') AS p, COUNT(*) AS c, COUNT(DISTINCT user_id) AS u FROM class_cards GROUP BY 1"),
+    db.all('SELECT practices, active_practice FROM users'),
+  ]);
+  const weekUsers = await db.all(
+    `SELECT COALESCE(practice, 'ballet') AS p, COUNT(DISTINCT user_id) AS u FROM records WHERE created_at >= ? GROUP BY 1`,
+    [weekAgo]
+  );
+  const savers = await db.all("SELECT COALESCE(practice, 'ballet') AS p, COUNT(DISTINCT user_id) AS u FROM records GROUP BY 1");
+
+  const out = {};
+  for (const p of PRACTICE_KEYS) {
+    const rec = recordRows.filter((r) => r.p === p);
+    const recaps = rec.find((r) => num(r.checkin) === 0);
+    const checkins = rec.find((r) => num(r.checkin) === 1);
+    const card = cardRows.find((r) => r.p === p);
+    out[p] = {
+      usersPicked: userRows.filter((u) => String(u.practices || 'ballet').split(',').includes(p)).length,
+      usersActiveNow: userRows.filter((u) => (u.active_practice || String(u.practices || 'ballet').split(',')[0]) === p).length,
+      usersWhoSaved: num(savers.find((r) => r.p === p)?.u),
+      usersWhoSavedLast7Days: num(weekUsers.find((r) => r.p === p)?.u),
+      recaps: num(recaps?.c),
+      checkins: num(checkins?.c),
+      recordsLast7Days: num(recaps?.w) + num(checkins?.w),
+      cards: num(card?.c),
+      events: {},
+    };
+  }
+  const untagged = {};
+  for (const name of PRACTICE_EVENTS) {
+    const buckets = { ballet: { count: 0, users: new Set() }, pilates: { count: 0, users: new Set() } };
+    let missing = 0;
+    for (const e of allEvents) {
+      if (e.event_name !== name) continue;
+      const p = parseJson(e.metadata).practice;
+      if (!buckets[p]) { missing += 1; continue; }
+      buckets[p].count += 1;
+      if (e.user_id != null) buckets[p].users.add(e.user_id);
+    }
+    for (const p of PRACTICE_KEYS) out[p].events[name] = { count: buckets[p].count, users: buckets[p].users.size };
+    untagged[name] = missing;
+  }
+  return {
+    ...out,
+    untagged,
+    note: '课记 / 打卡 / 课卡 / 选了哪个项目直接查表，旧数据没有项目的算芭蕾。事件从「每个事件都带项目」这版上线后才能分开，之前的算「未标记」，不往任何一边猜。',
+  };
+}
+
 async function buildAdminStats() {
   const weekAgo = Date.now() - WEEK_MS;
 
@@ -390,6 +453,7 @@ async function buildAdminStats() {
       reviewOpenedUniqueUsers: unique('review_opened'),
     },
     userSplit,
+    byPractice: await practiceBreakdown(allEvents, weekAgo),
     traffic,
     screenViews,
     clientErrors,

@@ -197,6 +197,15 @@
     </div>
 
     <div class="card">
+      <h3>芭蕾 / 普拉提</h3>
+      <table>
+        <thead><tr><th></th><th>芭蕾</th><th>普拉提</th><th>未标记（旧事件）</th></tr></thead>
+        <tbody id="practice-body"></tbody>
+      </table>
+      <p class="muted" id="practice-note" style="margin:10px 0 0;"></p>
+    </div>
+
+    <div class="card">
       <h3>规范漏斗（同一 session，才是 conversion）</h3>
       <p class="muted" id="funnel-def" style="margin:0 0 10px;">Record started → Voice completed → ASR → AI → Review → Confirm。没有 sessionId 的历史行不会被补进这张表。</p>
       <table>
@@ -409,6 +418,35 @@ function render(data) {
   document.getElementById('t-test').textContent = sp.test == null ? '-' : sp.test;
   document.getElementById('t-real').textContent = sp.real == null ? '-' : sp.real;
   document.getElementById('t-split-note').textContent = sp.rule ? sp.rule + '。你自己的账号算真实用户。' : '';
+  const byP = data.byPractice || {};
+  if (byP.ballet && byP.pilates) {
+    const b = byP.ballet, pl = byP.pilates, un = byP.untagged || {};
+    const row = (label, bv, pv, uv) => '<tr><td>' + escapeHtml(label) + '</td><td>' + bv + '</td><td>' + pv + '</td><td>' + (uv == null ? '' : uv) + '</td></tr>';
+    const ev = (name, label) => row(label + '（次 / 人）',
+      b.events[name].count + ' / ' + b.events[name].users,
+      pl.events[name].count + ' / ' + pl.events[name].users,
+      un[name] || 0);
+    document.getElementById('practice-body').innerHTML = [
+      row('选了这个项目的账号', b.usersPicked, pl.usersPicked),
+      row('现在正在用的账号', b.usersActiveNow, pl.usersActiveNow),
+      row('保存过记录的账号', b.usersWhoSaved, pl.usersWhoSaved),
+      row('近 7 天保存过的账号', b.usersWhoSavedLast7Days, pl.usersWhoSavedLast7Days),
+      row('课记', b.recaps, pl.recaps),
+      row('打卡', b.checkins, pl.checkins),
+      row('近 7 天新记录（课记 + 打卡）', b.recordsLast7Days, pl.recordsLast7Days),
+      row('课卡', b.cards, pl.cards),
+      ev('record_voice_start', '开始录音'),
+      ev('asr_success', '语音识别成功'),
+      ev('ai_process_success', 'AI 整理成功'),
+      ev('review_opened', '打开复盘结果'),
+      ev('save_record', '保存课记'),
+      ev('checkin_saved', '打卡'),
+      ev('card_used', '扣课卡'),
+      ev('ask_success', '问问档案'),
+      ev('screen_view', '页面浏览'),
+    ].join('');
+    document.getElementById('practice-note').textContent = byP.note || '';
+  }
   const ask = u.askUsage || {};
   const aw = ask.last7d || {}, aa = ask.all || {};
   document.getElementById('ask-total').textContent = aw.total == null ? '-' : aw.total;

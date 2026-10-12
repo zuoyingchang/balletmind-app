@@ -33,10 +33,7 @@ function inputFrom(req) {
 
 function practiceMeta(req) {
   const practice = practiceFromReq(req);
-  return {
-    promptVersion: reviewPromptFor(practice).version,
-    ...(practice === 'ballet' ? {} : { practice }),
-  };
+  return { promptVersion: reviewPromptFor(practice).version, practice };
 }
 
 function failMeta(req, extra) {

@@ -6856,7 +6856,7 @@ async function downloadCheckinCard() {
   drawCheckinCard();
   const blob = await checkinShareBlob();
   if (!blob) { toast('生成图片失败'); return; }
-  logEvent('share_card_downloaded', { practice: currentPractice }, 'none');
+  logEvent('share_card_downloaded', {}, 'none');
   const fileName = `balletmind-checkin-${dateKey(new Date())}.png`;
   const file = new File([blob], fileName, { type: 'image/png' });
   if (isAppleTouch()) {

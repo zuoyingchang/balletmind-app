@@ -535,7 +535,7 @@ test('/api/events logs a known event for the calling user', async () => {
 
   const row = await db.get('SELECT * FROM events WHERE user_id = ? AND event_name = ?', [user.id, 'history_open']);
   assert.ok(row, 'expected an events row to be written');
-  assert.deepEqual(JSON.parse(row.metadata), { from: 'home' });
+  assert.deepEqual(JSON.parse(row.metadata), { from: 'home', practice: 'ballet' });
 });
 
 test('session funnel counts one capture that starts and saves with the same sessionId', async () => {

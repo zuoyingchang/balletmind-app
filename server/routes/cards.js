@@ -90,7 +90,7 @@ router.delete('/:id', async (req, res) => {
 router.post('/:id/use', async (req, res) => {
   try {
     const result = await useCard(req.userId, req.params.id, { practice: practiceFromReq(req) });
-    await logEvent(req.userId, 'card_used', { from: 'manual' });
+    await logEvent(req.userId, 'card_used', { from: 'manual', practice: practiceFromReq(req) });
     res.json(result);
   } catch (e) {
     sendCardError(res, e);

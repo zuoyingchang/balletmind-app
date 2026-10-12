@@ -232,7 +232,7 @@ router.get('/ask', async (req, res) => {
           });
         }
       }
-      await logEvent(req.userId, 'ask_fail', withSession({ reason: 'quota_exceeded' }, sessionId));
+      await logEvent(req.userId, 'ask_fail', withSession({ reason: 'quota_exceeded', practice }, sessionId));
       return res.status(429).json({ error: '这周的问问次数已经用完了，下周再问吧' });
     }
     round1 = await retrieveAskRecords(rows, searchQuestion, { limit: 8, onUsage: (u) => logEmbeddingUsage(req.userId, 'ask', u) });
@@ -253,13 +253,14 @@ router.get('/ask', async (req, res) => {
   }
 
   if (overQuota) {
-    await logEvent(req.userId, 'ask_fail', withSession({ reason: 'quota_exceeded' }, sessionId));
+    await logEvent(req.userId, 'ask_fail', withSession({ reason: 'quota_exceeded', practice }, sessionId));
     return res.status(429).json({ error: '这周的问问次数已经用完了，下周再问吧' });
   }
 
   const startedAt = Date.now();
   await logEvent(req.userId, 'ask_success', withSession({
     rounds: 1,
+    practice,
     latencyMs: Date.now() - startedAt,
     answered: true,
     matchCount: round1Matches.length,
